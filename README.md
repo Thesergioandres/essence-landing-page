@@ -2,6 +2,11 @@
 
 Aplicación fullstack para landing page de productos de belleza natural.
 
+> **⚠️ RAMA DE PRODUCCIÓN** - Para desarrollo, cambia a la rama `dev`:
+> ```bash
+> git checkout dev
+> ```
+
 ## 📁 Estructura del Proyecto
 
 ```
