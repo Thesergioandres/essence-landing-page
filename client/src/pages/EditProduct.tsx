@@ -11,9 +11,15 @@ import type { Category, Product } from "../types";
 interface FormState {
   name: string;
   description: string;
-  price: string;
+  purchasePrice: string;
+  suggestedPrice: string;
+  distributorPrice: string;
+  clientPrice: string;
+  distributorCommission: string;
+  totalStock: string;
+  warehouseStock: string;
+  lowStockAlert: string;
   category: string;
-  stock: string;
   featured: boolean;
   ingredients: string;
   benefits: string;
@@ -67,12 +73,18 @@ export default function EditProduct() {
       setFormData({
         name: response.name,
         description: response.description,
-        price: response.price.toString(),
+        purchasePrice: response.purchasePrice?.toString() ?? "0",
+        suggestedPrice: response.suggestedPrice?.toString() ?? "0",
+        distributorPrice: response.distributorPrice?.toString() ?? "0",
+        clientPrice: response.clientPrice?.toString() ?? "0",
+        distributorCommission: response.distributorCommission?.toString() ?? "0",
+        totalStock: response.totalStock?.toString() ?? "0",
+        warehouseStock: response.warehouseStock?.toString() ?? "0",
+        lowStockAlert: response.lowStockAlert?.toString() ?? "10",
         category:
           typeof response.category === "string"
             ? response.category
             : response.category._id,
-        stock: response.stock?.toString() ?? "0",
         featured: response.featured,
         ingredients: response.ingredients?.join(", ") ?? "",
         benefits: response.benefits?.join(", ") ?? "",
@@ -108,14 +120,29 @@ export default function EditProduct() {
         ? target.checked
         : value;
 
-    setFormData(current =>
-      current
-        ? {
-            ...current,
-            [name]: fieldValue,
-          }
-        : current
-    );
+    // Auto-calcular suggestedPrice cuando cambia purchasePrice
+    if (name === "purchasePrice") {
+      const purchasePrice = parseFloat(value) || 0;
+      const suggestedPrice = purchasePrice * 1.3;
+      setFormData(current =>
+        current
+          ? {
+              ...current,
+              purchasePrice: value,
+              suggestedPrice: suggestedPrice.toFixed(0),
+            }
+          : current
+      );
+    } else {
+      setFormData(current =>
+        current
+          ? {
+              ...current,
+              [name]: fieldValue,
+            }
+          : current
+      );
+    }
   };
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -145,15 +172,21 @@ export default function EditProduct() {
     setSaving(true);
 
     try {
-      const price = Number(formData.price);
-      const stock = Number(formData.stock || 0);
+      const purchasePrice = Number(formData.purchasePrice);
+      const suggestedPrice = Number(formData.suggestedPrice);
+      const distributorPrice = Number(formData.distributorPrice);
+      const clientPrice = Number(formData.clientPrice);
+      const distributorCommission = Number(formData.distributorCommission);
+      const totalStock = Number(formData.totalStock || 0);
+      const warehouseStock = Number(formData.warehouseStock || 0);
+      const lowStockAlert = Number(formData.lowStockAlert || 10);
 
-      if (Number.isNaN(price) || price < 0) {
-        throw new Error("El precio debe ser un número válido");
+      if (Number.isNaN(purchasePrice) || purchasePrice < 0) {
+        throw new Error("El precio de compra debe ser un número válido");
       }
 
-      if (Number.isNaN(stock) || stock < 0) {
-        throw new Error("El stock debe ser un número válido");
+      if (Number.isNaN(totalStock) || totalStock < 0) {
+        throw new Error("El stock total debe ser un número válido");
       }
 
       const ingredients = formData.ingredients
@@ -177,9 +210,15 @@ export default function EditProduct() {
       await productService.update(id, {
         name: formData.name.trim(),
         description: formData.description.trim(),
-        price,
+        purchasePrice,
+        suggestedPrice,
+        distributorPrice,
+        clientPrice,
+        distributorCommission,
+        totalStock,
+        warehouseStock,
+        lowStockAlert,
         category: formData.category,
-        stock,
         featured: formData.featured,
         ingredients,
         benefits,
@@ -270,32 +309,144 @@ export default function EditProduct() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-300">
-                    Precio
+                    Precio de Compra *
                   </label>
                   <input
                     type="number"
-                    name="price"
-                    value={formData.price}
+                    name="purchasePrice"
+                    value={formData.purchasePrice}
                     onChange={handleChange}
                     required
                     min="0"
-                    step="0.01"
+                    step="1"
                     className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
+                  <p className="mt-1 text-xs text-gray-500">Costo base del producto</p>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-green-400">
+                    Precio Sugerido (30% ganancia)
+                  </label>
+                  <input
+                    type="number"
+                    name="suggestedPrice"
+                    value={formData.suggestedPrice}
+                    onChange={handleChange}
+                    min="0"
+                    step="1"
+                    className="w-full rounded-lg border border-green-500 bg-green-900/20 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                  <p className="mt-1 text-xs text-green-600">Auto-calculado: Compra × 1.3</p>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-blue-400">
+                    Precio para Distribuidor
+                  </label>
+                  <input
+                    type="number"
+                    name="distributorPrice"
+                    value={formData.distributorPrice}
+                    onChange={handleChange}
+                    min="0"
+                    step="1"
+                    className="w-full rounded-lg border border-blue-500 bg-blue-900/20 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="mt-1 text-xs text-blue-600">Precio que paga el distribuidor</p>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-purple-400">
+                    Precio al Cliente Final
+                  </label>
+                  <input
+                    type="number"
+                    name="clientPrice"
+                    value={formData.clientPrice}
+                    onChange={handleChange}
+                    min="0"
+                    step="1"
+                    className="w-full rounded-lg border border-purple-500 bg-purple-900/20 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <p className="mt-1 text-xs text-purple-600">Precio sugerido de venta</p>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-yellow-400">
+                    Comisión Distribuidor
+                  </label>
+                  <input
+                    type="number"
+                    name="distributorCommission"
+                    value={formData.distributorCommission}
+                    onChange={handleChange}
+                    min="0"
+                    step="1"
+                    className="w-full rounded-lg border border-yellow-500 bg-yellow-900/20 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  />
+                  <p className="mt-1 text-xs text-yellow-600">Ganancia por unidad vendida</p>
+                </div>
+
+                <div className="rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-3">
+                  <p className="text-xs text-gray-400 mb-1">Resumen de rentabilidad</p>
+                  <div className="space-y-1 text-xs">
+                    <p className="text-green-400">
+                      Ganancia Admin: ${Number(formData.distributorPrice || 0) - Number(formData.purchasePrice || 0)}
+                    </p>
+                    <p className="text-yellow-400">
+                      Ganancia Distribuidor: ${Number(formData.clientPrice || 0) - Number(formData.distributorPrice || 0)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-300">
+                    Stock Total *
+                  </label>
+                  <input
+                    type="number"
+                    name="totalStock"
+                    value={formData.totalStock}
+                    onChange={handleChange}
+                    required
+                    min="0"
+                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Unidades totales</p>
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-300">
-                    Stock
+                    Stock en Bodega *
                   </label>
                   <input
                     type="number"
-                    name="stock"
-                    value={formData.stock}
+                    name="warehouseStock"
+                    value={formData.warehouseStock}
+                    onChange={handleChange}
+                    required
+                    min="0"
+                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Disponible para asignar</p>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-300">
+                    Alerta Stock Bajo
+                  </label>
+                  <input
+                    type="number"
+                    name="lowStockAlert"
+                    value={formData.lowStockAlert}
                     onChange={handleChange}
                     min="0"
                     className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
+                  <p className="mt-1 text-xs text-gray-500">Umbral de alerta</p>
                 </div>
               </div>
 
