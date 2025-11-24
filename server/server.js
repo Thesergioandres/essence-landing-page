@@ -21,6 +21,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Conectar a MongoDB
 connectDB();
@@ -28,7 +29,9 @@ connectDB();
 // Middlewares
 app.use(
   cors({
-    origin: "http://localhost:3000", // URL del frontend Vite
+    origin: process.env.NODE_ENV === "production" 
+      ? [FRONTEND_URL, /\.vercel\.app$/]
+      : ["http://localhost:3000", "http://localhost:5173"],
     credentials: true,
   })
 );

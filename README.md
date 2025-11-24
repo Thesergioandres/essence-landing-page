@@ -1,137 +1,138 @@
-# Essence App 🌿
+# 🚀 Essence - Sistema de Gestión de Productos y Ventas
 
-Aplicación fullstack para landing page de productos de belleza natural.
+Sistema completo de gestión para distribuidores de productos tecnológicos con panel de administración, gamificación, análisis de ventas y gestión de inventario.
 
-## 📁 Estructura del Proyecto
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![React](https://img.shields.io/badge/React-19.1.0-61dafb.svg)
+![Node](https://img.shields.io/badge/Node-18+-green.svg)
 
-```
-essence-app/
-├── client/          # Frontend React + Vite + Tailwind
-├── server/          # Backend Node.js + Express + MongoDB
-├── package.json     # Scripts para ejecutar todo
-└── README.md
-```
+## ✨ Características Principales
 
-## 🚀 Inicio Rápido
+### 📱 Frontend (React + Vite + Tailwind CSS 4)
+- ✅ **Diseño Responsivo**: Optimizado para móviles (320px+) hasta desktop
+- ✅ **Autenticación JWT**: Login separado para Admin y Distribuidores
+- ✅ **Panel de Administración**: Gestión completa de productos, categorías y distribuidores
+- ✅ **Panel de Distribuidor**: Registro de ventas, inventario personal, reportes
+- ✅ **Catálogo Público**: Navegación de productos con filtros y búsqueda
+- ✅ **Sistema de Gamificación**: Rankings, logros, recompensas
+- ✅ **Análisis y Reportes**: Gráficos interactivos con Recharts
+- ✅ **Exportación PDF**: Reportes descargables con jsPDF
+- ✅ **Gestión de Defectuosos**: Control de productos dañados
+- ✅ **Sistema de Auditoría**: Registro de todas las acciones
 
-### 1️⃣ Instalar todas las dependencias
+### 🔧 Backend (Node.js + Express + MongoDB)
+- ✅ **API RESTful**: Arquitectura organizada con rutas modulares
+- ✅ **Base de Datos**: MongoDB con Mongoose
+- ✅ **Autenticación**: JWT con middleware de protección
+- ✅ **Upload de Imágenes**: Cloudinary integration
+- ✅ **Control de Stock**: Inventario de bodega y distribuidores
+- ✅ **Sistema de Alertas**: Notificaciones de stock bajo
+- ✅ **Analytics**: Estadísticas de ventas y ganancias
+- ✅ **Gamificación**: Sistema de puntos y logros
+- ✅ **Auditoría**: Log de todas las operaciones
 
+### 📊 Optimizaciones Móviles
+- ✅ Touch targets mínimos de 44px (WCAG 2.1)
+- ✅ Skeleton loaders para mejor UX
+- ✅ Lazy loading de imágenes
+- ✅ Active states con feedback táctil
+- ✅ Tablas responsivas (cards en móvil)
+- ✅ Menú hamburguesa funcional
+- ✅ Sidebars deslizantes con overlay
+- ✅ Tipografía fluida progresiva
+
+## 🛠️ Stack Tecnológico
+
+### Frontend
+- React 19.1 - TypeScript - Vite 6.3 - Tailwind CSS 4.1
+- React Router 7.9 - Axios - Recharts - jsPDF
+
+### Backend
+- Node.js - Express - MongoDB - Mongoose
+- JWT - Cloudinary - bcrypt - CORS
+
+## 📦 Instalación Local
+
+### Prerrequisitos
+- Node.js 18+ instalado
+- MongoDB instalado y corriendo
+- Git
+
+### 1. Clonar el repositorio
 ```bash
-npm run install-all
+git clone https://github.com/thesergioandres/essence-landing-page.git
+cd essence-landing-page
 ```
 
-### 2️⃣ Configurar variables de entorno
-
+### 2. Configurar Backend
 ```bash
-# En /server crear archivo .env
 cd server
+npm install
 cp .env.example .env
-# Editar .env con tus credenciales de MongoDB
+# Edita .env con tus configuraciones
+npm start
 ```
 
-### 3️⃣ Ejecutar en desarrollo
-
+### 3. Configurar Frontend
 ```bash
-# Desde la raíz del proyecto
+cd ../client
+npm install
+cp .env.example .env
+# Edita .env con la URL del backend
 npm run dev
 ```
 
-Esto iniciará:
+### 4. Acceder a la aplicación
+- Frontend: http://localhost:3000
+- Backend: http://localhost:5000
 
-- 🎨 Frontend en `http://localhost:5173`
-- 🔧 Backend en `http://localhost:5000`
+## 🌐 Despliegue en Vercel
 
-## 📦 Scripts Disponibles
+**Guía completa:** [DEPLOYMENT.md](./DEPLOYMENT.md)
 
-```bash
-npm run dev           # Ejecutar cliente y servidor simultáneamente
-npm run client        # Solo frontend
-npm run server        # Solo backend
-npm run install-all   # Instalar todas las dependencias
-npm run build         # Build de producción del cliente
+### Resumen:
+1. **Backend**: Deploy con root `server` + variables de entorno
+2. **Frontend**: Deploy con root `client` + VITE_API_URL
+3. **MongoDB Atlas**: Cluster gratuito M0
+
+## 📁 Estructura
+
+```
+essence-landing-page/
+├── client/                  # Frontend React
+│   ├── src/
+│   │   ├── api/            # Services
+│   │   ├── components/     # Componentes
+│   │   ├── pages/          # Páginas
+│   │   └── ...
+│   └── package.json
+├── server/                  # Backend Node.js
+│   ├── controllers/        # Lógica
+│   ├── models/             # Mongoose
+│   ├── routes/             # API routes
+│   └── server.js
+└── README.md
 ```
 
-## 🛠️ Tecnologías
+## 🔑 Variables de Entorno
 
-### Frontend
-
-- React 18
-- TypeScript
-- Vite
-- Tailwind CSS
-
-### Backend
-
-- Node.js
-- Express
-- MongoDB + Mongoose
-- JWT Authentication
-- Imágenes en Base64 (MongoDB)
-
-## ✨ Funcionalidades Clave
-
-- Autenticación segura con JWT y flujo de administrador
-- Dashboard privado con métricas y estado general del catálogo
-- Gestión completa de productos (listar, crear, editar, eliminar)
-- Subida de imágenes optimizada con Cloudinary y reemplazo controlado
-- Formularios con validaciones básicas y previsualización de contenido
-
-## 📚 Documentación
-
-- [Frontend README](./client/README.md)
-- [Backend README](./server/README.md)
-
-## 🔐 Variables de Entorno
-
-Crea un archivo `.env` en `/server` con:
-
+### Backend (.env)
 ```env
-MONGO_URI=mongodb://localhost:27017/essence
-PORT=5000
-JWT_SECRET=tu_secreto_super_seguro
-NODE_ENV=development
+MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/essence
+JWT_SECRET=your_secret_key
+FRONTEND_URL=https://your-frontend.vercel.app
 ```
 
-Para el cliente (opcional), puedes definir `VITE_API_URL` si deseas apuntar a otra URL para el backend:
-
-```bash
-# client/.env
-VITE_API_URL=http://localhost:5000/api
+### Frontend (.env)
+```env
+VITE_API_URL=https://your-backend.vercel.app/api
 ```
 
-## 🗄️ Base de Datos
+## 👨‍💻 Autor
 
-### MongoDB Local
+**Sergio Andrés**
+- GitHub: [@thesergioandres](https://github.com/thesergioandres)
 
-```bash
-# Instalar MongoDB
-# Windows: https://www.mongodb.com/try/download/community
+---
 
-# Iniciar MongoDB
-mongod
-```
-
-### MongoDB Atlas (Recomendado)
-
-1. Crear cuenta en [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-2. Crear un cluster gratuito
-3. Obtener la cadena de conexión
-4. Actualizar `MONGO_URI` en `.env`
-
-## 📝 Próximos Pasos
-
-1. ✅ Estructura del proyecto creada
-2. ✅ Backend configurado
-3. ✅ Conectar frontend con backend
-4. ✅ Implementar autenticación
-5. ✅ Crear sistema de productos
-6. ✅ Subir imágenes a Cloudinary
-7. ⏳ Deploy a producción
-
-## 🤝 Contribuir
-
-Este es un proyecto personal de aprendizaje.
-
-## 📄 Licencia
-
-MIT
+⭐ Si te fue útil, dale una estrella en GitHub!

@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "build:analyze": "npm run build && npx vite-bundle-analyzer"
+    "build:analyze": "npm run build && npx vite-bundle-analyzer",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.6",
