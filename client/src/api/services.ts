@@ -1,12 +1,31 @@
 import type {
+  AnalyticsDashboard,
+  AuditLog,
+  AuditLogsResponse,
+  AuditStats,
+  Averages,
   Category,
+  DailySummary,
+  DefectiveProduct,
+  DistributorProfit,
   DistributorStock,
+  DistributorStatsResponse,
+  EntityHistory,
+  FinancialSummary,
+  GamificationConfig,
+  MonthlyProfitData,
+  PeriodWinner,
   Product,
   ProductImage,
+  ProductProfit,
+  RankingResponse,
   Sale,
   SaleStats,
   StockAlert,
+  TimelineData,
   User,
+  UserActivity,
+  WinnersResponse,
 } from "../types";
 import api from "./axios.ts";
 
@@ -330,6 +349,251 @@ export const saleService = {
     }>
   > {
     const response = await api.get("/sales/report/by-distributor");
+    return response.data;
+  },
+
+  async confirmPayment(saleId: string): Promise<{
+    message: string;
+    sale: Sale;
+  }> {
+    const response = await api.put(`/sales/${saleId}/confirm-payment`);
+    return response.data;
+  },
+};
+
+// ==================== DEFECTIVE PRODUCT SERVICE ====================
+export const defectiveProductService = {
+  async report(data: {
+    productId: string;
+    quantity: number;
+    reason: string;
+    images?: ProductImage[];
+  }): Promise<{
+    message: string;
+    report: DefectiveProduct;
+    remainingStock: number;
+  }> {
+    const response = await api.post("/defective-products", data);
+    return response.data;
+  },
+
+  async getDistributorReports(
+    distributorId?: string,
+    status?: "pendiente" | "confirmado" | "rechazado"
+  ): Promise<DefectiveProduct[]> {
+    const url = distributorId
+      ? `/defective-products/distributor/${distributorId}`
+      : "/defective-products/distributor/me";
+    const response = await api.get(url, { params: { status } });
+    return response.data;
+  },
+
+  async getAllReports(filters?: {
+    status?: "pendiente" | "confirmado" | "rechazado";
+    distributorId?: string;
+    productId?: string;
+  }): Promise<{
+    reports: DefectiveProduct[];
+    stats: {
+      total: number;
+      pendiente: number;
+      confirmado: number;
+      rechazado: number;
+      totalQuantity: number;
+    };
+  }> {
+    const response = await api.get("/defective-products", { params: filters });
+    return response.data;
+  },
+
+  async confirm(
+    reportId: string,
+    adminNotes?: string
+  ): Promise<{
+    message: string;
+    report: DefectiveProduct;
+  }> {
+    const response = await api.put(`/defective-products/${reportId}/confirm`, {
+      adminNotes,
+    });
+    return response.data;
+  },
+
+  async reject(
+    reportId: string,
+    adminNotes?: string
+  ): Promise<{
+    message: string;
+    report: DefectiveProduct;
+  }> {
+    const response = await api.put(`/defective-products/${reportId}/reject`, {
+      adminNotes,
+    });
+    return response.data;
+  },
+};
+
+// ==================== ANALYTICS SERVICE ====================
+export const analyticsService = {
+  async getMonthlyProfit(): Promise<MonthlyProfitData> {
+    const response = await api.get<MonthlyProfitData>("/analytics/monthly-profit");
+    return response.data;
+  },
+
+  async getProfitByProduct(filters?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ProductProfit[]> {
+    const response = await api.get<ProductProfit[]>("/analytics/profit-by-product", {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  async getProfitByDistributor(filters?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<DistributorProfit[]> {
+    const response = await api.get<DistributorProfit[]>("/analytics/profit-by-distributor", {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  async getAverages(period: "day" | "week" | "month" = "month"): Promise<Averages> {
+    const response = await api.get<Averages>("/analytics/averages", {
+      params: { period },
+    });
+    return response.data;
+  },
+
+  async getSalesTimeline(days: number = 30): Promise<TimelineData[]> {
+    const response = await api.get<TimelineData[]>("/analytics/sales-timeline", {
+      params: { days },
+    });
+    return response.data;
+  },
+
+  async getFinancialSummary(filters?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<FinancialSummary> {
+    const response = await api.get<FinancialSummary>("/analytics/financial-summary", {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  async getAnalyticsDashboard(): Promise<AnalyticsDashboard> {
+    const response = await api.get<AnalyticsDashboard>("/analytics/dashboard");
+    return response.data;
+  },
+};
+
+// ==================== AUDIT SERVICE ====================
+export const auditService = {
+  async getLogs(filters?: {
+    page?: number;
+    limit?: number;
+    action?: string;
+    module?: string;
+    userId?: string;
+    startDate?: string;
+    endDate?: string;
+    severity?: string;
+    entityType?: string;
+    entityId?: string;
+  }): Promise<AuditLogsResponse> {
+    const response = await api.get<AuditLogsResponse>("/audit/logs", {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  async getLogById(id: string): Promise<AuditLog> {
+    const response = await api.get<AuditLog>(`/audit/logs/${id}`);
+    return response.data;
+  },
+
+  async getDailySummary(date?: string): Promise<DailySummary> {
+    const response = await api.get<DailySummary>("/audit/daily-summary", {
+      params: { date },
+    });
+    return response.data;
+  },
+
+  async getUserActivity(userId: string, filters?: {
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+  }): Promise<UserActivity> {
+    const response = await api.get<UserActivity>(`/audit/user-activity/${userId}`, {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  async getEntityHistory(entityType: string, entityId: string, limit?: number): Promise<EntityHistory> {
+    const response = await api.get<EntityHistory>(`/audit/entity-history/${entityType}/${entityId}`, {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  async getStats(days?: number): Promise<AuditStats> {
+    const response = await api.get<AuditStats>("/audit/stats", {
+      params: { days },
+    });
+    return response.data;
+  },
+
+  async cleanupOldLogs(days: number): Promise<{ message: string; deletedCount: number }> {
+    const response = await api.delete<{ message: string; deletedCount: number }>("/audit/cleanup", {
+      data: { days },
+    });
+    return response.data;
+  },
+};
+
+// ==================== GAMIFICATION SERVICE ====================
+export const gamificationService = {
+  async getConfig(): Promise<GamificationConfig> {
+    const response = await api.get<GamificationConfig>("/gamification/config");
+    return response.data;
+  },
+
+  async updateConfig(config: Partial<GamificationConfig>): Promise<{ message: string; config: GamificationConfig }> {
+    const response = await api.put<{ message: string; config: GamificationConfig }>("/gamification/config", config);
+    return response.data;
+  },
+
+  async getRanking(params?: { period?: string; startDate?: string; endDate?: string }): Promise<RankingResponse> {
+    const response = await api.get<RankingResponse>("/gamification/ranking", { params });
+    return response.data;
+  },
+
+  async evaluatePeriod(data: { startDate: string; endDate: string; notes?: string }): Promise<{ message: string; winner: PeriodWinner }> {
+    const response = await api.post<{ message: string; winner: PeriodWinner }>("/gamification/evaluate", data);
+    return response.data;
+  },
+
+  async getWinners(params?: { limit?: number; page?: number }): Promise<WinnersResponse> {
+    const response = await api.get<WinnersResponse>("/gamification/winners", { params });
+    return response.data;
+  },
+
+  async getDistributorStats(distributorId: string): Promise<DistributorStatsResponse> {
+    const response = await api.get<DistributorStatsResponse>(`/gamification/stats/${distributorId}`);
+    return response.data;
+  },
+
+  async markBonusPaid(winnerId: string): Promise<{ message: string; winner: PeriodWinner }> {
+    const response = await api.put<{ message: string; winner: PeriodWinner }>(`/gamification/winners/${winnerId}/pay`);
+    return response.data;
+  },
+
+  async getAchievements(): Promise<any[]> {
+    const response = await api.get<any[]>("/gamification/achievements");
     return response.data;
   },
 };

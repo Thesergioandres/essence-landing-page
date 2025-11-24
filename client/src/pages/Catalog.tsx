@@ -59,10 +59,10 @@ export default function Catalog() {
     // Sort products
     switch (sortBy) {
       case "price-asc":
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => (a.clientPrice || 0) - (b.clientPrice || 0));
         break;
       case "price-desc":
-        filtered.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => (b.clientPrice || 0) - (a.clientPrice || 0));
         break;
       case "name":
         filtered.sort((a, b) => a.name.localeCompare(b.name));

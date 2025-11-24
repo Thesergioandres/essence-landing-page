@@ -272,3 +272,38 @@ export const getSalesByDistributor = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Confirmar pago de una venta
+// @route   PUT /api/sales/:id/confirm-payment
+// @access  Private/Admin
+export const confirmPayment = async (req, res) => {
+  try {
+    const sale = await Sale.findById(req.params.id);
+
+    if (!sale) {
+      return res.status(404).json({ message: "Venta no encontrada" });
+    }
+
+    if (sale.paymentStatus === "confirmado") {
+      return res.status(400).json({ message: "El pago ya está confirmado" });
+    }
+
+    sale.paymentStatus = "confirmado";
+    sale.paymentConfirmedAt = Date.now();
+    sale.paymentConfirmedBy = req.user._id;
+
+    await sale.save();
+
+    const populatedSale = await Sale.findById(sale._id)
+      .populate("product", "name image")
+      .populate("distributor", "name email")
+      .populate("paymentConfirmedBy", "name email");
+
+    res.json({
+      message: "Pago confirmado exitosamente",
+      sale: populatedSale,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

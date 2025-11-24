@@ -52,6 +52,19 @@ const saleSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // Estado de pago
+    paymentStatus: {
+      type: String,
+      enum: ["pendiente", "confirmado"],
+      default: "pendiente",
+    },
+    paymentConfirmedAt: {
+      type: Date,
+    },
+    paymentConfirmedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   {
     timestamps: true,

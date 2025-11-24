@@ -118,7 +118,19 @@ export const withdrawStockFromDistributor = async (req, res) => {
 // @access  Private
 export const getDistributorStock = async (req, res) => {
   try {
-    const { distributorId } = req.params;
+    let { distributorId } = req.params;
+
+    // Si es "me", usar el ID del usuario autenticado
+    if (distributorId === "me") {
+      distributorId = req.user._id;
+    }
+
+    // Verificar permisos: admin puede ver cualquiera, distribuidor solo el suyo
+    if (req.user.role !== "admin" && req.user._id.toString() !== distributorId.toString()) {
+      return res.status(403).json({ 
+        message: "No tienes permiso para ver este inventario" 
+      });
+    }
 
     const stock = await DistributorStock.find({
       distributor: distributorId,

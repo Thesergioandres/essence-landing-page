@@ -4,9 +4,13 @@ import express from "express";
 import connectDB from "./config/database.js";
 
 // Importar rutas
+import analyticsRoutes from "./routes/analytics.routes.js";
+import auditRoutes from "./routes/audit.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
+import defectiveProductRoutes from "./routes/defectiveProduct.routes.js";
 import distributorRoutes from "./routes/distributor.routes.js";
+import gamificationRoutes from "./routes/gamification.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import saleRoutes from "./routes/sale.routes.js";
 import stockRoutes from "./routes/stock.routes.js";
@@ -44,6 +48,10 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/distributors", distributorRoutes);
 app.use("/api/stock", stockRoutes);
 app.use("/api/sales", saleRoutes);
+app.use("/api/defective-products", defectiveProductRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/audit", auditRoutes);
+app.use("/api/gamification", gamificationRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {

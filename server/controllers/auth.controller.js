@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import AuditService from "../services/audit.service.js";
 
 // Generar JWT
 const generateToken = (id) => {
@@ -58,6 +59,9 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await bcrypt.compare(password, user.password))) {
+      // Log de login exitoso
+      await AuditService.logAuth(user, "login", req, true);
+
       res.json({
         _id: user._id,
         name: user.name,
@@ -66,6 +70,9 @@ export const login = async (req, res) => {
         token: generateToken(user._id),
       });
     } else {
+      // Log de login fallido
+      await AuditService.logAuth(null, "login", req, false);
+
       res.status(401).json({ message: "Credenciales inválidas" });
     }
   } catch (error) {

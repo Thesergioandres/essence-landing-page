@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { categoryService, distributorService, productService, saleService, stockService } from "../api/services.ts";
-import type { Category, Product } from "../types";
+import { analyticsService, categoryService, distributorService, productService, saleService, stockService } from "../api/services.ts";
+import type { Category, MonthlyProfitData, Product } from "../types";
 
 export default function Dashboard() {
   interface DashboardStats {
@@ -32,6 +32,7 @@ export default function Dashboard() {
     categoryStats: [],
     recentProducts: [],
   });
+  const [monthlyData, setMonthlyData] = useState<MonthlyProfitData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,13 +41,16 @@ export default function Dashboard() {
 
   const loadStats = async () => {
     try {
-      const [products, categories, distributors, alerts, salesData] = await Promise.all([
+      const [products, categories, distributors, alerts, salesData, monthly] = await Promise.all([
         productService.getAll(),
         categoryService.getAll(),
         distributorService.getAll(),
         stockService.getAlerts(),
         saleService.getAllSales(),
+        analyticsService.getMonthlyProfit(),
       ]);
+
+      setMonthlyData(monthly);
 
       // Contar productos por categoría
       const categoryCount = products.reduce<Record<string, number>>(
@@ -121,9 +125,53 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {/* Resumen Financiero Mensual */}
+      {monthlyData && (
+        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-6 backdrop-blur-lg">
+          <h2 className="text-2xl font-bold text-white mb-4">💰 Resumen del Mes</h2>
+          <div className="grid gap-4 md:grid-cols-4">
+            <div>
+              <p className="text-sm text-gray-400">Ganancia Total</p>
+              <p className="mt-2 text-2xl font-bold text-green-400">
+                {new Intl.NumberFormat("es-MX", {
+                  style: "currency",
+                  currency: "MXN",
+                }).format(monthlyData.currentMonth.totalProfit)}
+              </p>
+              <p className={`text-xs mt-1 ${monthlyData.growthPercentage >= 0 ? "text-green-500" : "text-red-500"}`}>
+                {monthlyData.growthPercentage >= 0 ? "+" : ""}{monthlyData.growthPercentage.toFixed(2)}% vs mes anterior
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Ingresos</p>
+              <p className="mt-2 text-2xl font-bold text-blue-400">
+                {new Intl.NumberFormat("es-MX", {
+                  style: "currency",
+                  currency: "MXN",
+                }).format(monthlyData.currentMonth.revenue)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Ventas</p>
+              <p className="mt-2 text-2xl font-bold text-purple-400">
+                {monthlyData.currentMonth.salesCount}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Ticket Promedio</p>
+              <p className="mt-2 text-2xl font-bold text-orange-400">
+                {new Intl.NumberFormat("es-MX", {
+                  style: "currency",
+                  currency: "MXN",
+                }).format(monthlyData.averageTicket)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {/* Total Products */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">{/* Total Products */}
         <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-purple-500">
           <div className="flex items-center justify-between">
             <div>

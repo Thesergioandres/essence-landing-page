@@ -137,13 +137,13 @@ export default function ProductDetail() {
             {/* Price */}
             <div className="mb-6">
               <p className="text-3xl font-bold text-purple-400">
-                ${product.price.toLocaleString()}
+                ${product.clientPrice?.toLocaleString() || '0'}
               </p>
             </div>
 
             {/* Stock Status */}
             <div className="mb-6">
-              {product.stock > 0 ? (
+              {product.totalStock && product.totalStock > 0 ? (
                 <span className="inline-flex items-center rounded-full bg-green-900/30 px-3 py-1 text-sm font-medium text-green-400">
                   <svg
                     className="mr-1 h-4 w-4"
@@ -156,7 +156,7 @@ export default function ProductDetail() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  En stock ({product.stock} disponibles)
+                  En stock ({product.totalStock} disponibles)
                 </span>
               ) : (
                 <span className="inline-flex items-center rounded-full bg-red-900/30 px-3 py-1 text-sm font-medium text-red-400">

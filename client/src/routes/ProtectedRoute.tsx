@@ -11,24 +11,26 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   const token = localStorage.getItem("token");
   const user = authService.getCurrentUser();
 
+  // If not authenticated, redirect to login
   if (!token || !user) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // Check if route has role restrictions
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard based on role
-    if (user.role === "distribuidor") {
-      return <Navigate to="/distributor/dashboard" replace />;
-    } else if (user.role === "admin") {
-      return <Navigate to="/admin/dashboard" replace />;
+  // If specific roles are required, check if user has the right role
+  if (allowedRoles && allowedRoles.length > 0) {
+    if (!allowedRoles.includes(user.role)) {
+      // Redirect to appropriate dashboard based on user's actual role
+      const targetPath = user.role === "distribuidor" 
+        ? "/distributor/dashboard" 
+        : user.role === "admin" 
+        ? "/admin/dashboard" 
+        : "/";
+      
+      // Avoid redirect loop - only redirect if not already on target path
+      if (location.pathname !== targetPath) {
+        return <Navigate to={targetPath} replace />;
+      }
     }
-    return <Navigate to="/" replace />;
-  }
-
-  // If no specific roles required, allow admin and distributor
-  if (!allowedRoles && user.role !== "admin" && user.role !== "distribuidor") {
-    return <Navigate to="/login" replace />;
   }
 
   return children;

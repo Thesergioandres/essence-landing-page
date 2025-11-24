@@ -52,12 +52,12 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
 
         {/* Stock Badge */}
-        {product.stock < 10 && product.stock > 0 && (
+        {product.totalStock && product.totalStock < 10 && product.totalStock > 0 && (
           <div className="absolute left-3 top-3 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
             ¡Pocas unidades!
           </div>
         )}
-        {product.stock === 0 && (
+        {(!product.totalStock || product.totalStock === 0) && (
           <div className="absolute left-3 top-3 rounded-full bg-gray-500 px-3 py-1 text-xs font-bold text-white">
             Agotado
           </div>
@@ -80,11 +80,11 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-2xl font-bold text-purple-400">
-              ${product.price.toFixed(2)}
+              ${product.clientPrice?.toFixed(2) || '0.00'}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-gray-500">Stock: {product.stock}</p>
+            <p className="text-xs text-gray-500">Stock: {product.totalStock || 0}</p>
           </div>
         </div>
       </div>

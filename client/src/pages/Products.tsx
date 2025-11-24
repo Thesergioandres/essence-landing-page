@@ -191,9 +191,9 @@ export default function Products() {
                       : product.category.name}
                   </td>
                   <td className="px-6 py-4 font-semibold text-purple-400">
-                    ${product.price.toFixed(2)}
+                    ${product.clientPrice?.toFixed(2) || '0.00'}
                   </td>
-                  <td className="px-6 py-4 text-gray-300">{product.stock}</td>
+                  <td className="px-6 py-4 text-gray-300">{product.totalStock || 0}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-3">
                       <button

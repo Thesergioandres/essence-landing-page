@@ -13,7 +13,7 @@ export default function Navbar() {
           </Link>
 
           {/* Navigation Links */}
-          <div className="hidden items-center gap-8 md:flex">
+          <div className="hidden items-center gap-4 md:flex">
             <Link
               to="/"
               className="text-gray-300 transition hover:text-purple-400"
@@ -27,10 +27,16 @@ export default function Navbar() {
               Productos
             </Link>
             <Link
-              to="/login"
+              to="/login/admin"
               className="rounded-lg border border-purple-500 px-4 py-2 text-sm font-medium text-purple-400 transition hover:bg-purple-500/10"
             >
               Admin
+            </Link>
+            <Link
+              to="/login/distributor"
+              className="rounded-lg border border-blue-500 bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 text-sm font-medium text-white transition hover:from-blue-700 hover:to-cyan-700"
+            >
+              Distribuidor
             </Link>
           </div>
 
