@@ -1,12 +1,12 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { authService } from "../api/services.ts";
 
-interface ProtectedRouteProps {
+interface RoleRouteProps {
   children: JSX.Element;
-  allowedRoles?: string[];
+  role: "admin" | "distribuidor";
 }
 
-export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
+export function RoleRoute({ children, role }: RoleRouteProps) {
   const location = useLocation();
   const token = localStorage.getItem("token");
   const user = authService.getCurrentUser();
@@ -15,20 +15,14 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // Check if route has role restrictions
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard based on role
+  if (user.role !== role) {
+    // Redirect to appropriate dashboard
     if (user.role === "distribuidor") {
       return <Navigate to="/distributor/dashboard" replace />;
     } else if (user.role === "admin") {
       return <Navigate to="/admin/dashboard" replace />;
     }
     return <Navigate to="/" replace />;
-  }
-
-  // If no specific roles required, allow admin and distributor
-  if (!allowedRoles && user.role !== "admin" && user.role !== "distribuidor") {
-    return <Navigate to="/login" replace />;
   }
 
   return children;

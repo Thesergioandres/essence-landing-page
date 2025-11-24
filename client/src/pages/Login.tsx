@@ -17,7 +17,14 @@ export default function Login() {
     const token = localStorage.getItem("token");
 
     if (user && token) {
-      navigate("/admin/dashboard", { replace: true });
+      // Redirect based on role
+      if (user.role === "distribuidor") {
+        navigate("/distributor/dashboard", { replace: true });
+      } else if (user.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     }
   }, [navigate]);
 
@@ -34,8 +41,16 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await authService.login(formData.email, formData.password);
-      navigate("/admin/dashboard");
+      const response = await authService.login(formData.email, formData.password);
+      
+      // Redirect based on user role
+      if (response.role === "distribuidor") {
+        navigate("/distributor/dashboard");
+      } else if (response.role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data

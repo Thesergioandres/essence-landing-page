@@ -6,7 +6,12 @@ import Categories from "./pages/Categories";
 import CategoryProducts from "./pages/CategoryProducts";
 import Dashboard from "./pages/Dashboard";
 import DashboardLayout from "./pages/DashboardLayout";
+import DistributorDashboard from "./pages/DistributorDashboard";
+import DistributorDashboardLayout from "./pages/DistributorDashboardLayout";
 import DistributorDetail from "./pages/DistributorDetail";
+import DistributorProducts from "./pages/DistributorProducts";
+import DistributorSales from "./pages/DistributorSales";
+import DistributorStats from "./pages/DistributorStats";
 import Distributors from "./pages/Distributors";
 import EditDistributor from "./pages/EditDistributor";
 import EditProduct from "./pages/EditProduct";
@@ -14,8 +19,9 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ProductDetail from "./pages/ProductDetail";
 import Products from "./pages/Products";
+import RegisterSale from "./pages/RegisterSale";
 import StockManagement from "./pages/StockManagement";
-import ProtectedRoute from "./routes/ProtectedRoute";
+import { RoleRoute } from "./routes/RoleRoute";
 
 export default function App() {
   return (
@@ -33,9 +39,9 @@ export default function App() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute>
+          <RoleRoute role="admin">
             <DashboardLayout />
-          </ProtectedRoute>
+          </RoleRoute>
         }
       >
         <Route index element={<Navigate to="dashboard" replace />} />
@@ -49,6 +55,23 @@ export default function App() {
         <Route path="distributors/:id" element={<DistributorDetail />} />
         <Route path="distributors/:id/edit" element={<EditDistributor />} />
         <Route path="stock-management" element={<StockManagement />} />
+      </Route>
+
+      {/* Distributor Routes */}
+      <Route
+        path="/distributor"
+        element={
+          <RoleRoute role="distribuidor">
+            <DistributorDashboardLayout />
+          </RoleRoute>
+        }
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<DistributorDashboard />} />
+        <Route path="products" element={<DistributorProducts />} />
+        <Route path="register-sale" element={<RegisterSale />} />
+        <Route path="sales" element={<DistributorSales />} />
+        <Route path="stats" element={<DistributorStats />} />
       </Route>
 
       {/* Redirect unknown routes to home */}
