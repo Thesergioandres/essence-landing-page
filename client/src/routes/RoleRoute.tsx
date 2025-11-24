@@ -1,8 +1,9 @@
+import type { ReactElement } from "react";
 import { Navigate } from "react-router-dom";
 import { authService } from "../api/services.ts";
 
 interface RoleRouteProps {
-  children: JSX.Element;
+  children: ReactElement;
   role: "admin" | "distribuidor";
 }
 
