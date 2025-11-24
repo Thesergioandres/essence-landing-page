@@ -116,35 +116,35 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-bold text-white">Dashboard</h1>
-        <p className="mt-2 text-gray-400">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Dashboard</h1>
+        <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-400">
           Vista general de tu catálogo de productos
         </p>
       </div>
 
       {/* Resumen Financiero Mensual */}
       {monthlyData && (
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-6 backdrop-blur-lg">
-          <h2 className="text-2xl font-bold text-white mb-4">💰 Resumen del Mes</h2>
-          <div className="grid gap-4 md:grid-cols-4">
+        <div className="rounded-lg sm:rounded-xl border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-4 sm:p-6 backdrop-blur-lg">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4">💰 Resumen del Mes</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
             <div>
-              <p className="text-sm text-gray-400">Ganancia Total</p>
-              <p className="mt-2 text-2xl font-bold text-green-400">
+              <p className="text-xs sm:text-sm text-gray-400">Ganancia Total</p>
+              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-green-400">
                 {new Intl.NumberFormat("es-MX", {
                   style: "currency",
                   currency: "MXN",
                 }).format(monthlyData.currentMonth.totalProfit)}
               </p>
-              <p className={`text-xs mt-1 ${monthlyData.growthPercentage >= 0 ? "text-green-500" : "text-red-500"}`}>
+              <p className={`text-[10px] sm:text-xs mt-1 ${monthlyData.growthPercentage >= 0 ? "text-green-500" : "text-red-500"}`}>
                 {monthlyData.growthPercentage >= 0 ? "+" : ""}{monthlyData.growthPercentage.toFixed(2)}% vs mes anterior
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-400">Ingresos</p>
-              <p className="mt-2 text-2xl font-bold text-blue-400">
+              <p className="text-xs sm:text-sm text-gray-400">Ingresos</p>
+              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-blue-400">
                 {new Intl.NumberFormat("es-MX", {
                   style: "currency",
                   currency: "MXN",
@@ -152,14 +152,14 @@ export default function Dashboard() {
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-400">Ventas</p>
-              <p className="mt-2 text-2xl font-bold text-purple-400">
+              <p className="text-xs sm:text-sm text-gray-400">Ventas</p>
+              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-purple-400">
                 {monthlyData.currentMonth.salesCount}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-400">Ticket Promedio</p>
-              <p className="mt-2 text-2xl font-bold text-orange-400">
+              <p className="text-xs sm:text-sm text-gray-400">Ticket Promedio</p>
+              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-orange-400">
                 {new Intl.NumberFormat("es-MX", {
                   style: "currency",
                   currency: "MXN",
@@ -171,7 +171,7 @@ export default function Dashboard() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">{/* Total Products */}
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">{/* Total Products */}
         <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-purple-500">
           <div className="flex items-center justify-between">
             <div>
