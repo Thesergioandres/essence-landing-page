@@ -45,8 +45,22 @@ export const getProduct = async (req, res) => {
 // @access  Private/Admin
 export const createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
-    res.status(201).json(product);
+    const productData = { ...req.body };
+    
+    // Calcular precio sugerido si no se proporciona
+    if (!productData.suggestedPrice && productData.purchasePrice) {
+      productData.suggestedPrice = productData.purchasePrice * 1.3;
+    }
+    
+    // Inicializar stocks
+    if (productData.totalStock) {
+      productData.warehouseStock = productData.totalStock;
+    }
+    
+    const product = await Product.create(productData);
+    const populatedProduct = await Product.findById(product._id).populate("category", "name slug");
+    
+    res.status(201).json(populatedProduct);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

@@ -38,3 +38,21 @@ export const admin = (req, res, next) => {
     res.status(403).json({ message: "Acceso denegado. Solo administradores" });
   }
 };
+
+// Verificar si es distribuidor
+export const distributor = (req, res, next) => {
+  if (req.user && req.user.role === "distribuidor") {
+    next();
+  } else {
+    res.status(403).json({ message: "Acceso denegado. Solo distribuidores" });
+  }
+};
+
+// Verificar si es admin o distribuidor
+export const adminOrDistributor = (req, res, next) => {
+  if (req.user && (req.user.role === "admin" || req.user.role === "distribuidor")) {
+    next();
+  } else {
+    res.status(403).json({ message: "Acceso denegado" });
+  }
+};

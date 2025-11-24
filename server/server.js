@@ -6,7 +6,10 @@ import connectDB from "./config/database.js";
 // Importar rutas
 import authRoutes from "./routes/auth.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
+import distributorRoutes from "./routes/distributor.routes.js";
 import productRoutes from "./routes/product.routes.js";
+import saleRoutes from "./routes/sale.routes.js";
+import stockRoutes from "./routes/stock.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 
 // Configuración
@@ -38,6 +41,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/distributors", distributorRoutes);
+app.use("/api/stock", stockRoutes);
+app.use("/api/sales", saleRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {
