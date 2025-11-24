@@ -1,15 +1,20 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import AddDistributor from "./pages/AddDistributor";
 import AddProduct from "./pages/AddProduct";
 import Catalog from "./pages/Catalog";
 import Categories from "./pages/Categories";
 import CategoryProducts from "./pages/CategoryProducts";
 import Dashboard from "./pages/Dashboard";
 import DashboardLayout from "./pages/DashboardLayout";
+import DistributorDetail from "./pages/DistributorDetail";
+import Distributors from "./pages/Distributors";
+import EditDistributor from "./pages/EditDistributor";
 import EditProduct from "./pages/EditProduct";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ProductDetail from "./pages/ProductDetail";
 import Products from "./pages/Products";
+import StockManagement from "./pages/StockManagement";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -39,6 +44,11 @@ export default function App() {
         <Route path="categories" element={<Categories />} />
         <Route path="add-product" element={<AddProduct />} />
         <Route path="products/:id/edit" element={<EditProduct />} />
+        <Route path="distributors" element={<Distributors />} />
+        <Route path="distributors/add" element={<AddDistributor />} />
+        <Route path="distributors/:id" element={<DistributorDetail />} />
+        <Route path="distributors/:id/edit" element={<EditDistributor />} />
+        <Route path="stock-management" element={<StockManagement />} />
       </Route>
 
       {/* Redirect unknown routes to home */}
