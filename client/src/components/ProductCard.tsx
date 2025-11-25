@@ -16,7 +16,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <div
       onClick={() => navigate(`/producto/${product._id}`)}
-      className="group cursor-pointer overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50 backdrop-blur-lg transition hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20"
+      className="group cursor-pointer overflow-hidden rounded-lg sm:rounded-xl border border-gray-700 bg-gray-800/50 backdrop-blur-lg transition hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98]"
     >
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-900">
@@ -25,11 +25,12 @@ export default function ProductCard({ product }: ProductCardProps) {
             src={product.image.url}
             alt={product.name}
             className="h-full w-full object-cover transition duration-300 group-hover:scale-110"
+            loading="lazy"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <svg
-              className="h-20 w-20 text-gray-600"
+              className="h-12 w-12 sm:h-20 sm:w-20 text-gray-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -46,45 +47,45 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Featured Badge */}
         {product.featured && (
-          <div className="absolute right-3 top-3 rounded-full bg-yellow-500 px-3 py-1 text-xs font-bold text-gray-900">
+          <div className="absolute right-2 sm:right-3 top-2 sm:top-3 rounded-full bg-yellow-500 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-gray-900">
             ⭐ Destacado
           </div>
         )}
 
         {/* Stock Badge */}
-        {product.stock < 10 && product.stock > 0 && (
-          <div className="absolute left-3 top-3 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
+        {product.totalStock && product.totalStock < 10 && product.totalStock > 0 && (
+          <div className="absolute left-2 sm:left-3 top-2 sm:top-3 rounded-full bg-red-500 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-white">
             ¡Pocas unidades!
           </div>
         )}
-        {product.stock === 0 && (
-          <div className="absolute left-3 top-3 rounded-full bg-gray-500 px-3 py-1 text-xs font-bold text-white">
+        {(!product.totalStock || product.totalStock === 0) && (
+          <div className="absolute left-2 sm:left-3 top-2 sm:top-3 rounded-full bg-gray-500 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-white">
             Agotado
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <p className="mb-1 text-xs font-semibold uppercase text-purple-400">
+      <div className="p-3 sm:p-4">
+        <p className="mb-1 text-[10px] sm:text-xs font-semibold uppercase text-purple-400">
           {categoryName}
         </p>
-        <h3 className="mb-2 line-clamp-1 text-lg font-bold text-white">
+        <h3 className="mb-2 line-clamp-1 text-base sm:text-lg font-bold text-white">
           {product.name}
         </h3>
-        <p className="mb-4 line-clamp-2 text-sm text-gray-400">
+        <p className="mb-3 sm:mb-4 line-clamp-2 text-xs sm:text-sm text-gray-400">
           {product.description}
         </p>
 
         {/* Price and Stock */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-2xl font-bold text-purple-400">
-              ${product.price.toFixed(2)}
+            <p className="text-xl sm:text-2xl font-bold text-purple-400">
+              ${product.clientPrice?.toFixed(2) || '0.00'}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-gray-500">Stock: {product.stock}</p>
+            <p className="text-[10px] sm:text-xs text-gray-500">Stock: {product.totalStock || 0}</p>
           </div>
         </div>
       </div>

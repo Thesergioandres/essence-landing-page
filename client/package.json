@@ -11,14 +11,20 @@
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "build:analyze": "npm run build && npx vite-bundle-analyzer"
+    "build:analyze": "npm run build && npx vite-bundle-analyzer",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.6",
     "axios": "^1.13.2",
+    "date-fns": "^4.1.0",
+    "file-saver": "^2.0.5",
+    "jspdf": "^3.0.4",
+    "jspdf-autotable": "^5.0.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.9.6",
+    "recharts": "^3.5.0",
     "tailwindcss": "^4.1.6"
   },
   "devDependencies": {

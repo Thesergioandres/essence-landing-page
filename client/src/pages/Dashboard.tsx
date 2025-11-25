@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { categoryService, productService } from "../api/services.ts";
-import type { Category, Product } from "../types";
+import { analyticsService, categoryService, distributorService, productService, saleService, stockService } from "../api/services.ts";
+import type { Category, MonthlyProfitData, Product } from "../types";
 
 export default function Dashboard() {
   interface DashboardStats {
@@ -9,6 +9,11 @@ export default function Dashboard() {
     totalCategories: number;
     lowStockProducts: number;
     featuredProducts: number;
+    totalDistributors: number;
+    activeDistributors: number;
+    totalAlerts: number;
+    totalSales: number;
+    totalRevenue: number;
     categoryStats: Array<{ category: Category; count: number }>;
     recentProducts: Product[];
   }
@@ -19,9 +24,15 @@ export default function Dashboard() {
     totalCategories: 0,
     lowStockProducts: 0,
     featuredProducts: 0,
+    totalDistributors: 0,
+    activeDistributors: 0,
+    totalAlerts: 0,
+    totalSales: 0,
+    totalRevenue: 0,
     categoryStats: [],
     recentProducts: [],
   });
+  const [monthlyData, setMonthlyData] = useState<MonthlyProfitData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,10 +41,16 @@ export default function Dashboard() {
 
   const loadStats = async () => {
     try {
-      const [products, categories] = await Promise.all([
+      const [products, categories, distributors, alerts, salesData, monthly] = await Promise.all([
         productService.getAll(),
         categoryService.getAll(),
+        distributorService.getAll(),
+        stockService.getAlerts(),
+        saleService.getAllSales(),
+        analyticsService.getMonthlyProfit(),
       ]);
+
+      setMonthlyData(monthly);
 
       // Contar productos por categoría
       const categoryCount = products.reduce<Record<string, number>>(
@@ -56,17 +73,30 @@ export default function Dashboard() {
         }))
         .sort((a, b) => b.count - a.count);
 
-      // Productos con stock bajo (menos de 10)
-      const lowStockProducts = products.filter(p => p.stock < 10).length;
+      // Productos con stock bajo en bodega
+      const lowStockProducts = products.filter(
+        p => (p.warehouseStock || 0) <= (p.lowStockAlert || 0)
+      ).length;
 
       // Productos destacados
       const featuredProducts = products.filter(p => p.featured).length;
+
+      // Distribuidores activos
+      const activeDistributors = distributors.filter(d => d.active).length;
+
+      // Total de alertas (bodega + distribuidores)
+      const totalAlerts = alerts.warehouseAlerts.length + alerts.distributorAlerts.length;
 
       setStats({
         totalProducts: products.length,
         totalCategories: categories.length,
         lowStockProducts,
         featuredProducts,
+        totalDistributors: distributors.length,
+        activeDistributors,
+        totalAlerts,
+        totalSales: salesData.stats.totalSales,
+        totalRevenue: salesData.stats.totalRevenue,
         categoryStats,
         recentProducts: products.slice(0, 5),
       });
@@ -86,18 +116,62 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-bold text-white">Dashboard</h1>
-        <p className="mt-2 text-gray-400">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Dashboard</h1>
+        <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-400">
           Vista general de tu catálogo de productos
         </p>
       </div>
 
+      {/* Resumen Financiero Mensual */}
+      {monthlyData && (
+        <div className="rounded-lg sm:rounded-xl border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-4 sm:p-6 backdrop-blur-lg">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4">💰 Resumen del Mes</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="text-xs sm:text-sm text-gray-400">Ganancia Total</p>
+              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-green-400">
+                {new Intl.NumberFormat("es-MX", {
+                  style: "currency",
+                  currency: "MXN",
+                }).format(monthlyData.currentMonth.totalProfit)}
+              </p>
+              <p className={`text-[10px] sm:text-xs mt-1 ${monthlyData.growthPercentage >= 0 ? "text-green-500" : "text-red-500"}`}>
+                {monthlyData.growthPercentage >= 0 ? "+" : ""}{monthlyData.growthPercentage.toFixed(2)}% vs mes anterior
+              </p>
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm text-gray-400">Ingresos</p>
+              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-blue-400">
+                {new Intl.NumberFormat("es-MX", {
+                  style: "currency",
+                  currency: "MXN",
+                }).format(monthlyData.currentMonth.revenue)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm text-gray-400">Ventas</p>
+              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-purple-400">
+                {monthlyData.currentMonth.salesCount}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm text-gray-400">Ticket Promedio</p>
+              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-orange-400">
+                {new Intl.NumberFormat("es-MX", {
+                  style: "currency",
+                  currency: "MXN",
+                }).format(monthlyData.averageTicket)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {/* Total Products */}
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">{/* Total Products */}
         <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-purple-500">
           <div className="flex items-center justify-between">
             <div>
@@ -124,18 +198,21 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Total Categories */}
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-pink-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-pink-500">
+        {/* Total Distributors */}
+        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-blue-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-blue-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">Categorías</p>
+              <p className="text-sm text-gray-400">Distribuidores</p>
               <p className="mt-2 text-3xl font-bold text-white">
-                {stats.totalCategories}
+                {stats.totalDistributors}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {stats.activeDistributors} activos
               </p>
             </div>
-            <div className="rounded-full bg-pink-600/20 p-3">
+            <div className="rounded-full bg-blue-600/20 p-3">
               <svg
-                className="h-8 w-8 text-pink-400"
+                className="h-8 w-8 text-blue-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -144,25 +221,28 @@ export default function Dashboard() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
             </div>
           </div>
         </div>
 
-        {/* Featured Products */}
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-yellow-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-yellow-500">
+        {/* Total Sales */}
+        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-green-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">Destacados</p>
+              <p className="text-sm text-gray-400">Ventas Totales</p>
               <p className="mt-2 text-3xl font-bold text-white">
-                {stats.featuredProducts}
+                {stats.totalSales}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                ${new Intl.NumberFormat('es-CO').format(stats.totalRevenue)}
               </p>
             </div>
-            <div className="rounded-full bg-yellow-600/20 p-3">
+            <div className="rounded-full bg-green-600/20 p-3">
               <svg
-                className="h-8 w-8 text-yellow-400"
+                className="h-8 w-8 text-green-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -171,22 +251,24 @@ export default function Dashboard() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                 />
               </svg>
             </div>
           </div>
         </div>
 
-        {/* Low Stock */}
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-red-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-red-500">
+        {/* Stock Alerts */}
+        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-red-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-red-500 cursor-pointer" onClick={() => navigate("/admin/stock-management")}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">Stock Bajo</p>
+              <p className="text-sm text-gray-400">Alertas de Stock</p>
               <p className="mt-2 text-3xl font-bold text-white">
-                {stats.lowStockProducts}
+                {stats.totalAlerts}
               </p>
-              <p className="text-xs text-gray-500">Menos de 10 unidades</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {stats.lowStockProducts} productos en bodega
+              </p>
             </div>
             <div className="rounded-full bg-red-600/20 p-3">
               <svg
@@ -329,10 +411,10 @@ export default function Dashboard() {
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-purple-400">
-                    ${product.price}
+                    ${new Intl.NumberFormat('es-CO').format(product.distributorPrice || 0)}
                   </p>
                   <p className="text-sm text-gray-400">
-                    Stock: {product.stock}
+                    Stock: {product.totalStock || 0}
                   </p>
                 </div>
               </div>

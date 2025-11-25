@@ -59,10 +59,10 @@ export default function Catalog() {
     // Sort products
     switch (sortBy) {
       case "price-asc":
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => (a.clientPrice || 0) - (b.clientPrice || 0));
         break;
       case "price-desc":
-        filtered.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => (b.clientPrice || 0) - (a.clientPrice || 0));
         break;
       case "name":
         filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -86,24 +86,24 @@ export default function Catalog() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
       <Navbar />
 
-      <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-20 sm:py-24 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-12 text-center">
-          <h1 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-5xl font-bold text-transparent">
+        <div className="mb-8 sm:mb-12 text-center">
+          <h1 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-3xl sm:text-4xl md:text-5xl font-bold text-transparent">
             Catálogo de Productos
           </h1>
-          <p className="mt-4 text-lg text-gray-400">
+          <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-400">
             Explora todos nuestros productos de vaping
           </p>
         </div>
 
         {/* Filters */}
-        <div className="mb-8 space-y-4 rounded-2xl border border-gray-700 bg-gray-800/50 p-6 backdrop-blur-lg">
+        <div className="mb-6 sm:mb-8 space-y-3 sm:space-y-4 rounded-xl sm:rounded-2xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6 backdrop-blur-lg">
           {/* Search */}
           <div>
             <label
               htmlFor="search"
-              className="mb-2 block text-sm font-medium text-gray-300"
+              className="mb-2 block text-xs sm:text-sm font-medium text-gray-300"
             >
               Buscar
             </label>
@@ -113,16 +113,16 @@ export default function Catalog() {
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="Buscar productos..."
-              className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-4 py-2 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
             {/* Category Filter */}
             <div>
               <label
                 htmlFor="category"
-                className="mb-2 block text-sm font-medium text-gray-300"
+                className="mb-2 block text-xs sm:text-sm font-medium text-gray-300"
               >
                 Categoría
               </label>
@@ -130,7 +130,7 @@ export default function Catalog() {
                 id="category"
                 value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
-                className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="all">Todas las categorías</option>
                 {categories.map(cat => (
@@ -145,7 +145,7 @@ export default function Catalog() {
             <div>
               <label
                 htmlFor="sort"
-                className="mb-2 block text-sm font-medium text-gray-300"
+                className="mb-2 block text-xs sm:text-sm font-medium text-gray-300"
               >
                 Ordenar por
               </label>
@@ -153,7 +153,7 @@ export default function Catalog() {
                 id="sort"
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value)}
-                className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="name">Nombre (A-Z)</option>
                 <option value="price-asc">Precio: Menor a Mayor</option>
@@ -171,12 +171,12 @@ export default function Catalog() {
           </div>
         ) : filteredProducts.length > 0 ? (
           <>
-            <p className="mb-6 text-gray-400">
+            <p className="mb-4 sm:mb-6 text-sm sm:text-base text-gray-400">
               {filteredProducts.length} producto
               {filteredProducts.length !== 1 ? "s" : ""} encontrado
               {filteredProducts.length !== 1 ? "s" : ""}
             </p>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {filteredProducts.map(product => (
                 <ProductCard key={product._id} product={product} />
               ))}
@@ -184,14 +184,14 @@ export default function Catalog() {
           </>
         ) : (
           <div className="py-12 text-center">
-            <p className="text-xl text-gray-400">No se encontraron productos</p>
+            <p className="text-lg sm:text-xl text-gray-400">No se encontraron productos</p>
             <button
               onClick={() => {
                 setSearchTerm("");
                 setSelectedCategory("all");
                 setSortBy("name");
               }}
-              className="mt-4 text-purple-400 hover:text-purple-300"
+              className="mt-4 text-sm sm:text-base text-purple-400 hover:text-purple-300"
             >
               Limpiar filtros
             </button>

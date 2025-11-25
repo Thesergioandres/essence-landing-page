@@ -1,22 +1,22 @@
 export default function Footer() {
   return (
     <footer className="border-t border-gray-700 bg-gray-900/50 backdrop-blur-lg">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-8 md:grid-cols-3">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
           {/* Brand */}
-          <div>
-            <h2 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl font-bold text-transparent">
+          <div className="text-center md:text-left">
+            <h2 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-xl sm:text-2xl font-bold text-transparent">
               ESSENCE
             </h2>
-            <p className="mt-4 text-sm text-gray-400">
+            <p className="mt-3 sm:mt-4 text-sm text-gray-400">
               Tu tienda de confianza para vapes, líquidos y accesorios de
               calidad.
             </p>
           </div>
 
           {/* Links */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase text-white">
+          <div className="text-center md:text-left">
+            <h3 className="mb-3 sm:mb-4 text-sm font-semibold uppercase text-white">
               Enlaces
             </h3>
             <ul className="space-y-2">
@@ -40,14 +40,14 @@ export default function Footer() {
           </div>
 
           {/* Contact */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase text-white">
+          <div className="text-center md:text-left">
+            <h3 className="mb-3 sm:mb-4 text-sm font-semibold uppercase text-white">
               Contacto
             </h3>
             <ul className="space-y-2">
-              <li className="flex items-center gap-2 text-sm text-gray-400">
+              <li className="flex items-center justify-center md:justify-start gap-2 text-sm text-gray-400">
                 <svg
-                  className="h-5 w-5"
+                  className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -59,11 +59,11 @@ export default function Footer() {
                     d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                   />
                 </svg>
-                info@essence.com
+                <span className="break-all">info@essence.com</span>
               </li>
-              <li className="flex items-center gap-2 text-sm text-gray-400">
+              <li className="flex items-center justify-center md:justify-start gap-2 text-sm text-gray-400">
                 <svg
-                  className="h-5 w-5"
+                  className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -76,8 +76,8 @@ export default function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="mt-8 border-t border-gray-700 pt-8 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="mt-6 sm:mt-8 border-t border-gray-700 pt-6 sm:pt-8 text-center">
+          <p className="text-xs sm:text-sm text-gray-500">
             © {new Date().getFullYear()} Essence. Todos los derechos
             reservados.
           </p>

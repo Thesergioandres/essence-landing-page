@@ -11,10 +11,31 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, "La descripción es obligatoria"],
     },
-    price: {
+    // Precios
+    purchasePrice: {
       type: Number,
-      required: [true, "El precio es obligatorio"],
-      min: [0, "El precio no puede ser negativo"],
+      required: [true, "El precio de compra es obligatorio"],
+      min: [0, "El precio de compra no puede ser negativo"],
+    },
+    suggestedPrice: {
+      type: Number,
+      default: function () {
+        return this.purchasePrice * 1.3; // 30% automático
+      },
+    },
+    distributorPrice: {
+      type: Number,
+      required: [true, "El precio para distribuidor es obligatorio"],
+      min: [0, "El precio para distribuidor no puede ser negativo"],
+    },
+    clientPrice: {
+      type: Number,
+      min: [0, "El precio para cliente no puede ser negativo"],
+    },
+    distributorCommission: {
+      type: Number,
+      default: 0,
+      min: [0, "La comisión no puede ser negativa"],
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
@@ -25,10 +46,20 @@ const productSchema = new mongoose.Schema(
       url: String,
       publicId: String,
     },
-    stock: {
+    // Stock
+    totalStock: {
       type: Number,
       default: 0,
       min: [0, "El stock no puede ser negativo"],
+    },
+    warehouseStock: {
+      type: Number,
+      default: 0,
+      min: [0, "El stock en bodega no puede ser negativo"],
+    },
+    lowStockAlert: {
+      type: Number,
+      default: 10,
     },
     featured: {
       type: Boolean,

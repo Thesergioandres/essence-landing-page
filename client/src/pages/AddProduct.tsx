@@ -11,9 +11,14 @@ import type { Category } from "../types";
 interface FormState {
   name: string;
   description: string;
-  price: string;
+  purchasePrice: string;
+  suggestedPrice: string;
+  distributorPrice: string;
+  clientPrice: string;
+  distributorCommission: string;
   category: string;
-  stock: string;
+  totalStock: string;
+  lowStockAlert: string;
   featured: boolean;
   ingredients: string;
   benefits: string;
@@ -25,9 +30,14 @@ export default function AddProduct() {
   const [formData, setFormData] = useState<FormState>({
     name: "",
     description: "",
-    price: "",
+    purchasePrice: "",
+    suggestedPrice: "",
+    distributorPrice: "",
+    clientPrice: "",
+    distributorCommission: "",
     category: "",
-    stock: "",
+    totalStock: "",
+    lowStockAlert: "10",
     featured: false,
     ingredients: "",
     benefits: "",
@@ -80,10 +90,22 @@ export default function AddProduct() {
         ? target.checked
         : value;
 
-    setFormData(current => ({
-      ...current,
-      [name]: fieldValue,
-    }));
+    setFormData(current => {
+      const updated = {
+        ...current,
+        [name]: fieldValue,
+      };
+
+      // Calcular precio sugerido automáticamente (30%)
+      if (name === "purchasePrice" && value) {
+        const purchase = Number(value);
+        if (!isNaN(purchase)) {
+          updated.suggestedPrice = (purchase * 1.3).toFixed(2);
+        }
+      }
+
+      return updated;
+    });
   };
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -101,14 +123,25 @@ export default function AddProduct() {
     setLoading(true);
 
     try {
-      const price = Number(formData.price);
-      const stock = Number(formData.stock || 0);
+      const purchasePrice = Number(formData.purchasePrice);
+      const distributorPrice = Number(formData.distributorPrice);
+      const totalStock = Number(formData.totalStock || 0);
+      const clientPrice = formData.clientPrice
+        ? Number(formData.clientPrice)
+        : undefined;
+      const distributorCommission = formData.distributorCommission
+        ? Number(formData.distributorCommission)
+        : undefined;
 
-      if (Number.isNaN(price) || price < 0) {
-        throw new Error("El precio debe ser un número válido");
+      if (Number.isNaN(purchasePrice) || purchasePrice < 0) {
+        throw new Error("El precio de compra debe ser un número válido");
       }
 
-      if (Number.isNaN(stock) || stock < 0) {
+      if (Number.isNaN(distributorPrice) || distributorPrice < 0) {
+        throw new Error("El precio de distribuidor debe ser un número válido");
+      }
+
+      if (Number.isNaN(totalStock) || totalStock < 0) {
         throw new Error("El stock debe ser un número válido");
       }
 
@@ -131,9 +164,14 @@ export default function AddProduct() {
       await productService.create({
         name: formData.name.trim(),
         description: formData.description.trim(),
-        price,
+        purchasePrice,
+        suggestedPrice: Number(formData.suggestedPrice) || purchasePrice * 1.3,
+        distributorPrice,
+        clientPrice,
+        distributorCommission,
         category: formData.category,
-        stock,
+        totalStock,
+        lowStockAlert: Number(formData.lowStockAlert) || 10,
         featured: formData.featured,
         ingredients,
         benefits,
@@ -207,36 +245,133 @@ export default function AddProduct() {
                 />
               </div>
 
+              {/* Panel de Rentabilidad */}
+              <div className="rounded-lg border border-purple-500/30 bg-purple-900/20 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-purple-300">
+                  💰 Precios y Rentabilidad
+                </h3>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-gray-300">
+                      Precio de Compra *
+                    </label>
+                    <input
+                      type="number"
+                      name="purchasePrice"
+                      value={formData.purchasePrice}
+                      onChange={handleChange}
+                      required
+                      min="0"
+                      step="0.01"
+                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-green-300">
+                      Precio Sugerido (30%) *
+                    </label>
+                    <input
+                      type="number"
+                      name="suggestedPrice"
+                      value={formData.suggestedPrice}
+                      onChange={handleChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full rounded-lg border border-green-600 bg-green-900/20 px-4 py-2 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Calculado automático"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Se calcula automáticamente al ingresar precio de compra
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-blue-300">
+                      Precio Distribuidor *
+                    </label>
+                    <input
+                      type="number"
+                      name="distributorPrice"
+                      value={formData.distributorPrice}
+                      onChange={handleChange}
+                      required
+                      min="0"
+                      step="0.01"
+                      className="w-full rounded-lg border border-blue-600 bg-blue-900/20 px-4 py-2 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-gray-300">
+                      Precio Cliente (Opcional)
+                    </label>
+                    <input
+                      type="number"
+                      name="clientPrice"
+                      value={formData.clientPrice}
+                      onChange={handleChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-yellow-300">
+                      Comisión Distribuidor (Opcional)
+                    </label>
+                    <input
+                      type="number"
+                      name="distributorCommission"
+                      value={formData.distributorCommission}
+                      onChange={handleChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full rounded-lg border border-yellow-600 bg-yellow-900/20 px-4 py-2 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Stock */}
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-300">
-                    Precio
+                    Stock Total *
                   </label>
                   <input
                     type="number"
-                    name="price"
-                    value={formData.price}
+                    name="totalStock"
+                    value={formData.totalStock}
                     onChange={handleChange}
                     required
                     min="0"
-                    step="0.01"
                     className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="0.00"
+                    placeholder="Cantidad total"
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Irá automáticamente a bodega
+                  </p>
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-300">
-                    Stock
+                    Alerta Stock Bajo
                   </label>
                   <input
                     type="number"
-                    name="stock"
-                    value={formData.stock}
+                    name="lowStockAlert"
+                    value={formData.lowStockAlert}
                     onChange={handleChange}
                     min="0"
                     className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Cantidad disponible"
+                    placeholder="10"
                   />
                 </div>
               </div>

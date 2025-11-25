@@ -1,4 +1,32 @@
-import type { Category, Product, ProductImage, User } from "../types";
+import type {
+  AnalyticsDashboard,
+  AuditLog,
+  AuditLogsResponse,
+  AuditStats,
+  Averages,
+  Category,
+  DailySummary,
+  DefectiveProduct,
+  DistributorProfit,
+  DistributorStock,
+  DistributorStatsResponse,
+  EntityHistory,
+  FinancialSummary,
+  GamificationConfig,
+  MonthlyProfitData,
+  PeriodWinner,
+  Product,
+  ProductImage,
+  ProductProfit,
+  RankingResponse,
+  Sale,
+  SaleStats,
+  StockAlert,
+  TimelineData,
+  User,
+  UserActivity,
+  WinnersResponse,
+} from "../types";
 import api from "./axios.ts";
 
 interface AuthResponse extends User {
@@ -8,9 +36,15 @@ interface AuthResponse extends User {
 type ProductPayload = {
   name: string;
   description: string;
-  price: number;
-  category: string; // Ahora es el ID de la categoría
-  stock: number;
+  purchasePrice: number;
+  suggestedPrice?: number;
+  distributorPrice: number;
+  clientPrice?: number;
+  distributorCommission?: number;
+  category: string;
+  totalStock: number;
+  warehouseStock?: number;
+  lowStockAlert?: number;
   featured: boolean;
   ingredients?: string[];
   benefits?: string[];
@@ -138,3 +172,429 @@ export const categoryService = {
     return response.data;
   },
 };
+
+// ==================== DISTRIBUTOR SERVICE ====================
+export const distributorService = {
+  async getAll(active?: boolean): Promise<User[]> {
+    const params = active !== undefined ? { active } : {};
+    const response = await api.get<User[]>("/distributors", { params });
+    return response.data;
+  },
+
+  async getById(id: string): Promise<{
+    distributor: User;
+    stock: DistributorStock[];
+    recentSales: Sale[];
+    stats: { totalSales: number; totalProfit: number; totalRevenue: number };
+  }> {
+    const response = await api.get(`/distributors/${id}`);
+    return response.data;
+  },
+
+  async create(data: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+    address?: string;
+  }): Promise<User> {
+    const response = await api.post<User>("/distributors", data);
+    return response.data;
+  },
+
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      active?: boolean;
+    }
+  ): Promise<User> {
+    const response = await api.put<User>(`/distributors/${id}`, data);
+    return response.data;
+  },
+
+  async delete(id: string): Promise<{ message: string }> {
+    const response = await api.delete<{ message: string }>(
+      `/distributors/${id}`
+    );
+    return response.data;
+  },
+
+  async toggleActive(
+    id: string
+  ): Promise<{ message: string; active: boolean }> {
+    const response = await api.patch<{ message: string; active: boolean }>(
+      `/distributors/${id}/toggle-active`
+    );
+    return response.data;
+  },
+};
+
+// ==================== STOCK SERVICE ====================
+export const stockService = {
+  async assignToDistributor(data: {
+    distributorId: string;
+    productId: string;
+    quantity: number;
+  }): Promise<{
+    message: string;
+    distributorStock: DistributorStock;
+    warehouseStock: number;
+  }> {
+    const response = await api.post("/stock/assign", data);
+    return response.data;
+  },
+
+  async withdrawFromDistributor(data: {
+    distributorId: string;
+    productId: string;
+    quantity: number;
+  }): Promise<{
+    message: string;
+    distributorStock: DistributorStock;
+    warehouseStock: number;
+  }> {
+    const response = await api.post("/stock/withdraw", data);
+    return response.data;
+  },
+
+  async getDistributorStock(distributorId: string): Promise<DistributorStock[]> {
+    const response = await api.get<DistributorStock[]>(
+      `/stock/distributor/${distributorId}`
+    );
+    return response.data;
+  },
+
+  async getAllStock(): Promise<DistributorStock[]> {
+    const response = await api.get<DistributorStock[]>("/stock/all");
+    return response.data;
+  },
+
+  async getAlerts(): Promise<StockAlert> {
+    const response = await api.get<StockAlert>("/stock/alerts");
+    return response.data;
+  },
+};
+
+// ==================== SALE SERVICE ====================
+export const saleService = {
+  async register(data: {
+    productId: string;
+    quantity: number;
+    salePrice: number;
+    notes?: string;
+  }): Promise<{
+    message: string;
+    sale: Sale;
+    remainingStock: number;
+  }> {
+    const response = await api.post("/sales", data);
+    return response.data;
+  },
+
+  async getDistributorSales(
+    distributorId?: string,
+    filters?: {
+      startDate?: string;
+      endDate?: string;
+      productId?: string;
+    }
+  ): Promise<{ sales: Sale[]; stats: SaleStats }> {
+    const url = distributorId
+      ? `/sales/distributor/${distributorId}`
+      : "/sales/distributor";
+    const response = await api.get(url, { params: filters });
+    return response.data;
+  },
+
+  async getAllSales(filters?: {
+    startDate?: string;
+    endDate?: string;
+    distributorId?: string;
+    productId?: string;
+  }): Promise<{ sales: Sale[]; stats: SaleStats }> {
+    const response = await api.get("/sales", { params: filters });
+    return response.data;
+  },
+
+  async getSalesByProduct(): Promise<
+    Array<{
+      _id: string;
+      productName: string;
+      productImage?: ProductImage;
+      totalQuantity: number;
+      totalSales: number;
+      totalRevenue: number;
+      totalAdminProfit: number;
+      totalDistributorProfit: number;
+    }>
+  > {
+    const response = await api.get("/sales/report/by-product");
+    return response.data;
+  },
+
+  async getSalesByDistributor(): Promise<
+    Array<{
+      _id: string;
+      distributorName: string;
+      distributorEmail: string;
+      totalQuantity: number;
+      totalSales: number;
+      totalRevenue: number;
+      totalAdminProfit: number;
+      totalDistributorProfit: number;
+    }>
+  > {
+    const response = await api.get("/sales/report/by-distributor");
+    return response.data;
+  },
+
+  async confirmPayment(saleId: string): Promise<{
+    message: string;
+    sale: Sale;
+  }> {
+    const response = await api.put(`/sales/${saleId}/confirm-payment`);
+    return response.data;
+  },
+};
+
+// ==================== DEFECTIVE PRODUCT SERVICE ====================
+export const defectiveProductService = {
+  async report(data: {
+    productId: string;
+    quantity: number;
+    reason: string;
+    images?: ProductImage[];
+  }): Promise<{
+    message: string;
+    report: DefectiveProduct;
+    remainingStock: number;
+  }> {
+    const response = await api.post("/defective-products", data);
+    return response.data;
+  },
+
+  async getDistributorReports(
+    distributorId?: string,
+    status?: "pendiente" | "confirmado" | "rechazado"
+  ): Promise<DefectiveProduct[]> {
+    const url = distributorId
+      ? `/defective-products/distributor/${distributorId}`
+      : "/defective-products/distributor/me";
+    const response = await api.get(url, { params: { status } });
+    return response.data;
+  },
+
+  async getAllReports(filters?: {
+    status?: "pendiente" | "confirmado" | "rechazado";
+    distributorId?: string;
+    productId?: string;
+  }): Promise<{
+    reports: DefectiveProduct[];
+    stats: {
+      total: number;
+      pendiente: number;
+      confirmado: number;
+      rechazado: number;
+      totalQuantity: number;
+    };
+  }> {
+    const response = await api.get("/defective-products", { params: filters });
+    return response.data;
+  },
+
+  async confirm(
+    reportId: string,
+    adminNotes?: string
+  ): Promise<{
+    message: string;
+    report: DefectiveProduct;
+  }> {
+    const response = await api.put(`/defective-products/${reportId}/confirm`, {
+      adminNotes,
+    });
+    return response.data;
+  },
+
+  async reject(
+    reportId: string,
+    adminNotes?: string
+  ): Promise<{
+    message: string;
+    report: DefectiveProduct;
+  }> {
+    const response = await api.put(`/defective-products/${reportId}/reject`, {
+      adminNotes,
+    });
+    return response.data;
+  },
+};
+
+// ==================== ANALYTICS SERVICE ====================
+export const analyticsService = {
+  async getMonthlyProfit(): Promise<MonthlyProfitData> {
+    const response = await api.get<MonthlyProfitData>("/analytics/monthly-profit");
+    return response.data;
+  },
+
+  async getProfitByProduct(filters?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ProductProfit[]> {
+    const response = await api.get<ProductProfit[]>("/analytics/profit-by-product", {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  async getProfitByDistributor(filters?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<DistributorProfit[]> {
+    const response = await api.get<DistributorProfit[]>("/analytics/profit-by-distributor", {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  async getAverages(period: "day" | "week" | "month" = "month"): Promise<Averages> {
+    const response = await api.get<Averages>("/analytics/averages", {
+      params: { period },
+    });
+    return response.data;
+  },
+
+  async getSalesTimeline(days: number = 30): Promise<TimelineData[]> {
+    const response = await api.get<TimelineData[]>("/analytics/sales-timeline", {
+      params: { days },
+    });
+    return response.data;
+  },
+
+  async getFinancialSummary(filters?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<FinancialSummary> {
+    const response = await api.get<FinancialSummary>("/analytics/financial-summary", {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  async getAnalyticsDashboard(): Promise<AnalyticsDashboard> {
+    const response = await api.get<AnalyticsDashboard>("/analytics/dashboard");
+    return response.data;
+  },
+};
+
+// ==================== AUDIT SERVICE ====================
+export const auditService = {
+  async getLogs(filters?: {
+    page?: number;
+    limit?: number;
+    action?: string;
+    module?: string;
+    userId?: string;
+    startDate?: string;
+    endDate?: string;
+    severity?: string;
+    entityType?: string;
+    entityId?: string;
+  }): Promise<AuditLogsResponse> {
+    const response = await api.get<AuditLogsResponse>("/audit/logs", {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  async getLogById(id: string): Promise<AuditLog> {
+    const response = await api.get<AuditLog>(`/audit/logs/${id}`);
+    return response.data;
+  },
+
+  async getDailySummary(date?: string): Promise<DailySummary> {
+    const response = await api.get<DailySummary>("/audit/daily-summary", {
+      params: { date },
+    });
+    return response.data;
+  },
+
+  async getUserActivity(userId: string, filters?: {
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+  }): Promise<UserActivity> {
+    const response = await api.get<UserActivity>(`/audit/user-activity/${userId}`, {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  async getEntityHistory(entityType: string, entityId: string, limit?: number): Promise<EntityHistory> {
+    const response = await api.get<EntityHistory>(`/audit/entity-history/${entityType}/${entityId}`, {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  async getStats(days?: number): Promise<AuditStats> {
+    const response = await api.get<AuditStats>("/audit/stats", {
+      params: { days },
+    });
+    return response.data;
+  },
+
+  async cleanupOldLogs(days: number): Promise<{ message: string; deletedCount: number }> {
+    const response = await api.delete<{ message: string; deletedCount: number }>("/audit/cleanup", {
+      data: { days },
+    });
+    return response.data;
+  },
+};
+
+// ==================== GAMIFICATION SERVICE ====================
+export const gamificationService = {
+  async getConfig(): Promise<GamificationConfig> {
+    const response = await api.get<GamificationConfig>("/gamification/config");
+    return response.data;
+  },
+
+  async updateConfig(config: Partial<GamificationConfig>): Promise<{ message: string; config: GamificationConfig }> {
+    const response = await api.put<{ message: string; config: GamificationConfig }>("/gamification/config", config);
+    return response.data;
+  },
+
+  async getRanking(params?: { period?: string; startDate?: string; endDate?: string }): Promise<RankingResponse> {
+    const response = await api.get<RankingResponse>("/gamification/ranking", { params });
+    return response.data;
+  },
+
+  async evaluatePeriod(data: { startDate: string; endDate: string; notes?: string }): Promise<{ message: string; winner: PeriodWinner }> {
+    const response = await api.post<{ message: string; winner: PeriodWinner }>("/gamification/evaluate", data);
+    return response.data;
+  },
+
+  async getWinners(params?: { limit?: number; page?: number }): Promise<WinnersResponse> {
+    const response = await api.get<WinnersResponse>("/gamification/winners", { params });
+    return response.data;
+  },
+
+  async getDistributorStats(distributorId: string): Promise<DistributorStatsResponse> {
+    const response = await api.get<DistributorStatsResponse>(`/gamification/stats/${distributorId}`);
+    return response.data;
+  },
+
+  async markBonusPaid(winnerId: string): Promise<{ message: string; winner: PeriodWinner }> {
+    const response = await api.put<{ message: string; winner: PeriodWinner }>(`/gamification/winners/${winnerId}/pay`);
+    return response.data;
+  },
+
+  async getAchievements(): Promise<any[]> {
+    const response = await api.get<any[]>("/gamification/achievements");
+    return response.data;
+  },
+};
+
