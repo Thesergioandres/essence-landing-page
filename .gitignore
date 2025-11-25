@@ -53,3 +53,5 @@ coverage
 *.swo
 *~
 .cache
+
+.vercel
