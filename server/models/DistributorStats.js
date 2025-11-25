@@ -6,7 +6,6 @@ const distributorStatsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true,
     },
 
     // Puntos totales
@@ -101,7 +100,7 @@ const distributorStatsSchema = new mongoose.Schema(
 // Índices
 distributorStatsSchema.index({ totalPoints: -1 });
 distributorStatsSchema.index({ totalRevenue: -1 });
-distributorStatsSchema.index({ distributor: 1 });
+distributorStatsSchema.index({ distributor: 1 }, { unique: true });
 
 const DistributorStats = mongoose.model("DistributorStats", distributorStatsSchema);
 
