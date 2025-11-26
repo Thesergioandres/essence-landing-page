@@ -8,8 +8,8 @@ import type {
   DailySummary,
   DefectiveProduct,
   DistributorProfit,
-  DistributorStock,
   DistributorStatsResponse,
+  DistributorStock,
   EntityHistory,
   FinancialSummary,
   GamificationConfig,
@@ -261,7 +261,9 @@ export const stockService = {
     return response.data;
   },
 
-  async getDistributorStock(distributorId: string): Promise<DistributorStock[]> {
+  async getDistributorStock(
+    distributorId: string
+  ): Promise<DistributorStock[]> {
     const response = await api.get<DistributorStock[]>(
       `/stock/distributor/${distributorId}`
     );
@@ -436,7 +438,9 @@ export const defectiveProductService = {
 // ==================== ANALYTICS SERVICE ====================
 export const analyticsService = {
   async getMonthlyProfit(): Promise<MonthlyProfitData> {
-    const response = await api.get<MonthlyProfitData>("/analytics/monthly-profit");
+    const response = await api.get<MonthlyProfitData>(
+      "/analytics/monthly-profit"
+    );
     return response.data;
   },
 
@@ -444,9 +448,12 @@ export const analyticsService = {
     startDate?: string;
     endDate?: string;
   }): Promise<ProductProfit[]> {
-    const response = await api.get<ProductProfit[]>("/analytics/profit-by-product", {
-      params: filters,
-    });
+    const response = await api.get<ProductProfit[]>(
+      "/analytics/profit-by-product",
+      {
+        params: filters,
+      }
+    );
     return response.data;
   },
 
@@ -454,13 +461,18 @@ export const analyticsService = {
     startDate?: string;
     endDate?: string;
   }): Promise<DistributorProfit[]> {
-    const response = await api.get<DistributorProfit[]>("/analytics/profit-by-distributor", {
-      params: filters,
-    });
+    const response = await api.get<DistributorProfit[]>(
+      "/analytics/profit-by-distributor",
+      {
+        params: filters,
+      }
+    );
     return response.data;
   },
 
-  async getAverages(period: "day" | "week" | "month" = "month"): Promise<Averages> {
+  async getAverages(
+    period: "day" | "week" | "month" = "month"
+  ): Promise<Averages> {
     const response = await api.get<Averages>("/analytics/averages", {
       params: { period },
     });
@@ -468,9 +480,12 @@ export const analyticsService = {
   },
 
   async getSalesTimeline(days: number = 30): Promise<TimelineData[]> {
-    const response = await api.get<TimelineData[]>("/analytics/sales-timeline", {
-      params: { days },
-    });
+    const response = await api.get<TimelineData[]>(
+      "/analytics/sales-timeline",
+      {
+        params: { days },
+      }
+    );
     return response.data;
   },
 
@@ -478,9 +493,12 @@ export const analyticsService = {
     startDate?: string;
     endDate?: string;
   }): Promise<FinancialSummary> {
-    const response = await api.get<FinancialSummary>("/analytics/financial-summary", {
-      params: filters,
-    });
+    const response = await api.get<FinancialSummary>(
+      "/analytics/financial-summary",
+      {
+        params: filters,
+      }
+    );
     return response.data;
   },
 
@@ -522,21 +540,34 @@ export const auditService = {
     return response.data;
   },
 
-  async getUserActivity(userId: string, filters?: {
-    startDate?: string;
-    endDate?: string;
-    limit?: number;
-  }): Promise<UserActivity> {
-    const response = await api.get<UserActivity>(`/audit/user-activity/${userId}`, {
-      params: filters,
-    });
+  async getUserActivity(
+    userId: string,
+    filters?: {
+      startDate?: string;
+      endDate?: string;
+      limit?: number;
+    }
+  ): Promise<UserActivity> {
+    const response = await api.get<UserActivity>(
+      `/audit/user-activity/${userId}`,
+      {
+        params: filters,
+      }
+    );
     return response.data;
   },
 
-  async getEntityHistory(entityType: string, entityId: string, limit?: number): Promise<EntityHistory> {
-    const response = await api.get<EntityHistory>(`/audit/entity-history/${entityType}/${entityId}`, {
-      params: { limit },
-    });
+  async getEntityHistory(
+    entityType: string,
+    entityId: string,
+    limit?: number
+  ): Promise<EntityHistory> {
+    const response = await api.get<EntityHistory>(
+      `/audit/entity-history/${entityType}/${entityId}`,
+      {
+        params: { limit },
+      }
+    );
     return response.data;
   },
 
@@ -547,8 +578,13 @@ export const auditService = {
     return response.data;
   },
 
-  async cleanupOldLogs(days: number): Promise<{ message: string; deletedCount: number }> {
-    const response = await api.delete<{ message: string; deletedCount: number }>("/audit/cleanup", {
+  async cleanupOldLogs(
+    days: number
+  ): Promise<{ message: string; deletedCount: number }> {
+    const response = await api.delete<{
+      message: string;
+      deletedCount: number;
+    }>("/audit/cleanup", {
       data: { days },
     });
     return response.data;
@@ -562,33 +598,64 @@ export const gamificationService = {
     return response.data;
   },
 
-  async updateConfig(config: Partial<GamificationConfig>): Promise<{ message: string; config: GamificationConfig }> {
-    const response = await api.put<{ message: string; config: GamificationConfig }>("/gamification/config", config);
+  async updateConfig(
+    config: Partial<GamificationConfig>
+  ): Promise<{ message: string; config: GamificationConfig }> {
+    const response = await api.put<{
+      message: string;
+      config: GamificationConfig;
+    }>("/gamification/config", config);
     return response.data;
   },
 
-  async getRanking(params?: { period?: string; startDate?: string; endDate?: string }): Promise<RankingResponse> {
-    const response = await api.get<RankingResponse>("/gamification/ranking", { params });
+  async getRanking(params?: {
+    period?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<RankingResponse> {
+    const response = await api.get<RankingResponse>("/gamification/ranking", {
+      params,
+    });
     return response.data;
   },
 
-  async evaluatePeriod(data: { startDate: string; endDate: string; notes?: string }): Promise<{ message: string; winner: PeriodWinner }> {
-    const response = await api.post<{ message: string; winner: PeriodWinner }>("/gamification/evaluate", data);
+  async evaluatePeriod(data: {
+    startDate: string;
+    endDate: string;
+    notes?: string;
+  }): Promise<{ message: string; winner: PeriodWinner }> {
+    const response = await api.post<{ message: string; winner: PeriodWinner }>(
+      "/gamification/evaluate",
+      data
+    );
     return response.data;
   },
 
-  async getWinners(params?: { limit?: number; page?: number }): Promise<WinnersResponse> {
-    const response = await api.get<WinnersResponse>("/gamification/winners", { params });
+  async getWinners(params?: {
+    limit?: number;
+    page?: number;
+  }): Promise<WinnersResponse> {
+    const response = await api.get<WinnersResponse>("/gamification/winners", {
+      params,
+    });
     return response.data;
   },
 
-  async getDistributorStats(distributorId: string): Promise<DistributorStatsResponse> {
-    const response = await api.get<DistributorStatsResponse>(`/gamification/stats/${distributorId}`);
+  async getDistributorStats(
+    distributorId: string
+  ): Promise<DistributorStatsResponse> {
+    const response = await api.get<DistributorStatsResponse>(
+      `/gamification/stats/${distributorId}`
+    );
     return response.data;
   },
 
-  async markBonusPaid(winnerId: string): Promise<{ message: string; winner: PeriodWinner }> {
-    const response = await api.put<{ message: string; winner: PeriodWinner }>(`/gamification/winners/${winnerId}/pay`);
+  async markBonusPaid(
+    winnerId: string
+  ): Promise<{ message: string; winner: PeriodWinner }> {
+    const response = await api.put<{ message: string; winner: PeriodWinner }>(
+      `/gamification/winners/${winnerId}/pay`
+    );
     return response.data;
   },
 
@@ -613,4 +680,3 @@ export const gamificationService = {
     return response.data;
   },
 };
-

@@ -2,7 +2,6 @@ import DistributorStats from "../models/DistributorStats.js";
 import GamificationConfig from "../models/GamificationConfig.js";
 import PeriodWinner from "../models/PeriodWinner.js";
 import Sale from "../models/Sale.js";
-import User from "../models/User.js";
 
 // @desc    Obtener comisión ajustada por ranking para un distribuidor
 // @route   GET /api/gamification/commission/:distributorId
@@ -13,18 +12,18 @@ export const getAdjustedCommission = async (req, res) => {
     const config = await GamificationConfig.findOne();
 
     if (!config) {
-      return res.json({ 
-        baseCommission: 0, 
-        bonusCommission: 0, 
+      return res.json({
+        baseCommission: 0,
+        bonusCommission: 0,
         totalCommission: 0,
-        position: null 
+        position: null,
       });
     }
 
     // Obtener período actual
     const now = new Date();
     let startDate, endDate;
-    
+
     if (config.evaluationPeriod === "biweekly") {
       startDate = config.currentPeriodStart || new Date();
       endDate = new Date(startDate);
@@ -59,9 +58,8 @@ export const getAdjustedCommission = async (req, res) => {
       { $sort: { totalRevenue: -1 } },
     ]);
 
-    const position = rankings.findIndex(
-      (r) => r._id.toString() === distributorId
-    ) + 1;
+    const position =
+      rankings.findIndex((r) => r._id.toString() === distributorId) + 1;
 
     let bonusCommission = 0;
     if (position === 1) {
@@ -337,7 +335,14 @@ export const getRanking = async (req, res) => {
       const now = new Date();
       if (config?.evaluationPeriod === "monthly") {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        endDate = new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0,
+          23,
+          59,
+          59
+        );
       } else if (config?.evaluationPeriod === "weekly") {
         const dayOfWeek = now.getDay();
         startDate = new Date(now);
@@ -348,7 +353,9 @@ export const getRanking = async (req, res) => {
         endDate.setHours(23, 59, 59);
       } else if (config?.evaluationPeriod === "custom") {
         startDate = new Date();
-        startDate.setDate(startDate.getDate() - (config.customPeriodDays || 30));
+        startDate.setDate(
+          startDate.getDate() - (config.customPeriodDays || 30)
+        );
         endDate = new Date();
       } else {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -402,7 +409,9 @@ export const getRanking = async (req, res) => {
     // Agregar estadísticas de cada distribuidor
     const rankingsWithStats = await Promise.all(
       rankings.map(async (rank, index) => {
-        const stats = await DistributorStats.findOne({ distributor: rank.distributorId });
+        const stats = await DistributorStats.findOne({
+          distributor: rank.distributorId,
+        });
         return {
           ...rank,
           position: index + 1,
@@ -585,10 +594,9 @@ export const getDistributorStats = async (req, res) => {
   try {
     const { distributorId } = req.params;
 
-    let stats = await DistributorStats.findOne({ distributor: distributorId }).populate(
-      "distributor",
-      "name email"
-    );
+    let stats = await DistributorStats.findOne({
+      distributor: distributorId,
+    }).populate("distributor", "name email");
 
     if (!stats) {
       stats = await DistributorStats.create({
@@ -599,7 +607,8 @@ export const getDistributorStats = async (req, res) => {
 
     // Obtener posición en ranking actual
     const allStats = await DistributorStats.find().sort({ totalPoints: -1 });
-    const position = allStats.findIndex((s) => s.distributor.toString() === distributorId) + 1;
+    const position =
+      allStats.findIndex((s) => s.distributor.toString() === distributorId) + 1;
 
     res.json({
       stats,
@@ -628,7 +637,9 @@ export const markBonusPaid = async (req, res) => {
     await winner.save();
 
     // Actualizar estadísticas del distribuidor
-    const stats = await DistributorStats.findOne({ distributor: winner.winner });
+    const stats = await DistributorStats.findOne({
+      distributor: winner.winner,
+    });
     if (stats) {
       stats.pendingBonuses -= winner.bonusAmount;
       stats.paidBonuses += winner.bonusAmount;

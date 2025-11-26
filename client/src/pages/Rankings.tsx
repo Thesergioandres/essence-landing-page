@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { gamificationService } from "../api/services";
-import type { RankingResponse, PeriodWinner } from "../types";
+import type { PeriodWinner, RankingResponse } from "../types";
 
 const Rankings = () => {
   const [rankingData, setRankingData] = useState<RankingResponse | null>(null);
@@ -91,7 +91,7 @@ const Rankings = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-xl">Cargando ranking...</div>
       </div>
     );
@@ -99,10 +99,10 @@ const Rankings = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">🏆 Rankings y Ganadores</h1>
+      <h1 className="mb-8 text-3xl font-bold">🏆 Rankings y Ganadores</h1>
 
       {/* Tabs */}
-      <div className="flex mb-6 border-b border-gray-300">
+      <div className="mb-6 flex border-b border-gray-300">
         <button
           onClick={() => setView("current")}
           className={`px-6 py-3 font-semibold ${
@@ -128,14 +128,16 @@ const Rankings = () => {
       {view === "current" && rankingData && (
         <>
           {/* Filtros */}
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mb-6 rounded-lg bg-white p-6 shadow-md">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
-                <label className="block text-gray-700 font-medium mb-2">Periodo</label>
+                <label className="mb-2 block font-medium text-gray-700">
+                  Periodo
+                </label>
                 <select
                   value={period}
-                  onChange={(e) => setPeriod(e.target.value as any)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  onChange={e => setPeriod(e.target.value as any)}
+                  className="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="current">Periodo Actual</option>
                   <option value="custom">Personalizado</option>
@@ -145,26 +147,26 @@ const Rankings = () => {
               {period === "custom" && (
                 <>
                   <div>
-                    <label className="block text-gray-700 font-medium mb-2">
+                    <label className="mb-2 block font-medium text-gray-700">
                       Fecha Inicio
                     </label>
                     <input
                       type="date"
                       value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      onChange={e => setStartDate(e.target.value)}
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-medium mb-2">
+                    <label className="mb-2 block font-medium text-gray-700">
                       Fecha Fin
                     </label>
                     <input
                       type="date"
                       value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      onChange={e => setEndDate(e.target.value)}
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </>
@@ -173,35 +175,37 @@ const Rankings = () => {
           </div>
 
           {/* Info del Periodo */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 rounded-lg shadow-md mb-6 text-white">
-            <h2 className="text-2xl font-semibold mb-2">
+          <div className="mb-6 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white shadow-md">
+            <h2 className="mb-2 text-2xl font-semibold">
               📅 Periodo: {rankingData.period.type.toUpperCase()}
             </h2>
             <p className="text-lg opacity-90">
               {formatDate(rankingData.period.startDate)} -{" "}
               {formatDate(rankingData.period.endDate)}
             </p>
-            
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               {/* Premio en efectivo */}
-              <div className="bg-white bg-opacity-20 p-4 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="rounded-lg bg-white bg-opacity-20 p-4">
+                <div className="mb-2 flex items-center gap-2">
                   <span className="text-2xl">🏆</span>
                   <span className="text-sm opacity-80">Premio 1er Lugar</span>
                 </div>
                 <div className="text-3xl font-bold">
                   {formatCurrency(rankingData.config.topPerformerBonus)}
                 </div>
-                <p className="text-xs opacity-75 mt-1">Bono en efectivo cada 15 días</p>
+                <p className="mt-1 text-xs opacity-75">
+                  Bono en efectivo cada 15 días
+                </p>
               </div>
 
               {/* Comisiones variables */}
-              <div className="bg-white bg-opacity-20 p-4 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="rounded-lg bg-white bg-opacity-20 p-4">
+                <div className="mb-2 flex items-center gap-2">
                   <span className="text-2xl">💰</span>
                   <span className="text-sm opacity-80">Comisiones Extra</span>
                 </div>
-                <div className="text-sm space-y-1">
+                <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span>🥇 1er lugar:</span>
                     <span className="font-bold">+5% adicional</span>
@@ -218,8 +222,8 @@ const Rankings = () => {
               </div>
 
               {/* Info del sistema */}
-              <div className="bg-white bg-opacity-20 p-4 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="rounded-lg bg-white bg-opacity-20 p-4">
+                <div className="mb-2 flex items-center gap-2">
                   <span className="text-2xl">📊</span>
                   <span className="text-sm opacity-80">Sistema Activo</span>
                 </div>
@@ -242,32 +246,32 @@ const Rankings = () => {
           </div>
 
           {/* Tabla de Ranking */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-hidden rounded-lg bg-white shadow-md">
             <table className="min-w-full">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-600">
                     Posición
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-600">
                     Distribuidor
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-600">
                     Nivel
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
                     Ventas
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
                     Ingresos
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
                     Ganancia
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
                     Puntos
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
                     Victorias
                   </th>
                 </tr>
@@ -275,62 +279,75 @@ const Rankings = () => {
               <tbody className="divide-y divide-gray-200">
                 {rankingData.rankings.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                    <td
+                      colSpan={8}
+                      className="px-6 py-8 text-center text-gray-500"
+                    >
                       No hay datos para este periodo
                     </td>
                   </tr>
                 ) : (
-                  rankingData.rankings.map((rank) => (
+                  rankingData.rankings.map(rank => (
                     <tr
                       key={rank.distributorId}
                       className={`hover:bg-gray-50 ${
                         rank.position <= 3 ? "bg-yellow-50" : ""
                       }`}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-2xl">{getPositionBadge(rank.position)}</div>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <div className="text-2xl">
+                          {getPositionBadge(rank.position)}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-medium text-gray-900">
                           {rank.distributorName}
                         </div>
-                        <div className="text-sm text-gray-500">{rank.distributorEmail}</div>
+                        <div className="text-sm text-gray-500">
+                          {rank.distributorEmail}
+                        </div>
                         {rank.position <= 3 && (
                           <div className="mt-1">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                              💰 +{rank.position === 1 ? "5" : rank.position === 2 ? "3" : "2"}% comisión
+                            <span className="inline-flex items-center rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                              💰 +
+                              {rank.position === 1
+                                ? "5"
+                                : rank.position === 2
+                                  ? "3"
+                                  : "2"}
+                              % comisión
                             </span>
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="whitespace-nowrap px-6 py-4">
                         <span className="text-2xl">
                           {getLevelBadge(rank.currentLevel)}
                         </span>
-                        <span className="ml-2 text-sm text-gray-600 capitalize">
+                        <span className="ml-2 text-sm capitalize text-gray-600">
                           {rank.currentLevel}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <td className="whitespace-nowrap px-6 py-4 text-right">
                         <div className="font-semibold">{rank.totalSales}</div>
                         <div className="text-sm text-gray-500">
                           {rank.totalUnits} unidades
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right font-semibold text-green-600">
+                      <td className="whitespace-nowrap px-6 py-4 text-right font-semibold text-green-600">
                         {formatCurrency(rank.totalRevenue)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right font-semibold text-blue-600">
+                      <td className="whitespace-nowrap px-6 py-4 text-right font-semibold text-blue-600">
                         {formatCurrency(rank.totalProfit)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      <td className="whitespace-nowrap px-6 py-4 text-right">
+                        <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
                           {rank.totalPoints} pts
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <td className="whitespace-nowrap px-6 py-4 text-right">
                         {rank.periodWins > 0 && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
                             🏆 {rank.periodWins}
                           </span>
                         )}
@@ -345,7 +362,7 @@ const Rankings = () => {
       )}
 
       {view === "history" && (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="overflow-hidden rounded-lg bg-white shadow-md">
           {winnersLoading ? (
             <div className="px-6 py-8 text-center">Cargando historial...</div>
           ) : winners.length === 0 ? (
@@ -356,42 +373,45 @@ const Rankings = () => {
             <table className="min-w-full">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-600">
                     Periodo
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-600">
                     Ganador 🥇
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
                     Ventas
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
                     Ingresos
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
                     Bono
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-6 py-3 text-center text-xs font-medium uppercase text-gray-600">
                     Estado
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {winners.map((winner) => (
+                {winners.map(winner => (
                   <tr key={winner._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900 uppercase">
+                      <div className="font-medium uppercase text-gray-900">
                         {winner.periodType}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {formatDate(winner.startDate)} - {formatDate(winner.endDate)}
+                        {formatDate(winner.startDate)} -{" "}
+                        {formatDate(winner.endDate)}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">
                         {winner.winnerName}
                       </div>
-                      <div className="text-sm text-gray-500">{winner.winnerEmail}</div>
+                      <div className="text-sm text-gray-500">
+                        {winner.winnerEmail}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="font-semibold">{winner.salesCount}</div>
@@ -404,11 +424,11 @@ const Rankings = () => {
                     </td>
                     <td className="px-6 py-4 text-center">
                       {winner.bonusPaid ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
                           ✓ Pagado
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
                           ⏳ Pendiente
                         </span>
                       )}

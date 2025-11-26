@@ -1,7 +1,7 @@
 import DistributorStock from "../models/DistributorStock.js";
+import GamificationConfig from "../models/GamificationConfig.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
-import GamificationConfig from "../models/GamificationConfig.js";
 
 // Función auxiliar para obtener bonus de comisión por ranking
 const getCommissionBonus = async (distributorId) => {
@@ -12,7 +12,7 @@ const getCommissionBonus = async (distributorId) => {
     const now = new Date();
     let startDate = config.currentPeriodStart || now;
     let endDate = new Date(startDate);
-    
+
     if (config.evaluationPeriod === "biweekly") {
       endDate.setDate(endDate.getDate() + 15);
     } else if (config.evaluationPeriod === "monthly") {
@@ -42,14 +42,14 @@ const getCommissionBonus = async (distributorId) => {
       { $sort: { totalRevenue: -1 } },
     ]);
 
-    const position = rankings.findIndex(
-      (r) => r._id.toString() === distributorId.toString()
-    ) + 1;
+    const position =
+      rankings.findIndex((r) => r._id.toString() === distributorId.toString()) +
+      1;
 
     if (position === 1) return config.top1CommissionBonus || 0;
     if (position === 2) return config.top2CommissionBonus || 0;
     if (position === 3) return config.top3CommissionBonus || 0;
-    
+
     return 0;
   } catch (error) {
     console.error("Error calculando bonus de comisión:", error);

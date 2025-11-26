@@ -161,7 +161,14 @@ export default function RegisterSale() {
 
     try {
       setLoading(true);
-      const saleData: any = {
+      const saleData: {
+        productId: string;
+        quantity: number;
+        salePrice: number;
+        notes: string;
+        paymentProof?: string;
+        paymentProofMimeType?: string;
+      } = {
         productId: formData.productId,
         quantity: formData.quantity,
         salePrice: formData.salePrice,
@@ -196,8 +203,9 @@ export default function RegisterSale() {
       setTimeout(() => {
         navigate("/distributor/sales");
       }, 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Error al registrar la venta");
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error.response?.data?.message || "Error al registrar la venta");
     } finally {
       setLoading(false);
     }

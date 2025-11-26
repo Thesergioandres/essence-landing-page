@@ -1,22 +1,25 @@
 import express from "express";
 import {
-  getConfig,
-  updateConfig,
-  getRanking,
+  checkAndEvaluatePeriod,
   evaluatePeriod,
-  getWinners,
-  getDistributorStats,
-  markBonusPaid,
   getAchievements,
   getAdjustedCommission,
-  checkAndEvaluatePeriod,
+  getConfig,
+  getDistributorStats,
+  getRanking,
+  getWinners,
+  markBonusPaid,
+  updateConfig,
 } from "../controllers/gamification.controller.js";
-import { protect, admin } from "../middleware/auth.middleware.js";
+import { admin, protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
 // Rutas de configuración (solo admin)
-router.route("/config").get(protect, admin, getConfig).put(protect, admin, updateConfig);
+router
+  .route("/config")
+  .get(protect, admin, getConfig)
+  .put(protect, admin, updateConfig);
 
 // Rutas de ranking y ganadores (acceso protegido)
 router.get("/ranking", protect, getRanking);

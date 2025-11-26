@@ -93,7 +93,7 @@ const saleSchema = new mongoose.Schema(
 saleSchema.pre("save", function (next) {
   // Ganancia base del distribuidor: (precio de venta - precio distribuidor) * cantidad
   const baseProfit = (this.salePrice - this.distributorPrice) * this.quantity;
-  
+
   // Aplicar bonus de comisión si existe
   const bonusAmount = (baseProfit * this.commissionBonus) / 100;
   this.commissionBonusAmount = bonusAmount;

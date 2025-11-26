@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { saleService, stockService, gamificationService } from '../api/services';
-import type { DistributorStock, Sale } from '../types';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  gamificationService,
+  saleService,
+  stockService,
+} from "../api/services";
+import type { DistributorStock, Sale } from "../types";
 
 interface DashboardStats {
   totalSales: number;
@@ -40,18 +44,28 @@ export default function DistributorDashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const userId = localStorage.getItem('userId');
+      const userId = localStorage.getItem("userId");
       const [salesData, stockData, commissionData] = await Promise.all([
         saleService.getDistributorSales(),
-        stockService.getDistributorStock('me'),
-        userId ? gamificationService.getAdjustedCommission(userId).catch(() => null) : Promise.resolve(null),
+        stockService.getDistributorStock("me"),
+        userId
+          ? gamificationService.getAdjustedCommission(userId).catch(() => null)
+          : Promise.resolve(null),
       ]);
 
       // Calcular estadísticas
       const totalSales = salesData.sales.length;
-      const totalRevenue = salesData.sales.reduce((sum, sale) => sum + sale.salePrice * sale.quantity, 0);
-      const totalProfit = salesData.sales.reduce((sum, sale) => sum + sale.distributorProfit, 0);
-      const lowStockCount = stockData.filter(item => item.quantity <= item.lowStockAlert).length;
+      const totalRevenue = salesData.sales.reduce(
+        (sum, sale) => sum + sale.salePrice * sale.quantity,
+        0
+      );
+      const totalProfit = salesData.sales.reduce(
+        (sum, sale) => sum + sale.distributorProfit,
+        0
+      );
+      const lowStockCount = stockData.filter(
+        item => item.quantity <= item.lowStockAlert
+      ).length;
 
       setStats({
         totalSales,
@@ -63,30 +77,30 @@ export default function DistributorDashboard() {
 
       setRecentSales(salesData.sales.slice(0, 5));
       setMyStock(stockData.slice(0, 6));
-      
+
       if (commissionData) {
         setRankingInfo(commissionData);
       }
     } catch (error) {
-      console.error('Error al cargar datos del dashboard:', error);
+      console.error("Error al cargar datos del dashboard:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
       minimumFractionDigits: 0,
     }).format(value);
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es-CO', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(date).toLocaleDateString("es-CO", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -113,9 +127,15 @@ export default function DistributorDashboard() {
         <div className="rounded-xl border border-yellow-500/50 bg-gradient-to-br from-yellow-900/30 to-orange-900/30 p-6 backdrop-blur-lg">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="mb-2 flex items-center gap-3">
                 <span className="text-4xl">
-                  {rankingInfo.position === 1 ? "🥇" : rankingInfo.position === 2 ? "🥈" : rankingInfo.position === 3 ? "🥉" : "🏅"}
+                  {rankingInfo.position === 1
+                    ? "🥇"
+                    : rankingInfo.position === 2
+                      ? "🥈"
+                      : rankingInfo.position === 3
+                        ? "🥉"
+                        : "🏅"}
                 </span>
                 <div>
                   <h3 className="text-2xl font-bold text-white">
@@ -126,12 +146,14 @@ export default function DistributorDashboard() {
                   </p>
                 </div>
               </div>
-              
+
               {rankingInfo.bonusCommission > 0 && (
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-green-500/20 px-4 py-2 border border-green-500/50">
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-green-500/50 bg-green-500/20 px-4 py-2">
                   <span className="text-xl">💰</span>
                   <div>
-                    <p className="text-xs text-green-300">Comisión extra activa</p>
+                    <p className="text-xs text-green-300">
+                      Comisión extra activa
+                    </p>
                     <p className="text-lg font-bold text-green-400">
                       +{rankingInfo.bonusCommission}% en cada venta
                     </p>
@@ -141,15 +163,21 @@ export default function DistributorDashboard() {
             </div>
 
             <div className="text-right">
-              <p className="text-xs text-gray-400 mb-1">Período actual</p>
-              <p className="text-sm text-white font-medium">
-                {new Date(rankingInfo.periodStart).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
-                {' - '}
-                {new Date(rankingInfo.periodEnd).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
+              <p className="mb-1 text-xs text-gray-400">Período actual</p>
+              <p className="text-sm font-medium text-white">
+                {new Date(rankingInfo.periodStart).toLocaleDateString("es-CO", {
+                  day: "2-digit",
+                  month: "short",
+                })}
+                {" - "}
+                {new Date(rankingInfo.periodEnd).toLocaleDateString("es-CO", {
+                  day: "2-digit",
+                  month: "short",
+                })}
               </p>
               <button
-                onClick={() => navigate('/distributor/stats')}
-                className="mt-3 text-xs text-blue-400 hover:text-blue-300 underline"
+                onClick={() => navigate("/distributor/stats")}
+                className="mt-3 text-xs text-blue-400 underline hover:text-blue-300"
               >
                 Ver ranking completo →
               </button>
@@ -157,11 +185,11 @@ export default function DistributorDashboard() {
           </div>
 
           {rankingInfo.position <= 3 && (
-            <div className="mt-4 pt-4 border-t border-gray-700">
-              <p className="text-xs text-gray-300 flex items-center gap-2">
+            <div className="mt-4 border-t border-gray-700 pt-4">
+              <p className="flex items-center gap-2 text-xs text-gray-300">
                 <span>🏆</span>
-                {rankingInfo.position === 1 
-                  ? "¡Primer lugar! Ganas $50,000 al final del período" 
+                {rankingInfo.position === 1
+                  ? "¡Primer lugar! Ganas $50,000 al final del período"
                   : "¡Top 3! Sigue vendiendo para ganar el primer lugar ($50,000)"}
               </p>
             </div>
@@ -261,7 +289,7 @@ export default function DistributorDashboard() {
                 {stats.productsCount}
               </p>
               {stats.lowStockCount > 0 && (
-                <p className="text-xs text-red-400 mt-1">
+                <p className="mt-1 text-xs text-red-400">
                   {stats.lowStockCount} con stock bajo
                 </p>
               )}
@@ -288,7 +316,7 @@ export default function DistributorDashboard() {
       {/* Quick Actions */}
       <div className="grid gap-6 md:grid-cols-2">
         <button
-          onClick={() => navigate('/distributor/register-sale')}
+          onClick={() => navigate("/distributor/register-sale")}
           className="rounded-xl border border-gray-700 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 p-6 text-left transition hover:border-blue-500 hover:from-blue-600/30 hover:to-cyan-600/30"
         >
           <div className="flex items-center gap-4">
@@ -317,7 +345,7 @@ export default function DistributorDashboard() {
         </button>
 
         <button
-          onClick={() => navigate('/distributor/products')}
+          onClick={() => navigate("/distributor/products")}
           className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-600/20 to-pink-600/20 p-6 text-left transition hover:border-purple-500 hover:from-purple-600/30 hover:to-pink-600/30"
         >
           <div className="flex items-center gap-4">
@@ -351,7 +379,7 @@ export default function DistributorDashboard() {
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-bold text-white">Mi Inventario</h2>
           <button
-            onClick={() => navigate('/distributor/products')}
+            onClick={() => navigate("/distributor/products")}
             className="text-sm text-blue-400 hover:text-blue-300"
           >
             Ver todos →
@@ -359,29 +387,28 @@ export default function DistributorDashboard() {
         </div>
         {myStock.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-600 p-8 text-center">
-            <p className="text-gray-400">
-              No tienes productos asignados aún
-            </p>
+            <p className="text-gray-400">No tienes productos asignados aún</p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {myStock.map((item) => {
-              const product = typeof item.product === 'object' ? item.product : null;
+            {myStock.map(item => {
+              const product =
+                typeof item.product === "object" ? item.product : null;
               const isLowStock = item.quantity <= item.lowStockAlert;
-              
+
               return (
                 <div
                   key={item._id}
                   className={`rounded-lg border p-4 transition ${
                     isLowStock
-                      ? 'border-red-500 bg-red-900/20'
-                      : 'border-gray-700 bg-gray-900/50 hover:border-blue-500'
+                      ? "border-red-500 bg-red-900/20"
+                      : "border-gray-700 bg-gray-900/50 hover:border-blue-500"
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="font-semibold text-white">
-                        {product?.name || 'Producto'}
+                        {product?.name || "Producto"}
                       </h3>
                       <p className="mt-1 text-sm text-gray-400">
                         Precio: {formatCurrency(product?.distributorPrice || 0)}
@@ -391,13 +418,17 @@ export default function DistributorDashboard() {
                   <div className="mt-3 flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-500">Stock disponible</p>
-                      <p className={`text-2xl font-bold ${isLowStock ? 'text-red-400' : 'text-blue-400'}`}>
+                      <p
+                        className={`text-2xl font-bold ${isLowStock ? "text-red-400" : "text-blue-400"}`}
+                      >
                         {item.quantity}
                       </p>
                     </div>
                     {isLowStock && (
                       <div className="rounded-full bg-red-600/20 px-3 py-1">
-                        <p className="text-xs font-semibold text-red-400">Stock Bajo</p>
+                        <p className="text-xs font-semibold text-red-400">
+                          Stock Bajo
+                        </p>
                       </div>
                     )}
                   </div>
@@ -413,7 +444,7 @@ export default function DistributorDashboard() {
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-bold text-white">Ventas Recientes</h2>
           <button
-            onClick={() => navigate('/distributor/sales')}
+            onClick={() => navigate("/distributor/sales")}
             className="text-sm text-blue-400 hover:text-blue-300"
           >
             Ver todas →
@@ -422,9 +453,9 @@ export default function DistributorDashboard() {
         {recentSales.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-600 p-8 text-center">
             <p className="text-gray-400">
-              No has registrado ventas aún.{' '}
+              No has registrado ventas aún.{" "}
               <button
-                onClick={() => navigate('/distributor/register-sale')}
+                onClick={() => navigate("/distributor/register-sale")}
                 className="font-semibold text-blue-400 hover:text-blue-300"
               >
                 Registra tu primera venta
@@ -436,33 +467,34 @@ export default function DistributorDashboard() {
             <table className="min-w-full divide-y divide-gray-700">
               <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Fecha
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Producto
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Cantidad
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Precio Venta
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Ganancia
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {recentSales.map((sale) => {
-                  const product = typeof sale.product === 'object' ? sale.product : null;
+                {recentSales.map(sale => {
+                  const product =
+                    typeof sale.product === "object" ? sale.product : null;
                   return (
                     <tr key={sale._id} className="hover:bg-gray-700/30">
                       <td className="px-4 py-3 text-sm text-gray-300">
                         {formatDate(sale.saleDate)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-white font-medium">
-                        {product?.name || 'N/A'}
+                      <td className="px-4 py-3 text-sm font-medium text-white">
+                        {product?.name || "N/A"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-300">
                         {sale.quantity}

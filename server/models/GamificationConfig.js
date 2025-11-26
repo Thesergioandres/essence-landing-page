@@ -13,7 +13,7 @@ const gamificationConfigSchema = new mongoose.Schema(
       default: 15,
       min: 1,
     },
-    
+
     // Auto-evaluación
     autoEvaluate: {
       type: Boolean,
@@ -110,6 +110,9 @@ const gamificationConfigSchema = new mongoose.Schema(
   }
 );
 
-const GamificationConfig = mongoose.model("GamificationConfig", gamificationConfigSchema);
+const GamificationConfig = mongoose.model(
+  "GamificationConfig",
+  gamificationConfigSchema
+);
 
 export default GamificationConfig;
