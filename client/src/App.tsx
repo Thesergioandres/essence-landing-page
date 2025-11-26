@@ -71,6 +71,7 @@ export default function App() {
         <Route path="gamification-config" element={<GamificationConfig />} />
         <Route path="rankings" element={<Rankings />} />
         <Route path="defective-products" element={<DefectiveProductsManagement />} />
+        <Route path="register-sale" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRegisterSale /></ProtectedRoute>} />
       </Route>
 
       {/* Distributor Routes */}

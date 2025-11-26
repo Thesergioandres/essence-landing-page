@@ -30,10 +30,10 @@ export default function Navbar() {
               Productos
             </Link>
             <Link
-              to="/login/admin"
+              to="/admin/register-sale"
               className="rounded-lg border border-purple-500 px-3 lg:px-4 py-2 text-xs lg:text-sm font-medium text-purple-400 transition hover:bg-purple-500/10"
             >
-              Admin
+              Registrar Venta (Admin)
             </Link>
             <Link
               to="/login/distributor"
@@ -83,11 +83,11 @@ export default function Navbar() {
               Productos
             </Link>
             <Link
-              to="/login/admin"
+              to="/admin/register-sale"
               onClick={() => setMobileMenuOpen(false)}
               className="block mx-4 px-4 py-3 text-center text-base font-medium text-purple-400 border border-purple-500 rounded-lg transition hover:bg-purple-500/10"
             >
-              Admin
+              Registrar Venta (Admin)
             </Link>
             <Link
               to="/login/distributor"
