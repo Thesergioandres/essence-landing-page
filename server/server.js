@@ -53,7 +53,12 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Rutas
 app.get("/", (req, res) => {
-  res.json({ message: "🚀 Essence API funcionando correctamente" });
+  res.json({ 
+    message: "🚀 Essence API funcionando correctamente",
+    version: "2.0.0",
+    cors: "enabled-for-all-vercel-domains",
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.use("/api/auth", authRoutes);
