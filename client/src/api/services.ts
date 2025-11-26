@@ -288,6 +288,7 @@ export const saleService = {
     quantity: number;
     salePrice: number;
     notes?: string;
+    saleDate?: string;
   }): Promise<{
     message: string;
     sale: Sale;

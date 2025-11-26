@@ -10,6 +10,7 @@ interface FormState {
   salePrice: number;
   notes: string;
   paymentProof: string | null;
+  saleDate: string;
 }
 
 export default function RegisterSale() {
@@ -21,6 +22,7 @@ export default function RegisterSale() {
     salePrice: 0,
     notes: "",
     paymentProof: null,
+    saleDate: new Date().toISOString().slice(0, 10), // yyyy-mm-dd
   });
   const [selectedProduct, setSelectedProduct] =
     useState<DistributorStock | null>(null);
@@ -77,7 +79,9 @@ export default function RegisterSale() {
     setFormData(prev => ({
       ...prev,
       [name]:
-        name === "quantity" || name === "salePrice" ? Number(value) : value,
+        name === "quantity" || name === "salePrice"
+          ? Number(value)
+          : value,
     }));
   };
 
@@ -173,6 +177,7 @@ export default function RegisterSale() {
         quantity: formData.quantity,
         salePrice: formData.salePrice,
         notes: formData.notes,
+        saleDate: formData.saleDate,
       };
 
       // Agregar comprobante si existe
@@ -192,6 +197,7 @@ export default function RegisterSale() {
         salePrice: 0,
         notes: "",
         paymentProof: null,
+        saleDate: new Date().toISOString().slice(0, 10),
       });
       setSelectedProduct(null);
       setImagePreview(null);
@@ -280,6 +286,20 @@ export default function RegisterSale() {
             </h2>
 
             <div className="space-y-4">
+                            <div>
+                              <label htmlFor="saleDate" className="mb-2 block text-sm font-medium text-gray-300">
+                                Fecha de la venta *
+                              </label>
+                              <input
+                                type="date"
+                                id="saleDate"
+                                name="saleDate"
+                                value={formData.saleDate}
+                                onChange={handleChange}
+                                required
+                                className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
               <div>
                 <label
                   htmlFor="productId"

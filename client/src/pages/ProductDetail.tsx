@@ -126,7 +126,7 @@ export default function ProductDetail() {
             <div className="mb-3 sm:mb-4">
               <button
                 onClick={() => navigate(`/categoria/${product.category.slug}`)}
-                className="inline-block rounded-full bg-purple-900/50 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-purple-300 transition hover:bg-purple-900/70 active:scale-95 min-h-[44px] flex items-center"
+                className="rounded-full bg-purple-900/50 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-purple-300 transition hover:bg-purple-900/70 active:scale-95 min-h-[44px] flex items-center"
               >
                 {product.category.name}
               </button>
