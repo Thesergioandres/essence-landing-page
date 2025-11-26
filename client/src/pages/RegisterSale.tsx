@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { saleService, stockService } from '../api/services';
-import { Button } from '../components/Button';
-import type { DistributorStock } from '../types';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { saleService, stockService } from "../api/services";
+import { Button } from "../components/Button";
+import type { DistributorStock } from "../types";
 
 interface FormState {
   productId: string;
@@ -16,17 +16,18 @@ export default function RegisterSale() {
   const navigate = useNavigate();
   const [stock, setStock] = useState<DistributorStock[]>([]);
   const [formData, setFormData] = useState<FormState>({
-    productId: '',
+    productId: "",
     quantity: 1,
     salePrice: 0,
-    notes: '',
+    notes: "",
     paymentProof: null,
   });
-  const [selectedProduct, setSelectedProduct] = useState<DistributorStock | null>(null);
+  const [selectedProduct, setSelectedProduct] =
+    useState<DistributorStock | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingStock, setLoadingStock] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,45 +37,57 @@ export default function RegisterSale() {
   const loadStock = async () => {
     try {
       setLoadingStock(true);
-      const response = await stockService.getDistributorStock('me');
+      const response = await stockService.getDistributorStock("me");
       // Solo productos con stock disponible
       setStock(response.filter(item => item.quantity > 0));
     } catch (error) {
-      console.error('Error al cargar inventario:', error);
-      setError('No se pudo cargar el inventario');
+      console.error("Error al cargar inventario:", error);
+      setError("No se pudo cargar el inventario");
     } finally {
       setLoadingStock(false);
     }
   };
 
   const handleProductChange = (productId: string) => {
-    const product = stock.find(item => 
-      (typeof item.product === 'object' ? item.product._id : item.product) === productId
+    const product = stock.find(
+      item =>
+        (typeof item.product === "object" ? item.product._id : item.product) ===
+        productId
     );
-    
+
     setSelectedProduct(product || null);
     setFormData(prev => ({
       ...prev,
       productId,
       quantity: 1,
-      salePrice: product && typeof product.product === 'object' 
-        ? product.product.clientPrice || 0 
-        : 0,
+      salePrice:
+        product && typeof product.product === "object"
+          ? product.product.clientPrice || 0
+          : 0,
     }));
-    setError('');
+    setError("");
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'quantity' || name === 'salePrice' ? Number(value) : value,
+      [name]:
+        name === "quantity" || name === "salePrice" ? Number(value) : value,
     }));
   };
 
   const calculateProfit = () => {
-    if (!selectedProduct || typeof selectedProduct.product !== 'object') return 0;
-    return (formData.salePrice - selectedProduct.product.distributorPrice) * formData.quantity;
+    if (!selectedProduct || typeof selectedProduct.product !== "object")
+      return 0;
+    return (
+      (formData.salePrice - selectedProduct.product.distributorPrice) *
+      formData.quantity
+    );
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,13 +96,13 @@ export default function RegisterSale() {
 
     // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setError('La imagen no debe superar 5MB');
+      setError("La imagen no debe superar 5MB");
       return;
     }
 
     // Validar tipo
-    if (!file.type.startsWith('image/')) {
-      setError('Solo se permiten imágenes');
+    if (!file.type.startsWith("image/")) {
+      setError("Solo se permiten imágenes");
       return;
     }
 
@@ -112,32 +125,37 @@ export default function RegisterSale() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     if (!formData.productId) {
-      setError('Selecciona un producto');
+      setError("Selecciona un producto");
       return;
     }
 
     if (formData.quantity <= 0) {
-      setError('La cantidad debe ser mayor a 0');
+      setError("La cantidad debe ser mayor a 0");
       return;
     }
 
     if (!selectedProduct || formData.quantity > selectedProduct.quantity) {
-      setError(`Stock insuficiente. Disponible: ${selectedProduct?.quantity || 0}`);
+      setError(
+        `Stock insuficiente. Disponible: ${selectedProduct?.quantity || 0}`
+      );
       return;
     }
 
     if (formData.salePrice <= 0) {
-      setError('El precio de venta debe ser mayor a 0');
+      setError("El precio de venta debe ser mayor a 0");
       return;
     }
 
-    const product = typeof selectedProduct.product === 'object' ? selectedProduct.product : null;
+    const product =
+      typeof selectedProduct.product === "object"
+        ? selectedProduct.product
+        : null;
     if (product && formData.salePrice < product.distributorPrice) {
-      setError('El precio de venta no puede ser menor al precio que pagaste');
+      setError("El precio de venta no puede ser menor al precio que pagaste");
       return;
     }
 
@@ -153,42 +171,42 @@ export default function RegisterSale() {
       // Agregar comprobante si existe
       if (formData.paymentProof) {
         saleData.paymentProof = formData.paymentProof;
-        saleData.paymentProofMimeType = 'image/jpeg';
+        saleData.paymentProofMimeType = "image/jpeg";
       }
 
       await saleService.register(saleData);
 
-      setSuccess('¡Venta registrada exitosamente!');
-      
+      setSuccess("¡Venta registrada exitosamente!");
+
       // Resetear formulario
       setFormData({
-        productId: '',
+        productId: "",
         quantity: 1,
         salePrice: 0,
-        notes: '',
+        notes: "",
         paymentProof: null,
       });
       setSelectedProduct(null);
       setImagePreview(null);
-      
+
       // Recargar stock
       await loadStock();
 
       // Redirigir después de 2 segundos
       setTimeout(() => {
-        navigate('/distributor/sales');
+        navigate("/distributor/sales");
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al registrar la venta');
+      setError(err.response?.data?.message || "Error al registrar la venta");
     } finally {
       setLoading(false);
     }
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
       minimumFractionDigits: 0,
     }).format(value);
   };
@@ -202,7 +220,7 @@ export default function RegisterSale() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-4xl font-bold text-white">Registrar Venta</h1>
@@ -255,64 +273,82 @@ export default function RegisterSale() {
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="productId" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="productId"
+                  className="mb-2 block text-sm font-medium text-gray-300"
+                >
                   Producto *
                 </label>
                 <select
                   id="productId"
                   name="productId"
                   value={formData.productId}
-                  onChange={(e) => handleProductChange(e.target.value)}
+                  onChange={e => handleProductChange(e.target.value)}
                   required
                   className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Selecciona un producto</option>
-                  {stock.map((item) => {
-                    const product = typeof item.product === 'object' ? item.product : null;
+                  {stock.map(item => {
+                    const product =
+                      typeof item.product === "object" ? item.product : null;
                     return (
                       <option key={item._id} value={product?._id}>
-                        {product?.name} - Stock: {item.quantity} - {formatCurrency(product?.distributorPrice || 0)}
+                        {product?.name} - Stock: {item.quantity} -{" "}
+                        {formatCurrency(product?.distributorPrice || 0)}
                       </option>
                     );
                   })}
                 </select>
               </div>
 
-              {selectedProduct && typeof selectedProduct.product === 'object' && (
-                <div className="rounded-lg border border-blue-500/30 bg-blue-900/10 p-4">
-                  <h3 className="font-semibold text-white mb-2">
-                    {selectedProduct.product.name}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-400">Stock disponible:</p>
-                      <p className="text-lg font-bold text-blue-400">{selectedProduct.quantity} unidades</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Tu precio de compra:</p>
-                      <p className="text-lg font-bold text-white">
-                        {formatCurrency(selectedProduct.product.distributorPrice)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Precio sugerido:</p>
-                      <p className="text-lg font-bold text-green-400">
-                        {formatCurrency(selectedProduct.product.clientPrice || 0)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Ganancia sugerida:</p>
-                      <p className="text-lg font-bold text-purple-400">
-                        {formatCurrency((selectedProduct.product.clientPrice || 0) - selectedProduct.product.distributorPrice)}
-                      </p>
+              {selectedProduct &&
+                typeof selectedProduct.product === "object" && (
+                  <div className="rounded-lg border border-blue-500/30 bg-blue-900/10 p-4">
+                    <h3 className="mb-2 font-semibold text-white">
+                      {selectedProduct.product.name}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-400">Stock disponible:</p>
+                        <p className="text-lg font-bold text-blue-400">
+                          {selectedProduct.quantity} unidades
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Tu precio de compra:</p>
+                        <p className="text-lg font-bold text-white">
+                          {formatCurrency(
+                            selectedProduct.product.distributorPrice
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Precio sugerido:</p>
+                        <p className="text-lg font-bold text-green-400">
+                          {formatCurrency(
+                            selectedProduct.product.clientPrice || 0
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Ganancia sugerida:</p>
+                        <p className="text-lg font-bold text-purple-400">
+                          {formatCurrency(
+                            (selectedProduct.product.clientPrice || 0) -
+                              selectedProduct.product.distributorPrice
+                          )}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label htmlFor="quantity" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label
+                    htmlFor="quantity"
+                    className="mb-2 block text-sm font-medium text-gray-300"
+                  >
                     Cantidad *
                   </label>
                   <input
@@ -334,7 +370,10 @@ export default function RegisterSale() {
                 </div>
 
                 <div>
-                  <label htmlFor="salePrice" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label
+                    htmlFor="salePrice"
+                    className="mb-2 block text-sm font-medium text-gray-300"
+                  >
                     Precio de Venta (unitario) *
                   </label>
                   <input
@@ -355,7 +394,10 @@ export default function RegisterSale() {
               </div>
 
               <div>
-                <label htmlFor="paymentProof" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="paymentProof"
+                  className="mb-2 block text-sm font-medium text-gray-300"
+                >
                   Comprobante de Transferencia
                 </label>
                 <div className="space-y-3">
@@ -424,13 +466,17 @@ export default function RegisterSale() {
                     </div>
                   )}
                   <p className="text-xs text-gray-500">
-                    Opcional: Sube una captura de la transferencia bancaria para verificación
+                    Opcional: Sube una captura de la transferencia bancaria para
+                    verificación
                   </p>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="notes"
+                  className="mb-2 block text-sm font-medium text-gray-300"
+                >
                   Notas (opcional)
                 </label>
                 <textarea
@@ -447,41 +493,51 @@ export default function RegisterSale() {
           </div>
 
           {/* Sale Summary */}
-          {selectedProduct && formData.quantity > 0 && formData.salePrice > 0 && (
-            <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/30 to-blue-900/30 p-6">
-              <h2 className="mb-4 text-lg font-semibold text-white">
-                Resumen de la Venta
-              </h2>
-              <div className="space-y-3">
-                <div className="flex justify-between text-gray-300">
-                  <span>Cantidad:</span>
-                  <span className="font-semibold">{formData.quantity} unidades</span>
-                </div>
-                <div className="flex justify-between text-gray-300">
-                  <span>Precio unitario:</span>
-                  <span className="font-semibold">{formatCurrency(formData.salePrice)}</span>
-                </div>
-                <div className="border-t border-gray-600 pt-3 flex justify-between text-lg">
-                  <span className="text-white font-semibold">Total venta:</span>
-                  <span className="font-bold text-green-400">
-                    {formatCurrency(formData.salePrice * formData.quantity)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-lg">
-                  <span className="text-white font-semibold">Tu ganancia:</span>
-                  <span className="font-bold text-purple-400">
-                    {formatCurrency(calculateProfit())}
-                  </span>
+          {selectedProduct &&
+            formData.quantity > 0 &&
+            formData.salePrice > 0 && (
+              <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/30 to-blue-900/30 p-6">
+                <h2 className="mb-4 text-lg font-semibold text-white">
+                  Resumen de la Venta
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-gray-300">
+                    <span>Cantidad:</span>
+                    <span className="font-semibold">
+                      {formData.quantity} unidades
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-gray-300">
+                    <span>Precio unitario:</span>
+                    <span className="font-semibold">
+                      {formatCurrency(formData.salePrice)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-gray-600 pt-3 text-lg">
+                    <span className="font-semibold text-white">
+                      Total venta:
+                    </span>
+                    <span className="font-bold text-green-400">
+                      {formatCurrency(formData.salePrice * formData.quantity)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-lg">
+                    <span className="font-semibold text-white">
+                      Tu ganancia:
+                    </span>
+                    <span className="font-bold text-purple-400">
+                      {formatCurrency(calculateProfit())}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Action Buttons */}
           <div className="flex gap-4">
             <Button
               type="button"
-              onClick={() => navigate('/distributor/dashboard')}
+              onClick={() => navigate("/distributor/dashboard")}
               className="flex-1 bg-gray-700 hover:bg-gray-600"
             >
               Cancelar
@@ -491,7 +547,7 @@ export default function RegisterSale() {
               disabled={loading || !formData.productId}
               className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50"
             >
-              {loading ? 'Registrando...' : 'Registrar Venta'}
+              {loading ? "Registrando..." : "Registrar Venta"}
             </Button>
           </div>
         </form>

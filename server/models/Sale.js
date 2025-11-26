@@ -43,6 +43,15 @@ const saleSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Bonus de comisión por ranking
+    commissionBonus: {
+      type: Number,
+      default: 0,
+    },
+    commissionBonusAmount: {
+      type: Number,
+      default: 0,
+    },
     // Información adicional
     notes: {
       type: String,
@@ -82,15 +91,21 @@ const saleSchema = new mongoose.Schema(
 
 // Calcular ganancias antes de guardar
 saleSchema.pre("save", function (next) {
-  // Ganancia del distribuidor: (precio de venta - precio distribuidor) * cantidad
-  this.distributorProfit = (this.salePrice - this.distributorPrice) * this.quantity;
+  // Ganancia base del distribuidor: (precio de venta - precio distribuidor) * cantidad
+  const baseProfit = (this.salePrice - this.distributorPrice) * this.quantity;
   
+  // Aplicar bonus de comisión si existe
+  const bonusAmount = (baseProfit * this.commissionBonus) / 100;
+  this.commissionBonusAmount = bonusAmount;
+  this.distributorProfit = baseProfit + bonusAmount;
+
   // Ganancia del admin: (precio distribuidor - precio de compra) * cantidad
-  this.adminProfit = (this.distributorPrice - this.purchasePrice) * this.quantity;
-  
+  this.adminProfit =
+    (this.distributorPrice - this.purchasePrice) * this.quantity;
+
   // Ganancia total
   this.totalProfit = this.distributorProfit + this.adminProfit;
-  
+
   next();
 });
 

@@ -6,28 +6,55 @@ const gamificationConfigSchema = new mongoose.Schema(
     evaluationPeriod: {
       type: String,
       enum: ["daily", "weekly", "biweekly", "monthly", "custom"],
-      default: "monthly",
+      default: "biweekly", // Cambiar a quincenal
     },
     customPeriodDays: {
       type: Number,
-      default: 30,
+      default: 15,
       min: 1,
+    },
+    
+    // Auto-evaluación
+    autoEvaluate: {
+      type: Boolean,
+      default: true,
+    },
+    currentPeriodStart: {
+      type: Date,
+      default: Date.now,
     },
 
     // Configuración de bonos
     topPerformerBonus: {
       type: Number,
-      default: 1000,
+      default: 50000,
       min: 0,
     },
     secondPlaceBonus: {
       type: Number,
-      default: 500,
+      default: 0,
       min: 0,
     },
     thirdPlaceBonus: {
       type: Number,
-      default: 250,
+      default: 0,
+      min: 0,
+    },
+
+    // Comisiones variables por ranking (top 3 ganan más)
+    top1CommissionBonus: {
+      type: Number,
+      default: 5, // +5% adicional
+      min: 0,
+    },
+    top2CommissionBonus: {
+      type: Number,
+      default: 3, // +3% adicional
+      min: 0,
+    },
+    top3CommissionBonus: {
+      type: Number,
+      default: 2, // +2% adicional
       min: 0,
     },
 

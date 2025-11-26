@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { saleService, stockService } from '../api/services';
+import { saleService, stockService, gamificationService } from '../api/services';
 import type { DistributorStock, Sale } from '../types';
 
 interface DashboardStats {
@@ -9,6 +9,14 @@ interface DashboardStats {
   totalProfit: number;
   productsCount: number;
   lowStockCount: number;
+}
+
+interface RankingInfo {
+  position: number | null;
+  bonusCommission: number;
+  periodStart: string;
+  periodEnd: string;
+  totalDistributors: number;
 }
 
 export default function DistributorDashboard() {
@@ -22,6 +30,7 @@ export default function DistributorDashboard() {
   });
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
   const [myStock, setMyStock] = useState<DistributorStock[]>([]);
+  const [rankingInfo, setRankingInfo] = useState<RankingInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,9 +40,11 @@ export default function DistributorDashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [salesData, stockData] = await Promise.all([
+      const userId = localStorage.getItem('userId');
+      const [salesData, stockData, commissionData] = await Promise.all([
         saleService.getDistributorSales(),
         stockService.getDistributorStock('me'),
+        userId ? gamificationService.getAdjustedCommission(userId).catch(() => null) : Promise.resolve(null),
       ]);
 
       // Calcular estadísticas
@@ -52,6 +63,10 @@ export default function DistributorDashboard() {
 
       setRecentSales(salesData.sales.slice(0, 5));
       setMyStock(stockData.slice(0, 6));
+      
+      if (commissionData) {
+        setRankingInfo(commissionData);
+      }
     } catch (error) {
       console.error('Error al cargar datos del dashboard:', error);
     } finally {
@@ -92,6 +107,67 @@ export default function DistributorDashboard() {
           Bienvenido a tu panel de distribuidor
         </p>
       </div>
+
+      {/* Ranking Widget - Solo si hay información */}
+      {rankingInfo && rankingInfo.position && (
+        <div className="rounded-xl border border-yellow-500/50 bg-gradient-to-br from-yellow-900/30 to-orange-900/30 p-6 backdrop-blur-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-4xl">
+                  {rankingInfo.position === 1 ? "🥇" : rankingInfo.position === 2 ? "🥈" : rankingInfo.position === 3 ? "🥉" : "🏅"}
+                </span>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">
+                    Posición #{rankingInfo.position}
+                  </h3>
+                  <p className="text-sm text-gray-300">
+                    de {rankingInfo.totalDistributors} distribuidores
+                  </p>
+                </div>
+              </div>
+              
+              {rankingInfo.bonusCommission > 0 && (
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-green-500/20 px-4 py-2 border border-green-500/50">
+                  <span className="text-xl">💰</span>
+                  <div>
+                    <p className="text-xs text-green-300">Comisión extra activa</p>
+                    <p className="text-lg font-bold text-green-400">
+                      +{rankingInfo.bonusCommission}% en cada venta
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="text-right">
+              <p className="text-xs text-gray-400 mb-1">Período actual</p>
+              <p className="text-sm text-white font-medium">
+                {new Date(rankingInfo.periodStart).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
+                {' - '}
+                {new Date(rankingInfo.periodEnd).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
+              </p>
+              <button
+                onClick={() => navigate('/distributor/stats')}
+                className="mt-3 text-xs text-blue-400 hover:text-blue-300 underline"
+              >
+                Ver ranking completo →
+              </button>
+            </div>
+          </div>
+
+          {rankingInfo.position <= 3 && (
+            <div className="mt-4 pt-4 border-t border-gray-700">
+              <p className="text-xs text-gray-300 flex items-center gap-2">
+                <span>🏆</span>
+                {rankingInfo.position === 1 
+                  ? "¡Primer lugar! Ganas $50,000 al final del período" 
+                  : "¡Top 3! Sigue vendiendo para ganar el primer lugar ($50,000)"}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

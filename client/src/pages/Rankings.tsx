@@ -181,23 +181,61 @@ const Rankings = () => {
               {formatDate(rankingData.period.startDate)} -{" "}
               {formatDate(rankingData.period.endDate)}
             </p>
-            <div className="mt-4 flex gap-4">
-              <div className="bg-white bg-opacity-20 px-4 py-2 rounded">
-                <span className="text-sm opacity-80">Primer Lugar:</span>
-                <div className="text-xl font-bold">
+            
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Premio en efectivo */}
+              <div className="bg-white bg-opacity-20 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">🏆</span>
+                  <span className="text-sm opacity-80">Premio 1er Lugar</span>
+                </div>
+                <div className="text-3xl font-bold">
                   {formatCurrency(rankingData.config.topPerformerBonus)}
                 </div>
+                <p className="text-xs opacity-75 mt-1">Bono en efectivo cada 15 días</p>
               </div>
-              <div className="bg-white bg-opacity-20 px-4 py-2 rounded">
-                <span className="text-sm opacity-80">Segundo Lugar:</span>
-                <div className="text-xl font-bold">
-                  {formatCurrency(rankingData.config.secondPlaceBonus)}
+
+              {/* Comisiones variables */}
+              <div className="bg-white bg-opacity-20 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">💰</span>
+                  <span className="text-sm opacity-80">Comisiones Extra</span>
+                </div>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span>🥇 1er lugar:</span>
+                    <span className="font-bold">+5% adicional</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>🥈 2do lugar:</span>
+                    <span className="font-bold">+3% adicional</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>🥉 3er lugar:</span>
+                    <span className="font-bold">+2% adicional</span>
+                  </div>
                 </div>
               </div>
-              <div className="bg-white bg-opacity-20 px-4 py-2 rounded">
-                <span className="text-sm opacity-80">Tercer Lugar:</span>
-                <div className="text-xl font-bold">
-                  {formatCurrency(rankingData.config.thirdPlaceBonus)}
+
+              {/* Info del sistema */}
+              <div className="bg-white bg-opacity-20 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">📊</span>
+                  <span className="text-sm opacity-80">Sistema Activo</span>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span>✅</span>
+                    <span>Evaluación automática</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🔄</span>
+                    <span>Cada 15 días</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🎯</span>
+                    <span>Ranking en tiempo real</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -257,6 +295,13 @@ const Rankings = () => {
                           {rank.distributorName}
                         </div>
                         <div className="text-sm text-gray-500">{rank.distributorEmail}</div>
+                        {rank.position <= 3 && (
+                          <div className="mt-1">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                              💰 +{rank.position === 1 ? "5" : rank.position === 2 ? "3" : "2"}% comisión
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-2xl">

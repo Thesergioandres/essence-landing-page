@@ -596,5 +596,21 @@ export const gamificationService = {
     const response = await api.get<any[]>("/gamification/achievements");
     return response.data;
   },
+
+  async getAdjustedCommission(distributorId: string): Promise<{
+    position: number | null;
+    bonusCommission: number;
+    periodStart: string;
+    periodEnd: string;
+    totalDistributors: number;
+  }> {
+    const response = await api.get(`/gamification/commission/${distributorId}`);
+    return response.data;
+  },
+
+  async checkAndEvaluatePeriod(): Promise<any> {
+    const response = await api.post("/gamification/check-period");
+    return response.data;
+  },
 };
 

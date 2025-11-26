@@ -4,6 +4,241 @@ import PeriodWinner from "../models/PeriodWinner.js";
 import Sale from "../models/Sale.js";
 import User from "../models/User.js";
 
+// @desc    Obtener comisión ajustada por ranking para un distribuidor
+// @route   GET /api/gamification/commission/:distributorId
+// @access  Private
+export const getAdjustedCommission = async (req, res) => {
+  try {
+    const { distributorId } = req.params;
+    const config = await GamificationConfig.findOne();
+
+    if (!config) {
+      return res.json({ 
+        baseCommission: 0, 
+        bonusCommission: 0, 
+        totalCommission: 0,
+        position: null 
+      });
+    }
+
+    // Obtener período actual
+    const now = new Date();
+    let startDate, endDate;
+    
+    if (config.evaluationPeriod === "biweekly") {
+      startDate = config.currentPeriodStart || new Date();
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 15);
+    } else if (config.evaluationPeriod === "monthly") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    } else if (config.evaluationPeriod === "weekly") {
+      const dayOfWeek = now.getDay();
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - dayOfWeek);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      endDate.setHours(23, 59, 59);
+    }
+
+    // Obtener ranking actual
+    const rankings = await Sale.aggregate([
+      {
+        $match: {
+          saleDate: { $gte: startDate, $lte: endDate },
+          paymentStatus: "confirmado",
+        },
+      },
+      {
+        $group: {
+          _id: "$distributor",
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+        },
+      },
+      { $sort: { totalRevenue: -1 } },
+    ]);
+
+    const position = rankings.findIndex(
+      (r) => r._id.toString() === distributorId
+    ) + 1;
+
+    let bonusCommission = 0;
+    if (position === 1) {
+      bonusCommission = config.top1CommissionBonus || 0;
+    } else if (position === 2) {
+      bonusCommission = config.top2CommissionBonus || 0;
+    } else if (position === 3) {
+      bonusCommission = config.top3CommissionBonus || 0;
+    }
+
+    res.json({
+      position: position || null,
+      bonusCommission,
+      periodStart: startDate,
+      periodEnd: endDate,
+      totalDistributors: rankings.length,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Verificar y ejecutar auto-evaluación si es necesario
+// @route   POST /api/gamification/check-period
+// @access  Private/Admin
+export const checkAndEvaluatePeriod = async (req, res) => {
+  try {
+    const config = await GamificationConfig.findOne();
+
+    if (!config || !config.autoEvaluate) {
+      return res.json({ message: "Auto-evaluación desactivada" });
+    }
+
+    const now = new Date();
+    const startDate = config.currentPeriodStart || now;
+    let periodDuration = 15; // días por defecto
+
+    if (config.evaluationPeriod === "biweekly") {
+      periodDuration = 15;
+    } else if (config.evaluationPeriod === "monthly") {
+      periodDuration = 30;
+    } else if (config.evaluationPeriod === "weekly") {
+      periodDuration = 7;
+    } else if (config.evaluationPeriod === "custom") {
+      periodDuration = config.customPeriodDays || 15;
+    }
+
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + periodDuration);
+
+    // Verificar si el período ha terminado
+    if (now < endDate) {
+      return res.json({
+        message: "El período aún no ha terminado",
+        currentPeriodStart: startDate,
+        currentPeriodEnd: endDate,
+        daysRemaining: Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)),
+      });
+    }
+
+    // El período ha terminado, evaluar
+    const topDistributors = await Sale.aggregate([
+      {
+        $match: {
+          saleDate: { $gte: startDate, $lte: endDate },
+          paymentStatus: "confirmado",
+        },
+      },
+      {
+        $group: {
+          _id: "$distributor",
+          totalSales: { $sum: 1 },
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+          totalProfit: { $sum: "$totalProfit" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "distributor",
+        },
+      },
+      { $unwind: "$distributor" },
+      { $sort: { totalRevenue: -1 } },
+      { $limit: 3 },
+    ]);
+
+    if (topDistributors.length === 0) {
+      // No hay ventas, iniciar nuevo período sin ganador
+      config.currentPeriodStart = now;
+      await config.save();
+      return res.json({
+        message: "No hay ventas en el período, iniciando nuevo período",
+        newPeriodStart: now,
+      });
+    }
+
+    const winner = topDistributors[0];
+    const bonuses = [
+      config.topPerformerBonus || 50000,
+      config.secondPlaceBonus || 0,
+      config.thirdPlaceBonus || 0,
+    ];
+
+    // Crear registro de ganador
+    const periodWinner = await PeriodWinner.create({
+      periodType: config.evaluationPeriod,
+      startDate: startDate,
+      endDate: endDate,
+      winner: winner._id,
+      winnerName: winner.distributor.name,
+      winnerEmail: winner.distributor.email,
+      totalSales: winner.totalSales,
+      totalRevenue: winner.totalRevenue,
+      totalProfit: winner.totalProfit,
+      salesCount: winner.totalSales,
+      bonusAmount: bonuses[0],
+      topPerformers: topDistributors.map((dist, index) => ({
+        distributor: dist._id,
+        position: index + 1,
+        totalRevenue: dist.totalRevenue,
+        salesCount: dist.totalSales,
+        bonus: bonuses[index] || 0,
+      })),
+      notes: "Evaluación automática del sistema",
+    });
+
+    // Actualizar estadísticas de distribuidores
+    for (let i = 0; i < topDistributors.length; i++) {
+      const dist = topDistributors[i];
+      let stats = await DistributorStats.findOne({ distributor: dist._id });
+
+      if (!stats) {
+        stats = await DistributorStats.create({
+          distributor: dist._id,
+        });
+      }
+
+      stats.totalBonusEarned += bonuses[i] || 0;
+      stats.pendingBonuses += bonuses[i] || 0;
+
+      if (i === 0) {
+        stats.periodWins += 1;
+        stats.achievements.push({
+          type: "top_performer",
+          name: "Ganador del Periodo",
+          description: `Primer lugar del ${startDate.toLocaleDateString()} al ${endDate.toLocaleDateString()}`,
+          badge: "🏆",
+          earnedAt: new Date(),
+          value: bonuses[0],
+        });
+      }
+
+      if (i < 3) {
+        stats.topThreeFinishes += 1;
+      }
+
+      await stats.save();
+    }
+
+    // Iniciar nuevo período
+    config.currentPeriodStart = now;
+    config.lastEvaluationDate = now;
+    await config.save();
+
+    res.json({
+      message: "Período evaluado automáticamente",
+      winner: periodWinner,
+      newPeriodStart: now,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Obtener o crear configuración de gamificación
 // @route   GET /api/gamification/config
 // @access  Private/Admin
@@ -13,10 +248,16 @@ export const getConfig = async (req, res) => {
 
     if (!config) {
       config = await GamificationConfig.create({
-        evaluationPeriod: "monthly",
-        topPerformerBonus: 1000,
-        secondPlaceBonus: 500,
-        thirdPlaceBonus: 250,
+        evaluationPeriod: "biweekly",
+        customPeriodDays: 15,
+        topPerformerBonus: 50000,
+        secondPlaceBonus: 0,
+        thirdPlaceBonus: 0,
+        top1CommissionBonus: 5,
+        top2CommissionBonus: 3,
+        top3CommissionBonus: 2,
+        autoEvaluate: true,
+        currentPeriodStart: new Date(),
         salesTargets: [
           { level: "bronze", minAmount: 10000, bonus: 200, badge: "🥉" },
           { level: "silver", minAmount: 25000, bonus: 500, badge: "🥈" },
@@ -43,6 +284,10 @@ export const updateConfig = async (req, res) => {
       topPerformerBonus,
       secondPlaceBonus,
       thirdPlaceBonus,
+      top1CommissionBonus,
+      top2CommissionBonus,
+      top3CommissionBonus,
+      autoEvaluate,
       salesTargets,
       productBonuses,
       pointsPerSale,
@@ -60,6 +305,10 @@ export const updateConfig = async (req, res) => {
         topPerformerBonus,
         secondPlaceBonus,
         thirdPlaceBonus,
+        top1CommissionBonus,
+        top2CommissionBonus,
+        top3CommissionBonus,
+        autoEvaluate,
         salesTargets,
         productBonuses,
         pointsPerSale,

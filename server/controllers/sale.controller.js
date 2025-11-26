@@ -1,13 +1,75 @@
 import DistributorStock from "../models/DistributorStock.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
+import GamificationConfig from "../models/GamificationConfig.js";
+
+// Función auxiliar para obtener bonus de comisión por ranking
+const getCommissionBonus = async (distributorId) => {
+  try {
+    const config = await GamificationConfig.findOne();
+    if (!config) return 0;
+
+    const now = new Date();
+    let startDate = config.currentPeriodStart || now;
+    let endDate = new Date(startDate);
+    
+    if (config.evaluationPeriod === "biweekly") {
+      endDate.setDate(endDate.getDate() + 15);
+    } else if (config.evaluationPeriod === "monthly") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (config.evaluationPeriod === "weekly") {
+      const dayOfWeek = now.getDay();
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - dayOfWeek);
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+    }
+
+    const rankings = await Sale.aggregate([
+      {
+        $match: {
+          saleDate: { $gte: startDate, $lte: endDate },
+          paymentStatus: "confirmado",
+        },
+      },
+      {
+        $group: {
+          _id: "$distributor",
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+        },
+      },
+      { $sort: { totalRevenue: -1 } },
+    ]);
+
+    const position = rankings.findIndex(
+      (r) => r._id.toString() === distributorId.toString()
+    ) + 1;
+
+    if (position === 1) return config.top1CommissionBonus || 0;
+    if (position === 2) return config.top2CommissionBonus || 0;
+    if (position === 3) return config.top3CommissionBonus || 0;
+    
+    return 0;
+  } catch (error) {
+    console.error("Error calculando bonus de comisión:", error);
+    return 0;
+  }
+};
 
 // @desc    Registrar una venta (distribuidor)
 // @route   POST /api/sales
 // @access  Private/Distribuidor
 export const registerSale = async (req, res) => {
   try {
-    const { productId, quantity, salePrice, notes, paymentProof, paymentProofMimeType } = req.body;
+    const {
+      productId,
+      quantity,
+      salePrice,
+      notes,
+      paymentProof,
+      paymentProofMimeType,
+    } = req.body;
     const distributorId = req.user.id;
 
     // Verificar que el distribuidor tenga el producto
@@ -34,6 +96,9 @@ export const registerSale = async (req, res) => {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
+    // Obtener bonus de comisión por ranking
+    const commissionBonus = await getCommissionBonus(distributorId);
+
     // Crear la venta
     const saleData = {
       distributor: distributorId,
@@ -43,12 +108,13 @@ export const registerSale = async (req, res) => {
       distributorPrice: product.distributorPrice,
       salePrice,
       notes,
+      commissionBonus,
     };
 
     // Agregar comprobante de pago si se proporcionó
     if (paymentProof) {
       saleData.paymentProof = paymentProof;
-      saleData.paymentProofMimeType = paymentProofMimeType || 'image/jpeg';
+      saleData.paymentProofMimeType = paymentProofMimeType || "image/jpeg";
     }
 
     const sale = await Sale.create(saleData);
@@ -69,6 +135,7 @@ export const registerSale = async (req, res) => {
       message: "Venta registrada exitosamente",
       sale: populatedSale,
       remainingStock: distributorStock.quantity,
+      commissionBonus: commissionBonus > 0 ? `+${commissionBonus}%` : null,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -90,15 +157,15 @@ export const getDistributorSales = async (req, res) => {
     }
 
     const { startDate, endDate, productId } = req.query;
-    
+
     const filter = { distributor: distributorId };
-    
+
     if (startDate || endDate) {
       filter.saleDate = {};
       if (startDate) filter.saleDate.$gte = new Date(startDate);
       if (endDate) filter.saleDate.$lte = new Date(endDate);
     }
-    
+
     if (productId) filter.product = productId;
 
     const sales = await Sale.find(filter)
@@ -143,15 +210,15 @@ export const getDistributorSales = async (req, res) => {
 export const getAllSales = async (req, res) => {
   try {
     const { startDate, endDate, distributorId, productId } = req.query;
-    
+
     const filter = {};
-    
+
     if (startDate || endDate) {
       filter.saleDate = {};
       if (startDate) filter.saleDate.$gte = new Date(startDate);
       if (endDate) filter.saleDate.$lte = new Date(endDate);
     }
-    
+
     if (distributorId) filter.distributor = distributorId;
     if (productId) filter.product = productId;
 

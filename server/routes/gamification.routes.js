@@ -8,6 +8,8 @@ import {
   getDistributorStats,
   markBonusPaid,
   getAchievements,
+  getAdjustedCommission,
+  checkAndEvaluatePeriod,
 } from "../controllers/gamification.controller.js";
 import { protect, admin } from "../middleware/auth.middleware.js";
 
@@ -20,9 +22,11 @@ router.route("/config").get(protect, admin, getConfig).put(protect, admin, updat
 router.get("/ranking", protect, getRanking);
 router.get("/winners", protect, getWinners);
 router.get("/achievements", protect, getAchievements);
+router.get("/commission/:distributorId", protect, getAdjustedCommission);
 
 // Rutas de evaluación (solo admin)
 router.post("/evaluate", protect, admin, evaluatePeriod);
+router.post("/check-period", protect, admin, checkAndEvaluatePeriod);
 router.put("/winners/:winnerId/pay", protect, admin, markBonusPaid);
 
 // Rutas de estadísticas de distribuidor
