@@ -7,7 +7,7 @@ import Sale from "../models/Sale.js";
 // @access  Private/Distribuidor
 export const registerSale = async (req, res) => {
   try {
-    const { productId, quantity, salePrice, notes } = req.body;
+    const { productId, quantity, salePrice, notes, paymentProof, paymentProofMimeType } = req.body;
     const distributorId = req.user.id;
 
     // Verificar que el distribuidor tenga el producto
@@ -35,7 +35,7 @@ export const registerSale = async (req, res) => {
     }
 
     // Crear la venta
-    const sale = await Sale.create({
+    const saleData = {
       distributor: distributorId,
       product: productId,
       quantity,
@@ -43,7 +43,15 @@ export const registerSale = async (req, res) => {
       distributorPrice: product.distributorPrice,
       salePrice,
       notes,
-    });
+    };
+
+    // Agregar comprobante de pago si se proporcionó
+    if (paymentProof) {
+      saleData.paymentProof = paymentProof;
+      saleData.paymentProofMimeType = paymentProofMimeType || 'image/jpeg';
+    }
+
+    const sale = await Sale.create(saleData);
 
     // Descontar del stock del distribuidor
     distributorStock.quantity -= quantity;

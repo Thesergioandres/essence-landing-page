@@ -38,6 +38,7 @@ Error: Request failed with status code 500
 8. Clic en **Save**
 
 **Ejemplo de valor correcto:**
+
 ```
 MONGODB_URI=mongodb+srv://essence_admin:MiPassword123@cluster0.xxxxx.mongodb.net/essence?retryWrites=true&w=majority
 ```
@@ -61,7 +62,7 @@ MONGODB_URI=mongodb+srv://essence_admin:MiPassword123@cluster0.xxxxx.mongodb.net
    ```
 2. Deberías ver:
    ```json
-   {"message":"🚀 Essence API funcionando correctamente"}
+   { "message": "🚀 Essence API funcionando correctamente" }
    ```
 3. Si ves este mensaje, ¡MongoDB está conectado!
 
@@ -88,15 +89,18 @@ Si el error persiste:
 ### Errores Comunes en Logs
 
 **"MONGODB_URI no está definida"**
+
 - Solución: Vuelve al Paso 2 y configura la variable
 
 **"Authentication failed"**
+
 - Solución: La contraseña es incorrecta
 - Ve a MongoDB Atlas → Database Access
 - Resetea la contraseña del usuario
 - Actualiza `MONGODB_URI` en Vercel con la nueva contraseña
 
 **"IP is not whitelisted"**
+
 - Solución: Ve a MongoDB Atlas → Network Access
 - Agrega `0.0.0.0/0` a la lista blanca
 

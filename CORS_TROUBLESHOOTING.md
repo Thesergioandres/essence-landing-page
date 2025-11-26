@@ -167,6 +167,7 @@ app.use(
 ## 📋 Checklist de Verificación
 
 ### Variables de Entorno
+
 - [ ] Variable `VITE_API_URL` configurada en frontend
 - [ ] Variable `MONGODB_URI` configurada en backend (⚠️ NO `MONGO_URI`)
 - [ ] Variable `FRONTEND_URL` configurada en backend
@@ -175,12 +176,14 @@ app.use(
 - [ ] Variables aplicadas a Production, Preview y Development
 
 ### MongoDB Atlas
+
 - [ ] Cluster creado en MongoDB Atlas
 - [ ] Usuario de base de datos creado
 - [ ] Network Access permite `0.0.0.0/0`
 - [ ] Cadena de conexión correcta en `MONGODB_URI`
 
 ### Despliegues
+
 - [ ] Frontend redesplegado después de cambiar variables
 - [ ] Backend redesplegado después de cambiar variables
 - [ ] Backend responde en `https://backend.vercel.app/`
@@ -193,6 +196,7 @@ app.use(
 ### 1. Error 500 - Internal Server Error
 
 **Síntoma:**
+
 ```
 GET https://backend.vercel.app/api/products 500 (Internal Server Error)
 ```
@@ -200,6 +204,7 @@ GET https://backend.vercel.app/api/products 500 (Internal Server Error)
 **Causa:** MongoDB no puede conectarse
 
 **Solución:**
+
 1. Ve a Vercel → Backend → Deployments → Último deployment → View Function Logs
 2. Busca errores como:
    - `Error conectando a MongoDB`
@@ -254,6 +259,7 @@ GET https://backend.vercel.app/api/products 500 (Internal Server Error)
 
 **Solución Implementada:**
 El código del backend (`config/database.js`) ahora soporta ambos nombres:
+
 ```javascript
 const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
 ```

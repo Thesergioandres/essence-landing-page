@@ -5,15 +5,13 @@ import User from "./models/User.js";
 
 dotenv.config();
 
-const createAdminUser = async () => {
+const createNewAdmin = async () => {
   try {
-    // Conectar a MongoDB
-    const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
-    await mongoose.connect(mongoUri);
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log("✅ Conectado a MongoDB");
 
     // Verificar si el usuario ya existe
-    const userExists = await User.findOne({ email: "serguito2003@gmail.com" });
+    const userExists = await User.findOne({ email: "lauradaniela@gmail.com" });
 
     if (userExists) {
       console.log("⚠️  El usuario ya existe");
@@ -23,12 +21,12 @@ const createAdminUser = async () => {
 
     // Hash de la contraseña
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash("Serra_1707", salt);
+    const hashedPassword = await bcrypt.hash("nani123", salt);
 
     // Crear usuario administrador
     const adminUser = await User.create({
-      name: "Administrador",
-      email: "serguito2003@gmail.com",
+      name: "Laura Daniela",
+      email: "lauradaniela@gmail.com",
       password: hashedPassword,
       role: "admin",
     });
@@ -49,4 +47,4 @@ const createAdminUser = async () => {
   }
 };
 
-createAdminUser();
+createNewAdmin();

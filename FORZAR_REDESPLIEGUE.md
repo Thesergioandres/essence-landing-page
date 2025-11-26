@@ -3,6 +3,7 @@
 ## ⚠️ Situación Actual
 
 El código ya está actualizado en GitHub con:
+
 - ✅ CORS mejorado (permite todos los dominios `.vercel.app`)
 - ✅ Soporte para `MONGODB_URI` y `MONGO_URI`
 - ✅ Validación de variables de entorno
@@ -14,6 +15,7 @@ El código ya está actualizado en GitHub con:
 ### Paso 1: Verificar el Estado del Backend Actual
 
 Abre en el navegador:
+
 ```
 https://essence-landing-page-fvp2.vercel.app/
 ```
@@ -34,7 +36,7 @@ https://essence-landing-page-fvp2.vercel.app/
 6. Clic en el deployment más reciente
 7. Clic en el menú **⋮** (tres puntos) arriba a la derecha
 8. Selecciona **"Redeploy"**
-9. **IMPORTANTE**: Desmarca **"Use existing Build Cache"** 
+9. **IMPORTANTE**: Desmarca **"Use existing Build Cache"**
 10. Clic en **"Redeploy"**
 11. Espera 2-3 minutos
 
@@ -55,15 +57,19 @@ Esto crea un commit vacío que forzará a Vercel a redesplegar.
 Después del redespliegue:
 
 1. **Prueba el backend directamente:**
+
    ```
    https://essence-landing-page-fvp2.vercel.app/
    ```
+
    Debe responder: `{"message":"🚀 Essence API funcionando correctamente"}`
 
 2. **Prueba los productos:**
+
    ```
    https://essence-landing-page-fvp2.vercel.app/api/products
    ```
+
    - Si ves un **error 500**: MongoDB no está configurado (ver Paso 4)
    - Si ves un **array vacío `[]`**: ¡Funciona! Solo no hay productos aún
    - Si ves productos: ¡Perfecto!
@@ -116,6 +122,7 @@ Para ver qué está pasando:
 ## 🔍 Debugging: ¿Por qué no funciona CORS?
 
 El error que estás viendo:
+
 ```
 No 'Access-Control-Allow-Origin' header is present on the requested resource
 ```
@@ -123,6 +130,7 @@ No 'Access-Control-Allow-Origin' header is present on the requested resource
 Significa que el backend está usando **código viejo** que no incluye el CORS mejorado.
 
 **Causas posibles:**
+
 1. ✅ El commit se hizo correctamente (confirmado)
 2. ❌ Vercel usó build cache antiguo
 3. ❌ Vercel no detectó el cambio en `/server`
@@ -136,11 +144,13 @@ Redesplegar sin caché (Paso 2) debería solucionarlo al 100%.
 Si después de redesplegar sin caché el error persiste:
 
 1. **Verifica el Root Directory en Vercel:**
+
    - Vercel → Proyecto backend → Settings → General
    - **Root Directory** debe ser: `server`
    - Si no lo es, cámbialo y redesplega
 
 2. **Verifica la rama:**
+
    - Vercel → Proyecto backend → Settings → Git
    - **Production Branch** debe ser: `main`
    - Si es otra rama, cámbiala
@@ -161,18 +171,21 @@ Si después de redesplegar sin caché el error persiste:
 Cuando todo funcione correctamente:
 
 **✅ Backend responde:**
+
 ```bash
 curl https://essence-landing-page-fvp2.vercel.app/
 # Respuesta: {"message":"🚀 Essence API funcionando correctamente"}
 ```
 
 **✅ Sin errores de CORS:**
+
 - Abre: https://essence-landing-page.vercel.app/
 - DevTools → Console → Sin errores de CORS
 - DevTools → Network → Headers de la petición:
   - `access-control-allow-origin: https://essence-landing-page.vercel.app`
 
 **✅ Productos cargan (si MongoDB configurado):**
+
 - Los productos aparecen en el frontend
 - Sin errores 500
 

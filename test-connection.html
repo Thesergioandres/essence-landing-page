@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Conexión Frontend-Backend</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .test-box {
+        background: white;
+        padding: 20px;
+        margin: 10px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .success {
+        color: #22c55e;
+      }
+      .error {
+        color: #ef4444;
+      }
+      button {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background: #2563eb;
+      }
+      pre {
+        background: #1f2937;
+        color: #f3f4f6;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔍 Test de Conexión</h1>
+
+    <div class="test-box">
+      <h3>Backend URL:</h3>
+      <pre id="backend-url">
+https://essence-landing-page-production.up.railway.app/api</pre
+      >
+    </div>
+
+    <div class="test-box">
+      <button onclick="testConnection()">🚀 Probar Conexión</button>
+    </div>
+
+    <div class="test-box">
+      <h3>Resultado:</h3>
+      <div id="result"></div>
+    </div>
+
+    <script>
+      const API_URL =
+        "https://essence-landing-page-production.up.railway.app/api";
+
+      async function testConnection() {
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = "<p>⏳ Probando conexión...</p>";
+
+        try {
+          // Test 1: Products
+          console.log("Probando GET /api/products...");
+          const productsResponse = await fetch(`${API_URL}/products`);
+          const products = await productsResponse.json();
+
+          let html = '<div class="success">✅ Conexión exitosa!</div>';
+          html += `<p><strong>Status:</strong> ${productsResponse.status}</p>`;
+          html += `<p><strong>Productos encontrados:</strong> ${products.length}</p>`;
+          html +=
+            "<pre>" + JSON.stringify(products.slice(0, 2), null, 2) + "</pre>";
+
+          // Test 2: Categories
+          console.log("Probando GET /api/categories...");
+          const categoriesResponse = await fetch(`${API_URL}/categories`);
+          const categories = await categoriesResponse.json();
+          html += `<p><strong>Categorías encontradas:</strong> ${categories.length}</p>`;
+
+          resultDiv.innerHTML = html;
+        } catch (error) {
+          console.error("Error:", error);
+          resultDiv.innerHTML = `
+                    <div class="error">❌ Error de conexión</div>
+                    <pre>${error.message}</pre>
+                    <p><strong>Posibles causas:</strong></p>
+                    <ul>
+                        <li>CORS no configurado correctamente</li>
+                        <li>Backend no está respondiendo</li>
+                        <li>URL incorrecta</li>
+                    </ul>
+                `;
+        }
+      }
+
+      // Auto-test al cargar
+      window.onload = () => {
+        console.log("Testing API connection...");
+        testConnection();
+      };
+    </script>
+  </body>
+</html>

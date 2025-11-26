@@ -65,6 +65,15 @@ const saleSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    // Comprobante de transferencia
+    paymentProof: {
+      type: String, // Base64 de la imagen
+      default: null,
+    },
+    paymentProofMimeType: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
