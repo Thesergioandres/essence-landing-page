@@ -26,36 +26,14 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 // Conectar a MongoDB
 connectDB();
 
-// Middlewares - CORS Configuration v3.0
+// Middlewares - CORS Configuration v4.0 - Simplified & Permissive
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Permitir peticiones sin origin (como herramientas de testing)
-      if (!origin) {
-        return callback(null, true);
-      }
-      
-      // En producción, permitir TODOS los dominios de Vercel
-      if (process.env.NODE_ENV === "production") {
-        if (origin.includes(".vercel.app")) {
-          return callback(null, true);
-        }
-        if (origin === FRONTEND_URL) {
-          return callback(null, true);
-        }
-      } else {
-        // En desarrollo, permitir localhost
-        if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
-          return callback(null, true);
-        }
-      }
-      
-      // Rechazar otros orígenes
-      callback(new Error(`CORS: Origin ${origin} not allowed`));
-    },
+    origin: true, // Permitir TODOS los orígenes
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Length", "X-Requested-With"],
   })
 );
 // Aumentar límite de tamaño del body para imágenes Base64 (50MB)
