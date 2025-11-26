@@ -50,6 +50,25 @@ export default function DashboardLayout() {
           {/* Navigation - Scrollable */}
           <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
             <NavLink
+                          <NavLink
+                            to="/admin/register-sale"
+                            className={({ isActive }): string => navLinkClasses(isActive)}
+                          >
+                            <svg
+                              className="h-5 w-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4v16m8-8H4"
+                              />
+                            </svg>
+                            Registrar Venta (Admin)
+                          </NavLink>
               to="/admin/dashboard"
               className={({ isActive }): string => navLinkClasses(isActive)}
             >
