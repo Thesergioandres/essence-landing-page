@@ -29,9 +29,21 @@ connectDB();
 // Middlewares
 app.use(
   cors({
-    origin: process.env.NODE_ENV === "production" 
-      ? [FRONTEND_URL, /\.vercel\.app$/]
-      : ["http://localhost:3000", "http://localhost:5173"],
+    origin:
+      process.env.NODE_ENV === "production"
+        ? (origin, callback) => {
+            // Permitir todas las URLs de Vercel y el frontend configurado
+            if (
+              !origin ||
+              origin.endsWith(".vercel.app") ||
+              origin === FRONTEND_URL
+            ) {
+              callback(null, true);
+            } else {
+              callback(new Error("Not allowed by CORS"));
+            }
+          }
+        : ["http://localhost:3000", "http://localhost:5173"],
     credentials: true,
   })
 );
