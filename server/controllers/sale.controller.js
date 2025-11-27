@@ -1,3 +1,61 @@
+// @desc    Registrar una venta como administrador (stock general)
+// @route   POST /api/sales/admin
+// @access  Private/Admin
+export const registerAdminSale = async (req, res) => {
+  try {
+    const {
+      productId,
+      quantity,
+      salePrice,
+      notes,
+      saleDate,
+      paymentProof,
+      paymentProofMimeType,
+    } = req.body;
+
+    // Validar producto
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    // Validar stock general
+    if (product.totalStock < quantity) {
+      return res.status(400).json({ message: `Stock insuficiente. Disponible: ${product.totalStock}` });
+    }
+
+    // Crear la venta (sin distribuidor)
+    const saleData = {
+      distributor: null,
+      product: productId,
+      quantity,
+      purchasePrice: product.purchasePrice,
+      distributorPrice: product.distributorPrice,
+      salePrice,
+      notes,
+      saleDate,
+      paymentProof,
+      paymentProofMimeType: paymentProof ? (paymentProofMimeType || "image/jpeg") : undefined,
+    };
+
+    const sale = await Sale.create(saleData);
+
+    // Descontar del stock total del producto
+    product.totalStock -= quantity;
+    await product.save();
+
+    const populatedSale = await Sale.findById(sale._id)
+      .populate("product", "name image");
+
+    res.status(201).json({
+      message: "Venta registrada exitosamente (admin)",
+      sale: populatedSale,
+      remainingStock: product.totalStock,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 import DistributorStock from "../models/DistributorStock.js";
 import GamificationConfig from "../models/GamificationConfig.js";
 import Product from "../models/Product.js";

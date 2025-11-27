@@ -6,6 +6,7 @@ import {
   getSalesByDistributor,
   getSalesByProduct,
   registerSale,
+  registerAdminSale,
 } from "../controllers/sale.controller.js";
 import { admin, protect } from "../middleware/auth.middleware.js";
 
@@ -20,5 +21,8 @@ router.get("/", protect, admin, getAllSales);
 router.get("/report/by-product", protect, admin, getSalesByProduct);
 router.get("/report/by-distributor", protect, admin, getSalesByDistributor);
 router.put("/:id/confirm-payment", protect, admin, confirmPayment);
+
+// Registrar venta como admin (stock general)
+router.post("/admin", protect, admin, registerAdminSale);
 
 export default router;

@@ -299,6 +299,21 @@ export const saleService = {
     return response.data;
   },
 
+  async registerAdmin(data: {
+    productId: string;
+    quantity: number;
+    salePrice: number;
+    notes?: string;
+    saleDate?: string;
+  }): Promise<{
+    message: string;
+    sale: Sale;
+    remainingStock: number;
+  }> {
+    const response = await api.post("/sales/admin", data);
+    return response.data;
+  },
+
   async getDistributorSales(
     distributorId?: string,
     filters?: {

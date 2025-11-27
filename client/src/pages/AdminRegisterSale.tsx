@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { productService, saleService } from "../api/services";
+import { productService, saleService, authService } from "../api/services";
 import { Button } from "../components/Button";
 import type { Product } from "../types";
 
@@ -90,13 +90,24 @@ export default function AdminRegisterSale() {
 
     try {
       setLoading(true);
-      await saleService.register({
-        productId: formData.productId,
-        quantity: formData.quantity,
-        salePrice: formData.salePrice,
-        notes: formData.notes,
-        saleDate: formData.saleDate,
-      });
+      const user = authService.getCurrentUser();
+      if (user && user.role === "admin") {
+        await saleService.registerAdmin({
+          productId: formData.productId,
+          quantity: formData.quantity,
+          salePrice: formData.salePrice,
+          notes: formData.notes,
+          saleDate: formData.saleDate,
+        });
+      } else {
+        await saleService.register({
+          productId: formData.productId,
+          quantity: formData.quantity,
+          salePrice: formData.salePrice,
+          notes: formData.notes,
+          saleDate: formData.saleDate,
+        });
+      }
       setSuccess("¡Venta registrada exitosamente!");
       setFormData({
         productId: "",
