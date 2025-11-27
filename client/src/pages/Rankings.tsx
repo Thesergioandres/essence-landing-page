@@ -1,4 +1,3 @@
-import React from "react";
 import { useEffect, useState, useCallback } from "react";
 import { gamificationService } from "../api/services";
 import type { PeriodWinner, RankingResponse } from "../types";
