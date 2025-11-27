@@ -110,7 +110,7 @@ export default function Analytics() {
     return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
   };
 
-  const exportToCSV = (data: any[], filename: string) => {
+  const exportToCSV = (data: Record<string, unknown>[], filename: string) => {
     if (data.length === 0) return;
 
     const headers = Object.keys(data[0]);

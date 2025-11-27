@@ -52,7 +52,7 @@ const GamificationConfigPage = () => {
     try {
       setSaving(true);
       await gamificationService.updateConfig({
-        evaluationPeriod: evaluationPeriod as any,
+        evaluationPeriod: evaluationPeriod as "daily" | "weekly" | "biweekly" | "monthly" | "custom",
         customPeriodDays,
         topPerformerBonus,
         secondPlaceBonus,
@@ -93,6 +93,7 @@ const GamificationConfigPage = () => {
       setEvalStartDate("");
       setEvalEndDate("");
       setEvalNotes("");
+     
     } catch (error: any) {
       console.error("Error evaluating period:", error);
       alert(error.response?.data?.message || "Error al evaluar el periodo");
@@ -112,7 +113,7 @@ const GamificationConfigPage = () => {
     setSalesTargets(salesTargets.filter((_, i) => i !== index));
   };
 
-  const updateSalesTarget = (index: number, field: keyof SalesTarget, value: any) => {
+  const updateSalesTarget = (index: number, field: keyof SalesTarget, value: string | number) => {
     const updated = [...salesTargets];
     updated[index] = { ...updated[index], [field]: value };
     setSalesTargets(updated);

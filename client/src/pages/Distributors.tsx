@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { distributorService } from "../api/services";
 import type { User } from "../types";
@@ -10,15 +10,10 @@ export default function Distributors() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
 
-  useEffect(() => {
-    loadDistributors();
-  }, [filter]);
-
-  const loadDistributors = async () => {
+  const loadDistributors = useCallback(async () => {
     try {
       setLoading(true);
-      const activeFilter =
-        filter === "all" ? undefined : filter === "active";
+      const activeFilter = filter === "all" ? undefined : filter === "active";
       const data = await distributorService.getAll(activeFilter);
       setDistributors(data);
     } catch (err) {
@@ -27,7 +22,11 @@ export default function Distributors() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    loadDistributors();
+  }, [loadDistributors]);
 
   const handleToggleActive = async (id: string) => {
     try {
@@ -35,6 +34,7 @@ export default function Distributors() {
       await loadDistributors();
     } catch (err) {
       setError("Error al cambiar estado del distribuidor");
+      console.error(err);
     }
   };
 
@@ -174,14 +174,18 @@ export default function Distributors() {
                 <div className="text-center">
                   <p className="text-xs text-gray-500">Ganancias</p>
                   <p className="text-lg font-bold text-green-400">
-                    ${(distributor as any).stats?.totalProfit?.toFixed(2) || "0.00"}
+                    $
+                    {(distributor as any).stats?.totalProfit?.toFixed(2) ||
+                      "0.00"}
                   </p>
                 </div>
               </div>
 
               <div className="mt-4 flex gap-2">
                 <button
-                  onClick={() => navigate(`/admin/distributors/${distributor._id}`)}
+                  onClick={() =>
+                    navigate(`/admin/distributors/${distributor._id}`)
+                  }
                   className="flex-1 rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20"
                 >
                   Ver Detalle
@@ -198,7 +202,9 @@ export default function Distributors() {
                   {distributor.active ? "⏸" : "▶"}
                 </button>
                 <button
-                  onClick={() => handleDelete(distributor._id, distributor.name)}
+                  onClick={() =>
+                    handleDelete(distributor._id, distributor.name)
+                  }
                   className="rounded-lg border border-red-500/60 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-600/20"
                   title="Eliminar"
                 >

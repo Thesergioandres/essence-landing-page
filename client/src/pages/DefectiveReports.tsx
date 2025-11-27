@@ -52,6 +52,7 @@ export default function DefectiveReports() {
       setShowModal(false);
       setFormData({ productId: "", quantity: 1, reason: "" });
       await loadData();
+     
     } catch (error: any) {
       console.error("Error al reportar producto:", error);
       alert(error.response?.data?.message || "Error al enviar el reporte");

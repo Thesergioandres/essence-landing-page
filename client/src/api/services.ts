@@ -1,4 +1,5 @@
 import type {
+  Achievement,
   AnalyticsDashboard,
   AuditLog,
   AuditLogsResponse,
@@ -660,8 +661,8 @@ export const gamificationService = {
     return response.data;
   },
 
-  async getAchievements(): Promise<any[]> {
-    const response = await api.get<any[]>("/gamification/achievements");
+  async getAchievements(): Promise<Achievement[]> {
+    const response = await api.get<Achievement[]>("/gamification/achievements");
     return response.data;
   },
 
@@ -676,8 +677,13 @@ export const gamificationService = {
     return response.data;
   },
 
-  async checkAndEvaluatePeriod(): Promise<any> {
-    const response = await api.post("/gamification/check-period");
+  async checkAndEvaluatePeriod(): Promise<{
+    message: string;
+    winner?: PeriodWinner;
+  }> {
+    const response = await api.post<{ message: string; winner?: PeriodWinner }>(
+      "/gamification/check-period"
+    );
     return response.data;
   },
 };

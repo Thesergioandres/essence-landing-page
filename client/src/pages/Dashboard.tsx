@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { analyticsService, categoryService, distributorService, productService, saleService, stockService } from "../api/services.ts";
-import type { Category, MonthlyProfitData, Product } from "../types";
+import {
+  analyticsService,
+  categoryService,
+  distributorService,
+  productService,
+  saleService,
+  stockService,
+} from "../api/services.ts";
+import type { Category, MonthlyProfitData, Product, User } from "../types";
 
 export default function Dashboard() {
   interface DashboardStats {
@@ -32,7 +39,9 @@ export default function Dashboard() {
     categoryStats: [],
     recentProducts: [],
   });
-  const [monthlyData, setMonthlyData] = useState<MonthlyProfitData | null>(null);
+  const [monthlyData, setMonthlyData] = useState<MonthlyProfitData | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,14 +50,15 @@ export default function Dashboard() {
 
   const loadStats = async () => {
     try {
-      const [products, categories, distributors, alerts, salesData, monthly] = await Promise.all([
-        productService.getAll(),
-        categoryService.getAll(),
-        distributorService.getAll(),
-        stockService.getAlerts(),
-        saleService.getAllSales(),
-        analyticsService.getMonthlyProfit(),
-      ]);
+      const [products, categories, distributors, alerts, salesData, monthly] =
+        await Promise.all([
+          productService.getAll(),
+          categoryService.getAll(),
+          distributorService.getAll(),
+          stockService.getAlerts(),
+          saleService.getAllSales(),
+          analyticsService.getMonthlyProfit(),
+        ]);
 
       setMonthlyData(monthly);
 
@@ -67,25 +77,32 @@ export default function Dashboard() {
 
       // Crear array de estadísticas por categoría
       const categoryStats = categories
-        .map(cat => ({
+        .map((cat: Category) => ({
           category: cat,
           count: categoryCount[cat._id] || 0,
         }))
-        .sort((a, b) => b.count - a.count);
+        .sort(
+          (a: { count: number }, b: { count: number }) => b.count - a.count
+        );
 
       // Productos con stock bajo en bodega
       const lowStockProducts = products.filter(
-        p => (p.warehouseStock || 0) <= (p.lowStockAlert || 0)
+        (p: Product) => (p.warehouseStock || 0) <= (p.lowStockAlert || 0)
       ).length;
 
       // Productos destacados
-      const featuredProducts = products.filter(p => p.featured).length;
+      const featuredProducts = products.filter(
+        (p: Product) => p.featured
+      ).length;
 
       // Distribuidores activos
-      const activeDistributors = distributors.filter(d => d.active).length;
+      const activeDistributors = distributors.filter(
+        (d: User) => d.active
+      ).length;
 
       // Total de alertas (bodega + distribuidores)
-      const totalAlerts = alerts.warehouseAlerts.length + alerts.distributorAlerts.length;
+      const totalAlerts =
+        alerts.warehouseAlerts.length + alerts.distributorAlerts.length;
 
       setStats({
         totalProducts: products.length,
@@ -119,32 +136,39 @@ export default function Dashboard() {
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Dashboard</h1>
-        <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-400">
+        <h1 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl">
+          Dashboard
+        </h1>
+        <p className="mt-1 text-sm text-gray-400 sm:mt-2 sm:text-base">
           Vista general de tu catálogo de productos
         </p>
       </div>
 
       {/* Resumen Financiero Mensual */}
       {monthlyData && (
-        <div className="rounded-lg sm:rounded-xl border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-4 sm:p-6 backdrop-blur-lg">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4">💰 Resumen del Mes</h2>
-          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-4 backdrop-blur-lg sm:rounded-xl sm:p-6">
+          <h2 className="mb-3 text-lg font-bold text-white sm:mb-4 sm:text-xl md:text-2xl">
+            💰 Resumen del Mes
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <div>
-              <p className="text-xs sm:text-sm text-gray-400">Ganancia Total</p>
-              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-green-400">
+              <p className="text-xs text-gray-400 sm:text-sm">Ganancia Total</p>
+              <p className="mt-1 text-lg font-bold text-green-400 sm:mt-2 sm:text-xl md:text-2xl">
                 {new Intl.NumberFormat("es-MX", {
                   style: "currency",
                   currency: "MXN",
                 }).format(monthlyData.currentMonth.totalProfit)}
               </p>
-              <p className={`text-[10px] sm:text-xs mt-1 ${monthlyData.growthPercentage >= 0 ? "text-green-500" : "text-red-500"}`}>
-                {monthlyData.growthPercentage >= 0 ? "+" : ""}{monthlyData.growthPercentage.toFixed(2)}% vs mes anterior
+              <p
+                className={`mt-1 text-[10px] sm:text-xs ${monthlyData.growthPercentage >= 0 ? "text-green-500" : "text-red-500"}`}
+              >
+                {monthlyData.growthPercentage >= 0 ? "+" : ""}
+                {monthlyData.growthPercentage.toFixed(2)}% vs mes anterior
               </p>
             </div>
             <div>
-              <p className="text-xs sm:text-sm text-gray-400">Ingresos</p>
-              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-blue-400">
+              <p className="text-xs text-gray-400 sm:text-sm">Ingresos</p>
+              <p className="mt-1 text-lg font-bold text-blue-400 sm:mt-2 sm:text-xl md:text-2xl">
                 {new Intl.NumberFormat("es-MX", {
                   style: "currency",
                   currency: "MXN",
@@ -152,14 +176,16 @@ export default function Dashboard() {
               </p>
             </div>
             <div>
-              <p className="text-xs sm:text-sm text-gray-400">Ventas</p>
-              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-purple-400">
+              <p className="text-xs text-gray-400 sm:text-sm">Ventas</p>
+              <p className="mt-1 text-lg font-bold text-purple-400 sm:mt-2 sm:text-xl md:text-2xl">
                 {monthlyData.currentMonth.salesCount}
               </p>
             </div>
             <div>
-              <p className="text-xs sm:text-sm text-gray-400">Ticket Promedio</p>
-              <p className="mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-orange-400">
+              <p className="text-xs text-gray-400 sm:text-sm">
+                Ticket Promedio
+              </p>
+              <p className="mt-1 text-lg font-bold text-orange-400 sm:mt-2 sm:text-xl md:text-2xl">
                 {new Intl.NumberFormat("es-MX", {
                   style: "currency",
                   currency: "MXN",
@@ -171,7 +197,8 @@ export default function Dashboard() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">{/* Total Products */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+        {/* Total Products */}
         <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-purple-500">
           <div className="flex items-center justify-between">
             <div>
@@ -206,7 +233,7 @@ export default function Dashboard() {
               <p className="mt-2 text-3xl font-bold text-white">
                 {stats.totalDistributors}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="mt-1 text-xs text-gray-500">
                 {stats.activeDistributors} activos
               </p>
             </div>
@@ -236,8 +263,8 @@ export default function Dashboard() {
               <p className="mt-2 text-3xl font-bold text-white">
                 {stats.totalSales}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
-                ${new Intl.NumberFormat('es-CO').format(stats.totalRevenue)}
+              <p className="mt-1 text-xs text-gray-500">
+                ${new Intl.NumberFormat("es-CO").format(stats.totalRevenue)}
               </p>
             </div>
             <div className="rounded-full bg-green-600/20 p-3">
@@ -259,14 +286,17 @@ export default function Dashboard() {
         </div>
 
         {/* Stock Alerts */}
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-red-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-red-500 cursor-pointer" onClick={() => navigate("/admin/stock-management")}>
+        <div
+          className="cursor-pointer rounded-xl border border-gray-700 bg-gradient-to-br from-red-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-red-500"
+          onClick={() => navigate("/admin/stock-management")}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400">Alertas de Stock</p>
               <p className="mt-2 text-3xl font-bold text-white">
                 {stats.totalAlerts}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="mt-1 text-xs text-gray-500">
                 {stats.lowStockProducts} productos en bodega
               </p>
             </div>
@@ -411,7 +441,10 @@ export default function Dashboard() {
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-purple-400">
-                    ${new Intl.NumberFormat('es-CO').format(product.distributorPrice || 0)}
+                    $
+                    {new Intl.NumberFormat("es-CO").format(
+                      product.distributorPrice || 0
+                    )}
                   </p>
                   <p className="text-sm text-gray-400">
                     Stock: {product.totalStock || 0}

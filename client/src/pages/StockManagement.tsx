@@ -83,6 +83,7 @@ const StockManagement = () => {
       setSelectedProduct(null);
       setSelectedDistributor('');
       setQuantity(0);
+     
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al procesar la operación');
     } finally {

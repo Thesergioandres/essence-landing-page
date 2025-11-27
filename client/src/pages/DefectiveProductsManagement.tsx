@@ -60,6 +60,7 @@ export default function DefectiveProductsManagement() {
       setShowNotesModal(false);
       setSelectedReport(null);
       setAdminNotes("");
+     
     } catch (error: any) {
       console.error("Error al procesar reporte:", error);
       alert(error.response?.data?.message || "Error al procesar el reporte");

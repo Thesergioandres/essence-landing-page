@@ -1,0 +1,56 @@
+﻿
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\pages\Analytics.tsx
+  113:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\pages\AuditLogs.tsx
+  31:6  warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\pages\DefectiveProductsManagement.tsx
+  63:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\pages\DefectiveReports.tsx
+  55:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\pages\DistributorDetail.tsx
+   30:6   warning  React Hook useEffect has a missing dependency: 'loadDistributor'. Either include it or remove the dependency array              react-hooks/exhaustive-deps
+   35:6   warning  React Hook useEffect has missing dependencies: 'loadSales' and 'loadStock'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   44:19  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   56:19  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   73:19  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  153:50  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\pages\DistributorSales.tsx
+  20:6  warning  React Hook useEffect has a missing dependency: 'loadSales'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\pages\Distributors.tsx
+   15:6   warning  React Hook useEffect has a missing dependency: 'loadDistributors'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   36:14  error    'err' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+  165:38  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  171:38  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  177:39  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\pages\EditDistributor.tsx
+  29:6   warning  React Hook useEffect has a missing dependency: 'loadDistributor'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  44:19  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+  82:19  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\pages\GamificationConfig.tsx
+   55:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   96:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  115:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\pages\Rankings.tsx
+   19:6   warning  React Hook useEffect has a missing dependency: 'loadRanking'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   24:21  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  139:62  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\pages\StockManagement.tsx
+  86:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\sergu\OneDrive\Desktop\landing essence\react-tailwindcss\client\src\types\index.ts
+  233:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  234:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  237:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Ô£û 29 problems (22 errors, 7 warnings)
+

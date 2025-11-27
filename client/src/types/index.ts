@@ -230,11 +230,11 @@ export interface AuditLog {
   entityType?: string;
   entityId?: string;
   entityName?: string;
-  oldValues?: any;
-  newValues?: any;
+  oldValues?: Record<string, unknown>;
+  newValues?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   severity: "info" | "warning" | "error" | "critical";
   createdAt: string;
   updatedAt: string;
@@ -440,5 +440,3 @@ export interface DistributorStatsResponse {
   currentRankingPosition: number;
   totalDistributors: number;
 }
-
-

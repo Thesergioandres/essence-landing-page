@@ -41,6 +41,7 @@ const EditDistributor = () => {
         address: distributor.address || '',
       });
       setError('');
+     
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cargar distribuidor');
     } finally {
@@ -79,6 +80,7 @@ const EditDistributor = () => {
       setTimeout(() => {
         navigate(`/admin/distributors/${id}`);
       }, 1500);
+     
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al actualizar distribuidor');
     } finally {

@@ -14,14 +14,10 @@ const Rankings = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  useEffect(() => {
-    loadRanking();
-  }, [period, startDate, endDate]);
-
-  const loadRanking = async () => {
+  const loadRanking = React.useCallback(async () => {
     try {
       setLoading(true);
-      const params: any = { period };
+      const params: { period: string; startDate?: string; endDate?: string } = { period };
       if (period === "custom" && startDate && endDate) {
         params.startDate = startDate;
         params.endDate = endDate;
@@ -34,7 +30,11 @@ const Rankings = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period, startDate, endDate]);
+
+  useEffect(() => {
+    loadRanking();
+  }, [loadRanking]);
 
   const loadWinners = async () => {
     try {

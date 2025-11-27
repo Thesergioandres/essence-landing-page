@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import React from 'react';
 import { saleService } from '../api/services';
 import type { Sale } from '../types';
 
@@ -7,11 +8,7 @@ export default function DistributorStats() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'week' | 'month' | 'all'>('month');
 
-  useEffect(() => {
-    loadStats();
-  }, [period]);
-
-  const loadStats = async () => {
+  const loadStats = React.useCallback(async () => {
     try {
       setLoading(true);
       const now = new Date();
@@ -35,7 +32,11 @@ export default function DistributorStats() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period]);
+
+  useEffect(() => {
+    loadStats();
+  }, [period, loadStats]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CO', {
