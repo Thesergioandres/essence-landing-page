@@ -99,9 +99,9 @@ saleSchema.pre("save", function (next) {
   this.commissionBonusAmount = bonusAmount;
   this.distributorProfit = baseProfit + bonusAmount;
 
-  // Ganancia del admin: (precio distribuidor - precio de compra) * cantidad
+  // Ganancia del admin: (precio de venta - precio de compra) * cantidad
   this.adminProfit =
-    (this.distributorPrice - this.purchasePrice) * this.quantity;
+    (this.salePrice - this.purchasePrice) * this.quantity;
 
   // Ganancia total
   this.totalProfit = this.distributorProfit + this.adminProfit;
