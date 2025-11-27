@@ -5,7 +5,7 @@ const saleSchema = new mongoose.Schema(
     distributor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "El distribuidor es obligatorio"],
+      required: false,
     },
     product: {
       type: mongoose.Schema.Types.ObjectId,
