@@ -180,10 +180,10 @@ export default function Sales() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {distributor?.name || "N/A"}
+                        {distributor?.name || "Admin"}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {distributor?.email || ""}
+                        {distributor?.email || (distributor === null ? "" : distributor?.email)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -207,7 +207,9 @@ export default function Sales() {
                       ${(sale.salePrice * sale.quantity).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                      ${sale.adminProfit.toLocaleString()}
+                      {distributor === null
+                        ? `$${((sale.salePrice - (product?.purchasePrice || 0)) * sale.quantity).toLocaleString()}`
+                        : `$${sale.adminProfit.toLocaleString()}`}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {sale.paymentStatus === "pendiente" ? (
