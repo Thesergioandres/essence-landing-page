@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import AddDistributor from "./pages/AddDistributor";
 import AddProduct from "./pages/AddProduct";
+import AdminRegisterSale from "./pages/AdminRegisterSale";
 import Analytics from "./pages/Analytics";
 import AuditLogs from "./pages/AuditLogs";
 import Catalog from "./pages/Catalog";

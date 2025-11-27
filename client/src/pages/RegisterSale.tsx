@@ -169,7 +169,8 @@ export default function RegisterSale() {
         productId: string;
         quantity: number;
         salePrice: number;
-        notes: string;
+        notes?: string;
+        saleDate?: string;
         paymentProof?: string;
         paymentProofMimeType?: string;
       } = {
