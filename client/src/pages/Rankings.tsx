@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import React from "react";
+import { useEffect, useState, useCallback } from "react";
 import { gamificationService } from "../api/services";
 import type { PeriodWinner, RankingResponse } from "../types";
 
@@ -14,7 +15,7 @@ const Rankings = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const loadRanking = React.useCallback(async () => {
+  const loadRanking = useCallback(async () => {
     try {
       setLoading(true);
       const params: { period: string; startDate?: string; endDate?: string } = { period };
