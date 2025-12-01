@@ -43,10 +43,15 @@ const saleSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    // Bonus de comisión por ranking
+    // Bonus de comisión por ranking (porcentaje adicional sobre base del 20%)
     commissionBonus: {
       type: Number,
       default: 0,
+    },
+    // Porcentaje total de ganancia del distribuidor (20%, 21%, 23%, o 25%)
+    distributorProfitPercentage: {
+      type: Number,
+      default: 20,
     },
     commissionBonusAmount: {
       type: Number,
@@ -96,21 +101,19 @@ saleSchema.pre("save", function (next) {
     // Solo hay ganancia del admin: (precio de venta - precio de compra) * cantidad
     this.adminProfit = (this.salePrice - this.purchasePrice) * this.quantity;
     this.distributorProfit = 0;
-    this.commissionBonus = 0;
-    this.commissionBonusAmount = 0;
+    this.distributorProfitPercentage = 0;
     this.totalProfit = this.adminProfit;
   } else {
     // Venta de distribuidor
-    // El distribuidor gana un porcentaje sobre el precio de venta
-    // Porcentaje base: 20% + bonus de comisión
-    const totalPercentage = 20 + (this.commissionBonus || 0);
+    // El distribuidor gana un porcentaje sobre el precio de venta según su ranking
+    // 🥇 1º: 25%, 🥈 2º: 23%, 🥉 3º: 21%, Resto: 20%
+    const profitPercentage = this.distributorProfitPercentage || 20;
     
-    // Ganancia del distribuidor: precio de venta * porcentaje total
-    this.distributorProfit = (this.salePrice * totalPercentage / 100) * this.quantity;
-    this.commissionBonusAmount = (this.salePrice * (this.commissionBonus || 0) / 100) * this.quantity;
+    // Ganancia del distribuidor: precio de venta * porcentaje
+    this.distributorProfit = (this.salePrice * profitPercentage / 100) * this.quantity;
 
-    // Ganancia del admin: precio venta - ganancia distribuidor - precio de compra
-    this.adminProfit = ((this.salePrice - (this.salePrice * totalPercentage / 100) - this.purchasePrice) * this.quantity);
+    // Ganancia del admin: lo que sobra después de restar ganancia distribuidor y costo
+    this.adminProfit = ((this.salePrice - (this.salePrice * profitPercentage / 100) - this.purchasePrice) * this.quantity);
 
     // Ganancia total
     this.totalProfit = this.distributorProfit + this.adminProfit;

@@ -1,4 +1,5 @@
 import Product from "../models/Product.js";
+import { calculateDistributorPrice, getDistributorProfitPercentage } from "../utils/distributorPricing.js";
 
 // @desc    Obtener todos los productos
 // @route   GET /api/products
@@ -98,6 +99,38 @@ export const deleteProduct = async (req, res) => {
     }
 
     res.json({ message: "Producto eliminado" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Obtener precio de distribuidor ajustado por ranking
+// @route   GET /api/products/:id/distributor-price/:distributorId
+// @access  Private
+export const getDistributorPrice = async (req, res) => {
+  try {
+    const { id, distributorId } = req.params;
+    
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    const adjustedPrice = await calculateDistributorPrice(
+      product.purchasePrice,
+      distributorId
+    );
+    
+    const profitPercentage = await getDistributorProfitPercentage(distributorId);
+
+    res.json({
+      productId: product._id,
+      productName: product.name,
+      purchasePrice: product.purchasePrice,
+      distributorPrice: adjustedPrice,
+      profitPercentage,
+      estimatedProfit: adjustedPrice - product.purchasePrice,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
