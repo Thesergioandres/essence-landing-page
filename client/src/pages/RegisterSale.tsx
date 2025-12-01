@@ -415,7 +415,7 @@ export default function RegisterSale() {
                       {dynamicPricing ? (
                         <>
                           <div>
-                            <p className="text-gray-400">Precio sugerido venta:</p>
+                            <p className="text-gray-400">Precio de venta:</p>
                             <p className="text-lg font-bold text-green-400">
                               {formatCurrency(
                                 selectedProduct.product.clientPrice || 0
