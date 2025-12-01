@@ -91,24 +91,24 @@ const Rankings = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-xl">Cargando ranking...</div>
+      <div className="flex min-h-screen items-center justify-center bg-gray-900">
+        <div className="text-xl text-white">Cargando ranking...</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-3xl font-bold">🏆 Rankings y Ganadores</h1>
+    <div className="container mx-auto min-h-screen bg-gray-900 px-4 py-8">
+      <h1 className="mb-8 text-3xl font-bold text-white">🏆 Rankings y Ganadores</h1>
 
       {/* Tabs */}
-      <div className="mb-6 flex border-b border-gray-300">
+      <div className="mb-6 flex border-b border-gray-700">
         <button
           onClick={() => setView("current")}
           className={`px-6 py-3 font-semibold ${
             view === "current"
-              ? "border-b-4 border-blue-600 text-blue-600"
-              : "text-gray-600 hover:text-blue-600"
+              ? "border-b-4 border-blue-500 text-blue-400"
+              : "text-gray-400 hover:text-blue-400"
           }`}
         >
           📊 Ranking Actual
@@ -117,8 +117,8 @@ const Rankings = () => {
           onClick={() => setView("history")}
           className={`px-6 py-3 font-semibold ${
             view === "history"
-              ? "border-b-4 border-blue-600 text-blue-600"
-              : "text-gray-600 hover:text-blue-600"
+              ? "border-b-4 border-blue-500 text-blue-400"
+              : "text-gray-400 hover:text-blue-400"
           }`}
         >
           🏅 Historial de Ganadores
@@ -128,16 +128,16 @@ const Rankings = () => {
       {view === "current" && rankingData && (
         <>
           {/* Filtros */}
-          <div className="mb-6 rounded-lg bg-white p-6 shadow-md">
+          <div className="mb-6 rounded-lg border border-gray-700 bg-gray-800 p-6 shadow-md">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
-                <label className="mb-2 block font-medium text-gray-700">
+                <label className="mb-2 block font-medium text-gray-300">
                   Periodo
                 </label>
                 <select
                   value={period}
                   onChange={e => setPeriod(e.target.value as any)}
-                  className="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-md border border-gray-600 bg-gray-700 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="current">Periodo Actual</option>
                   <option value="custom">Personalizado</option>
@@ -147,26 +147,26 @@ const Rankings = () => {
               {period === "custom" && (
                 <>
                   <div>
-                    <label className="mb-2 block font-medium text-gray-700">
+                    <label className="mb-2 block font-medium text-gray-300">
                       Fecha Inicio
                     </label>
                     <input
                       type="date"
                       value={startDate}
                       onChange={e => setStartDate(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-md border border-gray-600 bg-gray-700 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-2 block font-medium text-gray-700">
+                    <label className="mb-2 block font-medium text-gray-300">
                       Fecha Fin
                     </label>
                     <input
                       type="date"
                       value={endDate}
                       onChange={e => setEndDate(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-md border border-gray-600 bg-gray-700 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </>
@@ -246,42 +246,42 @@ const Rankings = () => {
           </div>
 
           {/* Tabla de Ranking */}
-          <div className="overflow-hidden rounded-lg bg-white shadow-md">
+          <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800 shadow-md">
             <table className="min-w-full">
-              <thead className="bg-gray-100">
+              <thead className="bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                     Posición
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                     Distribuidor
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                     Nivel
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-300">
                     Ventas
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-300">
                     Ingresos
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-300">
                     Ganancia
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-300">
                     Puntos
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-300">
                     Victorias
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-700">
                 {rankingData.rankings.length === 0 ? (
                   <tr>
                     <td
                       colSpan={8}
-                      className="px-6 py-8 text-center text-gray-500"
+                      className="px-6 py-8 text-center text-gray-400"
                     >
                       No hay datos para este periodo
                     </td>
@@ -290,8 +290,8 @@ const Rankings = () => {
                   rankingData.rankings.map(rank => (
                     <tr
                       key={rank.distributorId}
-                      className={`hover:bg-gray-50 ${
-                        rank.position <= 3 ? "bg-yellow-50" : ""
+                      className={`hover:bg-gray-700 ${
+                        rank.position <= 3 ? "bg-yellow-900/30" : ""
                       }`}
                     >
                       <td className="whitespace-nowrap px-6 py-4">
@@ -300,10 +300,10 @@ const Rankings = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-white">
                           {rank.distributorName}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-400">
                           {rank.distributorEmail}
                         </div>
                         {rank.position <= 3 && (
@@ -324,13 +324,13 @@ const Rankings = () => {
                         <span className="text-2xl">
                           {getLevelBadge(rank.currentLevel)}
                         </span>
-                        <span className="ml-2 text-sm capitalize text-gray-600">
+                        <span className="ml-2 text-sm capitalize text-gray-300">
                           {rank.currentLevel}
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-right">
-                        <div className="font-semibold">{rank.totalSales}</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="font-semibold text-white">{rank.totalSales}</div>
+                        <div className="text-sm text-gray-400">
                           {rank.totalUnits} unidades
                         </div>
                       </td>
@@ -362,59 +362,59 @@ const Rankings = () => {
       )}
 
       {view === "history" && (
-        <div className="overflow-hidden rounded-lg bg-white shadow-md">
+        <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800 shadow-md">
           {winnersLoading ? (
-            <div className="px-6 py-8 text-center">Cargando historial...</div>
+            <div className="px-6 py-8 text-center text-white">Cargando historial...</div>
           ) : winners.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-500">
+            <div className="px-6 py-8 text-center text-gray-400">
               No hay ganadores registrados aún
             </div>
           ) : (
             <table className="min-w-full">
-              <thead className="bg-gray-100">
+              <thead className="bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                     Periodo
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                     Ganador 🥇
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-300">
                     Ventas
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-300">
                     Ingresos
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-300">
                     Bono
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium uppercase text-gray-600">
+                  <th className="px-6 py-3 text-center text-xs font-medium uppercase text-gray-300">
                     Estado
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-700">
                 {winners.map(winner => (
-                  <tr key={winner._id} className="hover:bg-gray-50">
+                  <tr key={winner._id} className="hover:bg-gray-700">
                     <td className="px-6 py-4">
-                      <div className="font-medium uppercase text-gray-900">
+                      <div className="font-medium uppercase text-white">
                         {winner.periodType}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-400">
                         {formatDate(winner.startDate)} -{" "}
                         {formatDate(winner.endDate)}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-white">
                         {winner.winnerName}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-400">
                         {winner.winnerEmail}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="font-semibold">{winner.salesCount}</div>
+                      <div className="font-semibold text-white">{winner.salesCount}</div>
                     </td>
                     <td className="px-6 py-4 text-right font-semibold text-green-600">
                       {formatCurrency(winner.totalRevenue)}
