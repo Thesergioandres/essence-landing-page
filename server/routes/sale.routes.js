@@ -1,6 +1,7 @@
 import express from "express";
 import {
   confirmPayment,
+  deleteSale,
   getAllSales,
   getDistributorSales,
   getSalesByDistributor,
