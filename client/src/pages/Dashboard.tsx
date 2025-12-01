@@ -50,7 +50,7 @@ export default function Dashboard() {
   }, []);
 
   const handleFixAdminSales = async () => {
-    if (!confirm("¿Actualizar todas las ventas admin pendientes a confirmadas? Esto permitirá que aparezcan en los analytics.")) {
+    if (!confirm("¿Actualizar todas las ventas admin?\n\n• Confirmar ventas pendientes\n• Recalcular ganancias correctamente\n• Mover ventas al mes actual\n\nEsto permitirá que aparezcan en los analytics.")) {
       return;
     }
 
@@ -65,7 +65,19 @@ export default function Dashboard() {
       });
       
       const data = await response.json();
-      alert(`✅ ${data.message}\n\nTotal ventas admin: ${data.totalAdminSales}\nConfirmadas: ${data.confirmed}\nPendientes: ${data.pending}\nActualizadas: ${data.updated}`);
+      
+      let message = `✅ ${data.message}\n\n`;
+      message += `📊 Resumen:\n`;
+      message += `• Total ventas admin: ${data.totalAdminSales}\n`;
+      message += `• Confirmadas: ${data.confirmed}\n`;
+      message += `• Pendientes: ${data.pending}\n`;
+      message += `• Actualizadas: ${data.updated}\n`;
+      if (data.datesUpdated > 0) {
+        message += `• Fechas actualizadas: ${data.datesUpdated}\n`;
+      }
+      message += `\n${data.note}`;
+      
+      alert(message);
       
       // Recargar stats
       await loadStats();

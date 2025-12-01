@@ -29,10 +29,14 @@ export const deleteSale = async (req, res) => {
 // @access  Private/Admin
 export const fixAdminSales = async (req, res) => {
   try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
     // Obtener todas las ventas admin
     const adminSales = await Sale.find({ distributor: null });
     
     let updated = 0;
+    let datesUpdated = 0;
     
     // Actualizar cada venta para recalcular ganancias
     for (const sale of adminSales) {
@@ -46,6 +50,21 @@ export const fixAdminSales = async (req, res) => {
         needsUpdate = true;
       }
       
+      // Si la venta es de un mes anterior, actualizar al mes actual
+      const saleMonth = new Date(sale.saleDate).getMonth();
+      const currentMonth = now.getMonth();
+      
+      if (saleMonth !== currentMonth) {
+        // Mantener el día pero actualizar mes y año
+        const saleDay = new Date(sale.saleDate).getDate();
+        const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const dayToUse = Math.min(saleDay, daysInCurrentMonth);
+        
+        sale.saleDate = new Date(now.getFullYear(), now.getMonth(), dayToUse);
+        needsUpdate = true;
+        datesUpdated++;
+      }
+      
       // Recalcular ganancias (el pre-save hook lo hará automáticamente)
       if (needsUpdate || sale.distributorProfit !== 0 || sale.totalProfit !== sale.adminProfit) {
         await sale.save(); // Esto ejecuta el pre-save hook que recalcula ganancias
@@ -54,7 +73,11 @@ export const fixAdminSales = async (req, res) => {
     }
 
     // Obtener resumen actualizado
-    const confirmedSales = await Sale.find({ distributor: null, paymentStatus: "confirmado" });
+    const confirmedSales = await Sale.find({ 
+      distributor: null, 
+      paymentStatus: "confirmado",
+      saleDate: { $gte: startOfMonth }
+    });
     const pendingSales = await Sale.find({ distributor: null, paymentStatus: "pendiente" });
 
     res.json({
@@ -63,7 +86,8 @@ export const fixAdminSales = async (req, res) => {
       confirmed: confirmedSales.length,
       pending: pendingSales.length,
       updated: updated,
-      note: "Ganancias recalculadas correctamente"
+      datesUpdated: datesUpdated,
+      note: `Ganancias recalculadas y ${datesUpdated} fechas actualizadas al mes actual`
     });
   } catch (error) {
     console.error("Error en fixAdminSales:", error);
