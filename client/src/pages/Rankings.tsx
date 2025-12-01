@@ -186,7 +186,7 @@ const Rankings = () => {
 
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               {/* Premio en efectivo */}
-              <div className="rounded-lg bg-white bg-opacity-20 p-4">
+              <div className="rounded-lg bg-black bg-opacity-20 p-4 backdrop-blur-sm">
                 <div className="mb-2 flex items-center gap-2">
                   <span className="text-2xl">🏆</span>
                   <span className="text-sm opacity-80">Premio 1er Lugar</span>
@@ -200,7 +200,7 @@ const Rankings = () => {
               </div>
 
               {/* Comisiones variables */}
-              <div className="rounded-lg bg-white bg-opacity-20 p-4">
+              <div className="rounded-lg bg-black bg-opacity-20 p-4 backdrop-blur-sm">
                 <div className="mb-2 flex items-center gap-2">
                   <span className="text-2xl">💰</span>
                   <span className="text-sm opacity-80">Comisiones Extra</span>
@@ -222,7 +222,7 @@ const Rankings = () => {
               </div>
 
               {/* Info del sistema */}
-              <div className="rounded-lg bg-white bg-opacity-20 p-4">
+              <div className="rounded-lg bg-black bg-opacity-20 p-4 backdrop-blur-sm">
                 <div className="mb-2 flex items-center gap-2">
                   <span className="text-2xl">📊</span>
                   <span className="text-sm opacity-80">Sistema Activo</span>
