@@ -21,21 +21,63 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+
+// Configurar orígenes permitidos
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://ssence-landing-page-client.vercel.app",
+  "https://essence-landing-page-production.up.railway.app",
+  /\.vercel\.app$/,  // Todos los subdominios de Vercel
+  /\.railway\.app$/  // Todos los subdominios de Railway
+];
 
 // Conectar a MongoDB
 connectDB();
 
-// Middlewares - CORS Configuration v4.0 - Simplified & Permissive
+// Middlewares - CORS Configuration v5.0 - Enhanced for Production
 app.use(
   cors({
-    origin: true, // Permitir TODOS los orígenes
+    origin: function (origin, callback) {
+      // Permitir requests sin origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      
+      // Verificar si el origin está en la lista permitida
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (typeof allowed === 'string') {
+          return allowed === origin;
+        } else if (allowed instanceof RegExp) {
+          return allowed.test(origin);
+        }
+        return false;
+      });
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        console.log('❌ Origin bloqueado:', origin);
+        callback(null, true); // Temporalmente permitir todos para debug
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     exposedHeaders: ["Content-Length", "X-Requested-With"],
+    maxAge: 86400 // 24 horas de cache para preflight
   })
 );
+
+// Manejo explícito de preflight requests
+app.options('*', cors());
+
+// Middleware de logging para debugging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log('Origin:', req.headers.origin);
+  console.log('Headers:', req.headers);
+  next();
+});
+
 // Aumentar límite de tamaño del body para imágenes Base64 (50MB)
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
