@@ -179,6 +179,18 @@ export default function Analytics() {
       {monthlyData && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-2xl font-semibold mb-4">📅 Resumen del Mes</h2>
+          
+          {/* Debug Info - TEMPORAL */}
+          {monthlyData._debug && (
+            <div className="mb-4 rounded border-2 border-yellow-500 bg-yellow-50 p-3 text-sm">
+              <p className="font-bold text-yellow-800">🐛 DEBUG INFO (Backend):</p>
+              <p className="text-yellow-700">Fecha servidor: {new Date(monthlyData._debug.now).toLocaleString("es-CO")}</p>
+              <p className="text-yellow-700">Rango mes actual: {new Date(monthlyData._debug.startOfMonth).toLocaleDateString("es-CO")} - {new Date(monthlyData._debug.endOfMonth).toLocaleDateString("es-CO")}</p>
+              <p className="text-yellow-700">Ventas encontradas mes actual: {monthlyData._debug.currentMonthSalesCount}</p>
+              <p className="text-yellow-700">Ventas encontradas mes anterior: {monthlyData._debug.lastMonthSalesCount}</p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="p-4 bg-green-50 rounded-lg">
               <p className="text-sm text-gray-600">Ganancia Total</p>

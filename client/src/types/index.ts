@@ -132,6 +132,15 @@ export interface MonthlyProfitData {
   };
   growthPercentage: number;
   averageTicket: number;
+  _debug?: {
+    now: string;
+    startOfMonth: string;
+    endOfMonth: string;
+    startOfLastMonth: string;
+    endOfLastMonth: string;
+    currentMonthSalesCount: number;
+    lastMonthSalesCount: number;
+  };
 }
 
 export interface ProductProfit {

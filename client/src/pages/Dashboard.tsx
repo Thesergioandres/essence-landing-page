@@ -201,6 +201,18 @@ export default function Dashboard() {
           <h2 className="mb-3 text-lg font-bold text-white sm:mb-4 sm:text-xl md:text-2xl">
             💰 Resumen del Mes
           </h2>
+          
+          {/* Debug Info - TEMPORAL */}
+          {monthlyData._debug && (
+            <div className="mb-4 rounded border border-yellow-500 bg-yellow-900/30 p-3 text-xs text-yellow-200">
+              <p className="font-bold">🐛 DEBUG INFO (Backend):</p>
+              <p>Fecha servidor: {new Date(monthlyData._debug.now).toLocaleString("es-CO")}</p>
+              <p>Rango mes actual: {new Date(monthlyData._debug.startOfMonth).toLocaleDateString("es-CO")} - {new Date(monthlyData._debug.endOfMonth).toLocaleDateString("es-CO")}</p>
+              <p>Ventas encontradas mes actual: {monthlyData._debug.currentMonthSalesCount}</p>
+              <p>Ventas encontradas mes anterior: {monthlyData._debug.lastMonthSalesCount}</p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <div>
               <p className="text-xs text-gray-400 sm:text-sm">Ganancia Total</p>

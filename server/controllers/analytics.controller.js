@@ -69,6 +69,16 @@ export const getMonthlyProfit = async (req, res) => {
       lastMonth,
       growthPercentage: parseFloat(growthPercentage.toFixed(2)),
       averageTicket: currentMonth.salesCount > 0 ? currentMonth.revenue / currentMonth.salesCount : 0,
+      // Debug info
+      _debug: {
+        now: now.toISOString(),
+        startOfMonth: startOfMonth.toISOString(),
+        endOfMonth: endOfMonth.toISOString(),
+        startOfLastMonth: startOfLastMonth.toISOString(),
+        endOfLastMonth: endOfLastMonth.toISOString(),
+        currentMonthSalesCount: currentMonthSales.length,
+        lastMonthSalesCount: lastMonthSales.length,
+      }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
