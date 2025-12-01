@@ -101,16 +101,16 @@ saleSchema.pre("save", function (next) {
     this.totalProfit = this.adminProfit;
   } else {
     // Venta de distribuidor
-    // Ganancia base del distribuidor: (precio de venta - precio distribuidor) * cantidad
-    const baseProfit = (this.salePrice - this.distributorPrice) * this.quantity;
+    // El distribuidor gana un porcentaje sobre el precio de venta
+    // Porcentaje base: 20% + bonus de comisión
+    const totalPercentage = 20 + (this.commissionBonus || 0);
+    
+    // Ganancia del distribuidor: precio de venta * porcentaje total
+    this.distributorProfit = (this.salePrice * totalPercentage / 100) * this.quantity;
+    this.commissionBonusAmount = (this.salePrice * (this.commissionBonus || 0) / 100) * this.quantity;
 
-    // Aplicar bonus de comisión si existe
-    const bonusAmount = (baseProfit * this.commissionBonus) / 100;
-    this.commissionBonusAmount = bonusAmount;
-    this.distributorProfit = baseProfit + bonusAmount;
-
-    // Ganancia del admin: (precio distribuidor - precio de compra) * cantidad
-    this.adminProfit = (this.distributorPrice - this.purchasePrice) * this.quantity;
+    // Ganancia del admin: precio venta - ganancia distribuidor - precio de compra
+    this.adminProfit = ((this.salePrice - (this.salePrice * totalPercentage / 100) - this.purchasePrice) * this.quantity);
 
     // Ganancia total
     this.totalProfit = this.distributorProfit + this.adminProfit;
