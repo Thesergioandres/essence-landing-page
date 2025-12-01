@@ -50,7 +50,7 @@ export default function Dashboard() {
   }, []);
 
   const handleFixAdminSales = async () => {
-    if (!confirm("¿Actualizar todas las ventas admin?\n\n• Confirmar ventas pendientes\n• Recalcular ganancias correctamente\n• Mover ventas al mes actual\n\nEsto permitirá que aparezcan en los analytics.")) {
+    if (!confirm("¿Actualizar ventas admin?\n\n• Confirmar ventas pendientes\n• Recalcular ganancias correctamente\n• Mover solo ventas del MES ANTERIOR al mes actual\n\nNOTA: No afecta el histórico de ventas antiguas.")) {
       return;
     }
 

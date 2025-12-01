@@ -31,6 +31,8 @@ export const fixAdminSales = async (req, res) => {
   try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
     
     // Obtener todas las ventas admin
     const adminSales = await Sale.find({ distributor: null });
@@ -50,13 +52,12 @@ export const fixAdminSales = async (req, res) => {
         needsUpdate = true;
       }
       
-      // Si la venta es de un mes anterior, actualizar al mes actual
-      const saleMonth = new Date(sale.saleDate).getMonth();
-      const currentMonth = now.getMonth();
-      
-      if (saleMonth !== currentMonth) {
-        // Mantener el día pero actualizar mes y año
-        const saleDay = new Date(sale.saleDate).getDate();
+      // Solo actualizar fechas si la venta es del mes anterior inmediato
+      // NO tocar ventas de meses más antiguos (histórico)
+      const saleDate = new Date(sale.saleDate);
+      if (saleDate >= startOfLastMonth && saleDate <= endOfLastMonth) {
+        // La venta es del mes anterior, moverla al mes actual
+        const saleDay = saleDate.getDate();
         const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const dayToUse = Math.min(saleDay, daysInCurrentMonth);
         
@@ -87,7 +88,9 @@ export const fixAdminSales = async (req, res) => {
       pending: pendingSales.length,
       updated: updated,
       datesUpdated: datesUpdated,
-      note: `Ganancias recalculadas y ${datesUpdated} fechas actualizadas al mes actual`
+      note: datesUpdated > 0 
+        ? `Ganancias recalculadas y ${datesUpdated} ventas del mes anterior movidas al mes actual` 
+        : "Ganancias recalculadas correctamente"
     });
   } catch (error) {
     console.error("Error en fixAdminSales:", error);
