@@ -1,4 +1,5 @@
 import Product from "../models/Product.js";
+import Sale from "../models/Sale.js";
 import { calculateDistributorPrice, getDistributorProfitPercentage } from "../utils/distributorPricing.js";
 
 // @desc    Obtener todos los productos
