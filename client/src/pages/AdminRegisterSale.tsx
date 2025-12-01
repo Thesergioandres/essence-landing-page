@@ -4,6 +4,16 @@ import { productService, saleService, authService } from "../api/services";
 import { Button } from "../components/Button";
 import type { Product } from "../types";
 
+interface SaleItem {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  salePrice: number;
+  purchasePrice: number;
+  clientPrice: number;
+}
+
 interface FormState {
   productId: string;
   quantity: number;
@@ -15,6 +25,7 @@ interface FormState {
 export default function AdminRegisterSale() {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
+  const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
   const [formData, setFormData] = useState<FormState>({
     productId: "",
     quantity: 1,
@@ -62,11 +73,9 @@ export default function AdminRegisterSale() {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddItem = () => {
     setError("");
-    setSuccess("");
-
+    
     if (!formData.productId) {
       setError("Selecciona un producto");
       return;
@@ -88,29 +97,76 @@ export default function AdminRegisterSale() {
       return;
     }
 
+    const newItem: SaleItem = {
+      id: Date.now().toString(),
+      productId: formData.productId,
+      productName: selectedProduct.name,
+      quantity: formData.quantity,
+      salePrice: formData.salePrice,
+      purchasePrice: selectedProduct.purchasePrice,
+      clientPrice: selectedProduct.clientPrice || 0,
+    };
+
+    setSaleItems(prev => [...prev, newItem]);
+    
+    // Limpiar solo los campos del producto
+    setFormData(prev => ({
+      ...prev,
+      productId: "",
+      quantity: 1,
+      salePrice: 0,
+    }));
+    setSelectedProduct(null);
+  };
+
+  const handleRemoveItem = (id: string) => {
+    setSaleItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (saleItems.length === 0) {
+      setError("Agrega al menos un producto al pedido");
+      return;
+    }
+
+    if (saleItems.length === 0) {
+      setError("Agrega al menos un producto al pedido");
+      return;
+    }
+
     try {
       setLoading(true);
       const user = authService.getCurrentUser();
-      if (user && user.role === "admin") {
-        await saleService.registerAdmin({
-          productId: formData.productId,
-          quantity: formData.quantity,
-          salePrice: formData.salePrice,
-          notes: formData.notes,
-          saleDate: formData.saleDate,
-        });
-      } else {
-        await saleService.register({
-          productId: formData.productId,
-          quantity: formData.quantity,
-          salePrice: formData.salePrice,
-          notes: formData.notes,
-          saleDate: formData.saleDate,
-        });
-      }
-      setSuccess("¡Venta registrada exitosamente! Puedes registrar otra venta o ir a ver las ventas.");
       
-      // Limpiar formulario para permitir registrar otra venta
+      // Registrar cada venta del pedido
+      for (const item of saleItems) {
+        if (user && user.role === "admin") {
+          await saleService.registerAdmin({
+            productId: item.productId,
+            quantity: item.quantity,
+            salePrice: item.salePrice,
+            notes: formData.notes,
+            saleDate: formData.saleDate,
+          });
+        } else {
+          await saleService.register({
+            productId: item.productId,
+            quantity: item.quantity,
+            salePrice: item.salePrice,
+            notes: formData.notes,
+            saleDate: formData.saleDate,
+          });
+        }
+      }
+      
+      setSuccess(`¡${saleItems.length} ${saleItems.length === 1 ? 'venta registrada' : 'ventas registradas'} exitosamente!`);
+      
+      // Limpiar todo
+      setSaleItems([]);
       setFormData({
         productId: "",
         quantity: 1,
@@ -122,11 +178,23 @@ export default function AdminRegisterSale() {
       
       // Recargar productos para actualizar stock
       await loadProducts();
+      
+      // Opción de volver al dashboard después de 2 segundos
+      setTimeout(() => {
+        setSuccess(prev => prev + " Redirigiendo al dashboard...");
+        setTimeout(() => navigate("/dashboard"), 1000);
+      }, 2000);
     } catch {
-      setError("Error al registrar la venta");
+      setError("Error al registrar las ventas");
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateTotals = () => {
+    const totalSale = saleItems.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
+    const totalProfit = saleItems.reduce((sum, item) => sum + ((item.salePrice - item.purchasePrice) * item.quantity), 0);
+    return { totalSale, totalProfit };
   };
 
   const formatCurrency = (value: number) => {
@@ -137,11 +205,13 @@ export default function AdminRegisterSale() {
     }).format(value);
   };
 
+  const totals = calculateTotals();
+
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h1 className="text-4xl font-bold text-white">Registrar Venta (Admin)</h1>
-        <p className="mt-2 text-gray-400">Registra una venta directa como administrador</p>
+        <h1 className="text-4xl font-bold text-white">Registrar Pedido Grande (Admin)</h1>
+        <p className="mt-2 text-gray-400">Registra múltiples ventas en un solo pedido</p>
       </div>
       {error && (
         <div className="rounded-lg border border-red-500 bg-red-500/10 p-4 text-sm text-red-400">{error}</div>
@@ -149,129 +219,201 @@ export default function AdminRegisterSale() {
       {success && (
         <div className="rounded-lg border border-green-500 bg-green-500/10 p-4 text-sm text-green-400">{success}</div>
       )}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <h2 className="mb-4 text-lg font-semibold text-white">Información de la Venta</h2>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="saleDate" className="mb-2 block text-sm font-medium text-gray-300">Fecha de la venta *</label>
-              <input
-                type="date"
-                id="saleDate"
-                name="saleDate"
-                value={formData.saleDate}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="productId" className="mb-2 block text-sm font-medium text-gray-300">Producto *</label>
-              <select
-                id="productId"
-                name="productId"
-                value={formData.productId}
-                onChange={e => handleProductChange(e.target.value)}
-                required
-                className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Selecciona un producto</option>
-                {products.map(product => (
-                  <option key={product._id} value={product._id}>
-                    {product.name} - {formatCurrency(product.clientPrice || 0)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {selectedProduct && (
-              <div className="rounded-lg border border-blue-500/30 bg-blue-900/10 p-4">
-                <h3 className="mb-2 font-semibold text-white">{selectedProduct.name}</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+      
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Formulario para agregar productos */}
+        <div className="space-y-6">
+          <form onSubmit={(e) => { e.preventDefault(); handleAddItem(); }} className="space-y-6">
+            <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+              <h2 className="mb-4 text-lg font-semibold text-white">Agregar Producto</h2>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="productId" className="mb-2 block text-sm font-medium text-gray-300">Producto *</label>
+                  <select
+                    id="productId"
+                    name="productId"
+                    value={formData.productId}
+                    onChange={e => handleProductChange(e.target.value)}
+                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Selecciona un producto</option>
+                    {products.map(product => (
+                      <option key={product._id} value={product._id}>
+                        {product.name} - {formatCurrency(product.clientPrice || 0)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {selectedProduct && (
+                  <div className="rounded-lg border border-blue-500/30 bg-blue-900/10 p-4">
+                    <h3 className="mb-2 font-semibold text-white">{selectedProduct.name}</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-400">Precio de compra:</p>
+                        <p className="font-bold text-white">{formatCurrency(selectedProduct.purchasePrice)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Precio sugerido:</p>
+                        <p className="font-bold text-green-400">{formatCurrency(selectedProduct.clientPrice || 0)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <p className="text-gray-400">Precio de compra:</p>
-                    <p className="text-lg font-bold text-white">{formatCurrency(selectedProduct.purchasePrice)}</p>
+                    <label htmlFor="quantity" className="mb-2 block text-sm font-medium text-gray-300">Cantidad *</label>
+                    <input
+                      type="number"
+                      id="quantity"
+                      name="quantity"
+                      value={formData.quantity}
+                      onChange={handleChange}
+                      min="1"
+                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
                   <div>
-                    <p className="text-gray-400">Precio sugerido:</p>
-                    <p className="text-lg font-bold text-green-400">{formatCurrency(selectedProduct.clientPrice || 0)}</p>
+                    <label htmlFor="salePrice" className="mb-2 block text-sm font-medium text-gray-300">Precio Unitario *</label>
+                    <input
+                      type="number"
+                      id="salePrice"
+                      name="salePrice"
+                      value={formData.salePrice}
+                      onChange={handleChange}
+                      min="0"
+                      step="1"
+                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
                 </div>
               </div>
+            </div>
+            <Button 
+              type="submit" 
+              disabled={!formData.productId} 
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            >
+              ➕ Agregar al Pedido
+            </Button>
+          </form>
+        </div>
+
+        {/* Lista de productos agregados */}
+        <div className="space-y-6">
+          <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+            <h2 className="mb-4 text-lg font-semibold text-white">
+              Productos en el Pedido ({saleItems.length})
+            </h2>
+            {saleItems.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No hay productos agregados</p>
+            ) : (
+              <div className="space-y-3">
+                {saleItems.map(item => (
+                  <div key={item.id} className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-white">{item.productName}</h3>
+                      <button
+                        onClick={() => handleRemoveItem(item.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-gray-400">Cantidad:</p>
+                        <p className="text-white">{item.quantity} uds</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Precio unit:</p>
+                        <p className="text-white">{formatCurrency(item.salePrice)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Subtotal:</p>
+                        <p className="font-bold text-green-400">{formatCurrency(item.salePrice * item.quantity)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Ganancia:</p>
+                        <p className="font-bold text-blue-400">{formatCurrency((item.salePrice - item.purchasePrice) * item.quantity)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
+          </div>
+
+          {/* Totales del pedido */}
+          {saleItems.length > 0 && (
+            <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/30 to-blue-900/30 p-6">
+              <h2 className="mb-4 text-lg font-semibold text-white">Resumen del Pedido</h2>
+              <div className="space-y-3">
+                <div className="flex justify-between text-lg">
+                  <span className="font-semibold text-white">Total venta:</span>
+                  <span className="font-bold text-green-400">{formatCurrency(totals.totalSale)}</span>
+                </div>
+                <div className="flex justify-between text-lg border-t border-gray-600 pt-3">
+                  <span className="font-semibold text-white">Ganancia total:</span>
+                  <span className="font-bold text-blue-400">{formatCurrency(totals.totalProfit)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Información general del pedido */}
+      {saleItems.length > 0 && (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+            <h2 className="mb-4 text-lg font-semibold text-white">Información del Pedido</h2>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label htmlFor="quantity" className="mb-2 block text-sm font-medium text-gray-300">Cantidad *</label>
+                <label htmlFor="saleDate" className="mb-2 block text-sm font-medium text-gray-300">Fecha del pedido *</label>
                 <input
-                  type="number"
-                  id="quantity"
-                  name="quantity"
-                  value={formData.quantity}
+                  type="date"
+                  id="saleDate"
+                  name="saleDate"
+                  value={formData.saleDate}
                   onChange={handleChange}
-                  min="1"
                   required
                   className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label htmlFor="salePrice" className="mb-2 block text-sm font-medium text-gray-300">Precio de Venta (unitario) *</label>
-                <input
-                  type="number"
-                  id="salePrice"
-                  name="salePrice"
-                  value={formData.salePrice}
+                <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-300">Notas (opcional)</label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  value={formData.notes}
                   onChange={handleChange}
-                  min="0"
-                  step="1"
-                  required
+                  rows={1}
                   className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Cliente, método de pago, etc."
                 />
-                <p className="mt-1 text-xs text-gray-500">Precio por unidad</p>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-300">Notas (opcional)</label>
-              <textarea
-                id="notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={3}
-                className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Cliente, método de pago, etc."
-              />
-            </div>
-          </div>
-        </div>
-        {/* Sale Summary */}
-        {selectedProduct && formData.quantity > 0 && formData.salePrice > 0 && (
-          <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/30 to-blue-900/30 p-6">
-            <h2 className="mb-4 text-lg font-semibold text-white">Resumen de la Venta</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between text-gray-300">
-                <span>Cantidad:</span>
-                <span className="font-semibold">{formData.quantity} unidades</span>
-              </div>
-              <div className="flex justify-between text-gray-300">
-                <span>Precio unitario:</span>
-                <span className="font-semibold">{formatCurrency(formData.salePrice)}</span>
-              </div>
-              <div className="flex justify-between border-t border-gray-600 pt-3 text-lg">
-                <span className="font-semibold text-white">Total venta:</span>
-                <span className="font-bold text-green-400">{formatCurrency(formData.salePrice * formData.quantity)}</span>
-              </div>
-              <div className="flex justify-between text-lg">
-                <span className="font-semibold text-white">Ganancia admin:</span>
-                <span className="font-bold text-blue-400">{formatCurrency((formData.salePrice - (selectedProduct?.purchasePrice || 0)) * formData.quantity)}</span>
               </div>
             </div>
           </div>
-        )}
-        {/* Action Buttons */}
-        <div className="flex gap-4">
-          <Button type="button" onClick={() => navigate("/dashboard")} className="flex-1 bg-gray-700 hover:bg-gray-600">Cancelar</Button>
-          <Button type="submit" disabled={loading || !formData.productId} className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50">{loading ? "Registrando..." : "Registrar Venta"}</Button>
-        </div>
-      </form>
+          
+          {/* Botones de acción */}
+          <div className="flex gap-4">
+            <Button 
+              type="button" 
+              onClick={() => navigate("/dashboard")} 
+              className="flex-1 bg-gray-700 hover:bg-gray-600"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={loading || saleItems.length === 0} 
+              className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50"
+            >
+              {loading ? "Registrando..." : `✓ Confirmar Pedido (${saleItems.length} ${saleItems.length === 1 ? 'venta' : 'ventas'})`}
+            </Button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
