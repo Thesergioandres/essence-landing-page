@@ -449,7 +449,7 @@ export default function DefectiveProductsManagement() {
                   <option value="">Selecciona un producto</option>
                   {products.map((product) => (
                     <option key={product._id} value={product._id}>
-                      {product.name} (Stock bodega: {product.warehouseStock})
+                      {product.name} | Stock: {product.warehouseStock} | Compra: ${product.purchasePrice} | Cliente: ${product.clientPrice || 0}
                     </option>
                   ))}
                 </select>

@@ -322,8 +322,7 @@ export default function RegisterSale() {
                       typeof item.product === "object" ? item.product : null;
                     return (
                       <option key={item._id} value={product?._id}>
-                        {product?.name} - Stock: {item.quantity} -{" "}
-                        {formatCurrency(product?.distributorPrice || 0)}
+                        {product?.name} | Stock: {item.quantity} | Tu precio: {formatCurrency(product?.distributorPrice || 0)} | Venta sugerida: {formatCurrency(product?.clientPrice || 0)}
                       </option>
                     );
                   })}

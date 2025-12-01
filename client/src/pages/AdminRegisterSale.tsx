@@ -239,7 +239,7 @@ export default function AdminRegisterSale() {
                     <option value="">Selecciona un producto</option>
                     {products.map(product => (
                       <option key={product._id} value={product._id}>
-                        {product.name} - {formatCurrency(product.clientPrice || 0)}
+                        {product.name} | Compra: {formatCurrency(product.purchasePrice)} | Cliente: {formatCurrency(product.clientPrice || 0)}
                       </option>
                     ))}
                   </select>

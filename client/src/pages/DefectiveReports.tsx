@@ -286,7 +286,7 @@ export default function DefectiveReports() {
                       const product = typeof s.product === "object" ? s.product : null;
                       return (
                         <option key={s._id} value={product?._id}>
-                          {product?.name} (Stock: {s.quantity})
+                          {product?.name} | Stock: {s.quantity} | Precio dist: ${product?.distributorPrice || 0} | Cliente: ${product?.clientPrice || 0}
                         </option>
                       );
                     })}
