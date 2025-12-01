@@ -72,19 +72,32 @@ export default function RegisterSale() {
       try {
         const currentUser = authService.getCurrentUser();
         if (currentUser) {
+          console.log("Obteniendo precio dinámico para:", productId, currentUser._id);
           const pricing = await productService.getDistributorPrice(productId, currentUser._id);
+          console.log("Pricing recibido:", pricing);
           setDynamicPricing({
             distributorPrice: pricing.distributorPrice,
             profitPercentage: pricing.profitPercentage,
             rankingPosition: pricing.rankingPosition,
           });
           
-          // Usar el precio dinámico como precio sugerido
+          // Usar el precio sugerido del cliente
+          const productData = typeof product.product === "object" ? product.product : null;
           setFormData(prev => ({
             ...prev,
             productId,
             quantity: 1,
-            salePrice: pricing.distributorPrice,
+            salePrice: productData?.clientPrice || 0,
+          }));
+        } else {
+          console.log("No hay usuario actual");
+          // Fallback si no hay usuario
+          const productData = typeof product.product === "object" ? product.product : null;
+          setFormData(prev => ({
+            ...prev,
+            productId,
+            quantity: 1,
+            salePrice: productData?.clientPrice || 0,
           }));
         }
       } catch (error) {
