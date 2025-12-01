@@ -2,6 +2,7 @@ import express from "express";
 import {
   confirmPayment,
   deleteSale,
+  fixAdminSales,
   getAllSales,
   getDistributorSales,
   getSalesByDistributor,
@@ -28,5 +29,8 @@ router.post("/admin", protect, admin, registerAdminSale);
 
 // Eliminar venta (admin)
 router.delete("/:id", protect, admin, deleteSale);
+
+// Fix temporal: actualizar ventas admin pendientes a confirmadas
+router.post("/fix-admin-sales", protect, admin, fixAdminSales);
 
 export default router;

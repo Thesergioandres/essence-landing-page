@@ -23,6 +23,43 @@ export const deleteSale = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Actualizar ventas admin pendientes a confirmadas (temporal)
+// @route   POST /api/sales/fix-admin-sales
+// @access  Private/Admin
+export const fixAdminSales = async (req, res) => {
+  try {
+    // Actualizar todas las ventas admin (distributor = null) que están pendientes
+    const result = await Sale.updateMany(
+      {
+        distributor: null,
+        paymentStatus: "pendiente"
+      },
+      {
+        $set: {
+          paymentStatus: "confirmado",
+          paymentConfirmedAt: new Date(),
+          paymentConfirmedBy: req.user.id
+        }
+      }
+    );
+
+    // Obtener resumen de ventas admin
+    const adminSales = await Sale.find({ distributor: null });
+    const confirmed = adminSales.filter(s => s.paymentStatus === "confirmado").length;
+    const pending = adminSales.filter(s => s.paymentStatus === "pendiente").length;
+
+    res.json({
+      message: `✅ ${result.modifiedCount} ventas admin actualizadas a confirmadas`,
+      totalAdminSales: adminSales.length,
+      confirmed,
+      pending,
+      updated: result.modifiedCount
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 // @desc    Registrar una venta como administrador (stock general)
 // @route   POST /api/sales/admin
 // @access  Private/Admin

@@ -43,10 +43,39 @@ export default function Dashboard() {
     null
   );
   const [loading, setLoading] = useState(true);
+  const [fixingAdminSales, setFixingAdminSales] = useState(false);
 
   useEffect(() => {
     loadStats();
   }, []);
+
+  const handleFixAdminSales = async () => {
+    if (!confirm("¿Actualizar todas las ventas admin pendientes a confirmadas? Esto permitirá que aparezcan en los analytics.")) {
+      return;
+    }
+
+    try {
+      setFixingAdminSales(true);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/sales/fix-admin-sales`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json"
+        }
+      });
+      
+      const data = await response.json();
+      alert(`✅ ${data.message}\n\nTotal ventas admin: ${data.totalAdminSales}\nConfirmadas: ${data.confirmed}\nPendientes: ${data.pending}\nActualizadas: ${data.updated}`);
+      
+      // Recargar stats
+      await loadStats();
+    } catch (error) {
+      console.error("Error actualizando ventas:", error);
+      alert("❌ Error al actualizar ventas admin");
+    } finally {
+      setFixingAdminSales(false);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -135,13 +164,24 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl">
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm text-gray-400 sm:mt-2 sm:text-base">
-          Vista general de tu catálogo de productos
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-gray-400 sm:mt-2 sm:text-base">
+            Vista general de tu catálogo de productos
+          </p>
+        </div>
+        {monthlyData && monthlyData.currentMonth.totalProfit === 0 && (
+          <button
+            onClick={handleFixAdminSales}
+            disabled={fixingAdminSales}
+            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            {fixingAdminSales ? "Actualizando..." : "🔧 Actualizar Ventas"}
+          </button>
+        )}
       </div>
 
       {/* Resumen Financiero Mensual */}
