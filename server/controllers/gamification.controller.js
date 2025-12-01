@@ -412,9 +412,36 @@ export const getRanking = async (req, res) => {
         const stats = await DistributorStats.findOne({
           distributor: rank.distributorId,
         });
+        
+        const position = index + 1;
+        let positionBadge = "";
+        let positionLabel = "";
+        let profitPercentage = 20;
+        
+        if (position === 1) {
+          positionBadge = "🥇";
+          positionLabel = "PRIMER LUGAR";
+          profitPercentage = 25;
+        } else if (position === 2) {
+          positionBadge = "🥈";
+          positionLabel = "SEGUNDO LUGAR";
+          profitPercentage = 23;
+        } else if (position === 3) {
+          positionBadge = "🥉";
+          positionLabel = "TERCER LUGAR";
+          profitPercentage = 21;
+        } else {
+          positionBadge = `#${position}`;
+          positionLabel = `POSICIÓN ${position}`;
+          profitPercentage = 20;
+        }
+        
         return {
           ...rank,
-          position: index + 1,
+          position,
+          positionBadge,
+          positionLabel,
+          profitPercentage,
           totalPoints: stats?.totalPoints || 0,
           currentLevel: stats?.currentLevel || "beginner",
           periodWins: stats?.periodWins || 0,

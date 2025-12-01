@@ -245,6 +245,61 @@ const Rankings = () => {
             </div>
           </div>
 
+          {/* Podio de los 3 primeros lugares */}
+          {rankingData.rankings.length >= 3 && (
+            <div className="mb-6 rounded-lg border border-gray-700 bg-gradient-to-br from-gray-800 to-gray-900 p-6 shadow-lg">
+              <h2 className="mb-4 text-center text-2xl font-bold text-white">
+                🏆 Podio Actual
+              </h2>
+              <div className="flex items-end justify-center gap-4">
+                {/* 2do Lugar */}
+                <div className="flex flex-col items-center">
+                  <div className="mb-2 flex h-32 w-32 flex-col items-center justify-center rounded-lg border-4 border-gray-400 bg-gray-700 shadow-lg">
+                    <div className="text-4xl">🥈</div>
+                    <div className="mt-2 text-xs font-bold text-gray-300">2º LUGAR</div>
+                  </div>
+                  <div className="mt-2 text-center">
+                    <p className="font-bold text-white">{rankingData.rankings[1]?.distributorName}</p>
+                    <p className="text-sm text-gray-400">{formatCurrency(rankingData.rankings[1]?.totalRevenue || 0)}</p>
+                    <span className="mt-1 inline-block rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white">
+                      23% ganancia
+                    </span>
+                  </div>
+                </div>
+
+                {/* 1er Lugar */}
+                <div className="flex flex-col items-center">
+                  <div className="mb-2 flex h-40 w-40 flex-col items-center justify-center rounded-lg border-4 border-yellow-400 bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-2xl">
+                    <div className="text-5xl">🥇</div>
+                    <div className="mt-2 text-sm font-bold text-yellow-900">1º LUGAR</div>
+                  </div>
+                  <div className="mt-2 text-center">
+                    <p className="font-bold text-white">{rankingData.rankings[0]?.distributorName}</p>
+                    <p className="text-sm text-gray-400">{formatCurrency(rankingData.rankings[0]?.totalRevenue || 0)}</p>
+                    <span className="mt-1 inline-block rounded-full bg-green-600 px-3 py-1 text-xs font-bold text-white">
+                      25% ganancia
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3er Lugar */}
+                <div className="flex flex-col items-center">
+                  <div className="mb-2 flex h-28 w-28 flex-col items-center justify-center rounded-lg border-4 border-orange-600 bg-gray-700 shadow-lg">
+                    <div className="text-3xl">🥉</div>
+                    <div className="mt-2 text-xs font-bold text-gray-300">3º LUGAR</div>
+                  </div>
+                  <div className="mt-2 text-center">
+                    <p className="font-bold text-white">{rankingData.rankings[2]?.distributorName}</p>
+                    <p className="text-sm text-gray-400">{formatCurrency(rankingData.rankings[2]?.totalRevenue || 0)}</p>
+                    <span className="mt-1 inline-block rounded-full bg-purple-600 px-3 py-1 text-xs font-bold text-white">
+                      21% ganancia
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Tabla de Ranking */}
           <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800 shadow-md">
             <table className="min-w-full">
@@ -291,31 +346,42 @@ const Rankings = () => {
                     <tr
                       key={rank.distributorId}
                       className={`hover:bg-gray-700 ${
-                        rank.position <= 3 ? "bg-yellow-900/30" : ""
+                        rank.position <= 3 ? "bg-yellow-900/30 border-l-4" : ""
+                      } ${
+                        rank.position === 1 ? "border-yellow-400" :
+                        rank.position === 2 ? "border-gray-400" :
+                        rank.position === 3 ? "border-orange-600" : ""
                       }`}
                     >
                       <td className="whitespace-nowrap px-6 py-4">
-                        <div className="text-2xl">
-                          {getPositionBadge(rank.position)}
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="text-3xl">
+                            {getPositionBadge(rank.position)}
+                          </div>
+                          {rank.position <= 3 && (
+                            <div className="text-[10px] font-bold uppercase text-yellow-400">
+                              {rank.position === 1 ? "1º LUGAR" :
+                               rank.position === 2 ? "2º LUGAR" : "3º LUGAR"}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-medium text-white">
-                          {rank.distributorName}
-                        </div>
-                        <div className="text-sm text-gray-400">
-                          {rank.distributorEmail}
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <div className="font-medium text-white">
+                              {rank.distributorName}
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              {rank.distributorEmail}
+                            </div>
+                          </div>
                         </div>
                         {rank.position <= 3 && (
-                          <div className="mt-1">
-                            <span className="inline-flex items-center rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                              💰 +
-                              {rank.position === 1
-                                ? "5"
-                                : rank.position === 2
-                                  ? "3"
-                                  : "2"}
-                              % comisión
+                          <div className="mt-2 flex gap-2">
+                            <span className="inline-flex items-center rounded-full bg-green-600 px-2.5 py-0.5 text-xs font-bold text-white">
+                              {rank.position === 1 ? "25%" :
+                               rank.position === 2 ? "23%" : "21%"} ganancia
                             </span>
                           </div>
                         )}
