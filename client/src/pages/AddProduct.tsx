@@ -15,7 +15,6 @@ interface FormState {
   suggestedPrice: string;
   distributorPrice: string;
   clientPrice: string;
-  distributorCommission: string;
   category: string;
   totalStock: string;
   lowStockAlert: string;
@@ -34,7 +33,6 @@ export default function AddProduct() {
     suggestedPrice: "",
     distributorPrice: "",
     clientPrice: "",
-    distributorCommission: "",
     category: "",
     totalStock: "",
     lowStockAlert: "10",
@@ -104,6 +102,14 @@ export default function AddProduct() {
         }
       }
 
+      // Calcular precio distribuidor automáticamente (80% del precio cliente)
+      if (name === "clientPrice" && value) {
+        const client = Number(value);
+        if (!isNaN(client)) {
+          updated.distributorPrice = Math.round(client * 0.8).toString();
+        }
+      }
+
       return updated;
     });
   };
@@ -128,9 +134,6 @@ export default function AddProduct() {
       const totalStock = Number(formData.totalStock || 0);
       const clientPrice = formData.clientPrice
         ? Number(formData.clientPrice)
-        : undefined;
-      const distributorCommission = formData.distributorCommission
-        ? Number(formData.distributorCommission)
         : undefined;
 
       if (Number.isNaN(purchasePrice) || purchasePrice < 0) {
@@ -168,7 +171,6 @@ export default function AddProduct() {
         suggestedPrice: Number(formData.suggestedPrice) || purchasePrice * 1.3,
         distributorPrice,
         clientPrice,
-        distributorCommission,
         category: formData.category,
         totalStock,
         lowStockAlert: Number(formData.lowStockAlert) || 10,
@@ -303,36 +305,24 @@ export default function AddProduct() {
                       className="w-full rounded-lg border border-blue-600 bg-blue-900/20 px-4 py-2 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="0.00"
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Se calcula como 80% del precio cliente
+                    </p>
                   </div>
 
                   <div>
                     <label className="mb-2 block text-xs font-medium text-gray-300">
-                      Precio Cliente (Opcional)
+                      Precio Cliente *
                     </label>
                     <input
                       type="number"
                       name="clientPrice"
                       value={formData.clientPrice}
                       onChange={handleChange}
+                      required
                       min="0"
                       step="0.01"
                       className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-medium text-yellow-300">
-                      Comisión Distribuidor (Opcional)
-                    </label>
-                    <input
-                      type="number"
-                      name="distributorCommission"
-                      value={formData.distributorCommission}
-                      onChange={handleChange}
-                      min="0"
-                      step="0.01"
-                      className="w-full rounded-lg border border-yellow-600 bg-yellow-900/20 px-4 py-2 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500"
                       placeholder="0.00"
                     />
                   </div>
