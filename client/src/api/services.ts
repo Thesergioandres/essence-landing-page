@@ -117,6 +117,18 @@ export const productService = {
     const response = await api.delete<{ message: string }>(`/products/${id}`);
     return response.data;
   },
+
+  async getDistributorPrice(productId: string, distributorId: string): Promise<{
+    productId: string;
+    distributorId: string;
+    purchasePrice: number;
+    distributorPrice: number;
+    profitPercentage: number;
+    rankingPosition: number;
+  }> {
+    const response = await api.get(`/products/${productId}/distributor-price/${distributorId}`);
+    return response.data;
+  },
 };
 
 export const uploadService = {

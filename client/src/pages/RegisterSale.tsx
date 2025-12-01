@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { saleService, stockService } from "../api/services";
+import { saleService, stockService, productService, authService } from "../api/services";
 import { Button } from "../components/Button";
 import type { DistributorStock } from "../types";
 
@@ -11,6 +11,12 @@ interface FormState {
   notes: string;
   paymentProof: string | null;
   saleDate: string;
+}
+
+interface DynamicPricing {
+  distributorPrice: number;
+  profitPercentage: number;
+  rankingPosition: number;
 }
 
 export default function RegisterSale() {
@@ -26,6 +32,7 @@ export default function RegisterSale() {
   });
   const [selectedProduct, setSelectedProduct] =
     useState<DistributorStock | null>(null);
+  const [dynamicPricing, setDynamicPricing] = useState<DynamicPricing | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingStock, setLoadingStock] = useState(true);
   const [error, setError] = useState("");
@@ -50,7 +57,7 @@ export default function RegisterSale() {
     }
   };
 
-  const handleProductChange = (productId: string) => {
+  const handleProductChange = async (productId: string) => {
     const product = stock.find(
       item =>
         (typeof item.product === "object" ? item.product._id : item.product) ===
@@ -58,15 +65,47 @@ export default function RegisterSale() {
     );
 
     setSelectedProduct(product || null);
-    setFormData(prev => ({
-      ...prev,
-      productId,
-      quantity: 1,
-      salePrice:
-        product && typeof product.product === "object"
-          ? product.product.clientPrice || 0
-          : 0,
-    }));
+    setDynamicPricing(null);
+    
+    // Obtener precio dinámico basado en ranking
+    if (product && typeof product.product === "object") {
+      try {
+        const currentUser = authService.getCurrentUser();
+        if (currentUser) {
+          const pricing = await productService.getDistributorPrice(productId, currentUser._id);
+          setDynamicPricing({
+            distributorPrice: pricing.distributorPrice,
+            profitPercentage: pricing.profitPercentage,
+            rankingPosition: pricing.rankingPosition,
+          });
+          
+          // Usar el precio dinámico como precio sugerido
+          setFormData(prev => ({
+            ...prev,
+            productId,
+            quantity: 1,
+            salePrice: pricing.distributorPrice,
+          }));
+        }
+      } catch (error) {
+        console.error("Error al obtener precio dinámico:", error);
+        // Fallback al precio fijo si falla
+        const productData = typeof product.product === "object" ? product.product : null;
+        setFormData(prev => ({
+          ...prev,
+          productId,
+          quantity: 1,
+          salePrice: productData?.clientPrice || 0,
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        productId,
+        quantity: 1,
+        salePrice: 0,
+      }));
+    }
     setError("");
   };
 
@@ -88,8 +127,12 @@ export default function RegisterSale() {
   const calculateProfit = () => {
     if (!selectedProduct || typeof selectedProduct.product !== "object")
       return 0;
+    
+    // Usar precio dinámico si está disponible
+    const distributorPrice = dynamicPricing?.distributorPrice || selectedProduct.product.distributorPrice;
+    
     return (
-      (formData.salePrice - selectedProduct.product.distributorPrice) *
+      (formData.salePrice - distributorPrice) *
       formData.quantity
     );
   };
@@ -158,7 +201,11 @@ export default function RegisterSale() {
       typeof selectedProduct.product === "object"
         ? selectedProduct.product
         : null;
-    if (product && formData.salePrice < product.distributorPrice) {
+    
+    // Usar precio dinámico si está disponible
+    const minPrice = dynamicPricing?.distributorPrice || product?.distributorPrice || 0;
+    
+    if (product && formData.salePrice < minPrice) {
       setError("El precio de venta no puede ser menor al precio que pagaste");
       return;
     }
@@ -332,9 +379,16 @@ export default function RegisterSale() {
               {selectedProduct &&
                 typeof selectedProduct.product === "object" && (
                   <div className="rounded-lg border border-blue-500/30 bg-blue-900/10 p-4">
-                    <h3 className="mb-2 font-semibold text-white">
-                      {selectedProduct.product.name}
-                    </h3>
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="font-semibold text-white">
+                        {selectedProduct.product.name}
+                      </h3>
+                      {dynamicPricing && (
+                        <span className="rounded-full bg-purple-500/20 px-3 py-1 text-sm font-bold text-purple-400">
+                          🏆 Posición #{dynamicPricing.rankingPosition} - {dynamicPricing.profitPercentage}% ganancia
+                        </span>
+                      )}
+                    </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-gray-400">Stock disponible:</p>
@@ -346,7 +400,7 @@ export default function RegisterSale() {
                         <p className="text-gray-400">Tu precio de compra:</p>
                         <p className="text-lg font-bold text-white">
                           {formatCurrency(
-                            selectedProduct.product.distributorPrice
+                            dynamicPricing?.distributorPrice || selectedProduct.product.distributorPrice
                           )}
                         </p>
                       </div>
@@ -363,7 +417,7 @@ export default function RegisterSale() {
                         <p className="text-lg font-bold text-purple-400">
                           {formatCurrency(
                             (selectedProduct.product.clientPrice || 0) -
-                              selectedProduct.product.distributorPrice
+                              (dynamicPricing?.distributorPrice || selectedProduct.product.distributorPrice)
                           )}
                         </p>
                       </div>
