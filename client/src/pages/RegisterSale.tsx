@@ -128,11 +128,14 @@ export default function RegisterSale() {
     if (!selectedProduct || typeof selectedProduct.product !== "object")
       return 0;
     
-    // Usar precio dinámico si está disponible
-    const distributorPrice = dynamicPricing?.distributorPrice || selectedProduct.product.distributorPrice;
+    // El distribuidor gana un porcentaje del precio de venta según su ranking
+    if (dynamicPricing) {
+      return (formData.salePrice * dynamicPricing.profitPercentage / 100) * formData.quantity;
+    }
     
+    // Fallback: ganancia básica (precio de venta - precio de compra)
     return (
-      (formData.salePrice - distributorPrice) *
+      (formData.salePrice - selectedProduct.product.distributorPrice) *
       formData.quantity
     );
   };
@@ -202,8 +205,8 @@ export default function RegisterSale() {
         ? selectedProduct.product
         : null;
     
-    // Usar precio dinámico si está disponible
-    const minPrice = dynamicPricing?.distributorPrice || product?.distributorPrice || 0;
+    // El precio mínimo es el que el distribuidor paga al admin
+    const minPrice = product?.distributorPrice || 0;
     
     if (product && formData.salePrice < minPrice) {
       setError("El precio de venta no puede ser menor al precio que pagaste");
@@ -400,12 +403,12 @@ export default function RegisterSale() {
                         <p className="text-gray-400">Tu precio de compra:</p>
                         <p className="text-lg font-bold text-white">
                           {formatCurrency(
-                            dynamicPricing?.distributorPrice || selectedProduct.product.distributorPrice
+                            selectedProduct.product.distributorPrice
                           )}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-400">Precio sugerido:</p>
+                        <p className="text-gray-400">Precio sugerido venta:</p>
                         <p className="text-lg font-bold text-green-400">
                           {formatCurrency(
                             selectedProduct.product.clientPrice || 0
@@ -413,12 +416,21 @@ export default function RegisterSale() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-400">Ganancia sugerida:</p>
+                        <p className="text-gray-400">
+                          {dynamicPricing 
+                            ? `Ganancia (${dynamicPricing.profitPercentage}% del precio venta):`
+                            : "Ganancia sugerida:"
+                          }
+                        </p>
                         <p className="text-lg font-bold text-purple-400">
-                          {formatCurrency(
-                            (selectedProduct.product.clientPrice || 0) -
-                              (dynamicPricing?.distributorPrice || selectedProduct.product.distributorPrice)
-                          )}
+                          {dynamicPricing
+                            ? formatCurrency(
+                                (selectedProduct.product.clientPrice || 0) * dynamicPricing.profitPercentage / 100
+                              )
+                            : formatCurrency(
+                                (selectedProduct.product.clientPrice || 0) - selectedProduct.product.distributorPrice
+                              )
+                          }
                         </p>
                       </div>
                     </div>

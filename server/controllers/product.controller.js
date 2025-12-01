@@ -116,20 +116,34 @@ export const getDistributorPrice = async (req, res) => {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
-    const adjustedPrice = await calculateDistributorPrice(
-      product.purchasePrice,
-      distributorId
-    );
-    
     const profitPercentage = await getDistributorProfitPercentage(distributorId);
+    const ranking = await Sale.aggregate([
+      {
+        $match: {
+          distributor: { $exists: true, $ne: null },
+          paymentStatus: "confirmado",
+        },
+      },
+      {
+        $group: {
+          _id: "$distributor",
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+        },
+      },
+      { $sort: { totalRevenue: -1 } },
+    ]);
+    
+    const position = ranking.findIndex(
+      (r) => r._id.toString() === distributorId.toString()
+    ) + 1;
 
     res.json({
       productId: product._id,
       productName: product.name,
       purchasePrice: product.purchasePrice,
-      distributorPrice: adjustedPrice,
-      profitPercentage,
-      estimatedProfit: adjustedPrice - product.purchasePrice,
+      distributorPrice: product.distributorPrice, // Precio fijo que paga al admin
+      profitPercentage, // 25%, 23%, 21%, o 20% según ranking
+      rankingPosition: position || 4,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
