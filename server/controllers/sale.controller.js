@@ -29,34 +29,44 @@ export const deleteSale = async (req, res) => {
 // @access  Private/Admin
 export const fixAdminSales = async (req, res) => {
   try {
-    // Actualizar todas las ventas admin (distributor = null) que están pendientes
-    const result = await Sale.updateMany(
-      {
-        distributor: null,
-        paymentStatus: "pendiente"
-      },
-      {
-        $set: {
-          paymentStatus: "confirmado",
-          paymentConfirmedAt: new Date(),
-          paymentConfirmedBy: req.user.id
-        }
-      }
-    );
-
-    // Obtener resumen de ventas admin
+    // Obtener todas las ventas admin
     const adminSales = await Sale.find({ distributor: null });
-    const confirmed = adminSales.filter(s => s.paymentStatus === "confirmado").length;
-    const pending = adminSales.filter(s => s.paymentStatus === "pendiente").length;
+    
+    let updated = 0;
+    
+    // Actualizar cada venta para recalcular ganancias
+    for (const sale of adminSales) {
+      let needsUpdate = false;
+      
+      // Actualizar estado de pago si está pendiente
+      if (sale.paymentStatus === "pendiente") {
+        sale.paymentStatus = "confirmado";
+        sale.paymentConfirmedAt = new Date();
+        sale.paymentConfirmedBy = req.user.id;
+        needsUpdate = true;
+      }
+      
+      // Recalcular ganancias (el pre-save hook lo hará automáticamente)
+      if (needsUpdate || sale.distributorProfit !== 0 || sale.totalProfit !== sale.adminProfit) {
+        await sale.save(); // Esto ejecuta el pre-save hook que recalcula ganancias
+        updated++;
+      }
+    }
+
+    // Obtener resumen actualizado
+    const confirmedSales = await Sale.find({ distributor: null, paymentStatus: "confirmado" });
+    const pendingSales = await Sale.find({ distributor: null, paymentStatus: "pendiente" });
 
     res.json({
-      message: `✅ ${result.modifiedCount} ventas admin actualizadas a confirmadas`,
+      message: `✅ ${updated} ventas admin actualizadas`,
       totalAdminSales: adminSales.length,
-      confirmed,
-      pending,
-      updated: result.modifiedCount
+      confirmed: confirmedSales.length,
+      pending: pendingSales.length,
+      updated: updated,
+      note: "Ganancias recalculadas correctamente"
     });
   } catch (error) {
+    console.error("Error en fixAdminSales:", error);
     res.status(500).json({ message: error.message });
   }
 };

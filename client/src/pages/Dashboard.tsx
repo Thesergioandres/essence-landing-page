@@ -173,15 +173,14 @@ export default function Dashboard() {
             Vista general de tu catálogo de productos
           </p>
         </div>
-        {monthlyData && monthlyData.currentMonth.totalProfit === 0 && (
-          <button
-            onClick={handleFixAdminSales}
-            disabled={fixingAdminSales}
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-          >
-            {fixingAdminSales ? "Actualizando..." : "🔧 Actualizar Ventas"}
-          </button>
-        )}
+        <button
+          onClick={handleFixAdminSales}
+          disabled={fixingAdminSales}
+          className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          title="Actualizar ventas admin y recalcular ganancias"
+        >
+          {fixingAdminSales ? "Actualizando..." : "🔧 Fix Ventas Admin"}
+        </button>
       </div>
 
       {/* Resumen Financiero Mensual */}
