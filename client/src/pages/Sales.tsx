@@ -7,6 +7,7 @@ export default function Sales() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pendiente" | "confirmado">("all");
+  const [sortBy, setSortBy] = useState<"date-desc" | "date-asc" | "distributor">("date-desc");
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
@@ -74,6 +75,22 @@ export default function Sales() {
     return sale.paymentStatus === filter;
   });
 
+  // Ordenar ventas
+  const sortedSales = [...filteredSales].sort((a, b) => {
+    switch (sortBy) {
+      case "date-desc":
+        return new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime();
+      case "date-asc":
+        return new Date(a.saleDate).getTime() - new Date(b.saleDate).getTime();
+      case "distributor":
+        const nameA = typeof a.distributor === "object" && a.distributor ? a.distributor.name : "Venta Admin";
+        const nameB = typeof b.distributor === "object" && b.distributor ? b.distributor.name : "Venta Admin";
+        return nameA.localeCompare(nameB);
+      default:
+        return 0;
+    }
+  });
+
   const stats = {
     total: sales.length,
     pendiente: sales.filter((s) => s.paymentStatus === "pendiente").length,
@@ -124,39 +141,58 @@ export default function Sales() {
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
-              filter === "all"
-                ? "bg-purple-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+      {/* Filtros y Ordenamiento */}
+      <div className="bg-white p-4 rounded-lg shadow space-y-4">
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-2">Filtrar por estado:</p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
+                filter === "all"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Todas ({stats.total})
+            </button>
+            <button
+              onClick={() => setFilter("pendiente")}
+              className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
+                filter === "pendiente"
+                  ? "bg-yellow-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Pendientes ({stats.pendiente})
+            </button>
+            <button
+              onClick={() => setFilter("confirmado")}
+              className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
+                filter === "confirmado"
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Confirmadas ({stats.confirmado})
+            </button>
+          </div>
+        </div>
+        
+        <div>
+          <label htmlFor="sortBy" className="text-sm font-medium text-gray-700 mb-2 block">
+            Ordenar por:
+          </label>
+          <select
+            id="sortBy"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
-            Todas ({stats.total})
-          </button>
-          <button
-            onClick={() => setFilter("pendiente")}
-            className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
-              filter === "pendiente"
-                ? "bg-yellow-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Pendientes ({stats.pendiente})
-          </button>
-          <button
-            onClick={() => setFilter("confirmado")}
-            className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
-              filter === "confirmado"
-                ? "bg-green-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Confirmadas ({stats.confirmado})
-          </button>
+            <option value="date-desc">Fecha (Más reciente primero)</option>
+            <option value="date-asc">Fecha (Más antigua primero)</option>
+            <option value="distributor">Distribuidor (A-Z)</option>
+          </select>
         </div>
       </div>
 
@@ -193,7 +229,7 @@ export default function Sales() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredSales.map((sale) => {
+              {sortedSales.map((sale) => {
                 const product = typeof sale.product === "object" ? sale.product : null;
                 const distributor = typeof sale.distributor === "object" ? sale.distributor : null;
 
@@ -293,9 +329,9 @@ export default function Sales() {
             </tbody>
           </table>
 
-          {filteredSales.length === 0 && (
+          {sortedSales.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">No hay ventas registradas</p>
+              <p className="text-gray-500">No hay ventas que mostrar</p>
             </div>
           )}
         </div>
