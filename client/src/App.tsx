@@ -1,41 +1,56 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import AddDistributor from "./pages/AddDistributor";
-import AddProduct from "./pages/AddProduct";
-import AdminRegisterSale from "./pages/AdminRegisterSale";
-import Analytics from "./pages/Analytics";
-import AuditLogs from "./pages/AuditLogs";
-import Catalog from "./pages/Catalog";
-import Categories from "./pages/Categories";
-import CategoryProducts from "./pages/CategoryProducts";
-import Dashboard from "./pages/Dashboard";
-import DashboardLayout from "./pages/DashboardLayout";
-import DefectiveProductsManagement from "./pages/DefectiveProductsManagement";
-import DefectiveReports from "./pages/DefectiveReports";
-import DistributorDashboard from "./pages/DistributorDashboard";
-import DistributorDashboardLayout from "./pages/DistributorDashboardLayout";
-import DistributorDetail from "./pages/DistributorDetail";
-import DistributorProducts from "./pages/DistributorProducts";
-import DistributorSales from "./pages/DistributorSales";
-import DistributorStats from "./pages/DistributorStats";
-import Distributors from "./pages/Distributors";
-import EditDistributor from "./pages/EditDistributor";
-import EditProduct from "./pages/EditProduct";
-import GamificationConfig from "./pages/GamificationConfig";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import LoginAdmin from "./pages/LoginAdmin";
-import LoginDistributor from "./pages/LoginDistributor";
-import ProductDetail from "./pages/ProductDetail";
-import Products from "./pages/Products";
-import Rankings from "./pages/Rankings";
-import RegisterSale from "./pages/RegisterSale";
-import Sales from "./pages/Sales";
-import StockManagement from "./pages/StockManagement";
 import ProtectedRoute from "./routes/ProtectedRoute";
+
+// Loading component
+const PageLoader = () => (
+  <div className="flex h-screen items-center justify-center bg-gray-900">
+    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-500"></div>
+  </div>
+);
+
+// Lazy load all pages
+const Home = lazy(() => import("./pages/Home"));
+const Catalog = lazy(() => import("./pages/Catalog"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const CategoryProducts = lazy(() => import("./pages/CategoryProducts"));
+const Login = lazy(() => import("./pages/Login"));
+const LoginAdmin = lazy(() => import("./pages/LoginAdmin"));
+const LoginDistributor = lazy(() => import("./pages/LoginDistributor"));
+
+// Admin pages
+const DashboardLayout = lazy(() => import("./pages/DashboardLayout"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Products = lazy(() => import("./pages/Products"));
+const Categories = lazy(() => import("./pages/Categories"));
+const AddProduct = lazy(() => import("./pages/AddProduct"));
+const EditProduct = lazy(() => import("./pages/EditProduct"));
+const Distributors = lazy(() => import("./pages/Distributors"));
+const AddDistributor = lazy(() => import("./pages/AddDistributor"));
+const DistributorDetail = lazy(() => import("./pages/DistributorDetail"));
+const EditDistributor = lazy(() => import("./pages/EditDistributor"));
+const StockManagement = lazy(() => import("./pages/StockManagement"));
+const Sales = lazy(() => import("./pages/Sales"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const AuditLogs = lazy(() => import("./pages/AuditLogs"));
+const GamificationConfig = lazy(() => import("./pages/GamificationConfig"));
+const Rankings = lazy(() => import("./pages/Rankings"));
+const DefectiveProductsManagement = lazy(() => import("./pages/DefectiveProductsManagement"));
+const AdminRegisterSale = lazy(() => import("./pages/AdminRegisterSale"));
+
+// Distributor pages
+const DistributorDashboardLayout = lazy(() => import("./pages/DistributorDashboardLayout"));
+const DistributorDashboard = lazy(() => import("./pages/DistributorDashboard"));
+const DistributorProducts = lazy(() => import("./pages/DistributorProducts"));
+const RegisterSale = lazy(() => import("./pages/RegisterSale"));
+const DistributorSales = lazy(() => import("./pages/DistributorSales"));
+const DistributorStats = lazy(() => import("./pages/DistributorStats"));
+const DefectiveReports = lazy(() => import("./pages/DefectiveReports"));
 
 export default function App() {
   return (
-    <Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
       {/* Public Routes */}
       <Route path="/" element={<Home />} />
       <Route path="/productos" element={<Catalog />} />
@@ -95,5 +110,6 @@ export default function App() {
       {/* Redirect unknown routes to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }

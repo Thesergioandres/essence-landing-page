@@ -1,6 +1,7 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import compression from "compression";
 import connectDB from "./config/database.js";
 
 // Importar rutas
@@ -34,6 +35,17 @@ const allowedOrigins = [
 
 // Conectar a MongoDB
 connectDB();
+
+// Compression middleware (debe ir antes de las rutas)
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  level: 6
+}));
 
 // Middlewares - CORS Configuration v5.0 - Enhanced for Production
 app.use(
