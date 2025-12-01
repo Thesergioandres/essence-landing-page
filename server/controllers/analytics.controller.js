@@ -90,13 +90,6 @@ export const getMonthlyProfit = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-        lastMonthSalesCount: lastMonthSales.length,
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
 // @desc    Obtener ganancias por producto
 // @route   GET /api/analytics/profit-by-product
