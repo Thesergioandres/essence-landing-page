@@ -19,6 +19,8 @@ const StockManagement = () => {
   const [items, setItems] = useState<StockItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [selectedDistributor, setSelectedDistributor] = useState<string>('');
+  const [distributorStock, setDistributorStock] = useState<DistributorStock[]>([]);
+  const [loadingDistributorStock, setLoadingDistributorStock] = useState(false);
   const [operation, setOperation] = useState<OperationType>('assign');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,6 +29,14 @@ const StockManagement = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (selectedDistributor) {
+      loadDistributorStock(selectedDistributor);
+    } else {
+      setDistributorStock([]);
+    }
+  }, [selectedDistributor]);
 
   const loadData = async () => {
     try {
@@ -40,6 +50,19 @@ const StockManagement = () => {
       setAlerts([...alertsRes.warehouseAlerts, ...alertsRes.distributorAlerts]);
     } catch (err) {
       console.error('Error al cargar datos:', err);
+    }
+  };
+
+  const loadDistributorStock = async (distributorId: string) => {
+    try {
+      setLoadingDistributorStock(true);
+      const stock = await stockService.getDistributorStock(distributorId);
+      setDistributorStock(stock);
+    } catch (err) {
+      console.error('Error al cargar inventario del distribuidor:', err);
+      setDistributorStock([]);
+    } finally {
+      setLoadingDistributorStock(false);
     }
   };
 
@@ -137,9 +160,13 @@ const StockManagement = () => {
       // Recargar datos
       await loadData();
       
-      // Resetear formulario
+      // Recargar inventario del distribuidor
+      if (selectedDistributor) {
+        await loadDistributorStock(selectedDistributor);
+      }
+      
+      // Resetear formulario de items
       setItems([]);
-      setSelectedDistributor('');
      
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al procesar la operación');
@@ -274,6 +301,59 @@ const StockManagement = () => {
             </div>
           </div>
         </div>
+
+        {/* Inventario del Distribuidor Seleccionado */}
+        {selectedDistributor && (
+          <div className="rounded-xl border border-blue-500/30 bg-blue-900/20 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-white">
+                Inventario de {distributors.find(d => d._id === selectedDistributor)?.name}
+              </h2>
+              {loadingDistributorStock && (
+                <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-500"></div>
+              )}
+            </div>
+
+            {!loadingDistributorStock && distributorStock.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-400">
+                  Este distribuidor no tiene productos asignados
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {distributorStock.map((stock) => {
+                  const product = typeof stock.product === 'object' ? stock.product : null;
+                  return (
+                    <div
+                      key={stock._id}
+                      className="rounded-lg border border-blue-500/20 bg-blue-950/30 p-4"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-white">
+                            {product?.name || 'Producto desconocido'}
+                          </h3>
+                          <p className="mt-1 text-xs text-gray-400">
+                            {formatCurrency(product?.distributorPrice || 0)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-lg font-bold ${
+                            stock.quantity <= 5 ? 'text-red-400' : 'text-green-400'
+                          }`}>
+                            {stock.quantity}
+                          </p>
+                          <p className="text-xs text-gray-400">unidades</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Agregar Productos */}
         <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
