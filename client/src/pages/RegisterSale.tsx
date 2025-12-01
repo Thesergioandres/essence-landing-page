@@ -412,40 +412,63 @@ export default function RegisterSale() {
                           {selectedProduct.quantity} unidades
                         </p>
                       </div>
-                      <div>
-                        <p className="text-gray-400">Tu precio de compra:</p>
-                        <p className="text-lg font-bold text-white">
-                          {formatCurrency(
-                            selectedProduct.product.distributorPrice
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Precio sugerido venta:</p>
-                        <p className="text-lg font-bold text-green-400">
-                          {formatCurrency(
-                            selectedProduct.product.clientPrice || 0
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">
-                          {dynamicPricing 
-                            ? `Ganancia (${dynamicPricing.profitPercentage}% del precio venta):`
-                            : "Ganancia sugerida:"
-                          }
-                        </p>
-                        <p className="text-lg font-bold text-purple-400">
-                          {dynamicPricing
-                            ? formatCurrency(
+                      {dynamicPricing ? (
+                        <>
+                          <div>
+                            <p className="text-gray-400">Precio sugerido venta:</p>
+                            <p className="text-lg font-bold text-green-400">
+                              {formatCurrency(
+                                selectedProduct.product.clientPrice || 0
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">
+                              Tu ganancia ({dynamicPricing.profitPercentage}%):
+                            </p>
+                            <p className="text-lg font-bold text-purple-400">
+                              {formatCurrency(
                                 (selectedProduct.product.clientPrice || 0) * dynamicPricing.profitPercentage / 100
-                              )
-                            : formatCurrency(
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">Envías al admin:</p>
+                            <p className="text-lg font-bold text-white">
+                              {formatCurrency(
+                                (selectedProduct.product.clientPrice || 0) * (100 - dynamicPricing.profitPercentage) / 100
+                              )}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div>
+                            <p className="text-gray-400">Tu precio de compra:</p>
+                            <p className="text-lg font-bold text-white">
+                              {formatCurrency(
+                                selectedProduct.product.distributorPrice
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">Precio sugerido venta:</p>
+                            <p className="text-lg font-bold text-green-400">
+                              {formatCurrency(
+                                selectedProduct.product.clientPrice || 0
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">Ganancia sugerida:</p>
+                            <p className="text-lg font-bold text-purple-400">
+                              {formatCurrency(
                                 (selectedProduct.product.clientPrice || 0) - selectedProduct.product.distributorPrice
-                              )
-                          }
-                        </p>
-                      </div>
+                              )}
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
