@@ -206,7 +206,8 @@ export default function Dashboard() {
           {monthlyData._debug && (
             <div className="mb-4 rounded border border-yellow-500 bg-yellow-900/30 p-3 text-xs text-yellow-200">
               <p className="font-bold">🐛 DEBUG INFO (Backend):</p>
-              <p>Fecha servidor: {new Date(monthlyData._debug.now).toLocaleString("es-CO")}</p>
+              <p>Hora UTC: {new Date(monthlyData._debug.nowUTC).toLocaleString("es-CO")}</p>
+              <p>Hora Colombia: {new Date(monthlyData._debug.nowColombia).toLocaleString("es-CO")}</p>
               <p>Rango mes actual: {new Date(monthlyData._debug.startOfMonth).toLocaleDateString("es-CO")} - {new Date(monthlyData._debug.endOfMonth).toLocaleDateString("es-CO")}</p>
               <p>Ventas encontradas mes actual: {monthlyData._debug.currentMonthSalesCount}</p>
               <p>Ventas encontradas mes anterior: {monthlyData._debug.lastMonthSalesCount}</p>

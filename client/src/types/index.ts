@@ -133,7 +133,8 @@ export interface MonthlyProfitData {
   growthPercentage: number;
   averageTicket: number;
   _debug?: {
-    now: string;
+    nowUTC: string;
+    nowColombia: string;
     startOfMonth: string;
     endOfMonth: string;
     startOfLastMonth: string;

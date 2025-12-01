@@ -184,7 +184,8 @@ export default function Analytics() {
           {monthlyData._debug && (
             <div className="mb-4 rounded border-2 border-yellow-500 bg-yellow-50 p-3 text-sm">
               <p className="font-bold text-yellow-800">🐛 DEBUG INFO (Backend):</p>
-              <p className="text-yellow-700">Fecha servidor: {new Date(monthlyData._debug.now).toLocaleString("es-CO")}</p>
+              <p className="text-yellow-700">Hora UTC: {new Date(monthlyData._debug.nowUTC).toLocaleString("es-CO")}</p>
+              <p className="text-yellow-700">Hora Colombia: {new Date(monthlyData._debug.nowColombia).toLocaleString("es-CO")}</p>
               <p className="text-yellow-700">Rango mes actual: {new Date(monthlyData._debug.startOfMonth).toLocaleDateString("es-CO")} - {new Date(monthlyData._debug.endOfMonth).toLocaleDateString("es-CO")}</p>
               <p className="text-yellow-700">Ventas encontradas mes actual: {monthlyData._debug.currentMonthSalesCount}</p>
               <p className="text-yellow-700">Ventas encontradas mes anterior: {monthlyData._debug.lastMonthSalesCount}</p>

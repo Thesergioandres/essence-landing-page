@@ -9,13 +9,18 @@ import DefectiveProduct from "../models/DefectiveProduct.js";
 // @access  Private/Admin
 export const getMonthlyProfit = async (req, res) => {
   try {
+    // Obtener fecha actual ajustada al timezone de Colombia (UTC-5)
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const colombiaOffset = 5 * 60; // Colombia es UTC-5 (5 horas * 60 minutos)
+    const localOffset = now.getTimezoneOffset(); // Offset del servidor en minutos (positivo al oeste de UTC)
+    const colombiaTime = new Date(now.getTime() - (localOffset + colombiaOffset) * 60000);
+    
+    const startOfMonth = new Date(colombiaTime.getFullYear(), colombiaTime.getMonth(), 1);
+    const endOfMonth = new Date(colombiaTime.getFullYear(), colombiaTime.getMonth() + 1, 0, 23, 59, 59);
 
     // Mes anterior para comparación
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    const startOfLastMonth = new Date(colombiaTime.getFullYear(), colombiaTime.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(colombiaTime.getFullYear(), colombiaTime.getMonth(), 0, 23, 59, 59);
 
     // Ventas del mes actual
     const currentMonthSales = await Sale.find({
@@ -71,12 +76,20 @@ export const getMonthlyProfit = async (req, res) => {
       averageTicket: currentMonth.salesCount > 0 ? currentMonth.revenue / currentMonth.salesCount : 0,
       // Debug info
       _debug: {
-        now: now.toISOString(),
+        nowUTC: now.toISOString(),
+        nowColombia: colombiaTime.toISOString(),
         startOfMonth: startOfMonth.toISOString(),
         endOfMonth: endOfMonth.toISOString(),
         startOfLastMonth: startOfLastMonth.toISOString(),
         endOfLastMonth: endOfLastMonth.toISOString(),
         currentMonthSalesCount: currentMonthSales.length,
+        lastMonthSalesCount: lastMonthSales.length,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
         lastMonthSalesCount: lastMonthSales.length,
       }
     });
