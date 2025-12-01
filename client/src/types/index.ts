@@ -75,6 +75,8 @@ export interface Sale {
   paymentStatus: "pendiente" | "confirmado";
   paymentConfirmedAt?: string;
   paymentConfirmedBy?: User | string;
+  paymentProof?: string;
+  paymentProofMimeType?: string;
   createdAt?: string;
   updatedAt?: string;
 }

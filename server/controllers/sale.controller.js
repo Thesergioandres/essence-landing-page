@@ -1,3 +1,28 @@
+// @desc    Eliminar una venta (admin)
+// @route   DELETE /api/sales/:id
+// @access  Private/Admin
+export const deleteSale = async (req, res) => {
+  try {
+    const sale = await Sale.findById(req.params.id);
+    if (!sale) {
+      return res.status(404).json({ message: "Venta no encontrada" });
+    }
+
+    // Restaurar stock del producto
+    const product = await Product.findById(sale.product);
+    if (product) {
+      product.totalStock += sale.quantity;
+      await product.save();
+    }
+
+    // Eliminar la venta
+    await sale.deleteOne();
+
+    res.json({ message: "Venta eliminada y stock restaurado" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 // @desc    Registrar una venta como administrador (stock general)
 // @route   POST /api/sales/admin
 // @access  Private/Admin

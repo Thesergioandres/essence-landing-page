@@ -108,7 +108,9 @@ export default function AdminRegisterSale() {
           saleDate: formData.saleDate,
         });
       }
-      setSuccess("¡Venta registrada exitosamente!");
+      setSuccess("¡Venta registrada exitosamente! Puedes registrar otra venta o ir a ver las ventas.");
+      
+      // Limpiar formulario para permitir registrar otra venta
       setFormData({
         productId: "",
         quantity: 1,
@@ -117,9 +119,9 @@ export default function AdminRegisterSale() {
         saleDate: new Date().toISOString().slice(0, 10),
       });
       setSelectedProduct(null);
-      setTimeout(() => {
-        navigate("/sales");
-      }, 2000);
+      
+      // Recargar productos para actualizar stock
+      await loadProducts();
     } catch {
       setError("Error al registrar la venta");
     } finally {

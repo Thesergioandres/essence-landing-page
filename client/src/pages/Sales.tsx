@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { saleService } from "../api/services";
+import { saleService, authService } from "../api/services";
 import type { Sale } from "../types";
+import SaleDetailModal from "../components/SaleDetailModal";
 
 export default function Sales() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pendiente" | "confirmado">("all");
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
   useEffect(() => {
     loadSales();
@@ -24,6 +27,23 @@ export default function Sales() {
     }
   };
 
+  const handleDeleteSale = async (saleId: string) => {
+    if (!confirm("¿Seguro que deseas eliminar esta venta? Esto restaurará el stock del producto.")) return;
+    
+    try {
+      setDeletingId(saleId);
+      await saleService.deleteSale(saleId);
+      
+      // Actualizar la lista sin recargar toda la página
+      setSales(prevSales => prevSales.filter(sale => sale._id !== saleId));
+    } catch (error) {
+      console.error("Error al eliminar la venta:", error);
+      alert("Error al eliminar la venta");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const handleConfirmPayment = async (saleId: string) => {
     if (!confirm("¿Confirmar que has recibido el pago de esta venta?")) {
       return;
@@ -32,7 +52,15 @@ export default function Sales() {
     try {
       setConfirmingId(saleId);
       await saleService.confirmPayment(saleId);
-      await loadSales();
+      
+      // Actualizar solo la venta específica sin recargar toda la página
+      setSales(prevSales => 
+        prevSales.map(sale => 
+          sale._id === saleId 
+            ? { ...sale, paymentStatus: "confirmado", paymentConfirmedAt: new Date().toISOString() }
+            : sale
+        )
+      );
     } catch (error) {
       console.error("Error al confirmar pago:", error);
       alert("Error al confirmar el pago");
@@ -170,7 +198,15 @@ export default function Sales() {
                 const distributor = typeof sale.distributor === "object" ? sale.distributor : null;
 
                 return (
-                  <tr key={sale._id} className="hover:bg-gray-50">
+                  <tr 
+                    key={sale._id} 
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={(e) => {
+                      // No abrir modal si se hace clic en botones
+                      if ((e.target as HTMLElement).closest('button')) return;
+                      setSelectedSale(sale);
+                    }}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {new Date(sale.saleDate).toLocaleDateString("es-ES", {
                         year: "numeric",
@@ -183,7 +219,7 @@ export default function Sales() {
                         {distributor?.name || "Admin"}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {distributor?.email || (distributor === null ? "" : distributor?.email)}
+                        {distributor?.email || ""}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -207,9 +243,7 @@ export default function Sales() {
                       ${(sale.salePrice * sale.quantity).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                      {distributor === null
-                        ? `$${((sale.salePrice - (product?.purchasePrice || 0)) * sale.quantity).toLocaleString()}`
-                        : `$${sale.adminProfit.toLocaleString()}`}
+                      ${sale.adminProfit.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {sale.paymentStatus === "pendiente" ? (
@@ -223,23 +257,35 @@ export default function Sales() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {sale.paymentStatus === "pendiente" ? (
-                        <button
-                          onClick={() => handleConfirmPayment(sale._id)}
-                          disabled={confirmingId === sale._id}
-                          className="text-green-600 hover:text-green-900 font-medium disabled:opacity-50"
-                        >
-                          {confirmingId === sale._id
-                            ? "Confirmando..."
-                            : "Confirmar Pago"}
-                        </button>
-                      ) : (
-                        <span className="text-gray-400 text-xs">
-                          Confirmado el{" "}
-                          {sale.paymentConfirmedAt &&
-                            new Date(sale.paymentConfirmedAt).toLocaleDateString()}
-                        </span>
-                      )}
+                      <div className="flex gap-2">
+                        {sale.paymentStatus === "pendiente" ? (
+                          <button
+                            onClick={() => handleConfirmPayment(sale._id)}
+                            disabled={confirmingId === sale._id}
+                            className="text-green-600 hover:text-green-900 font-medium disabled:opacity-50"
+                          >
+                            {confirmingId === sale._id
+                              ? "Confirmando..."
+                              : "Confirmar Pago"}
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-xs">
+                            Confirmado el{" "}
+                            {sale.paymentConfirmedAt &&
+                              new Date(sale.paymentConfirmedAt).toLocaleDateString()}
+                          </span>
+                        )}
+                        {/* Botón eliminar solo para admin */}
+                        {authService.getCurrentUser()?.role === "admin" && (
+                          <button
+                            onClick={() => handleDeleteSale(sale._id)}
+                            disabled={deletingId === sale._id}
+                            className="text-red-600 hover:text-red-900 font-medium disabled:opacity-50"
+                          >
+                            {deletingId === sale._id ? "Eliminando..." : "Eliminar"}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -254,6 +300,12 @@ export default function Sales() {
           )}
         </div>
       </div>
+
+      {/* Modal de Detalle */}
+      <SaleDetailModal 
+        sale={selectedSale} 
+        onClose={() => setSelectedSale(null)} 
+      />
     </div>
   );
 }

@@ -25,4 +25,7 @@ router.put("/:id/confirm-payment", protect, admin, confirmPayment);
 // Registrar venta como admin (stock general)
 router.post("/admin", protect, admin, registerAdminSale);
 
+// Eliminar venta (admin)
+router.delete("/:id", protect, admin, deleteSale);
+
 export default router;

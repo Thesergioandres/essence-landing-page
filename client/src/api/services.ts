@@ -378,6 +378,11 @@ export const saleService = {
     const response = await api.put(`/sales/${saleId}/confirm-payment`);
     return response.data;
   },
+
+  async deleteSale(saleId: string): Promise<{ message: string }> {
+    const response = await api.delete(`/sales/${saleId}`);
+    return response.data;
+  },
 };
 
 // ==================== DEFECTIVE PRODUCT SERVICE ====================
