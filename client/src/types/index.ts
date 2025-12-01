@@ -96,7 +96,7 @@ export interface StockAlert {
 
 export interface DefectiveProduct {
   _id: string;
-  distributor: User | string;
+  distributor?: User | string | null; // Opcional: null cuando es reporte de admin desde bodega
   product: Product | string;
   quantity: number;
   reason: string;

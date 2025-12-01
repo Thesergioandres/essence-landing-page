@@ -5,7 +5,7 @@ const defectiveProductSchema = new mongoose.Schema(
     distributor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "El distribuidor es obligatorio"],
+      required: false, // Opcional: puede ser null si el admin reporta desde bodega
     },
     product: {
       type: mongoose.Schema.Types.ObjectId,

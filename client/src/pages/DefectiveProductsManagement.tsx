@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { defectiveProductService } from "../api/services";
-import type { DefectiveProduct } from "../types";
+import { defectiveProductService, productService } from "../api/services";
+import type { DefectiveProduct, Product } from "../types";
 
 export default function DefectiveProductsManagement() {
   const [data, setData] = useState<{
@@ -20,9 +20,20 @@ export default function DefectiveProductsManagement() {
   const [selectedReport, setSelectedReport] = useState<DefectiveProduct | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [actionType, setActionType] = useState<"confirm" | "reject">("confirm");
+  
+  // Estados para reportar desde admin
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [reportForm, setReportForm] = useState({
+    productId: "",
+    quantity: 1,
+    reason: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadReports();
+    loadProducts();
   }, []);
 
   const loadReports = async () => {
@@ -34,6 +45,15 @@ export default function DefectiveProductsManagement() {
       console.error("Error al cargar reportes:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadProducts = async () => {
+    try {
+      const response = await productService.getAll();
+      setProducts(response.filter((p: Product) => p.warehouseStock > 0));
+    } catch (error) {
+      console.error("Error al cargar productos:", error);
     }
   };
 
@@ -69,6 +89,38 @@ export default function DefectiveProductsManagement() {
     }
   };
 
+  const handleReportFromWarehouse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!reportForm.productId || reportForm.quantity <= 0 || !reportForm.reason.trim()) {
+      alert("Por favor completa todos los campos");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await defectiveProductService.reportAdmin({
+        productId: reportForm.productId,
+        quantity: reportForm.quantity,
+        reason: reportForm.reason,
+      });
+
+      // Recargar datos
+      await Promise.all([loadReports(), loadProducts()]);
+      
+      // Limpiar y cerrar
+      setReportForm({ productId: "", quantity: 1, reason: "" });
+      setShowReportModal(false);
+      
+      alert("Producto defectuoso reportado desde bodega");
+    } catch (error: any) {
+      console.error("Error al reportar:", error);
+      alert(error.response?.data?.message || "Error al reportar el producto");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const filteredReports = data.reports.filter((report) => {
     if (filter === "all") return true;
     return report.status === filter;
@@ -86,6 +138,12 @@ export default function DefectiveProductsManagement() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Productos Defectuosos</h1>
+        <button
+          onClick={() => setShowReportModal(true)}
+          className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition shadow-lg"
+        >
+          + Reportar desde Bodega
+        </button>
       </div>
 
       {/* Estadísticas */}
@@ -202,12 +260,22 @@ export default function DefectiveProductsManagement() {
                       })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {distributor?.name || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {distributor?.email || ""}
-                      </div>
+                      {report.distributor ? (
+                        <>
+                          <div className="text-sm font-medium text-gray-900">
+                            {distributor?.name || "N/A"}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {distributor?.email || ""}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            🏢 Bodega (Admin)
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -353,6 +421,104 @@ export default function DefectiveProductsManagement() {
                   : "Rechazar"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para reportar desde bodega */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Reportar Producto Defectuoso (Bodega)
+            </h2>
+
+            <form onSubmit={handleReportFromWarehouse} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Producto *
+                </label>
+                <select
+                  value={reportForm.productId}
+                  onChange={(e) =>
+                    setReportForm({ ...reportForm, productId: e.target.value, quantity: 1 })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Selecciona un producto</option>
+                  {products.map((product) => (
+                    <option key={product._id} value={product._id}>
+                      {product.name} (Stock bodega: {product.warehouseStock})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cantidad *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max={
+                    reportForm.productId
+                      ? products.find((p) => p._id === reportForm.productId)
+                          ?.warehouseStock || 1
+                      : 1
+                  }
+                  value={reportForm.quantity}
+                  onChange={(e) =>
+                    setReportForm({ ...reportForm, quantity: parseInt(e.target.value) })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Razón del defecto *
+                </label>
+                <textarea
+                  value={reportForm.reason}
+                  onChange={(e) => setReportForm({ ...reportForm, reason: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                  placeholder="Describe el defecto del producto..."
+                  required
+                />
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-sm text-yellow-800">
+                  ℹ️ Los reportes desde bodega se auto-confirman automáticamente y descuentan
+                  del stock de bodega.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportForm({ productId: "", quantity: 1, reason: "" });
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                  disabled={submitting}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 bg-gradient-to-r from-red-600 to-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition disabled:opacity-50"
+                >
+                  {submitting ? "Reportando..." : "Reportar"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

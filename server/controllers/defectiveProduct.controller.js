@@ -2,6 +2,57 @@ import DefectiveProduct from "../models/DefectiveProduct.js";
 import DistributorStock from "../models/DistributorStock.js";
 import Product from "../models/Product.js";
 
+// @desc    Reportar producto defectuoso (admin desde bodega)
+// @route   POST /api/defective-products/admin
+// @access  Private/Admin
+export const reportDefectiveProductAdmin = async (req, res) => {
+  try {
+    const { productId, quantity, reason, images } = req.body;
+
+    // Verificar que el producto exista y tenga stock en bodega
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    if (product.warehouseStock < quantity) {
+      return res.status(400).json({
+        message: `Stock insuficiente en bodega. Disponible: ${product.warehouseStock}`,
+      });
+    }
+
+    // Crear el reporte sin distribuidor (es del admin/bodega)
+    const defectiveReport = await DefectiveProduct.create({
+      distributor: null, // Admin no tiene distribuidor asociado
+      product: productId,
+      quantity,
+      reason,
+      images: images || [],
+      status: "confirmado", // Los reportes del admin se autoconfirman
+      confirmedAt: Date.now(),
+      confirmedBy: req.user._id,
+      adminNotes: "Reporte directo de administrador desde bodega",
+    });
+
+    // Descontar del stock de bodega
+    product.warehouseStock -= quantity;
+    await product.save();
+
+    const populatedReport = await DefectiveProduct.findById(defectiveReport._id)
+      .populate("product", "name image")
+      .populate("confirmedBy", "name email");
+
+    res.status(201).json({
+      message: "Producto defectuoso reportado desde bodega",
+      report: populatedReport,
+      remainingStock: product.warehouseStock,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Reportar producto defectuoso (distribuidor)
 // @route   POST /api/defective-products
 // @access  Private/Distribuidor

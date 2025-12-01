@@ -401,6 +401,20 @@ export const defectiveProductService = {
     return response.data;
   },
 
+  async reportAdmin(data: {
+    productId: string;
+    quantity: number;
+    reason: string;
+    images?: ProductImage[];
+  }): Promise<{
+    message: string;
+    report: DefectiveProduct;
+    remainingStock: number;
+  }> {
+    const response = await api.post("/defective-products/admin", data);
+    return response.data;
+  },
+
   async getDistributorReports(
     distributorId?: string,
     status?: "pendiente" | "confirmado" | "rechazado"
