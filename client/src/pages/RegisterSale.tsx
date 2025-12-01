@@ -96,7 +96,7 @@ export default function RegisterSale() {
       setItems([...items, newItem]);
       setSelectedProductId("");
       setError("");
-    } catch (err) {
+    } catch {
       setError("Error al agregar el producto");
     }
   };
