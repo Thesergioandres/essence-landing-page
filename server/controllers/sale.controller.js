@@ -61,6 +61,9 @@ export const registerAdminSale = async (req, res) => {
       saleDate,
       paymentProof,
       paymentProofMimeType: paymentProof ? (paymentProofMimeType || "image/jpeg") : undefined,
+      paymentStatus: "confirmado", // Las ventas admin están confirmadas automáticamente
+      paymentConfirmedAt: new Date(),
+      paymentConfirmedBy: req.user.id,
     };
 
     const sale = await Sale.create(saleData);
