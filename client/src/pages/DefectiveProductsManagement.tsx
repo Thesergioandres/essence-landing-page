@@ -51,7 +51,8 @@ export default function DefectiveProductsManagement() {
   const loadProducts = async () => {
     try {
       const response = await productService.getAll();
-      setProducts(response.filter((p: Product) => p.warehouseStock > 0));
+      const products = response.data || response;
+      setProducts(products.filter((p: Product) => p.warehouseStock > 0));
     } catch (error) {
       console.error("Error al cargar productos:", error);
     }

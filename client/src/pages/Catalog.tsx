@@ -27,7 +27,7 @@ export default function Catalog() {
           productService.getAll(),
           categoryService.getAll(),
         ]);
-        setProducts(productsData);
+        setProducts(productsData.data || productsData);
         setCategories(categoriesData);
       } catch (error) {
         console.error("Error loading data:", error);

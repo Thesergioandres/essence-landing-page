@@ -20,7 +20,7 @@ export default function Sales() {
     try {
       setLoading(true);
       const response = await saleService.getAllSales();
-      setSales(response.sales);
+      setSales(response.sales || response);
     } catch (error) {
       console.error("Error al cargar ventas:", error);
     } finally {

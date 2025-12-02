@@ -25,7 +25,8 @@ export default function Home() {
       try {
         // Get featured products
         const productsData = await productService.getAll();
-        const featured = productsData
+        const products = productsData.data || productsData;
+        const featured = products
           .filter((p: Product) => p.featured)
           .slice(0, 6);
         setFeaturedProducts(featured);

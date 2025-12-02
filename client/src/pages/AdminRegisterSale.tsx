@@ -45,7 +45,7 @@ export default function AdminRegisterSale() {
   const loadProducts = async () => {
     try {
       const response = await productService.getAll();
-      setProducts(response);
+      setProducts(response.data || response);
     } catch {
       setError("No se pudo cargar los productos");
     }

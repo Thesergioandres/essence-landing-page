@@ -45,7 +45,7 @@ const StockManagement = () => {
         distributorService.getAll(),
         stockService.getAlerts(),
       ]);
-      setProducts(productsRes);
+      setProducts(productsData.data || productsData);
       setDistributors(distributorsRes.filter((d: User) => d.active));
       setAlerts([...alertsRes.warehouseAlerts, ...alertsRes.distributorAlerts]);
     } catch (err) {

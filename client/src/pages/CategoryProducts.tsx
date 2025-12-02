@@ -36,7 +36,8 @@ export default function CategoryProducts() {
         setCategory(foundCategory);
 
         // Get products for this category
-        const productsData = await productService.getAll();
+        const productsResponse = await productService.getAll();
+        const productsData = productsResponse.data || productsResponse;
         const categoryProducts = productsData.filter(
           p => p.category._id === foundCategory._id
         );
