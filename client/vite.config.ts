@@ -103,15 +103,13 @@ export default defineConfig({
         manualChunks: (id) => {
           // Separar vendors grandes
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react-vendor';
+            if (id.includes('recharts') || id.includes('jspdf') || id.includes('xlsx')) {
+              return 'charts-vendor';
             }
-            if (id.includes('react-router')) {
-              return 'router';
+            if (id.includes('framer-motion')) {
+              return 'animation-vendor';
             }
-            if (id.includes('axios')) {
-              return 'axios';
-            }
+            // Mantener React en el bundle principal para evitar problemas de contexto
             return 'vendor';
           }
         },
