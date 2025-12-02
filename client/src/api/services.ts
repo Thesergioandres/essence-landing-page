@@ -798,3 +798,182 @@ export const gamificationService = {
     return response.data;
   },
 };
+
+// Servicio de Analíticas Avanzadas
+export const advancedAnalyticsService = {
+  async getSalesTimeline(params: {
+    period: "day" | "week" | "month";
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{
+    timeline: Array<{
+      period: string;
+      totalSales: number;
+      revenue: number;
+      profit: number;
+      salesCount: number;
+    }>;
+  }> {
+    const response = await api.get("/advanced-analytics/sales-timeline", {
+      params,
+    });
+    return response.data;
+  },
+
+  async getTopProducts(params?: {
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{
+    topProducts: Array<{
+      _id: string;
+      name: string;
+      totalQuantity: number;
+      totalRevenue: number;
+      salesCount: number;
+    }>;
+  }> {
+    const response = await api.get("/advanced-analytics/top-products", {
+      params,
+    });
+    return response.data;
+  },
+
+  async getSalesByCategory(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{
+    categoryDistribution: Array<{
+      _id: string;
+      categoryName: string;
+      totalSales: number;
+      revenue: number;
+      percentage: number;
+    }>;
+  }> {
+    const response = await api.get("/advanced-analytics/sales-by-category", {
+      params,
+    });
+    return response.data;
+  },
+
+  async getDistributorRankings(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{
+    rankings: Array<{
+      _id: string;
+      name: string;
+      email: string;
+      totalSales: number;
+      revenue: number;
+      profit: number;
+      conversionRate: number;
+      averageOrderValue: number;
+      rank: number;
+    }>;
+  }> {
+    const response = await api.get("/advanced-analytics/distributor-rankings", {
+      params,
+    });
+    return response.data;
+  },
+
+  async getLowStockVisual(): Promise<{
+    lowStockProducts: Array<{
+      productId: string;
+      productName: string;
+      currentStock: number;
+      lowStockAlert: number;
+      urgency: "critical" | "warning" | "normal";
+      stockPercentage: number;
+    }>;
+  }> {
+    const response = await api.get("/advanced-analytics/low-stock-visual");
+    return response.data;
+  },
+
+  async getProductRotation(params?: {
+    days?: number;
+  }): Promise<{
+    productRotation: Array<{
+      productId: string;
+      productName: string;
+      totalSold: number;
+      daysAnalyzed: number;
+      rotationRate: number;
+      averageDailySales: number;
+      status: "high" | "medium" | "low";
+    }>;
+  }> {
+    const response = await api.get("/advanced-analytics/product-rotation", {
+      params,
+    });
+    return response.data;
+  },
+
+  async getFinancialKPIs(): Promise<{
+    kpis: {
+      todaySales: number;
+      todayRevenue: number;
+      todayProfit: number;
+      weekSales: number;
+      weekRevenue: number;
+      weekProfit: number;
+      monthSales: number;
+      monthRevenue: number;
+      monthProfit: number;
+      averageTicket: number;
+      totalActiveDistributors: number;
+    };
+  }> {
+    const response = await api.get("/advanced-analytics/financial-kpis");
+    return response.data;
+  },
+
+  async getComparativeAnalysis(params?: {
+    currentMonth?: number;
+    currentYear?: number;
+  }): Promise<{
+    comparison: {
+      currentMonth: {
+        sales: number;
+        revenue: number;
+        profit: number;
+      };
+      previousMonth: {
+        sales: number;
+        revenue: number;
+        profit: number;
+      };
+      growth: {
+        salesGrowth: number;
+        revenueGrowth: number;
+        profitGrowth: number;
+      };
+    };
+  }> {
+    const response = await api.get("/advanced-analytics/comparative-analysis", {
+      params,
+    });
+    return response.data;
+  },
+
+  async getSalesFunnel(): Promise<{
+    funnel: {
+      pending: {
+        count: number;
+        totalValue: number;
+      };
+      confirmed: {
+        count: number;
+        totalValue: number;
+      };
+      conversionRate: number;
+      averageConversionTime: number;
+    };
+  }> {
+    const response = await api.get("/advanced-analytics/sales-funnel");
+    return response.data;
+  },
+};

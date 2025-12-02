@@ -7,6 +7,7 @@ import { initRedis } from "./config/redis.js";
 
 // Importar rutas
 import analyticsRoutes from "./routes/analytics.routes.js";
+import advancedAnalyticsRoutes from "./routes/advancedAnalytics.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
@@ -115,6 +116,7 @@ app.use("/api/stock", stockRoutes);
 app.use("/api/sales", saleRoutes);
 app.use("/api/defective-products", defectiveProductRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/advanced-analytics", advancedAnalyticsRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/gamification", gamificationRoutes);
 
