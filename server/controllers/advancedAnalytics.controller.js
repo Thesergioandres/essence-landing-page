@@ -9,43 +9,37 @@ import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
 // @access  Private/Admin
 export const getSalesTimeline = async (req, res) => {
   try {
-    const { period = 'week', startDate: customStartDate, endDate: customEndDate } = req.query;
+    const { period = 'month', startDate: customStartDate, endDate: customEndDate } = req.query;
     
-    let startDate, groupBy;
-    const now = new Date();
+    let groupBy;
     
-    // Si se proporcionan fechas personalizadas, usarlas
-    if (customStartDate && customEndDate) {
-      startDate = new Date(customStartDate);
-      groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
-    } else {
-      // Si no, usar períodos predefinidos más amplios
-      switch(period) {
-        case 'day':
-          startDate = subDays(now, 30); // Últimos 30 días
-          groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
-          break;
-        case 'week':
-          startDate = subDays(now, 90); // Últimos 90 días
-          groupBy = { $dateToString: { format: "%Y-W%V", date: "$createdAt" } };
-          break;
-        case 'month':
-          startDate = subMonths(now, 12); // Últimos 12 meses
-          groupBy = { $dateToString: { format: "%Y-%m", date: "$createdAt" } };
-          break;
-        default:
-          startDate = subDays(now, 90); // Por defecto 90 días
-          groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
-      }
+    // Determinar agrupación según período
+    switch(period) {
+      case 'day':
+        groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
+        break;
+      case 'week':
+        groupBy = { $dateToString: { format: "%Y-W%V", date: "$createdAt" } };
+        break;
+      case 'month':
+        groupBy = { $dateToString: { format: "%Y-%m", date: "$createdAt" } };
+        break;
+      default:
+        groupBy = { $dateToString: { format: "%Y-%m", date: "$createdAt" } };
     }
 
+    // Construir filtro - SIN restricción de fecha por defecto
     const matchFilter = { paymentStatus: 'confirmed' };
-    if (startDate) {
-      matchFilter.createdAt = { $gte: startDate };
-    }
-    if (customEndDate) {
-      matchFilter.createdAt = matchFilter.createdAt || {};
-      matchFilter.createdAt.$lte = new Date(customEndDate);
+    
+    // Solo aplicar filtros de fecha si se proporcionan explícitamente
+    if (customStartDate || customEndDate) {
+      matchFilter.createdAt = {};
+      if (customStartDate) {
+        matchFilter.createdAt.$gte = new Date(customStartDate);
+      }
+      if (customEndDate) {
+        matchFilter.createdAt.$lte = new Date(customEndDate);
+      }
     }
 
     const timeline = await Sale.aggregate([
@@ -58,10 +52,11 @@ export const getSalesTimeline = async (req, res) => {
           totalProfit: { $sum: "$profit" }
         }
       },
-      { $sort: { _id: 1 } }
+      { $sort: { _id: 1 } },
+      { $limit: 100 } // Limitar a últimos 100 períodos para no sobrecargar
     ]);
 
-    console.log(`Sales Timeline - Found ${timeline.length} records with filter:`, matchFilter);
+    console.log(`Sales Timeline - Found ${timeline.length} records`);
 
     // Map the response to match frontend expectations
     const formattedTimeline = timeline.map(item => ({
