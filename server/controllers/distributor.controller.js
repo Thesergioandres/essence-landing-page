@@ -50,16 +50,26 @@ export const createDistributor = async (req, res) => {
 // @access  Private/Admin
 export const getDistributors = async (req, res) => {
   try {
-    const { active } = req.query;
+    const { active, page = 1, limit = 20 } = req.query;
     
     const filter = { role: "distribuidor" };
     if (active !== undefined) {
       filter.active = active === "true";
     }
 
-    const distributors = await User.find(filter)
-      .select("-password")
-      .populate("assignedProducts", "name image");
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    const [distributors, total] = await Promise.all([
+      User.find(filter)
+        .select("-password")
+        .populate("assignedProducts", "name image")
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      User.countDocuments(filter)
+    ]);
 
     // Agregar estadísticas de cada distribuidor
     const distributorsWithStats = await Promise.all(
@@ -67,11 +77,11 @@ export const getDistributors = async (req, res) => {
         // Stock total del distribuidor
         const stock = await DistributorStock.find({
           distributor: distributor._id,
-        });
+        }).lean();
         const totalStock = stock.reduce((sum, item) => sum + item.quantity, 0);
 
         // Ventas totales
-        const sales = await Sale.find({ distributor: distributor._id });
+        const sales = await Sale.find({ distributor: distributor._id }).lean();
         const totalSales = sales.length;
         const totalProfit = sales.reduce(
           (sum, sale) => sum + sale.distributorProfit,
@@ -79,18 +89,27 @@ export const getDistributors = async (req, res) => {
         );
 
         return {
-          ...distributor.toObject(),
+          ...distributor,
           stats: {
             totalStock,
             totalSales,
             totalProfit,
-            assignedProductsCount: distributor.assignedProducts.length,
+            assignedProductsCount: distributor.assignedProducts?.length || 0,
           },
         };
       })
     );
 
-    res.json(distributorsWithStats);
+    res.json({
+      data: distributorsWithStats,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+        hasMore: pageNum < Math.ceil(total / limitNum)
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

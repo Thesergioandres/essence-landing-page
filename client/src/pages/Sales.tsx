@@ -5,6 +5,8 @@ import SaleDetailModal from "../components/SaleDetailModal";
 
 export default function Sales() {
   const [sales, setSales] = useState<Sale[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0, hasMore: false });
+  const [statsData, setStatsData] = useState({ totalSales: 0, totalRevenue: 0, confirmedSales: 0, pendingSales: 0, totalProfit: 0 });
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pendiente" | "confirmado">("all");
   const [sortBy, setSortBy] = useState<"date-desc" | "date-asc" | "distributor">("date-desc");
@@ -14,13 +16,29 @@ export default function Sales() {
 
   useEffect(() => {
     loadSales();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.page, filter, sortBy]);
 
   const loadSales = async () => {
     try {
       setLoading(true);
-      const response = await saleService.getAllSales();
+      const params: any = {
+        page: pagination.page,
+        limit: pagination.limit,
+        sortBy: sortBy,
+      };
+      if (filter !== "all") params.paymentStatus = filter;
+
+      const response = await saleService.getAllSales(params);
       setSales(response.sales || response);
+      
+      if (response.pagination) {
+        setPagination(response.pagination);
+      }
+      
+      if (response.stats) {
+        setStatsData(response.stats);
+      }
     } catch (error) {
       console.error("Error al cargar ventas:", error);
     } finally {
@@ -70,34 +88,18 @@ export default function Sales() {
     }
   };
 
-  const filteredSales = sales.filter((sale) => {
-    if (filter === "all") return true;
-    return sale.paymentStatus === filter;
-  });
-
-  // Ordenar ventas
-  const sortedSales = [...filteredSales].sort((a, b) => {
-    switch (sortBy) {
-      case "date-desc":
-        return new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime();
-      case "date-asc":
-        return new Date(a.saleDate).getTime() - new Date(b.saleDate).getTime();
-      case "distributor": {
-        const nameA = typeof a.distributor === "object" && a.distributor ? a.distributor.name : "Venta Admin";
-        const nameB = typeof b.distributor === "object" && b.distributor ? b.distributor.name : "Venta Admin";
-        return nameA.localeCompare(nameB);
-      }
-      default:
-        return 0;
-    }
-  });
+  // Ya no necesitamos filtrado/ordenamiento local, el servidor lo hace
 
   const stats = {
-    total: sales.length,
-    pendiente: sales.filter((s) => s.paymentStatus === "pendiente").length,
-    confirmado: sales.filter((s) => s.paymentStatus === "confirmado").length,
-    totalRevenue: sales.reduce((sum, s) => sum + s.salePrice * s.quantity, 0),
-    totalProfit: sales.reduce((sum, s) => sum + s.adminProfit, 0),
+    total: statsData.totalSales || sales.length,
+    pendiente: statsData.pendingSales || sales.filter((s) => s.paymentStatus === "pendiente").length,
+    confirmado: statsData.confirmedSales || sales.filter((s) => s.paymentStatus === "confirmado").length,
+    totalRevenue: statsData.totalRevenue || sales.reduce((sum, s) => sum + s.salePrice * s.quantity, 0),
+    totalProfit: statsData.totalProfit || sales.reduce((sum, s) => sum + s.adminProfit, 0),
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   if (loading) {
@@ -230,7 +232,7 @@ export default function Sales() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {sortedSales.map((sale) => {
+              {sales.map((sale) => {
                 const product = typeof sale.product === "object" ? sale.product : null;
                 const distributor = typeof sale.distributor === "object" ? sale.distributor : null;
 
@@ -330,12 +332,37 @@ export default function Sales() {
             </tbody>
           </table>
 
-          {sortedSales.length === 0 && (
+          {sales.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500">No hay ventas que mostrar</p>
             </div>
           )}
         </div>
+
+        {/* Controles de Paginación */}
+        {pagination.pages > 1 && (
+          <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-gray-50">
+            <div className="text-sm text-gray-600">
+              Página {pagination.page} de {pagination.pages} • Total: {pagination.total} ventas
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+              >
+                ← Anterior
+              </button>
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={!pagination.hasMore}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+              >
+                Siguiente →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Detalle */}

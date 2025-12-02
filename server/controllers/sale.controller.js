@@ -374,7 +374,7 @@ export const getDistributorSales = async (req, res) => {
 // @access  Private/Admin
 export const getAllSales = async (req, res) => {
   try {
-    const { startDate, endDate, distributorId, productId, page = 1, limit = 50 } = req.query;
+    const { startDate, endDate, distributorId, productId, paymentStatus, sortBy, page = 1, limit = 50 } = req.query;
 
     const filter = {};
 
@@ -386,6 +386,15 @@ export const getAllSales = async (req, res) => {
 
     if (distributorId) filter.distributor = distributorId;
     if (productId) filter.product = productId;
+    if (paymentStatus) filter.paymentStatus = paymentStatus;
+
+    // Determinar ordenamiento
+    let sortOption = { saleDate: -1 }; // default: más reciente primero
+    if (sortBy === 'date-asc') {
+      sortOption = { saleDate: 1 };
+    } else if (sortBy === 'distributor') {
+      sortOption = { 'distributor.name': 1 };
+    }
 
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
@@ -395,7 +404,7 @@ export const getAllSales = async (req, res) => {
       Sale.find(filter)
         .populate("product", "name image")
         .populate("distributor", "name email")
-        .sort({ saleDate: -1 })
+        .sort(sortOption)
         .skip(skip)
         .limit(limitNum)
         .lean(),
@@ -403,7 +412,7 @@ export const getAllSales = async (req, res) => {
     ]);
 
     // Calcular totales usando agregación (más eficiente)
-    const stats = await Sale.aggregate([
+    const statsAgg = await Sale.aggregate([
       { $match: filter },
       {
         $group: {
@@ -412,17 +421,27 @@ export const getAllSales = async (req, res) => {
           totalQuantity: { $sum: "$quantity" },
           totalDistributorProfit: { $sum: "$distributorProfit" },
           totalAdminProfit: { $sum: "$adminProfit" },
-          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } }
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+          confirmedSales: {
+            $sum: { $cond: [{ $eq: ["$paymentStatus", "confirmado"] }, 1, 0] }
+          },
+          pendingSales: {
+            $sum: { $cond: [{ $eq: ["$paymentStatus", "pendiente"] }, 1, 0] }
+          },
+          totalProfit: { $sum: { $add: ["$distributorProfit", "$adminProfit"] } }
         }
       }
     ]);
 
-    const summary = stats[0] || {
+    const summary = statsAgg[0] || {
       totalSales: 0,
       totalQuantity: 0,
       totalDistributorProfit: 0,
       totalAdminProfit: 0,
-      totalRevenue: 0
+      totalRevenue: 0,
+      confirmedSales: 0,
+      pendingSales: 0,
+      totalProfit: 0
     };
 
     res.json({

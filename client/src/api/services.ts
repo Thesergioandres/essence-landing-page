@@ -193,10 +193,16 @@ export const categoryService = {
 
 // ==================== DISTRIBUTOR SERVICE ====================
 export const distributorService = {
-  async getAll(active?: boolean): Promise<User[]> {
-    const params = active !== undefined ? { active } : {};
-    const response = await api.get<User[]>("/distributors", { params });
-    return response.data;
+  async getAll(active?: boolean | { active?: boolean; page?: number; limit?: number }): Promise<User[] | { data: User[]; pagination: { page: number; limit: number; total: number; pages: number; hasMore: boolean } }> {
+    let params: any = {};
+    if (typeof active === 'boolean') {
+      params = { active };
+    } else if (typeof active === 'object') {
+      params = active;
+    }
+    const response = await api.get("/distributors", { params });
+    // Compatibilidad: si viene con .data, es paginado
+    return response.data.data ? response.data : { data: response.data, pagination: { page: 1, limit: response.data.length, total: response.data.length, pages: 1, hasMore: false } };
   },
 
   async getById(id: string): Promise<{
@@ -351,7 +357,21 @@ export const saleService = {
     endDate?: string;
     distributorId?: string;
     productId?: string;
-  }): Promise<{ sales: Sale[]; stats: SaleStats }> {
+    paymentStatus?: string;
+    sortBy?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ 
+    sales: Sale[]; 
+    stats: SaleStats & { confirmedSales?: number; pendingSales?: number; totalProfit?: number };
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+      hasMore: boolean;
+    };
+  }> {
     const response = await api.get("/sales", { params: filters });
     return response.data;
   },
