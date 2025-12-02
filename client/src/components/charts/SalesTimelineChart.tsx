@@ -46,7 +46,7 @@ export const SalesTimelineChart: React.FC<SalesTimelineChartProps> = ({
           return;
         }
         
-        const formattedData = response.timeline.map((item) => ({
+        const formattedData = response.timeline.map((item: any) => ({
           ...item,
           period: format(parseISO(item.period || item._id), "dd MMM", { locale: es }),
         }));
