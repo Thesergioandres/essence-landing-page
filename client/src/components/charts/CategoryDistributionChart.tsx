@@ -161,9 +161,10 @@ export const CategoryDistributionChart: React.FC<
           <Legend
             verticalAlign="bottom"
             height={36}
-            formatter={(_value, entry: any) =>
-              `${entry.payload.categoryName} (${entry.payload.percentage.toFixed(1)}%)`
-            }
+            formatter={(_value, entry: any) => {
+              const name = entry?.payload?.name || 'Categoría';
+              return `${name}`;
+            }}
           />
         </PieChart>
       </ResponsiveContainer>

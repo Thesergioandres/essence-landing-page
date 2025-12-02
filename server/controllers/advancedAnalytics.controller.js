@@ -166,7 +166,12 @@ export const getSalesByCategory = async (req, res) => {
 export const getDistributorRankings = async (req, res) => {
   try {
     const rankings = await Sale.aggregate([
-      { $match: { paymentStatus: 'confirmado' } },
+      { 
+        $match: { 
+          paymentStatus: 'confirmado',
+          distributor: { $exists: true, $ne: null }
+        } 
+      },
       {
         $group: {
           _id: "$distributor",
@@ -184,11 +189,16 @@ export const getDistributorRankings = async (req, res) => {
           as: "distributorInfo"
         }
       },
-      { $unwind: "$distributorInfo" },
+      { 
+        $unwind: { 
+          path: "$distributorInfo",
+          preserveNullAndEmptyArrays: true 
+        } 
+      },
       {
         $project: {
-          name: "$distributorInfo.name",
-          email: "$distributorInfo.email",
+          name: { $ifNull: ["$distributorInfo.name", "Distribuidor desconocido"] },
+          email: { $ifNull: ["$distributorInfo.email", ""] },
           totalSales: 1,
           totalRevenue: 1,
           totalProfit: 1,
@@ -201,22 +211,28 @@ export const getDistributorRankings = async (req, res) => {
     // Calculate conversion rate
     const allSales = await Sale.aggregate([
       {
+        $match: {
+          distributor: { $exists: true, $ne: null }
+        }
+      },
+      {
         $group: {
           _id: "$distributor",
-          pending: {
-            $sum: { $cond: [{ $eq: ["$paymentStatus", "pending"] }, 1, 0] }
+          pendiente: {
+            $sum: { $cond: [{ $eq: ["$paymentStatus", "pendiente"] }, 1, 0] }
           },
-          confirmed: {
-            $sum: { $cond: [{ $eq: ["$paymentStatus", "confirmed"] }, 1, 0] }
+          confirmado: {
+            $sum: { $cond: [{ $eq: ["$paymentStatus", "confirmado"] }, 1, 0] }
           }
         }
       }
     ]);
 
     const rankingsWithConversion = rankings.map(rank => {
-      const salesData = allSales.find(s => s._id.toString() === rank._id.toString());
-      const conversionRate = salesData 
-        ? ((salesData.confirmed / (salesData.confirmed + salesData.pending)) * 100).toFixed(2)
+      const salesData = allSales.find(s => s._id && rank._id && s._id.toString() === rank._id.toString());
+      const total = salesData ? (salesData.confirmado + salesData.pendiente) : 0;
+      const conversionRate = total > 0
+        ? ((salesData.confirmado / total) * 100).toFixed(2)
         : 0;
       
       return {
