@@ -440,7 +440,6 @@ export const getAllSales = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-};
 
 // @desc    Obtener reporte de ventas por producto
 // @route   GET /api/sales/report/by-product
