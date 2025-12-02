@@ -50,7 +50,15 @@ export const getSalesTimeline = async (req, res) => {
       { $sort: { _id: 1 } }
     ]);
 
-    res.json({ timeline });
+    // Map the response to match frontend expectations
+    const formattedTimeline = timeline.map(item => ({
+      period: item._id,
+      salesCount: item.totalSales,
+      revenue: item.totalRevenue,
+      profit: item.totalProfit
+    }));
+
+    res.json({ timeline: formattedTimeline });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
