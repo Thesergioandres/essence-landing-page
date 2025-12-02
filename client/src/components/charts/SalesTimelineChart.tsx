@@ -49,6 +49,9 @@ export const SalesTimelineChart: React.FC<SalesTimelineChartProps> = ({
         const formattedData = response.timeline.map((item: any) => ({
           ...item,
           period: format(parseISO(item.period || item._id), "dd MMM", { locale: es }),
+          revenue: Number(item.revenue) || 0,
+          profit: Number(item.profit) || 0,
+          salesCount: Number(item.salesCount) || 0
         }));
         
         setData(formattedData);
@@ -110,7 +113,10 @@ export const SalesTimelineChart: React.FC<SalesTimelineChartProps> = ({
           <YAxis yAxisId="left" />
           <YAxis yAxisId="right" orientation="right" />
           <Tooltip
-            formatter={(value: number) => `$${value.toFixed(2)}`}
+            formatter={(value: any) => {
+              const num = Number(value);
+              return isNaN(num) ? '$0.00' : `$${num.toFixed(2)}`;
+            }}
             contentStyle={{
               backgroundColor: "rgba(255, 255, 255, 0.95)",
               border: "1px solid #e5e7eb",

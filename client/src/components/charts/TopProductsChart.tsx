@@ -50,7 +50,13 @@ export const TopProductsChart: React.FC<TopProductsChartProps> = ({
           endDate,
         });
         console.log("Top Products Response:", response);
-        setData(response.topProducts || []);
+        const validatedData = (response.topProducts || []).map((item: any) => ({
+          ...item,
+          totalQuantity: Number(item.totalQuantity) || 0,
+          totalRevenue: Number(item.totalRevenue) || 0,
+          salesCount: Number(item.salesCount) || 0
+        }));
+        setData(validatedData);
       } catch (error) {
         console.error("Error al cargar productos top:", error);
         setData([]);
@@ -113,11 +119,13 @@ export const TopProductsChart: React.FC<TopProductsChartProps> = ({
             tick={{ fontSize: 12 }}
           />
           <Tooltip
-            formatter={(value: number, name: string) => {
+            formatter={(value: any, name: string) => {
+              const num = Number(value);
+              if (isNaN(num)) return ['0', name];
               if (name === "totalRevenue") {
-                return [`$${value.toFixed(2)}`, "Ingresos"];
+                return [`$${num.toFixed(2)}`, "Ingresos"];
               }
-              return [value, "Cantidad"];
+              return [num, "Cantidad"];
             }}
             contentStyle={{
               backgroundColor: "rgba(255, 255, 255, 0.95)",

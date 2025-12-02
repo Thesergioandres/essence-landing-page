@@ -41,7 +41,12 @@ export const CategoryDistributionChart: React.FC<
           endDate,
         });
         console.log("Category Distribution Response:", response);
-        setData(response.categoryDistribution || []);
+        const validatedData = (response.categoryDistribution || []).map((item: any) => ({
+          ...item,
+          totalSales: Number(item.totalSales) || 0,
+          totalRevenue: Number(item.totalRevenue) || 0
+        }));
+        setData(validatedData);
       } catch (error) {
         console.error("Error al cargar distribución por categoría:", error);
         setData([]);
@@ -132,17 +137,21 @@ export const CategoryDistributionChart: React.FC<
             outerRadius={120}
             fill="#8884d8"
             dataKey="totalSales"
-            nameKey="categoryName"
+            nameKey="name"
           >
             {data.map((_, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number, _name: string, props: any) => [
-              `${value} ventas ($${props.payload.revenue.toFixed(2)})`,
-              props.payload.categoryName,
-            ]}
+            formatter={(value: any, _name: string, props: any) => {
+              const val = Number(value) || 0;
+              const revenue = Number(props?.payload?.totalRevenue) || 0;
+              return [
+                `${val} ventas ($${revenue.toFixed(2)})`,
+                props?.payload?.name || 'Categoría',
+              ];
+            }}
             contentStyle={{
               backgroundColor: "rgba(255, 255, 255, 0.95)",
               border: "1px solid #e5e7eb",
