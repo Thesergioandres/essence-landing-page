@@ -21,7 +21,7 @@ router.get("/distributor-rankings", protect, admin, getDistributorRankings);
 router.get("/low-stock-visual", protect, admin, getLowStockVisual);
 router.get("/product-rotation", protect, admin, getProductRotation);
 router.get("/financial-kpis", protect, admin, getFinancialKPIs);
-router.get("/comparative", protect, admin, getComparativeAnalysis);
+router.get("/comparative-analysis", protect, admin, getComparativeAnalysis);
 router.get("/sales-funnel", protect, admin, getSalesFunnel);
 
 export default router;
