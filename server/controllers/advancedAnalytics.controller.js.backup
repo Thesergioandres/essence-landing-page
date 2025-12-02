@@ -286,7 +286,7 @@ export const getProductRotation = async (req, res) => {
         }
       },
       { $sort: { rotationRate: -1 } }
-    ]);
+    });
 
     res.json({ productRotation: rotation });
   } catch (error) {
@@ -365,7 +365,7 @@ export const getFinancialKPIs = async (req, res) => {
 };
 
 // @desc    Get comparative analysis
-// @route   GET /api/advanced-analytics/comparative-analysis
+// @route   GET /api/advanced-analytics/comparative
 // @access  Private/Admin
 export const getComparativeAnalysis = async (req, res) => {
   try {
