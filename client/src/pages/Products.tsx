@@ -7,6 +7,7 @@ export default function Products() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0, hasMore: false });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -14,16 +15,26 @@ export default function Products() {
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [pagination.page, categoryFilter]);
 
   const loadData = async () => {
     try {
       setLoading(true);
+      const filters: Record<string, string | boolean | number> = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
+      if (categoryFilter) filters.category = categoryFilter;
+
       const [productsData, categoriesData] = await Promise.all([
-        productService.getAll(),
+        productService.getAll(filters),
         categoryService.getAll(),
       ]);
-      setProducts(productsData);
+      
+      setProducts(productsData.data);
+      if (productsData.pagination) {
+        setPagination(productsData.pagination);
+      }
       setCategories(categoriesData);
     } catch (err) {
       const message =
@@ -59,14 +70,12 @@ export default function Products() {
     const matchesSearch = product.name
       .toLowerCase()
       .includes(search.toLowerCase());
-    const matchesCategory = categoryFilter
-      ? (typeof product.category === "string"
-          ? product.category
-          : product.category._id) === categoryFilter
-      : true;
-
-    return matchesSearch && matchesCategory;
+    return matchesSearch;
   });
+
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -189,6 +198,33 @@ export default function Products() {
             ))}
           </div>
 
+          {/* Paginación Vista Móvil */}
+          {pagination.pages > 1 && (
+            <div className="md:hidden mt-6 flex flex-col items-center gap-4 rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-4">
+              <div className="text-sm text-gray-400 text-center">
+                Página {pagination.page} de {pagination.pages}
+                <br />
+                Total: {pagination.total} productos
+              </div>
+              <div className="flex gap-2 w-full">
+                <button
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  className="flex-1 rounded-lg border border-purple-500/60 px-4 py-3 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent min-h-[44px]"
+                >
+                  ← Anterior
+                </button>
+                <button
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={!pagination.hasMore}
+                  className="flex-1 rounded-lg border border-purple-500/60 px-4 py-3 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent min-h-[44px]"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Desktop Table View */}
           <div className="hidden md:block overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50">
             <div className="overflow-x-auto">
@@ -274,6 +310,31 @@ export default function Products() {
                 </tbody>
               </table>
             </div>
+
+            {/* Controles de Paginación */}
+            {pagination.pages > 1 && (
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-4">
+                <div className="text-sm text-gray-400">
+                  Página {pagination.page} de {pagination.pages} • Total: {pagination.total} productos
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                  >
+                    ← Anterior
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={!pagination.hasMore}
+                    className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                  >
+                    Siguiente →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

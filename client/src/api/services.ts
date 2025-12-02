@@ -85,10 +85,15 @@ export const authService = {
 
 export const productService = {
   async getAll(
-    filters: Record<string, string | boolean> = {}
-  ): Promise<Product[]> {
-    const response = await api.get<Product[]>("/products", { params: filters });
-    return response.data;
+    filters: Record<string, string | boolean | number> = {}
+  ): Promise<{ data: Product[]; pagination?: { page: number; limit: number; total: number; pages: number; hasMore: boolean } }> {
+    const response = await api.get("/products", { params: filters });
+    // Si viene con paginación (formato nuevo), retornar tal cual
+    if (response.data.data && response.data.pagination) {
+      return response.data;
+    }
+    // Si viene como array (formato antiguo sin paginación), adaptarlo
+    return { data: Array.isArray(response.data) ? response.data : [], pagination: undefined };
   },
 
   async getById(id: string): Promise<Product> {
