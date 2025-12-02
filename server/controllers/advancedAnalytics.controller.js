@@ -234,7 +234,7 @@ export const getLowStockVisual = async (req, res) => {
       stockPercentage: ((product.warehouseStock / product.lowStockAlert) * 100).toFixed(0),
       urgency: product.warehouseStock === 0 ? 'critical' : 
                product.warehouseStock <= product.lowStockAlert * 0.5 ? 'high' : 'medium'
-    });
+    }));
 
     res.json({ lowStockProducts: visualData });
   } catch (error) {
