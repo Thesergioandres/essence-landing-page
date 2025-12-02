@@ -40,9 +40,11 @@ export const CategoryDistributionChart: React.FC<
           startDate,
           endDate,
         });
-        setData(response.categoryDistribution);
+        console.log("Category Distribution Response:", response);
+        setData(response.categoryDistribution || []);
       } catch (error) {
         console.error("Error al cargar distribución por categoría:", error);
+        setData([]);
       } finally {
         setLoading(false);
       }
@@ -56,6 +58,29 @@ export const CategoryDistributionChart: React.FC<
       <div className="flex items-center justify-center h-96 bg-white rounded-lg shadow">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-white p-6 rounded-lg shadow-lg"
+      >
+        <h3 className="text-xl font-bold text-gray-800 mb-4">
+          Distribución por Categoría
+        </h3>
+        <div className="flex flex-col items-center justify-center h-96 text-gray-500">
+          <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+          </svg>
+          <p className="text-lg font-medium">No hay ventas por categoría</p>
+          <p className="text-sm mt-2">Los datos aparecer án cuando haya ventas registradas</p>
+        </div>
+      </motion.div>
     );
   }
 
