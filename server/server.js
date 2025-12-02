@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import express from "express";
 import compression from "compression";
 import connectDB from "./config/database.js";
+import { initRedis } from "./config/redis.js";
 
 // Importar rutas
 import analyticsRoutes from "./routes/analytics.routes.js";
@@ -33,8 +34,9 @@ const allowedOrigins = [
   /\.railway\.app$/  // Todos los subdominios de Railway
 ];
 
-// Conectar a MongoDB
+// Conectar a MongoDB y Redis
 connectDB();
+initRedis();
 
 // Compression middleware (debe ir antes de las rutas)
 app.use(compression({

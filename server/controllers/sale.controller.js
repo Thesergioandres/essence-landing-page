@@ -162,6 +162,7 @@ import DistributorStock from "../models/DistributorStock.js";
 import GamificationConfig from "../models/GamificationConfig.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
+import { invalidateCache } from "../middleware/cache.middleware.js";
 
 // Función auxiliar para obtener bonus de comisión por ranking
 const getCommissionBonus = async (distributorId) => {
@@ -291,6 +292,10 @@ export const registerSale = async (req, res) => {
       .populate("product", "name image")
       .populate("distributor", "name email");
 
+    // Invalidar caché de analytics y gamificación
+    await invalidateCache('cache:analytics:*');
+    await invalidateCache('cache:gamification:*');
+
     res.status(201).json({
       message: "Venta registrada exitosamente",
       sale: populatedSale,
@@ -369,7 +374,7 @@ export const getDistributorSales = async (req, res) => {
 // @access  Private/Admin
 export const getAllSales = async (req, res) => {
   try {
-    const { startDate, endDate, distributorId, productId } = req.query;
+    const { startDate, endDate, distributorId, productId, page = 1, limit = 50 } = req.query;
 
     const filter = {};
 
@@ -382,40 +387,59 @@ export const getAllSales = async (req, res) => {
     if (distributorId) filter.distributor = distributorId;
     if (productId) filter.product = productId;
 
-    const sales = await Sale.find(filter)
-      .populate("product", "name image")
-      .populate("distributor", "name email")
-      .sort({ saleDate: -1 });
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
 
-    // Calcular totales
-    const totalSales = sales.length;
-    const totalQuantity = sales.reduce((sum, sale) => sum + sale.quantity, 0);
-    const totalDistributorProfit = sales.reduce(
-      (sum, sale) => sum + sale.distributorProfit,
-      0
-    );
-    const totalAdminProfit = sales.reduce(
-      (sum, sale) => sum + sale.adminProfit,
-      0
-    );
-    const totalRevenue = sales.reduce(
-      (sum, sale) => sum + sale.salePrice * sale.quantity,
-      0
-    );
+    const [sales, total] = await Promise.all([
+      Sale.find(filter)
+        .populate("product", "name image")
+        .populate("distributor", "name email")
+        .sort({ saleDate: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Sale.countDocuments(filter)
+    ]);
+
+    // Calcular totales usando agregación (más eficiente)
+    const stats = await Sale.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: 1 },
+          totalQuantity: { $sum: "$quantity" },
+          totalDistributorProfit: { $sum: "$distributorProfit" },
+          totalAdminProfit: { $sum: "$adminProfit" },
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } }
+        }
+      }
+    ]);
+
+    const summary = stats[0] || {
+      totalSales: 0,
+      totalQuantity: 0,
+      totalDistributorProfit: 0,
+      totalAdminProfit: 0,
+      totalRevenue: 0
+    };
 
     res.json({
       sales,
-      stats: {
-        totalSales,
-        totalQuantity,
-        totalDistributorProfit,
-        totalAdminProfit,
-        totalRevenue,
-      },
+      stats: summary,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+        hasMore: pageNum < Math.ceil(total / limitNum)
+      }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
 };
 
 // @desc    Obtener reporte de ventas por producto

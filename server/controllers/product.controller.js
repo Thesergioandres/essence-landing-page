@@ -1,22 +1,43 @@
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
 import { calculateDistributorPrice, getDistributorProfitPercentage } from "../utils/distributorPricing.js";
+import { invalidateCache } from "../middleware/cache.middleware.js";
 
 // @desc    Obtener todos los productos
 // @route   GET /api/products
 // @access  Public
 export const getProducts = async (req, res) => {
   try {
-    const { category, featured } = req.query;
+    const { category, featured, page = 1, limit = 20 } = req.query;
     let filter = {};
 
     if (category) filter.category = category;
     if (featured) filter.featured = featured === "true";
 
-    const products = await Product.find(filter)
-      .populate("category", "name slug")
-      .sort({ createdAt: -1 });
-    res.json(products);
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .populate("category", "name slug")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Product.countDocuments(filter)
+    ]);
+
+    res.json({
+      data: products,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+        hasMore: pageNum < Math.ceil(total / limitNum)
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -27,10 +48,9 @@ export const getProducts = async (req, res) => {
 // @access  Public
 export const getProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate(
-      "category",
-      "name slug"
-    );
+    const product = await Product.findById(req.params.id)
+      .populate("category", "name slug")
+      .lean();
 
     if (!product) {
       return res.status(404).json({ message: "Producto no encontrado" });
@@ -62,6 +82,9 @@ export const createProduct = async (req, res) => {
     const product = await Product.create(productData);
     const populatedProduct = await Product.findById(product._id).populate("category", "name slug");
     
+    // Invalidar caché de productos
+    await invalidateCache('cache:products:*');
+    
     res.status(201).json(populatedProduct);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -82,6 +105,10 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
+    // Invalidar caché de productos
+    await invalidateCache('cache:products:*');
+    await invalidateCache('cache:product:*');
+
     res.json(product);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -98,6 +125,10 @@ export const deleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
+
+    // Invalidar caché de productos
+    await invalidateCache('cache:products:*');
+    await invalidateCache('cache:product:*');
 
     res.json({ message: "Producto eliminado" });
   } catch (error) {
