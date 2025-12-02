@@ -27,9 +27,11 @@ export const FinancialKPICards: React.FC = () => {
       try {
         setLoading(true);
         const response = await advancedAnalyticsService.getFinancialKPIs();
-        setKpis(response.kpis);
+        console.log("Financial KPIs Response:", response);
+        setKpis(response);
       } catch (error) {
         console.error("Error al cargar KPIs financieros:", error);
+        setKpis(null);
       } finally {
         setLoading(false);
       }
@@ -53,53 +55,58 @@ export const FinancialKPICards: React.FC = () => {
 
   if (!kpis) return null;
 
+  const safeNumber = (val: any) => {
+    const num = Number(val);
+    return isNaN(num) ? 0 : num;
+  };
+
   const kpiCards: KPI[] = [
     {
       label: "Ventas Hoy",
-      value: kpis.todaySales,
+      value: safeNumber(kpis.daily?.sales),
       icon: <ShoppingCart className="w-8 h-8" />,
       color: "bg-purple-500",
     },
     {
       label: "Ingresos del Mes",
-      value: `$${kpis.monthRevenue.toFixed(2)}`,
+      value: `$${safeNumber(kpis.monthly?.revenue).toFixed(2)}`,
       icon: <DollarSign className="w-8 h-8" />,
       color: "bg-green-500",
     },
     {
       label: "Ganancia del Mes",
-      value: `$${kpis.monthProfit.toFixed(2)}`,
+      value: `$${safeNumber(kpis.monthly?.profit).toFixed(2)}`,
       icon: <TrendingUp className="w-8 h-8" />,
       color: "bg-blue-500",
     },
     {
       label: "Ticket Promedio",
-      value: `$${kpis.averageTicket.toFixed(2)}`,
+      value: `$${safeNumber(kpis.avgTicket).toFixed(2)}`,
       icon: <Target className="w-8 h-8" />,
       color: "bg-orange-500",
     },
     {
       label: "Ventas Semana",
-      value: kpis.weekSales,
+      value: safeNumber(kpis.weekly?.sales),
       icon: <ShoppingCart className="w-8 h-8" />,
       color: "bg-pink-500",
     },
     {
       label: "Ingresos Semana",
-      value: `$${kpis.weekRevenue.toFixed(2)}`,
+      value: `$${safeNumber(kpis.weekly?.revenue).toFixed(2)}`,
       icon: <DollarSign className="w-8 h-8" />,
       color: "bg-teal-500",
     },
     {
-      label: "Distribuidores Activos",
-      value: kpis.totalActiveDistributors,
-      icon: <Users className="w-8 h-8" />,
+      label: "Ventas del Día",
+      value: safeNumber(kpis.daily?.sales),
+      icon: <ShoppingCart className="w-8 h-8" />,
       color: "bg-indigo-500",
     },
     {
-      label: "Ventas del Mes",
-      value: kpis.monthSales,
-      icon: <ShoppingCart className="w-8 h-8" />,
+      label: "Ingresos del Día",
+      value: `$${safeNumber(kpis.daily?.revenue).toFixed(2)}`,
+      icon: <DollarSign className="w-8 h-8" />,
       color: "bg-violet-500",
     },
   ];

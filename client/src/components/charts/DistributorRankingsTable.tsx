@@ -22,9 +22,20 @@ export const DistributorRankingsTable: React.FC<
           startDate,
           endDate,
         });
-        setRankings(response.rankings);
+        console.log("Distributor Rankings Response:", response);
+        const validatedData = (response.rankings || []).map((item: any, index: number) => ({
+          ...item,
+          rank: index + 1,
+          totalSales: Number(item.totalSales) || 0,
+          revenue: Number(item.totalRevenue) || 0,
+          profit: Number(item.totalProfit) || 0,
+          conversionRate: Number(item.conversionRate) || 0,
+          averageOrderValue: Number(item.avgOrderValue) || 0
+        }));
+        setRankings(validatedData);
       } catch (error) {
         console.error("Error al cargar rankings de distribuidores:", error);
+        setRankings([]);
       } finally {
         setLoading(false);
       }
