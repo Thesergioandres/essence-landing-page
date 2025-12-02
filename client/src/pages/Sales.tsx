@@ -82,10 +82,11 @@ export default function Sales() {
         return new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime();
       case "date-asc":
         return new Date(a.saleDate).getTime() - new Date(b.saleDate).getTime();
-      case "distributor":
+      case "distributor": {
         const nameA = typeof a.distributor === "object" && a.distributor ? a.distributor.name : "Venta Admin";
         const nameB = typeof b.distributor === "object" && b.distributor ? b.distributor.name : "Venta Admin";
         return nameA.localeCompare(nameB);
+      }
       default:
         return 0;
     }
