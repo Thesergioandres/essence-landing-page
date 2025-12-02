@@ -48,8 +48,8 @@ export const getSalesTimeline = async (req, res) => {
         $group: {
           _id: groupBy,
           totalSales: { $sum: 1 },
-          totalRevenue: { $sum: "$totalPrice" },
-          totalProfit: { $sum: "$profit" }
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+          totalProfit: { $sum: "$totalProfit" }
         }
       },
       { $sort: { _id: 1 } },
@@ -62,8 +62,8 @@ export const getSalesTimeline = async (req, res) => {
     const formattedTimeline = timeline.map(item => ({
       period: item._id,
       salesCount: item.totalSales,
-      revenue: item.totalRevenue,
-      profit: item.totalProfit
+      revenue: item.totalRevenue || 0,
+      profit: item.totalProfit || 0
     }));
 
     res.json({ timeline: formattedTimeline });
@@ -81,12 +81,11 @@ export const getTopProducts = async (req, res) => {
 
     const topProducts = await Sale.aggregate([
       { $match: { paymentStatus: 'confirmado' } },
-      { $unwind: "$products" },
       {
         $group: {
-          _id: "$products.product",
-          totalQuantity: { $sum: "$products.quantity" },
-          totalRevenue: { $sum: { $multiply: ["$products.quantity", "$products.price"] } },
+          _id: "$product",
+          totalQuantity: { $sum: "$quantity" },
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
           salesCount: { $sum: 1 }
         }
       },
@@ -125,11 +124,10 @@ export const getSalesByCategory = async (req, res) => {
   try {
     const salesByCategory = await Sale.aggregate([
       { $match: { paymentStatus: 'confirmado' } },
-      { $unwind: "$products" },
       {
         $lookup: {
           from: "products",
-          localField: "products.product",
+          localField: "product",
           foreignField: "_id",
           as: "productInfo"
         }
@@ -148,8 +146,8 @@ export const getSalesByCategory = async (req, res) => {
         $group: {
           _id: "$categoryInfo._id",
           name: { $first: "$categoryInfo.name" },
-          totalSales: { $sum: "$products.quantity" },
-          totalRevenue: { $sum: { $multiply: ["$products.quantity", "$products.price"] } },
+          totalSales: { $sum: "$quantity" },
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
           color: { $first: "$categoryInfo.color" }
         }
       },
@@ -173,9 +171,9 @@ export const getDistributorRankings = async (req, res) => {
         $group: {
           _id: "$distributor",
           totalSales: { $sum: 1 },
-          totalRevenue: { $sum: "$totalPrice" },
-          totalProfit: { $sum: "$profit" },
-          avgOrderValue: { $avg: "$totalPrice" }
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+          totalProfit: { $sum: "$totalProfit" },
+          avgOrderValue: { $avg: { $multiply: ["$salePrice", "$quantity"] } }
         }
       },
       {
@@ -273,11 +271,10 @@ export const getProductRotation = async (req, res) => {
           createdAt: { $gte: startDate }
         }
       },
-      { $unwind: "$products" },
       {
         $group: {
-          _id: "$products.product",
-          totalSold: { $sum: "$products.quantity" },
+          _id: "$product",
+          totalSold: { $sum: "$quantity" },
           frequency: { $sum: 1 }
         }
       },
@@ -327,8 +324,8 @@ export const getFinancialKPIs = async (req, res) => {
         {
           $group: {
             _id: null,
-            revenue: { $sum: "$totalPrice" },
-            profit: { $sum: "$profit" },
+            revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+            profit: { $sum: "$totalProfit" },
             sales: { $sum: 1 }
           }
         }
@@ -339,8 +336,8 @@ export const getFinancialKPIs = async (req, res) => {
         {
           $group: {
             _id: null,
-            revenue: { $sum: "$totalPrice" },
-            profit: { $sum: "$profit" },
+            revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+            profit: { $sum: "$totalProfit" },
             sales: { $sum: 1 }
           }
         }
@@ -351,8 +348,8 @@ export const getFinancialKPIs = async (req, res) => {
         {
           $group: {
             _id: null,
-            revenue: { $sum: "$totalPrice" },
-            profit: { $sum: "$profit" },
+            revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+            profit: { $sum: "$totalProfit" },
             sales: { $sum: 1 }
           }
         }
@@ -363,7 +360,7 @@ export const getFinancialKPIs = async (req, res) => {
         {
           $group: {
             _id: null,
-            avgTicket: { $avg: "$totalPrice" }
+            avgTicket: { $avg: { $multiply: ["$salePrice", "$quantity"] } }
           }
         }
       ])
@@ -401,8 +398,8 @@ export const getComparativeAnalysis = async (req, res) => {
         {
           $group: {
             _id: null,
-            revenue: { $sum: "$totalPrice" },
-            profit: { $sum: "$profit" },
+            revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+            profit: { $sum: "$totalProfit" },
             sales: { $sum: 1 }
           }
         }
@@ -417,8 +414,8 @@ export const getComparativeAnalysis = async (req, res) => {
         {
           $group: {
             _id: null,
-            revenue: { $sum: "$totalPrice" },
-            profit: { $sum: "$profit" },
+            revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+            profit: { $sum: "$totalProfit" },
             sales: { $sum: 1 }
           }
         }
@@ -457,7 +454,7 @@ export const getSalesFunnel = async (req, res) => {
         $group: {
           _id: "$paymentStatus",
           count: { $sum: 1 },
-          totalValue: { $sum: "$totalPrice" }
+          totalValue: { $sum: { $multiply: ["$salePrice", "$quantity"] } }
         }
       }
     ]);
