@@ -6,7 +6,6 @@ import {
   TrendingDown,
   DollarSign,
   ShoppingCart,
-  Users,
   Target,
 } from "lucide-react";
 

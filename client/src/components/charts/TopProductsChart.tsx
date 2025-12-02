@@ -120,12 +120,12 @@ export const TopProductsChart: React.FC<TopProductsChartProps> = ({
           />
           <Tooltip
             formatter={(value: any, name: string) => {
-              const num = Number(value);
+              const num = Number(value) || 0;
               if (isNaN(num)) return ['0', name];
               if (name === "totalRevenue") {
                 return [`$${num.toFixed(2)}`, "Ingresos"];
               }
-              return [num, "Cantidad"];
+              return [num.toFixed(0), "Cantidad"];
             }}
             contentStyle={{
               backgroundColor: "rgba(255, 255, 255, 0.95)",

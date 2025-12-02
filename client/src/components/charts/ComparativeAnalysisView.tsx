@@ -96,7 +96,7 @@ export const ComparativeAnalysisView: React.FC = () => {
               <div>
                 <div className="text-3xl font-bold text-gray-800 mb-1">
                   {metric.prefix}
-                  {metric.current.toFixed(metric.prefix === "$" ? 2 : 0)}
+                  {(Number(metric.current) || 0).toFixed(metric.prefix === "$" ? 2 : 0)}
                 </div>
                 <div className="text-xs text-gray-500">Mes Actual</div>
               </div>
@@ -104,7 +104,7 @@ export const ComparativeAnalysisView: React.FC = () => {
                 {getGrowthIcon(metric.growth)}
                 <span className="font-bold text-lg ml-1">
                   {metric.growth > 0 ? "+" : ""}
-                  {metric.growth.toFixed(1)}%
+                  {(Number(metric.growth) || 0).toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -114,7 +114,7 @@ export const ComparativeAnalysisView: React.FC = () => {
                 <span className="text-sm text-gray-600">Mes Anterior:</span>
                 <span className="font-semibold text-gray-700">
                   {metric.prefix}
-                  {metric.previous.toFixed(metric.prefix === "$" ? 2 : 0)}
+                  {(Number(metric.previous) || 0).toFixed(metric.prefix === "$" ? 2 : 0)}
                 </span>
               </div>
               <div className="flex items-center justify-between mt-2">
@@ -130,7 +130,7 @@ export const ComparativeAnalysisView: React.FC = () => {
                 >
                   {metric.current - metric.previous > 0 ? "+" : ""}
                   {metric.prefix}
-                  {(metric.current - metric.previous).toFixed(
+                  {(Number(metric.current - metric.previous) || 0).toFixed(
                     metric.prefix === "$" ? 2 : 0
                   )}
                 </span>

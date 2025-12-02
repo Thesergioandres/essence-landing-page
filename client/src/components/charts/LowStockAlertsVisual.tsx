@@ -146,7 +146,7 @@ export const LowStockAlertsVisual: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-semibold inline-block text-gray-600">
-                    {product.stockPercentage.toFixed(0)}%
+                    {(Number(product.stockPercentage) || 0).toFixed(0)}%
                   </span>
                 </div>
               </div>
