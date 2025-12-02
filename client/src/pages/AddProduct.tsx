@@ -4,8 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   categoryService,
   productService,
-  uploadService,
-} from "../api/services.ts";
+} from "../api/services";
 import type { Category } from "../types";
 
 interface FormState {
@@ -158,12 +157,6 @@ export default function AddProduct() {
         .map(item => item.trim())
         .filter(Boolean);
 
-      let imageData: { url: string; publicId: string } | undefined;
-
-      if (imageFile) {
-        imageData = await uploadService.uploadImage(imageFile);
-      }
-
       await productService.create({
         name: formData.name.trim(),
         description: formData.description.trim(),
@@ -177,7 +170,7 @@ export default function AddProduct() {
         featured: formData.featured,
         ingredients,
         benefits,
-        image: imageData ?? null,
+        imageFile: imageFile || undefined,
       });
 
       navigate("/admin/products");

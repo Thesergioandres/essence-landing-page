@@ -105,16 +105,56 @@ export const productService = {
     return categoryService.getAll();
   },
 
-  async create(productData: ProductPayload): Promise<Product> {
-    const response = await api.post<Product>("/products", productData);
+  async create(productData: ProductPayload & { imageFile?: File }): Promise<Product> {
+    const formData = new FormData();
+    
+    // Agregar todos los campos del producto
+    Object.entries(productData).forEach(([key, value]) => {
+      if (key === 'imageFile') return; // El imageFile se maneja aparte
+      if (key === 'image') return; // No enviar el objeto image antiguo
+      if (value !== undefined && value !== null) {
+        formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+      }
+    });
+    
+    // Agregar la imagen si existe
+    if (productData.imageFile) {
+      formData.append('image', productData.imageFile);
+    }
+    
+    const response = await api.post<Product>("/products", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
   async update(
     id: string,
-    productData: Partial<ProductPayload>
+    productData: Partial<ProductPayload> & { imageFile?: File }
   ): Promise<Product> {
-    const response = await api.put<Product>(`/products/${id}`, productData);
+    const formData = new FormData();
+    
+    // Agregar todos los campos del producto
+    Object.entries(productData).forEach(([key, value]) => {
+      if (key === 'imageFile') return; // El imageFile se maneja aparte
+      if (key === 'image') return; // No enviar el objeto image antiguo
+      if (value !== undefined && value !== null) {
+        formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+      }
+    });
+    
+    // Agregar la imagen si existe
+    if (productData.imageFile) {
+      formData.append('image', productData.imageFile);
+    }
+    
+    const response = await api.put<Product>(`/products/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 

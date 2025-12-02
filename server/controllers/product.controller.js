@@ -70,6 +70,31 @@ export const createProduct = async (req, res) => {
   try {
     const productData = { ...req.body };
     
+    // Parsear arrays que vienen como JSON strings desde FormData
+    if (typeof productData.ingredients === 'string') {
+      try {
+        productData.ingredients = JSON.parse(productData.ingredients);
+      } catch (e) {
+        productData.ingredients = productData.ingredients.split(',').map(i => i.trim());
+      }
+    }
+    if (typeof productData.benefits === 'string') {
+      try {
+        productData.benefits = JSON.parse(productData.benefits);
+      } catch (e) {
+        productData.benefits = productData.benefits.split(',').map(b => b.trim());
+      }
+    }
+    
+    // Convertir valores numéricos y booleanos
+    if (productData.purchasePrice) productData.purchasePrice = Number(productData.purchasePrice);
+    if (productData.suggestedPrice) productData.suggestedPrice = Number(productData.suggestedPrice);
+    if (productData.distributorPrice) productData.distributorPrice = Number(productData.distributorPrice);
+    if (productData.clientPrice) productData.clientPrice = Number(productData.clientPrice);
+    if (productData.totalStock) productData.totalStock = Number(productData.totalStock);
+    if (productData.lowStockAlert) productData.lowStockAlert = Number(productData.lowStockAlert);
+    if (typeof productData.featured === 'string') productData.featured = productData.featured === 'true';
+    
     // Manejar imagen de Cloudinary si se subió
     if (req.file) {
       productData.image = {
@@ -118,6 +143,33 @@ export const updateProduct = async (req, res) => {
     
     // Actualizar datos del producto
     const updateData = { ...req.body };
+    
+    // Parsear arrays que vienen como JSON strings desde FormData
+    if (typeof updateData.ingredients === 'string') {
+      try {
+        updateData.ingredients = JSON.parse(updateData.ingredients);
+      } catch (e) {
+        updateData.ingredients = updateData.ingredients.split(',').map(i => i.trim());
+      }
+    }
+    if (typeof updateData.benefits === 'string') {
+      try {
+        updateData.benefits = JSON.parse(updateData.benefits);
+      } catch (e) {
+        updateData.benefits = updateData.benefits.split(',').map(b => b.trim());
+      }
+    }
+    
+    // Convertir valores numéricos y booleanos
+    if (updateData.purchasePrice) updateData.purchasePrice = Number(updateData.purchasePrice);
+    if (updateData.suggestedPrice) updateData.suggestedPrice = Number(updateData.suggestedPrice);
+    if (updateData.distributorPrice) updateData.distributorPrice = Number(updateData.distributorPrice);
+    if (updateData.clientPrice) updateData.clientPrice = Number(updateData.clientPrice);
+    if (updateData.distributorCommission) updateData.distributorCommission = Number(updateData.distributorCommission);
+    if (updateData.totalStock) updateData.totalStock = Number(updateData.totalStock);
+    if (updateData.warehouseStock) updateData.warehouseStock = Number(updateData.warehouseStock);
+    if (updateData.lowStockAlert) updateData.lowStockAlert = Number(updateData.lowStockAlert);
+    if (typeof updateData.featured === 'string') updateData.featured = updateData.featured === 'true';
     
     // Manejar nueva imagen de Cloudinary si se subió
     if (req.file) {

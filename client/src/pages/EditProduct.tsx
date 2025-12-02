@@ -4,8 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   categoryService,
   productService,
-  uploadService,
-} from "../api/services.ts";
+} from "../api/services";
 import type { Category, Product } from "../types";
 
 interface FormState {
@@ -34,7 +33,6 @@ export default function EditProduct() {
   const [formData, setFormData] = useState<FormState | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageToDelete, setImageToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -151,7 +149,6 @@ export default function EditProduct() {
     if (file) {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
-      setImageToDelete(product?.image?.publicId ?? null);
     }
   };
 
@@ -160,7 +157,6 @@ export default function EditProduct() {
 
     setImageFile(null);
     setImagePreview(null);
-    setImageToDelete(product.image.publicId);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -199,14 +195,6 @@ export default function EditProduct() {
         .map(item => item.trim())
         .filter(Boolean);
 
-      let imageData: { url: string; publicId: string } | null | undefined;
-
-      if (imageFile) {
-        imageData = await uploadService.uploadImage(imageFile);
-      } else if (!imagePreview) {
-        imageData = null;
-      }
-
       await productService.update(id, {
         name: formData.name.trim(),
         description: formData.description.trim(),
@@ -222,16 +210,8 @@ export default function EditProduct() {
         featured: formData.featured,
         ingredients,
         benefits,
-        image: imageData,
+        imageFile: imageFile || undefined,
       });
-
-      if (imageToDelete) {
-        try {
-          await uploadService.deleteImage(imageToDelete);
-        } catch (deleteError) {
-          console.warn("No se pudo eliminar la imagen anterior", deleteError);
-        }
-      }
 
       navigate("/admin/products");
     } catch (err) {
