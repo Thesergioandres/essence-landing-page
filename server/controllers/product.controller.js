@@ -2,6 +2,7 @@ import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
 import { calculateDistributorPrice, getDistributorProfitPercentage } from "../utils/distributorPricing.js";
 import { invalidateCache } from "../middleware/cache.middleware.js";
+import { deleteImage } from "../config/cloudinary.js";
 
 // @desc    Obtener todos los productos
 // @route   GET /api/products
@@ -69,6 +70,14 @@ export const createProduct = async (req, res) => {
   try {
     const productData = { ...req.body };
     
+    // Manejar imagen de Cloudinary si se subió
+    if (req.file) {
+      productData.image = {
+        url: req.file.path,
+        publicId: req.file.filename
+      };
+    }
+    
     // Calcular precio sugerido si no se proporciona
     if (!productData.suggestedPrice && productData.purchasePrice) {
       productData.suggestedPrice = productData.purchasePrice * 1.3;
@@ -96,20 +105,42 @@ export const createProduct = async (req, res) => {
 // @access  Private/Admin
 export const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-
+    const product = await Product.findById(req.params.id);
+    
     if (!product) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
+    
+    // Si hay nueva imagen, eliminar la anterior de Cloudinary
+    if (req.file && product.image?.publicId) {
+      await deleteImage(product.image.publicId);
+    }
+    
+    // Actualizar datos del producto
+    const updateData = { ...req.body };
+    
+    // Manejar nueva imagen de Cloudinary si se subió
+    if (req.file) {
+      updateData.image = {
+        url: req.file.path,
+        publicId: req.file.filename
+      };
+    }
+    
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id, 
+      updateData, 
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).populate("category", "name slug");
 
     // Invalidar caché de productos
     await invalidateCache('cache:products:*');
     await invalidateCache('cache:product:*');
 
-    res.json(product);
+    res.json(updatedProduct);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -120,11 +151,18 @@ export const updateProduct = async (req, res) => {
 // @access  Private/Admin
 export const deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findById(req.params.id);
 
     if (!product) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
+    
+    // Eliminar imagen de Cloudinary si existe
+    if (product.image?.publicId) {
+      await deleteImage(product.image.publicId);
+    }
+    
+    await product.deleteOne();
 
     // Invalidar caché de productos
     await invalidateCache('cache:products:*');
