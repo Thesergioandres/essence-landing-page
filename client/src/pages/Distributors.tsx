@@ -21,10 +21,11 @@ export default function Distributors() {
       if (filter !== "all") params.active = filter === "active";
       
       const response = await distributorService.getAll(params);
-      const data = response.data || response;
-      setDistributors(Array.isArray(data) ? data : data);
       
-      if (response.pagination) {
+      if (Array.isArray(response)) {
+        setDistributors(response);
+      } else if ('data' in response) {
+        setDistributors(response.data);
         setPagination(response.pagination);
       }
     } catch (err) {
@@ -225,31 +226,31 @@ export default function Distributors() {
             </div>
           ))}
         </div>
+      )}
 
-        {/* Controles de Paginación */}
-        {pagination.pages > 1 && (
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-4">
-            <div className="text-sm text-gray-400">
-              Página {pagination.page} de {pagination.pages} • Total: {pagination.total} distribuidores
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                disabled={pagination.page === 1}
-                className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-              >
-                ← Anterior
-              </button>
-              <button
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                disabled={!pagination.hasMore}
-                className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-              >
-                Siguiente →
-              </button>
-            </div>
+      {/* Controles de Paginación */}
+      {!loading && pagination.pages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-4">
+          <div className="text-sm text-gray-400">
+            Página {pagination.page} de {pagination.pages} • Total: {pagination.total} distribuidores
           </div>
-        )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+              disabled={pagination.page === 1}
+              className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
+              ← Anterior
+            </button>
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+              disabled={!pagination.hasMore}
+              className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
+              Siguiente →
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

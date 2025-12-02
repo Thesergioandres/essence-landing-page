@@ -6,7 +6,7 @@ import SaleDetailModal from "../components/SaleDetailModal";
 export default function Sales() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0, hasMore: false });
-  const [statsData, setStatsData] = useState({ totalSales: 0, totalRevenue: 0, confirmedSales: 0, pendingSales: 0, totalProfit: 0 });
+  const [statsData, setStatsData] = useState<{ totalSales?: number; totalRevenue?: number; confirmedSales?: number; pendingSales?: number; totalProfit?: number }>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pendiente" | "confirmado">("all");
   const [sortBy, setSortBy] = useState<"date-desc" | "date-asc" | "distributor">("date-desc");
