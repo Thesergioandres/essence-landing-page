@@ -91,7 +91,7 @@ export default function Dashboard() {
 
   const loadStats = async () => {
     try {
-      const [productsResponse, categories, distributors, alerts, salesResponse, monthly] =
+      const [productsResponse, categories, distributorsResponse, alerts, salesResponse, monthly] =
         await Promise.all([
           productService.getAll(),
           categoryService.getAll(),
@@ -102,6 +102,7 @@ export default function Dashboard() {
         ]);
 
       const products = productsResponse.data || productsResponse;
+      const distributors = Array.isArray(distributorsResponse) ? distributorsResponse : distributorsResponse.data;
       const salesData = salesResponse.sales ? salesResponse : { stats: { totalSales: 0, totalRevenue: 0 }, sales: salesResponse };
 
       setMonthlyData(monthly);

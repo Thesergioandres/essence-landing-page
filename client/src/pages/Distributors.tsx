@@ -34,7 +34,7 @@ export default function Distributors() {
     } finally {
       setLoading(false);
     }
-  }, [filter, pagination.page]);
+  }, [filter, pagination.page, pagination.limit]);
 
   useEffect(() => {
     loadDistributors();

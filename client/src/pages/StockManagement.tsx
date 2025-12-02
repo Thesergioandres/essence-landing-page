@@ -46,7 +46,8 @@ const StockManagement = () => {
         stockService.getAlerts(),
       ]);
       setProducts(productsData.data || productsData);
-      setDistributors(distributorsRes.filter((d: User) => d.active));
+      const distList = Array.isArray(distributorsRes) ? distributorsRes : distributorsRes.data;
+      setDistributors(distList.filter((d: User) => d.active));
       setAlerts([...alertsRes.warehouseAlerts, ...alertsRes.distributorAlerts]);
     } catch (err) {
       console.error('Error al cargar datos:', err);
