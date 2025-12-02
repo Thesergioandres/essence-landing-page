@@ -101,6 +101,8 @@ export const CategoryDistributionChart: React.FC<
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    
+    const percentage = Number(percent) || 0;
 
     return (
       <text
@@ -111,7 +113,7 @@ export const CategoryDistributionChart: React.FC<
         dominantBaseline="central"
         className="font-bold"
       >
-        {`${(percent * 100).toFixed(0)}%`}
+        {`${(percentage * 100).toFixed(0)}%`}
       </text>
     );
   };
