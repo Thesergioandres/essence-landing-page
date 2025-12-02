@@ -185,3 +185,15 @@ html {
     padding-right: max(0px, env(safe-area-inset-right));
   }
 }
+
+/* Remove number input spinners (arrows) */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

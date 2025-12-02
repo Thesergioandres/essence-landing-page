@@ -100,7 +100,7 @@ const StockManagement = () => {
 
   const updateItemQuantity = (productId: string, quantity: number) => {
     setItems(items.map(item =>
-      item.productId === productId ? { ...item, quantity: Math.max(1, quantity) } : item
+      item.productId === productId ? { ...item, quantity: quantity || 1 } : item
     ));
   };
 
@@ -422,10 +422,17 @@ const StockManagement = () => {
                             min="1"
                             max={operation === 'assign' ? item.warehouseStock : undefined}
                             value={item.quantity}
-                            onChange={(e) =>
-                              updateItemQuantity(item.productId, Number(e.target.value))
-                            }
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? '' : Number(e.target.value);
+                              updateItemQuantity(item.productId, val as number);
+                            }}
+                            onBlur={(e) => {
+                              if (e.target.value === '' || Number(e.target.value) < 1) {
+                                updateItemQuantity(item.productId, 1);
+                              }
+                            }}
                             className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Ej: 10"
                           />
                         </div>
 
