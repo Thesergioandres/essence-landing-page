@@ -29,7 +29,7 @@ export const getSalesTimeline = async (req, res) => {
     }
 
     // Construir filtro - SIN restricción de fecha por defecto
-    const matchFilter = { paymentStatus: 'confirmed' };
+    const matchFilter = { paymentStatus: 'confirmado' };
     
     // Solo aplicar filtros de fecha si se proporcionan explícitamente
     if (customStartDate || customEndDate) {
@@ -80,7 +80,7 @@ export const getTopProducts = async (req, res) => {
     const { limit = 10 } = req.query;
 
     const topProducts = await Sale.aggregate([
-      { $match: { paymentStatus: 'confirmed' } },
+      { $match: { paymentStatus: 'confirmado' } },
       { $unwind: "$products" },
       {
         $group: {
@@ -124,7 +124,7 @@ export const getTopProducts = async (req, res) => {
 export const getSalesByCategory = async (req, res) => {
   try {
     const salesByCategory = await Sale.aggregate([
-      { $match: { paymentStatus: 'confirmed' } },
+      { $match: { paymentStatus: 'confirmado' } },
       { $unwind: "$products" },
       {
         $lookup: {
@@ -168,7 +168,7 @@ export const getSalesByCategory = async (req, res) => {
 export const getDistributorRankings = async (req, res) => {
   try {
     const rankings = await Sale.aggregate([
-      { $match: { paymentStatus: 'confirmed' } },
+      { $match: { paymentStatus: 'confirmado' } },
       {
         $group: {
           _id: "$distributor",
@@ -269,7 +269,7 @@ export const getProductRotation = async (req, res) => {
     const rotation = await Sale.aggregate([
       {
         $match: {
-          paymentStatus: 'confirmed',
+          paymentStatus: 'confirmado',
           createdAt: { $gte: startDate }
         }
       },
@@ -323,7 +323,7 @@ export const getFinancialKPIs = async (req, res) => {
     const [dailyStats, weeklyStats, monthlyStats, avgTicket] = await Promise.all([
       // Daily stats
       Sale.aggregate([
-        { $match: { createdAt: { $gte: startOfToday }, paymentStatus: 'confirmed' } },
+        { $match: { createdAt: { $gte: startOfToday }, paymentStatus: 'confirmado' } },
         {
           $group: {
             _id: null,
@@ -335,7 +335,7 @@ export const getFinancialKPIs = async (req, res) => {
       ]),
       // Weekly stats
       Sale.aggregate([
-        { $match: { createdAt: { $gte: startOfThisWeek }, paymentStatus: 'confirmed' } },
+        { $match: { createdAt: { $gte: startOfThisWeek }, paymentStatus: 'confirmado' } },
         {
           $group: {
             _id: null,
@@ -347,7 +347,7 @@ export const getFinancialKPIs = async (req, res) => {
       ]),
       // Monthly stats
       Sale.aggregate([
-        { $match: { createdAt: { $gte: startOfThisMonth }, paymentStatus: 'confirmed' } },
+        { $match: { createdAt: { $gte: startOfThisMonth }, paymentStatus: 'confirmado' } },
         {
           $group: {
             _id: null,
@@ -359,7 +359,7 @@ export const getFinancialKPIs = async (req, res) => {
       ]),
       // Average ticket
       Sale.aggregate([
-        { $match: { paymentStatus: 'confirmed' } },
+        { $match: { paymentStatus: 'confirmado' } },
         {
           $group: {
             _id: null,
@@ -395,7 +395,7 @@ export const getComparativeAnalysis = async (req, res) => {
         {
           $match: {
             createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd },
-            paymentStatus: 'confirmed'
+            paymentStatus: 'confirmado'
           }
         },
         {
@@ -411,7 +411,7 @@ export const getComparativeAnalysis = async (req, res) => {
         {
           $match: {
             createdAt: { $gte: thisMonthStart },
-            paymentStatus: 'confirmed'
+            paymentStatus: 'confirmado'
           }
         },
         {
