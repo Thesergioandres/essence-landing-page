@@ -50,7 +50,7 @@ export const getSalesTimeline = async (req, res) => {
       { $sort: { _id: 1 } }
     ]);
 
-    res.json(timeline);
+    res.json({ timeline });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -96,7 +96,7 @@ export const getTopProducts = async (req, res) => {
       }
     ]);
 
-    res.json(topProducts);
+    res.json({ topProducts });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -140,7 +140,7 @@ export const getSalesByCategory = async (req, res) => {
       { $sort: { totalRevenue: -1 } }
     ]);
 
-    res.json(salesByCategory);
+    res.json({ categoryDistribution: salesByCategory });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -211,7 +211,7 @@ export const getDistributorRankings = async (req, res) => {
       };
     });
 
-    res.json(rankingsWithConversion);
+    res.json({ rankings: rankingsWithConversion });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -234,9 +234,9 @@ export const getLowStockVisual = async (req, res) => {
       stockPercentage: ((product.warehouseStock / product.lowStockAlert) * 100).toFixed(0),
       urgency: product.warehouseStock === 0 ? 'critical' : 
                product.warehouseStock <= product.lowStockAlert * 0.5 ? 'high' : 'medium'
-    }));
+    });
 
-    res.json(visualData);
+    res.json({ lowStockProducts: visualData });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -286,9 +286,9 @@ export const getProductRotation = async (req, res) => {
         }
       },
       { $sort: { rotationRate: -1 } }
-    ]);
+    });
 
-    res.json(rotation);
+    res.json({ productRotation: rotation });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -454,7 +454,7 @@ export const getSalesFunnel = async (req, res) => {
     const total = funnel.pending.count + funnel.confirmed.count;
     funnel.conversionRate = total > 0 ? ((funnel.confirmed.count / total) * 100).toFixed(2) : 0;
 
-    res.json(funnel);
+    res.json({ funnel });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
