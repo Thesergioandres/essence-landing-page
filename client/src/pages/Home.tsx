@@ -41,10 +41,10 @@ export default function Home() {
               description?: string;
               slug: string;
             }) => {
-              const products = productsData.filter(
+              const prods = products.filter(
                 (p: Product) => p.category._id === cat._id
               );
-              return { ...cat, productCount: products.length };
+              return { ...cat, productCount: prods.length };
             }
           )
         );

@@ -40,7 +40,7 @@ const StockManagement = () => {
 
   const loadData = async () => {
     try {
-      const [productsRes, distributorsRes, alertsRes] = await Promise.all([
+      const [productsData, distributorsRes, alertsRes] = await Promise.all([
         productService.getAll(),
         distributorService.getAll(),
         stockService.getAlerts(),

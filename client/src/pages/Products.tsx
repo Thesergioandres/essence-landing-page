@@ -15,6 +15,7 @@ export default function Products() {
 
   useEffect(() => {
     void loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.page, categoryFilter]);
 
   const loadData = async () => {
