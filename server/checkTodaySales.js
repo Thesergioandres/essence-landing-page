@@ -33,6 +33,7 @@ const checkTodaySales = async () => {
     .sort({ saleDate: -1 });
 
     console.log(`\n📊 Ventas de hoy (desde ${startOfTodayColombia.toISOString()}): ${todaySales.length}\n`);
+    console.log('='.repeat(100));
 
     todaySales.forEach((sale, index) => {
       console.log(`${index + 1}. Producto: ${sale.product?.name}`);

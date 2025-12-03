@@ -342,12 +342,30 @@ export const getFinancialKPIs = async (req, res) => {
     const today = new Date();
     
     // Ajustar a zona horaria de Colombia (UTC-5)
+    // El día en Colombia comienza a las 5:00 AM UTC y termina a las 4:59:59 AM UTC del día siguiente
     const colombiaOffset = -5 * 60; // -5 horas en minutos
     const colombiaTime = new Date(today.getTime() + colombiaOffset * 60000);
     
-    const startOfToday = new Date(colombiaTime.getFullYear(), colombiaTime.getMonth(), colombiaTime.getDate(), 0, 0, 0);
-    const startOfThisWeek = startOfWeek(colombiaTime);
-    const startOfThisMonth = startOfMonth(colombiaTime);
+    // Inicio del día actual en Colombia (medianoche Colombia = 5:00 AM UTC)
+    const startOfToday = new Date(Date.UTC(
+      colombiaTime.getUTCFullYear(),
+      colombiaTime.getUTCMonth(),
+      colombiaTime.getUTCDate(),
+      5, 0, 0, 0
+    ));
+    
+    // Inicio de la semana en Colombia
+    const dayOfWeek = colombiaTime.getUTCDay();
+    const startOfThisWeek = new Date(startOfToday);
+    startOfThisWeek.setUTCDate(startOfToday.getUTCDate() - dayOfWeek);
+    
+    // Inicio del mes en Colombia
+    const startOfThisMonth = new Date(Date.UTC(
+      colombiaTime.getUTCFullYear(),
+      colombiaTime.getUTCMonth(),
+      1,
+      5, 0, 0, 0
+    ));
 
     console.log('KPI Dates:', {
       now: today.toISOString(),
@@ -428,9 +446,20 @@ export const getComparativeAnalysis = async (req, res) => {
     const colombiaOffset = -5 * 60; // -5 horas en minutos
     const colombiaTime = new Date(now.getTime() + colombiaOffset * 60000);
     
-    const lastMonthStart = startOfMonth(subMonths(colombiaTime, 1));
-    const lastMonthEnd = endOfMonth(subMonths(colombiaTime, 1));
-    const thisMonthStart = startOfMonth(colombiaTime);
+    // Inicio del mes actual en Colombia (día 1 a las 00:00 Colombia = 05:00 UTC)
+    const thisMonthStart = new Date(Date.UTC(
+      colombiaTime.getUTCFullYear(),
+      colombiaTime.getUTCMonth(),
+      1,
+      5, 0, 0, 0
+    ));
+    
+    // Mes anterior
+    const lastMonthYear = colombiaTime.getUTCMonth() === 0 ? colombiaTime.getUTCFullYear() - 1 : colombiaTime.getUTCFullYear();
+    const lastMonthNum = colombiaTime.getUTCMonth() === 0 ? 11 : colombiaTime.getUTCMonth() - 1;
+    
+    const lastMonthStart = new Date(Date.UTC(lastMonthYear, lastMonthNum, 1, 5, 0, 0, 0));
+    const lastMonthEnd = new Date(thisMonthStart.getTime() - 1); // 1 milisegundo antes del inicio del mes actual
 
     console.log('Comparative Analysis Dates:', {
       now: now.toISOString(),
