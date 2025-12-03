@@ -259,12 +259,23 @@ export const getLowStockVisual = async (req, res) => {
     .sort({ warehouseStock: 1 })
     .lean();
 
-    const visualData = lowStockProducts.map(product => ({
-      ...product,
-      stockPercentage: ((product.warehouseStock / product.lowStockAlert) * 100).toFixed(0),
-      urgency: product.warehouseStock === 0 ? 'critical' : 
-               product.warehouseStock <= product.lowStockAlert * 0.5 ? 'high' : 'medium'
-    }));
+    const visualData = lowStockProducts.map(product => {
+      // Calcular porcentaje basado en el nivel de alerta como 100%
+      const maxStock = product.lowStockAlert * 2 || 100; // Asumimos que el doble del alert es el máximo
+      const percentage = Math.min(((product.warehouseStock / maxStock) * 100), 100);
+      
+      return {
+        productId: product._id,
+        productName: product.name,
+        currentStock: product.warehouseStock,
+        lowStockAlert: product.lowStockAlert,
+        categoryName: product.category?.name || 'Sin categoría',
+        stockPercentage: parseFloat(percentage.toFixed(1)),
+        urgency: product.warehouseStock === 0 ? 'critical' : 
+                 product.warehouseStock <= product.lowStockAlert * 0.5 ? 'critical' :
+                 product.warehouseStock <= product.lowStockAlert ? 'warning' : 'normal'
+      };
+    });
 
     res.json({ lowStockProducts: visualData });
   } catch (error) {
@@ -447,12 +458,14 @@ export const getComparativeAnalysis = async (req, res) => {
     };
 
     res.json({
-      lastMonth: lastMonthData,
-      thisMonth: thisMonthData,
-      growth: {
-        revenue: parseFloat(calculateGrowth(thisMonthData.revenue, lastMonthData.revenue)),
-        profit: parseFloat(calculateGrowth(thisMonthData.profit, lastMonthData.profit)),
-        sales: parseFloat(calculateGrowth(thisMonthData.sales, lastMonthData.sales))
+      comparison: {
+        previousMonth: lastMonthData,
+        currentMonth: thisMonthData,
+        growth: {
+          salesGrowth: parseFloat(calculateGrowth(thisMonthData.sales, lastMonthData.sales)),
+          revenueGrowth: parseFloat(calculateGrowth(thisMonthData.revenue, lastMonthData.revenue)),
+          profitGrowth: parseFloat(calculateGrowth(thisMonthData.profit, lastMonthData.profit))
+        }
       }
     });
   } catch (error) {
@@ -476,12 +489,12 @@ export const getSalesFunnel = async (req, res) => {
     ]);
 
     const funnel = {
-      pending: funnelData.find(f => f._id === 'pending') || { count: 0, totalValue: 0 },
-      confirmed: funnelData.find(f => f._id === 'confirmed') || { count: 0, totalValue: 0 }
+      pending: funnelData.find(f => f._id === 'pendiente') || { count: 0, totalValue: 0 },
+      confirmed: funnelData.find(f => f._id === 'confirmado') || { count: 0, totalValue: 0 }
     };
 
     const total = funnel.pending.count + funnel.confirmed.count;
-    funnel.conversionRate = total > 0 ? ((funnel.confirmed.count / total) * 100).toFixed(2) : 0;
+    funnel.conversionRate = total > 0 ? parseFloat(((funnel.confirmed.count / total) * 100).toFixed(2)) : 0;
 
     res.json({ funnel });
   } catch (error) {
