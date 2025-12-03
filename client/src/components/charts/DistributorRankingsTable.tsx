@@ -136,12 +136,12 @@ export const DistributorRankingsTable: React.FC<
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-semibold text-green-600">
-                    ${distributor.revenue.toFixed(2)}
+                    ${(Number(distributor.revenue) || 0).toFixed(2)}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-semibold text-blue-600">
-                    ${distributor.profit.toFixed(2)}
+                    ${(Number(distributor.profit) || 0).toFixed(2)}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -155,13 +155,13 @@ export const DistributorRankingsTable: React.FC<
                           : "text-red-600"
                       }`}
                     >
-                      {distributor.conversionRate.toFixed(1)}%
+                      {(Number(distributor.conversionRate) || 0).toFixed(1)}%
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    ${distributor.averageOrderValue.toFixed(2)}
+                    ${(Number(distributor.averageOrderValue) || 0).toFixed(2)}
                   </div>
                 </td>
               </motion.tr>
