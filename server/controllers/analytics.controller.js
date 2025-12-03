@@ -101,8 +101,16 @@ export const getProfitByProduct = async (req, res) => {
     const filter = { paymentStatus: "confirmado" };
     if (startDate || endDate) {
       filter.saleDate = {};
-      if (startDate) filter.saleDate.$gte = new Date(startDate);
-      if (endDate) filter.saleDate.$lte = new Date(endDate);
+      if (startDate) {
+        // Convertir fecha a inicio del día en Colombia (00:00 Colombia = 05:00 UTC)
+        const date = new Date(startDate);
+        filter.saleDate.$gte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 5, 0, 0));
+      }
+      if (endDate) {
+        // Convertir fecha a fin del día en Colombia (23:59:59 Colombia = 04:59:59 UTC del día siguiente)
+        const date = new Date(endDate);
+        filter.saleDate.$lte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 4, 59, 59, 999));
+      }
     }
 
     const profitByProduct = await Sale.aggregate([
@@ -168,8 +176,16 @@ export const getProfitByDistributor = async (req, res) => {
     const filter = { paymentStatus: "confirmado" };
     if (startDate || endDate) {
       filter.saleDate = {};
-      if (startDate) filter.saleDate.$gte = new Date(startDate);
-      if (endDate) filter.saleDate.$lte = new Date(endDate);
+      if (startDate) {
+        // Convertir fecha a inicio del día en Colombia (00:00 Colombia = 05:00 UTC)
+        const date = new Date(startDate);
+        filter.saleDate.$gte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 5, 0, 0));
+      }
+      if (endDate) {
+        // Convertir fecha a fin del día en Colombia (23:59:59 Colombia = 04:59:59 UTC del día siguiente)
+        const date = new Date(endDate);
+        filter.saleDate.$lte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 4, 59, 59, 999));
+      }
     }
 
     const profitByDistributor = await Sale.aggregate([
@@ -334,8 +350,16 @@ export const getFinancialSummary = async (req, res) => {
     const filter = { paymentStatus: "confirmado" };
     if (startDate || endDate) {
       filter.saleDate = {};
-      if (startDate) filter.saleDate.$gte = new Date(startDate);
-      if (endDate) filter.saleDate.$lte = new Date(endDate);
+      if (startDate) {
+        // Convertir fecha a inicio del día en Colombia (00:00 Colombia = 05:00 UTC)
+        const date = new Date(startDate);
+        filter.saleDate.$gte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 5, 0, 0));
+      }
+      if (endDate) {
+        // Convertir fecha a fin del día en Colombia (23:59:59 Colombia = 04:59:59 UTC del día siguiente)
+        const date = new Date(endDate);
+        filter.saleDate.$lte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 4, 59, 59, 999));
+      }
     }
 
     const sales = await Sale.find(filter);
