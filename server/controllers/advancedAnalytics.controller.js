@@ -16,16 +16,16 @@ export const getSalesTimeline = async (req, res) => {
     // Determinar agrupación según período
     switch(period) {
       case 'day':
-        groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
+        groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } };
         break;
       case 'week':
-        groupBy = { $dateToString: { format: "%Y-W%V", date: "$createdAt" } };
+        groupBy = { $dateToString: { format: "%Y-W%V", date: "$saleDate" } };
         break;
       case 'month':
-        groupBy = { $dateToString: { format: "%Y-%m", date: "$createdAt" } };
+        groupBy = { $dateToString: { format: "%Y-%m", date: "$saleDate" } };
         break;
       default:
-        groupBy = { $dateToString: { format: "%Y-%m", date: "$createdAt" } };
+        groupBy = { $dateToString: { format: "%Y-%m", date: "$saleDate" } };
     }
 
     // Construir filtro - SIN restricción de fecha por defecto
@@ -33,12 +33,12 @@ export const getSalesTimeline = async (req, res) => {
     
     // Solo aplicar filtros de fecha si se proporcionan explícitamente
     if (customStartDate || customEndDate) {
-      matchFilter.createdAt = {};
+      matchFilter.saleDate = {};
       if (customStartDate) {
-        matchFilter.createdAt.$gte = new Date(customStartDate);
+        matchFilter.saleDate.$gte = new Date(customStartDate);
       }
       if (customEndDate) {
-        matchFilter.createdAt.$lte = new Date(customEndDate);
+        matchFilter.saleDate.$lte = new Date(customEndDate);
       }
     }
 
@@ -295,7 +295,7 @@ export const getProductRotation = async (req, res) => {
       {
         $match: {
           paymentStatus: 'confirmado',
-          createdAt: { $gte: startDate }
+          saleDate: { $gte: startDate }
         }
       },
       {
@@ -347,7 +347,7 @@ export const getFinancialKPIs = async (req, res) => {
     const [dailyStats, weeklyStats, monthlyStats, avgTicket] = await Promise.all([
       // Daily stats
       Sale.aggregate([
-        { $match: { createdAt: { $gte: startOfToday }, paymentStatus: 'confirmado' } },
+        { $match: { saleDate: { $gte: startOfToday }, paymentStatus: 'confirmado' } },
         {
           $group: {
             _id: null,
@@ -359,7 +359,7 @@ export const getFinancialKPIs = async (req, res) => {
       ]),
       // Weekly stats
       Sale.aggregate([
-        { $match: { createdAt: { $gte: startOfThisWeek }, paymentStatus: 'confirmado' } },
+        { $match: { saleDate: { $gte: startOfThisWeek }, paymentStatus: 'confirmado' } },
         {
           $group: {
             _id: null,
@@ -371,7 +371,7 @@ export const getFinancialKPIs = async (req, res) => {
       ]),
       // Monthly stats
       Sale.aggregate([
-        { $match: { createdAt: { $gte: startOfThisMonth }, paymentStatus: 'confirmado' } },
+        { $match: { saleDate: { $gte: startOfThisMonth }, paymentStatus: 'confirmado' } },
         {
           $group: {
             _id: null,
@@ -418,7 +418,7 @@ export const getComparativeAnalysis = async (req, res) => {
       Sale.aggregate([
         {
           $match: {
-            createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd },
+            saleDate: { $gte: lastMonthStart, $lte: lastMonthEnd },
             paymentStatus: 'confirmado'
           }
         },
@@ -434,7 +434,7 @@ export const getComparativeAnalysis = async (req, res) => {
       Sale.aggregate([
         {
           $match: {
-            createdAt: { $gte: thisMonthStart },
+            saleDate: { $gte: thisMonthStart },
             paymentStatus: 'confirmado'
           }
         },
