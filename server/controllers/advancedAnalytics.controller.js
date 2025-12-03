@@ -340,9 +340,22 @@ export const getProductRotation = async (req, res) => {
 export const getFinancialKPIs = async (req, res) => {
   try {
     const today = new Date();
-    const startOfToday = startOfDay(today);
-    const startOfThisWeek = startOfWeek(today);
-    const startOfThisMonth = startOfMonth(today);
+    
+    // Ajustar a zona horaria de Colombia (UTC-5)
+    const colombiaOffset = -5 * 60; // -5 horas en minutos
+    const colombiaTime = new Date(today.getTime() + colombiaOffset * 60000);
+    
+    const startOfToday = new Date(colombiaTime.getFullYear(), colombiaTime.getMonth(), colombiaTime.getDate(), 0, 0, 0);
+    const startOfThisWeek = startOfWeek(colombiaTime);
+    const startOfThisMonth = startOfMonth(colombiaTime);
+
+    console.log('KPI Dates:', {
+      now: today.toISOString(),
+      colombiaTime: colombiaTime.toISOString(),
+      startOfToday: startOfToday.toISOString(),
+      startOfThisWeek: startOfThisWeek.toISOString(),
+      startOfThisMonth: startOfThisMonth.toISOString()
+    });
 
     const [dailyStats, weeklyStats, monthlyStats, avgTicket] = await Promise.all([
       // Daily stats
@@ -410,9 +423,22 @@ export const getFinancialKPIs = async (req, res) => {
 export const getComparativeAnalysis = async (req, res) => {
   try {
     const now = new Date();
-    const lastMonthStart = startOfMonth(subMonths(now, 1));
-    const lastMonthEnd = endOfMonth(subMonths(now, 1));
-    const thisMonthStart = startOfMonth(now);
+    
+    // Ajustar a zona horaria de Colombia (UTC-5)
+    const colombiaOffset = -5 * 60; // -5 horas en minutos
+    const colombiaTime = new Date(now.getTime() + colombiaOffset * 60000);
+    
+    const lastMonthStart = startOfMonth(subMonths(colombiaTime, 1));
+    const lastMonthEnd = endOfMonth(subMonths(colombiaTime, 1));
+    const thisMonthStart = startOfMonth(colombiaTime);
+
+    console.log('Comparative Analysis Dates:', {
+      now: now.toISOString(),
+      colombiaTime: colombiaTime.toISOString(),
+      lastMonthStart: lastMonthStart.toISOString(),
+      lastMonthEnd: lastMonthEnd.toISOString(),
+      thisMonthStart: thisMonthStart.toISOString()
+    });
 
     const [lastMonth, thisMonth] = await Promise.all([
       Sale.aggregate([
