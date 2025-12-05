@@ -128,6 +128,13 @@ export default function RegisterSale() {
     }, 0);
   };
 
+  const calculateTotalPayment = () => {
+    return items.reduce((total, item) => {
+      const payment = item.salePrice * (100 - (item.profitPercentage || 20)) / 100;
+      return total + payment * item.quantity;
+    }, 0);
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -398,8 +405,19 @@ export default function RegisterSale() {
                           </div>
                         </div>
 
-                        <div className="mt-2 text-xs text-gray-400">
-                          Tu ganancia: {formatCurrency((item.salePrice * (item.profitPercentage || 20) / 100) * item.quantity)}
+                        <div className="mt-3 space-y-1 rounded-lg bg-blue-900/10 border border-blue-500/20 p-3">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Pagar al admin:</span>
+                            <span className="font-semibold text-blue-400">
+                              {formatCurrency((item.salePrice * (100 - (item.profitPercentage || 20)) / 100) * item.quantity)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Tu ganancia:</span>
+                            <span className="font-semibold text-green-400">
+                              {formatCurrency((item.salePrice * (item.profitPercentage || 20) / 100) * item.quantity)}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
@@ -519,15 +537,21 @@ export default function RegisterSale() {
                     {items.reduce((sum, item) => sum + item.quantity, 0)}
                   </span>
                 </div>
-                <div className="flex justify-between text-lg">
+                <div className="flex justify-between text-lg border-t border-gray-700 pt-2 mt-2">
                   <span className="text-gray-300">Total venta:</span>
                   <span className="font-bold text-green-400">
                     {formatCurrency(calculateTotal())}
                   </span>
                 </div>
-                <div className="flex justify-between text-lg">
-                  <span className="text-gray-300">Tu ganancia total:</span>
-                  <span className="font-bold text-purple-400">
+                <div className="flex justify-between text-base bg-blue-900/20 border border-blue-500/30 rounded-lg p-2">
+                  <span className="text-blue-300">A pagar al admin:</span>
+                  <span className="font-bold text-blue-400">
+                    {formatCurrency(calculateTotalPayment())}
+                  </span>
+                </div>
+                <div className="flex justify-between text-base bg-green-900/20 border border-green-500/30 rounded-lg p-2">
+                  <span className="text-green-300">Tu ganancia total:</span>
+                  <span className="font-bold text-green-400">
                     {formatCurrency(calculateTotalProfit())}
                   </span>
                 </div>
