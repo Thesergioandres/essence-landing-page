@@ -34,8 +34,13 @@ export default function SaleDetailModal({ sale, onClose }: SaleDetailModalProps)
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <div className="flex justify-between items-start mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Detalle de Venta</h2>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Detalle de Venta</h2>
+              <p className="text-sm text-gray-500 mt-1 font-mono">
+                ID: <span className="text-blue-600 font-semibold">{sale.saleId || sale._id}</span>
+              </p>
+            </div>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
@@ -46,7 +51,7 @@ export default function SaleDetailModal({ sale, onClose }: SaleDetailModalProps)
             </button>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6"
             {/* Información del Producto */}
             <div className="border-b pb-4">
               <h3 className="text-lg font-semibold mb-3 text-gray-700">Producto</h3>
