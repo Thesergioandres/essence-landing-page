@@ -421,14 +421,17 @@ const StockManagement = () => {
                             type="number"
                             min="1"
                             max={operation === 'assign' ? item.warehouseStock : undefined}
-                            value={item.quantity}
+                            value={item.quantity === 0 ? '' : item.quantity}
                             onChange={(e) => {
-                              const val = e.target.value === '' ? '' : Number(e.target.value);
-                              updateItemQuantity(item.productId, val as number);
+                              const val = e.target.value === '' ? 0 : Number(e.target.value);
+                              updateItemQuantity(item.productId, val);
                             }}
                             onBlur={(e) => {
-                              if (e.target.value === '' || Number(e.target.value) < 1) {
+                              const val = Number(e.target.value);
+                              if (e.target.value === '' || val < 1) {
                                 updateItemQuantity(item.productId, 1);
+                              } else if (operation === 'assign' && val > item.warehouseStock) {
+                                updateItemQuantity(item.productId, item.warehouseStock);
                               }
                             }}
                             className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
