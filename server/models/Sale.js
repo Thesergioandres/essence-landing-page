@@ -105,15 +105,23 @@ saleSchema.pre("save", function (next) {
     this.totalProfit = this.adminProfit;
   } else {
     // Venta de distribuidor
-    // El distribuidor gana un porcentaje sobre el precio de venta según su ranking
+    // El distribuidor recibe una comisión sobre el precio de venta según su ranking
     // 🥇 1º: 25%, 🥈 2º: 23%, 🥉 3º: 21%, Resto: 20%
     const profitPercentage = this.distributorProfitPercentage || 20;
     
-    // Ganancia del distribuidor: precio de venta * porcentaje
-    this.distributorProfit = (this.salePrice * profitPercentage / 100) * this.quantity;
+    // PRECIO PARA DISTRIBUIDOR = Lo que el distribuidor PAGA al admin
+    // Ejemplo: Venta $22,000 con 20% comisión
+    // Precio para dist = $22,000 × 80% = $17,600 (lo que paga al admin)
+    const priceForDistributor = this.salePrice * ((100 - profitPercentage) / 100);
+    this.distributorPrice = priceForDistributor;
+    
+    // GANANCIA DEL DISTRIBUIDOR = Precio Venta - Precio que paga al admin
+    // Ejemplo: $22,000 - $17,600 = $4,400 (su comisión del 20%)
+    this.distributorProfit = (this.salePrice - priceForDistributor) * this.quantity;
 
-    // Ganancia del admin: lo que sobra después de restar ganancia distribuidor y costo
-    this.adminProfit = ((this.salePrice - (this.salePrice * profitPercentage / 100) - this.purchasePrice) * this.quantity);
+    // GANANCIA DEL ADMIN = Precio Venta - Precio Compra - Ganancia Distribuidor
+    // Ejemplo: $22,000 - $10,500 - $4,400 = $7,100
+    this.adminProfit = (this.salePrice - this.purchasePrice - (this.salePrice - priceForDistributor)) * this.quantity;
 
     // Ganancia total
     this.totalProfit = this.distributorProfit + this.adminProfit;
