@@ -61,6 +61,7 @@ export interface DistributorStock {
 
 export interface Sale {
   _id: string;
+  saleId: string;
   distributor: User | string;
   product: Product | string;
   quantity: number;
@@ -70,6 +71,7 @@ export interface Sale {
   distributorProfit: number;
   adminProfit: number;
   totalProfit: number;
+  distributorProfitPercentage?: number;
   notes?: string;
   saleDate: string;
   paymentStatus: "pendiente" | "confirmado";

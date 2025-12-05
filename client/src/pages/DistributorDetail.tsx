@@ -273,6 +273,9 @@ const DistributorDetail = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                         Fecha
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -295,6 +298,11 @@ const DistributorDetail = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {sales.map((sale) => (
                       <tr key={sale._id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="font-mono text-blue-600 text-xs">
+                            {sale.saleId || sale._id.slice(-8)}
+                          </span>
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {formatDate(sale.createdAt || '')}
                         </td>

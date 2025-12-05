@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const saleSchema = new mongoose.Schema(
   {
+    saleId: {
+      type: String,
+      unique: true,
+      required: true,
+    },
     distributor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -93,6 +98,25 @@ const saleSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Generar saleId único antes de guardar
+saleSchema.pre("save", async function (next) {
+  if (this.isNew && !this.saleId) {
+    const year = new Date().getFullYear();
+    const Sale = mongoose.model("Sale");
+    
+    // Contar ventas del año actual para generar número secuencial
+    const count = await Sale.countDocuments({
+      saleId: { $regex: `^VTA-${year}-` }
+    });
+    
+    // Generar ID con formato VTA-2025-0001
+    const sequentialNumber = String(count + 1).padStart(4, '0');
+    this.saleId = `VTA-${year}-${sequentialNumber}`;
+  }
+  
+  next();
+});
 
 // Calcular ganancias antes de guardar
 saleSchema.pre("save", function (next) {
