@@ -97,10 +97,15 @@ export const createProduct = async (req, res) => {
     
     // Manejar imagen de Cloudinary si se subió
     if (req.file) {
-      productData.image = {
-        url: req.file.path,
-        publicId: req.file.filename
-      };
+      // Verificar que Cloudinary esté configurado
+      if (!process.env.CLOUDINARY_CLOUD_NAME) {
+        console.warn('⚠️  Cloudinary no configurado, imagen no será subida');
+      } else {
+        productData.image = {
+          url: req.file.path,
+          publicId: req.file.filename
+        };
+      }
     }
     
     // Calcular precio sugerido si no se proporciona
