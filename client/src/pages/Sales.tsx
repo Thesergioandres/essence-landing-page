@@ -212,6 +212,9 @@ export default function Sales() {
                   Distribuidor
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Rango
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Producto
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -235,6 +238,21 @@ export default function Sales() {
               {sales.map((sale) => {
                 const product = typeof sale.product === "object" ? sale.product : null;
                 const distributor = typeof sale.distributor === "object" ? sale.distributor : null;
+                
+                // Determinar rango según comisión
+                let rankBadge = { emoji: '👑', text: 'Admin', color: 'bg-purple-100 text-purple-800' };
+                if (distributor) {
+                  const percentage = sale.distributorProfitPercentage || 20;
+                  if (percentage === 25) {
+                    rankBadge = { emoji: '🥇', text: '1º', color: 'bg-yellow-100 text-yellow-800' };
+                  } else if (percentage === 23) {
+                    rankBadge = { emoji: '🥈', text: '2º', color: 'bg-gray-100 text-gray-800' };
+                  } else if (percentage === 21) {
+                    rankBadge = { emoji: '🥉', text: '3º', color: 'bg-orange-100 text-orange-800' };
+                  } else {
+                    rankBadge = { emoji: '📊', text: 'Normal', color: 'bg-blue-100 text-blue-800' };
+                  }
+                }
 
                 return (
                   <tr 
@@ -260,6 +278,11 @@ export default function Sales() {
                       <div className="text-sm text-gray-500">
                         {distributor?.email || ""}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${rankBadge.color}`}>
+                        {rankBadge.emoji} {rankBadge.text}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
