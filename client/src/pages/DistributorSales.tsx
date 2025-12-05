@@ -199,6 +199,9 @@ export default function DistributorSales() {
                     Total
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                    Rango
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
                     Ganancia
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
@@ -210,6 +213,16 @@ export default function DistributorSales() {
                 {sales.map((sale) => {
                   const product = typeof sale.product === 'object' ? sale.product : null;
                   const total = sale.salePrice * sale.quantity;
+                  
+                  // Determinar rango según comisión
+                  let rankBadge = { emoji: '📊', text: 'Normal', color: 'bg-blue-900/30 text-blue-400' };
+                  if (sale.distributorProfitPercentage === 25) {
+                    rankBadge = { emoji: '🥇', text: '1º', color: 'bg-yellow-900/30 text-yellow-400' };
+                  } else if (sale.distributorProfitPercentage === 23) {
+                    rankBadge = { emoji: '🥈', text: '2º', color: 'bg-gray-700/30 text-gray-300' };
+                  } else if (sale.distributorProfitPercentage === 21) {
+                    rankBadge = { emoji: '🥉', text: '3º', color: 'bg-orange-900/30 text-orange-400' };
+                  }
                   
                   return (
                     <tr key={sale._id} className="hover:bg-gray-700/30">
@@ -243,6 +256,11 @@ export default function DistributorSales() {
                       </td>
                       <td className="px-4 py-3 text-sm font-semibold text-white">
                         {formatCurrency(total)}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${rankBadge.color}`}>
+                          {rankBadge.emoji} {rankBadge.text}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-sm font-bold text-green-400">
                         {formatCurrency(sale.distributorProfit)}

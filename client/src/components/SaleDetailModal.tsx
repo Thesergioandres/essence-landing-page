@@ -5,11 +5,30 @@ interface SaleDetailModalProps {
   onClose: () => void;
 }
 
+const getRankInfo = (percentage?: number, hasDistributor?: boolean) => {
+  if (!hasDistributor) {
+    return { rank: "Admin", emoji: "👑", color: "text-purple-600 bg-purple-100" };
+  }
+  
+  switch (percentage) {
+    case 25:
+      return { rank: "1º Lugar", emoji: "🥇", color: "text-yellow-600 bg-yellow-100" };
+    case 23:
+      return { rank: "2º Lugar", emoji: "🥈", color: "text-gray-600 bg-gray-100" };
+    case 21:
+      return { rank: "3º Lugar", emoji: "🥉", color: "text-orange-600 bg-orange-100" };
+    case 20:
+    default:
+      return { rank: "Normal", emoji: "📊", color: "text-blue-600 bg-blue-100" };
+  }
+};
+
 export default function SaleDetailModal({ sale, onClose }: SaleDetailModalProps) {
   if (!sale) return null;
 
   const product = typeof sale.product === "object" ? sale.product : null;
   const distributor = typeof sale.distributor === "object" ? sale.distributor : null;
+  const rankInfo = getRankInfo(sale.distributorProfitPercentage, !!distributor);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -52,9 +71,14 @@ export default function SaleDetailModal({ sale, onClose }: SaleDetailModalProps)
                 {distributor ? "Distribuidor" : "Vendedor"}
               </h3>
               <div className="space-y-2">
-                <p className="text-gray-900 font-medium">
-                  {distributor?.name || "Admin"}
-                </p>
+                <div className="flex items-center gap-3">
+                  <p className="text-gray-900 font-medium">
+                    {distributor?.name || "Admin"}
+                  </p>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${rankInfo.color}`}>
+                    {rankInfo.emoji} {rankInfo.rank}
+                  </span>
+                </div>
                 {distributor && (
                   <>
                     <p className="text-gray-600">{distributor.email}</p>
@@ -65,6 +89,11 @@ export default function SaleDetailModal({ sale, onClose }: SaleDetailModalProps)
                       <p className="text-gray-600">{distributor.address}</p>
                     )}
                   </>
+                )}
+                {sale.distributorProfitPercentage && (
+                  <p className="text-sm text-gray-500">
+                    Comisión: {sale.distributorProfitPercentage}%
+                  </p>
                 )}
               </div>
             </div>

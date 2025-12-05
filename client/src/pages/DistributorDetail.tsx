@@ -288,6 +288,9 @@ const DistributorDetail = () => {
                         Precio Venta
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Rango
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                         Total
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -296,7 +299,18 @@ const DistributorDetail = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {sales.map((sale) => (
+                    {sales.map((sale) => {
+                      // Determinar rango según comisión
+                      let rankBadge = { emoji: '📊', text: 'Normal', color: 'bg-blue-100 text-blue-800' };
+                      if (sale.distributorProfitPercentage === 25) {
+                        rankBadge = { emoji: '🥇', text: '1º', color: 'bg-yellow-100 text-yellow-800' };
+                      } else if (sale.distributorProfitPercentage === 23) {
+                        rankBadge = { emoji: '🥈', text: '2º', color: 'bg-gray-100 text-gray-800' };
+                      } else if (sale.distributorProfitPercentage === 21) {
+                        rankBadge = { emoji: '🥉', text: '3º', color: 'bg-orange-100 text-orange-800' };
+                      }
+                      
+                      return (
                       <tr key={sale._id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="font-mono text-blue-600 text-xs">
@@ -314,13 +328,19 @@ const DistributorDetail = () => {
                           {formatCurrency(sale.salePrice)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${rankBadge.color}`}>
+                            {rankBadge.emoji} {rankBadge.text}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
                           {formatCurrency(sale.salePrice * sale.quantity)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-green-600 font-semibold">
                           {formatCurrency(sale.distributorProfit)}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
