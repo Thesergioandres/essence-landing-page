@@ -51,7 +51,7 @@ export default function SaleDetailModal({ sale, onClose }: SaleDetailModalProps)
             </button>
           </div>
 
-          <div className="space-y-6"
+          <div className="space-y-6">
             {/* Información del Producto */}
             <div className="border-b pb-4">
               <h3 className="text-lg font-semibold mb-3 text-gray-700">Producto</h3>
