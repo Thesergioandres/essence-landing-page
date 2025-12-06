@@ -25,7 +25,7 @@ export default function DistributorDashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+    <div className="min-h-screen bg-linear-to-br from-gray-900 via-blue-900 to-gray-900">
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
@@ -41,7 +41,7 @@ export default function DistributorDashboardLayout() {
         <div className="flex h-full flex-col px-4 py-6">
           {/* Logo */}
           <div className="mb-8">
-            <h1 className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-3xl font-bold text-transparent">
+            <h1 className="bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-3xl font-bold text-transparent">
               ESSENCE
             </h1>
             <p className="mt-1 text-sm text-gray-400">Panel Distribuidor</p>
@@ -173,7 +173,7 @@ export default function DistributorDashboardLayout() {
           {/* User Info & Logout */}
           <div className="border-t border-gray-700 pt-4">
             <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-cyan-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-blue-600 to-cyan-600">
                 <span className="text-sm font-bold text-white">
                   {user?.name?.charAt(0) || "D"}
                 </span>
@@ -218,7 +218,7 @@ export default function DistributorDashboardLayout() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-xl font-bold text-transparent">
+          <h1 className="bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-xl font-bold text-transparent">
             ESSENCE
           </h1>
           <div className="w-10" />

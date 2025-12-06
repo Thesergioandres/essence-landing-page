@@ -322,7 +322,7 @@ const GamificationConfigPage = () => {
       </div>
 
       {/* Evaluación Manual */}
-      <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 rounded-lg shadow-md text-white">
+      <div className="bg-linear-to-r from-purple-500 to-indigo-600 p-6 rounded-lg shadow-md text-white">
         <h2 className="text-2xl font-semibold mb-4">🏆 Evaluar Periodo Manualmente</h2>
         <p className="mb-4 opacity-90">
           Calcula el ganador del periodo y asigna bonos automáticamente

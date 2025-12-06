@@ -81,7 +81,7 @@ export default function Distributors() {
         </div>
         <button
           onClick={() => navigate("/admin/distributors/add")}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700"
+          className="inline-flex items-center gap-2 rounded-lg bg-linear-to-r from-purple-600 to-pink-600 px-5 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700"
         >
           <span className="text-2xl leading-none">＋</span>
           Nuevo distribuidor

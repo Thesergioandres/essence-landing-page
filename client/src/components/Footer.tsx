@@ -1,29 +1,29 @@
 export default function Footer() {
   return (
     <footer className="border-t border-gray-700 bg-gray-900/50 backdrop-blur-lg">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10 md:py-12">
+        <div className="grid gap-8 sm:gap-10 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
           {/* Brand */}
-          <div className="text-center md:text-left">
-            <h2 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-xl sm:text-2xl font-bold text-transparent">
+          <div className="text-center sm:text-left">
+            <h2 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl sm:text-2xl md:text-3xl font-bold text-transparent">
               ESSENCE
             </h2>
-            <p className="mt-3 sm:mt-4 text-sm text-gray-400">
+            <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-400 leading-relaxed px-2 sm:px-0">
               Tu tienda de confianza para vapes, líquidos y accesorios de
               calidad.
             </p>
           </div>
 
           {/* Links */}
-          <div className="text-center md:text-left">
-            <h3 className="mb-3 sm:mb-4 text-sm font-semibold uppercase text-white">
+          <div className="text-center sm:text-left">
+            <h3 className="mb-3 sm:mb-4 text-sm sm:text-base font-semibold uppercase text-white tracking-wider">
               Enlaces
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5 sm:space-y-3">
               <li>
                 <a
                   href="/"
-                  className="text-sm text-gray-400 transition hover:text-purple-400"
+                  className="inline-block text-sm sm:text-base text-gray-400 transition hover:text-purple-400 active:scale-95 min-h-[44px] flex items-center justify-center sm:justify-start"
                 >
                   Inicio
                 </a>
@@ -31,7 +31,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/productos"
-                  className="text-sm text-gray-400 transition hover:text-purple-400"
+                  className="inline-block text-sm sm:text-base text-gray-400 transition hover:text-purple-400 active:scale-95 min-h-[44px] flex items-center justify-center sm:justify-start"
                 >
                   Productos
                 </a>
@@ -40,14 +40,14 @@ export default function Footer() {
           </div>
 
           {/* Contact */}
-          <div className="text-center md:text-left">
-            <h3 className="mb-3 sm:mb-4 text-sm font-semibold uppercase text-white">
+          <div className="text-center sm:text-left sm:col-span-2 md:col-span-1">
+            <h3 className="mb-3 sm:mb-4 text-sm sm:text-base font-semibold uppercase text-white tracking-wider">
               Contacto
             </h3>
-            <ul className="space-y-2">
-              <li className="flex items-center justify-center md:justify-start gap-2 text-sm text-gray-400">
+            <ul className="space-y-3 sm:space-y-3.5">
+              <li className="flex items-center justify-center sm:justify-start gap-2.5 text-sm sm:text-base text-gray-400">
                 <svg
-                  className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0"
+                  className="h-5 w-5 sm:h-6 sm:w-6 shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -61,9 +61,9 @@ export default function Footer() {
                 </svg>
                 <span className="break-all">info@essence.com</span>
               </li>
-              <li className="flex items-center justify-center md:justify-start gap-2 text-sm text-gray-400">
+              <li className="flex items-center justify-center sm:justify-start gap-2.5 text-sm sm:text-base text-gray-400">
                 <svg
-                  className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0"
+                  className="h-5 w-5 sm:h-6 sm:w-6 shrink-0"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -76,8 +76,8 @@ export default function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="mt-6 sm:mt-8 border-t border-gray-700 pt-6 sm:pt-8 text-center">
-          <p className="text-xs sm:text-sm text-gray-500">
+        <div className="mt-8 sm:mt-10 border-t border-gray-700 pt-6 sm:pt-8 text-center">
+          <p className="text-sm sm:text-base text-gray-500">
             © {new Date().getFullYear()} Essence. Todos los derechos
             reservados.
           </p>

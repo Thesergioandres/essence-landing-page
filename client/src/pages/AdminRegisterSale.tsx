@@ -345,7 +345,7 @@ export default function AdminRegisterSale() {
 
           {/* Totales del pedido */}
           {saleItems.length > 0 && (
-            <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/30 to-blue-900/30 p-6">
+            <div className="rounded-xl border border-gray-700 bg-linear-to-br from-purple-900/30 to-blue-900/30 p-6">
               <h2 className="mb-4 text-lg font-semibold text-white">Resumen del Pedido</h2>
               <div className="space-y-3">
                 <div className="flex justify-between text-lg">
@@ -407,7 +407,7 @@ export default function AdminRegisterSale() {
             <Button 
               type="submit" 
               disabled={loading || saleItems.length === 0} 
-              className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50"
+              className="flex-1 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50"
             >
               {loading ? "Registrando..." : `✓ Confirmar Pedido (${saleItems.length} ${saleItems.length === 1 ? 'venta' : 'ventas'})`}
             </Button>

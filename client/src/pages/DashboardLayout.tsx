@@ -25,7 +25,7 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+    <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900 to-gray-900">
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
@@ -41,7 +41,7 @@ export default function DashboardLayout() {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="px-4 py-6 border-b border-gray-700">
-            <h1 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-3xl font-bold text-transparent">
+            <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-3xl font-bold text-transparent">
               ESSENCE
             </h1>
             <p className="mt-1 text-sm text-gray-400">Panel Admin</p>
@@ -338,7 +338,7 @@ export default function DashboardLayout() {
           {/* User Info & Logout */}
           <div className="border-t border-gray-700 p-4 bg-gray-800/80">
             <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex-shrink-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-purple-600 to-pink-600 shrink-0">
                 <span className="text-sm font-bold text-white">
                   {user?.name?.charAt(0) || "A"}
                 </span>
@@ -383,7 +383,7 @@ export default function DashboardLayout() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-xl font-bold text-transparent">
+          <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-xl font-bold text-transparent">
             ESSENCE
           </h1>
           <div className="w-10" />

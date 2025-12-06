@@ -141,7 +141,7 @@ export default function DefectiveProductsManagement() {
         <h1 className="text-3xl font-bold text-gray-900">Productos Defectuosos</h1>
         <button
           onClick={() => setShowReportModal(true)}
-          className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition shadow-lg"
+          className="bg-linear-to-r from-red-600 to-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition shadow-lg"
         >
           + Reportar desde Bodega
         </button>
@@ -514,7 +514,7 @@ export default function DefectiveProductsManagement() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 bg-gradient-to-r from-red-600 to-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition disabled:opacity-50"
+                  className="flex-1 bg-linear-to-r from-red-600 to-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition disabled:opacity-50"
                 >
                   {submitting ? "Reportando..." : "Reportar"}
                 </button>

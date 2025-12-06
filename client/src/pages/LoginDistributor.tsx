@@ -59,11 +59,11 @@ export default function LoginDistributor() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-gray-900 via-blue-900 to-gray-900 px-4">
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="mb-8 text-center">
-          <h1 className="mb-2 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-5xl font-bold text-transparent">
+          <h1 className="mb-2 bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-5xl font-bold text-transparent">
             ESSENCE
           </h1>
           <p className="text-lg text-blue-300">Portal de Distribuidores</p>
@@ -126,7 +126,7 @@ export default function LoginDistributor() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 py-3 font-semibold text-white transition hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 py-3 font-semibold text-white transition hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
             </button>

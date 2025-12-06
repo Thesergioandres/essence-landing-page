@@ -83,27 +83,27 @@ export default function Catalog() {
   }, [products, searchTerm, selectedCategory, sortBy, setSearchParams]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+    <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900/20 to-gray-900">
       <Navbar />
 
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:py-24 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-3 sm:px-4 md:px-6 lg:px-8 py-16 sm:py-20 md:py-24">
         {/* Header */}
-        <div className="mb-8 sm:mb-12 text-center">
-          <h1 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-3xl sm:text-4xl md:text-5xl font-bold text-transparent">
+        <div className="mb-6 sm:mb-8 md:mb-12 text-center">
+          <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-3xl sm:text-4xl md:text-5xl font-bold text-transparent">
             Catálogo de Productos
           </h1>
-          <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-400">
+          <p className="mt-2 sm:mt-3 md:mt-4 text-sm sm:text-base md:text-lg text-gray-400">
             Explora todos nuestros productos de vaping
           </p>
         </div>
 
         {/* Filters */}
-        <div className="mb-6 sm:mb-8 space-y-3 sm:space-y-4 rounded-xl sm:rounded-2xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6 backdrop-blur-lg">
+        <div className="mb-5 sm:mb-6 md:mb-8 space-y-3 sm:space-y-4 rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-5 md:p-6 backdrop-blur-lg">
           {/* Search */}
           <div>
             <label
               htmlFor="search"
-              className="mb-2 block text-xs sm:text-sm font-medium text-gray-300"
+              className="mb-2 block text-sm sm:text-base font-medium text-gray-300"
             >
               Buscar
             </label>
@@ -113,16 +113,16 @@ export default function Catalog() {
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="Buscar productos..."
-              className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-4 py-3 sm:py-3.5 text-base text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[48px]"
             />
           </div>
 
-          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
             {/* Category Filter */}
             <div>
               <label
                 htmlFor="category"
-                className="mb-2 block text-xs sm:text-sm font-medium text-gray-300"
+                className="mb-2 block text-sm sm:text-base font-medium text-gray-300"
               >
                 Categoría
               </label>
@@ -130,7 +130,7 @@ export default function Catalog() {
                 id="category"
                 value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
-                className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-4 py-3 sm:py-3.5 text-base text-white focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[48px]"
               >
                 <option value="all">Todas las categorías</option>
                 {categories.map(cat => (
@@ -145,7 +145,7 @@ export default function Catalog() {
             <div>
               <label
                 htmlFor="sort"
-                className="mb-2 block text-xs sm:text-sm font-medium text-gray-300"
+                className="mb-2 block text-sm sm:text-base font-medium text-gray-300"
               >
                 Ordenar por
               </label>

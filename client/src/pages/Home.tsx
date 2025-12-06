@@ -60,16 +60,16 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+    <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900/20 to-gray-900">
       <Navbar />
 
       {/* Hero Section */}
       <Hero />
 
       {/* Featured Products */}
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:py-16 sm:px-6 lg:px-8">
-        <div className="mb-8 sm:mb-12 text-center">
-          <h2 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl sm:text-3xl md:text-4xl font-bold text-transparent">
+      <section className="mx-auto max-w-7xl px-3 sm:px-4 md:px-6 lg:px-8 py-10 sm:py-12 md:py-16">
+        <div className="mb-6 sm:mb-8 md:mb-12 text-center">
+          <h2 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl sm:text-3xl md:text-4xl font-bold text-transparent">
             Productos Destacados
           </h2>
           <p className="mt-2 text-sm sm:text-base text-gray-400">
@@ -78,12 +78,12 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 xs:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="rounded-lg sm:rounded-xl border border-gray-700 bg-gray-800/50 overflow-hidden">
+                <div className="rounded-xl border border-gray-700 bg-gray-800/50 overflow-hidden">
                   <div className="aspect-square bg-gray-700"></div>
-                  <div className="p-3 sm:p-4 space-y-3">
+                  <div className="p-4 sm:p-5 space-y-3">
                     <div className="h-3 bg-gray-700 rounded w-1/3"></div>
                     <div className="h-4 bg-gray-700 rounded w-3/4"></div>
                     <div className="h-3 bg-gray-700 rounded w-full"></div>
@@ -94,7 +94,7 @@ export default function Home() {
             ))}
           </div>
         ) : featuredProducts.length > 0 ? (
-          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 xs:grid-cols-2 lg:grid-cols-3">
             {featuredProducts.map(product => (
               <ProductCard key={product._id} product={product} />
             ))}
@@ -105,10 +105,10 @@ export default function Home() {
           </p>
         )}
 
-        <div className="mt-8 sm:mt-12 text-center">
+        <div className="mt-8 sm:mt-10 md:mt-12 text-center">
           <a
             href="/productos"
-            className="inline-block w-full sm:w-auto rounded-lg sm:rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 active:scale-[0.98]"
+            className="inline-block w-full sm:w-auto rounded-xl sm:rounded-full bg-linear-to-r from-purple-600 to-pink-600 px-6 sm:px-8 py-3.5 sm:py-4 text-base sm:text-lg font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 active:scale-[0.98] min-h-[52px]"
           >
             Ver todos los productos
           </a>
@@ -117,10 +117,10 @@ export default function Home() {
 
       {/* Categories */}
       {categories.length > 0 && (
-        <section className="border-t border-gray-700 bg-gray-900/50 py-12 sm:py-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 sm:mb-12 text-center">
-              <h2 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl sm:text-3xl md:text-4xl font-bold text-transparent">
+        <section className="border-t border-gray-700 bg-gray-900/50 py-10 sm:py-12 md:py-16">
+          <div className="mx-auto max-w-7xl px-3 sm:px-4 md:px-6 lg:px-8">
+            <div className="mb-6 sm:mb-8 md:mb-12 text-center">
+              <h2 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl sm:text-3xl md:text-4xl font-bold text-transparent">
                 Categorías
               </h2>
               <p className="mt-2 text-sm sm:text-base text-gray-400">
@@ -128,7 +128,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {categories.map(category => (
                 <CategoryCard 
                   key={category._id} 

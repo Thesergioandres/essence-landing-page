@@ -90,7 +90,7 @@ export default function Products() {
         </div>
         <button
           onClick={() => navigate("/admin/add-product")}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 sm:px-5 py-3 text-sm sm:text-base font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 active:scale-[0.98] min-h-[48px] w-full md:w-auto"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-linear-to-r from-purple-600 to-pink-600 px-4 sm:px-5 py-3 text-sm sm:text-base font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 active:scale-[0.98] min-h-[48px] w-full md:w-auto"
         >
           <span className="text-xl sm:text-2xl leading-none">＋</span>
           Nuevo producto
@@ -158,11 +158,11 @@ export default function Products() {
                     <img
                       src={product.image.url}
                       alt={product.name}
-                      className="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
+                      className="h-20 w-20 shrink-0 rounded-lg object-cover"
                       loading="lazy"
                     />
                   ) : (
-                    <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-600 text-xs text-gray-500">
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-600 text-xs text-gray-500">
                       N/A
                     </div>
                   )}

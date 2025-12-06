@@ -146,7 +146,7 @@ export default function AuditLogs() {
 
       {/* Resumen Diario */}
       {dailySummary && (
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-blue-900/50 to-gray-800/50 p-6 backdrop-blur-lg">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-blue-900/50 to-gray-800/50 p-6 backdrop-blur-lg">
           <h2 className="text-2xl font-bold text-white mb-4">📊 Resumen de Hoy</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="p-4 bg-white/5 rounded-lg">
@@ -192,7 +192,7 @@ export default function AuditLogs() {
 
       {/* Estadísticas Generales */}
       {stats && (
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/50 to-gray-800/50 p-6 backdrop-blur-lg">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-purple-900/50 to-gray-800/50 p-6 backdrop-blur-lg">
           <h2 className="text-2xl font-bold text-white mb-4">📈 Estadísticas (Últimos 30 días)</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>

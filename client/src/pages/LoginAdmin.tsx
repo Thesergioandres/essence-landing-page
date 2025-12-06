@@ -59,11 +59,11 @@ export default function LoginAdmin() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-gray-900 via-purple-900 to-gray-900 px-4">
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="mb-8 text-center">
-          <h1 className="mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-5xl font-bold text-transparent">
+          <h1 className="mb-2 bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-5xl font-bold text-transparent">
             ESSENCE
           </h1>
           <p className="text-lg text-purple-300">Panel de Administración</p>
@@ -126,7 +126,7 @@ export default function LoginAdmin() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-linear-to-r from-purple-600 to-pink-600 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
             </button>

@@ -201,7 +201,7 @@ export default function Dashboard() {
 
       {/* Resumen Financiero Mensual */}
       {monthlyData && (
-        <div className="rounded-lg border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-4 backdrop-blur-lg sm:rounded-xl sm:p-6">
+        <div className="rounded-lg border border-gray-700 bg-linear-to-br from-green-900/50 to-gray-800/50 p-4 backdrop-blur-lg sm:rounded-xl sm:p-6">
           <h2 className="mb-3 text-lg font-bold text-white sm:mb-4 sm:text-xl md:text-2xl">
             💰 Resumen del Mes
           </h2>
@@ -267,7 +267,7 @@ export default function Dashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
         {/* Total Products */}
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-purple-500">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-purple-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-purple-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400">Total Productos</p>
@@ -294,7 +294,7 @@ export default function Dashboard() {
         </div>
 
         {/* Total Distributors */}
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-blue-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-blue-500">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-blue-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-blue-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400">Distribuidores</p>
@@ -324,7 +324,7 @@ export default function Dashboard() {
         </div>
 
         {/* Total Sales */}
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-green-500">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-green-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-green-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400">Ventas Totales</p>
@@ -355,7 +355,7 @@ export default function Dashboard() {
 
         {/* Stock Alerts */}
         <div
-          className="cursor-pointer rounded-xl border border-gray-700 bg-gradient-to-br from-red-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-red-500"
+          className="cursor-pointer rounded-xl border border-gray-700 bg-linear-to-br from-red-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-red-500"
           onClick={() => navigate("/admin/stock-management")}
         >
           <div className="flex items-center justify-between">

@@ -148,23 +148,23 @@ export default function DistributorStats() {
 
       {/* Main Stats */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-blue-900/50 to-gray-800/50 p-6">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-blue-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Total Ventas</p>
           <p className="mt-2 text-3xl font-bold text-white">{totalSales}</p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-6">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-green-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Ingresos Totales</p>
           <p className="mt-2 text-2xl font-bold text-white">
             {formatCurrency(totalRevenue)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/50 to-gray-800/50 p-6">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-purple-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Ganancias Totales</p>
           <p className="mt-2 text-2xl font-bold text-white">
             {formatCurrency(totalProfit)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-yellow-900/50 to-gray-800/50 p-6">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-yellow-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Promedio por Venta</p>
           <p className="mt-2 text-2xl font-bold text-white">
             {formatCurrency(avgSaleValue)}
@@ -217,7 +217,7 @@ export default function DistributorStats() {
                     <div className="flex items-center gap-3">
                       <div className="h-2 w-32 bg-gray-700 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-blue-600 to-cyan-600"
+                          className="h-full bg-linear-to-r from-blue-600 to-cyan-600"
                           style={{
                             width: `${(count / Math.max(...Object.values(salesByDay))) * 100}%`,
                           }}
@@ -249,7 +249,7 @@ export default function DistributorStats() {
                 className="rounded-lg border border-gray-700 bg-gray-900/50 p-4"
               >
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-blue-600 to-cyan-600 text-white font-bold">
                     {index + 1}
                   </div>
                   <div className="flex-1">

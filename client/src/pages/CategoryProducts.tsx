@@ -55,7 +55,7 @@ export default function CategoryProducts() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+      <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900/20 to-gray-900">
         <Navbar />
         <div className="flex min-h-[60vh] items-center justify-center">
           <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-500"></div>
@@ -67,7 +67,7 @@ export default function CategoryProducts() {
 
   if (error || !category) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+      <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900/20 to-gray-900">
         <Navbar />
         <div className="flex min-h-[60vh] flex-col items-center justify-center">
           <p className="text-xl text-gray-400">
@@ -86,7 +86,7 @@ export default function CategoryProducts() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+    <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900/20 to-gray-900">
       <Navbar />
 
       <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
@@ -113,7 +113,7 @@ export default function CategoryProducts() {
 
         {/* Category Header */}
         <div className="mb-12 text-center">
-          <h1 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-5xl font-bold text-transparent">
+          <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-5xl font-bold text-transparent">
             {category.name}
           </h1>
           {category.description && (

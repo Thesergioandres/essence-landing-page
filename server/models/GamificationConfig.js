@@ -6,7 +6,7 @@ const gamificationConfigSchema = new mongoose.Schema(
     evaluationPeriod: {
       type: String,
       enum: ["daily", "weekly", "biweekly", "monthly", "custom"],
-      default: "biweekly", // Cambiar a quincenal
+      default: "weekly", // Periodo semanal para rankings
     },
     customPeriodDays: {
       type: Number,
@@ -54,7 +54,14 @@ const gamificationConfigSchema = new mongoose.Schema(
     },
     top3CommissionBonus: {
       type: Number,
-      default: 2, // +2% adicional
+      default: 1, // +1% adicional
+      min: 0,
+    },
+
+    // Requisito mínimo para acceder al ranking
+    minAdminProfitForRanking: {
+      type: Number,
+      default: 100000, // $100,000 COP mínimo en ganancia para el admin
       min: 0,
     },
 

@@ -138,6 +138,8 @@ export const registerAdminSale = async (req, res) => {
       paymentStatus: "confirmado", // Las ventas admin están confirmadas automáticamente
       paymentConfirmedAt: new Date(),
       paymentConfirmedBy: req.user.id,
+      commissionBonus: 0, // Admin no tiene bonus
+      distributorProfitPercentage: 0, // Admin no tiene porcentaje de ganancia
     };
 
     const sale = await Sale.create(saleData);
@@ -174,6 +176,7 @@ const getCommissionBonus = async (distributorId) => {
     let startDate = config.currentPeriodStart || now;
     let endDate = new Date(startDate);
 
+    // Calcular periodo según configuración (ahora default es weekly)
     if (config.evaluationPeriod === "biweekly") {
       endDate.setDate(endDate.getDate() + 15);
     } else if (config.evaluationPeriod === "monthly") {
@@ -187,17 +190,25 @@ const getCommissionBonus = async (distributorId) => {
       endDate.setDate(startDate.getDate() + 6);
     }
 
+    // Calcular rankings con ganancia total del admin por distribuidor
     const rankings = await Sale.aggregate([
       {
         $match: {
           saleDate: { $gte: startDate, $lte: endDate },
           paymentStatus: "confirmado",
+          distributor: { $ne: null }, // Solo ventas de distribuidores
         },
       },
       {
         $group: {
           _id: "$distributor",
           totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+          totalAdminProfit: { $sum: "$adminProfit" }, // Ganancia generada al admin
+        },
+      },
+      {
+        $match: {
+          totalAdminProfit: { $gte: config.minAdminProfitForRanking || 100000 }, // Filtrar por requisito mínimo
         },
       },
       { $sort: { totalRevenue: -1 } },
@@ -207,6 +218,8 @@ const getCommissionBonus = async (distributorId) => {
       rankings.findIndex((r) => r._id.toString() === distributorId.toString()) +
       1;
 
+    // Si no cumple el requisito mínimo o no está en top 3, retorna 0
+    if (position === 0) return 0; // No está en el ranking (no cumplió requisito)
     if (position === 1) return config.top1CommissionBonus || 0;
     if (position === 2) return config.top2CommissionBonus || 0;
     if (position === 3) return config.top3CommissionBonus || 0;
@@ -257,8 +270,11 @@ export const registerSale = async (req, res) => {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
-    // Obtener bonus de comisión por ranking
+    // Obtener el bonus de comisión del distribuidor según su ranking
     const commissionBonus = await getCommissionBonus(distributorId);
+    
+    // Calcular el porcentaje total de ganancia del distribuidor (20% base + bonus)
+    const distributorProfitPercentage = 20 + commissionBonus;
 
     // Crear la venta
     const saleData = {
@@ -270,6 +286,7 @@ export const registerSale = async (req, res) => {
       salePrice,
       notes,
       commissionBonus,
+      distributorProfitPercentage,
     };
 
     // Agregar comprobante de pago si se proporcionó

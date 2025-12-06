@@ -43,7 +43,7 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+      <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900/20 to-gray-900">
         <Navbar />
         <div className="flex min-h-[60vh] items-center justify-center">
           <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-500"></div>
@@ -55,7 +55,7 @@ export default function ProductDetail() {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+      <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900/20 to-gray-900">
         <Navbar />
         <div className="flex min-h-[60vh] flex-col items-center justify-center">
           <p className="text-xl text-gray-400">
@@ -74,17 +74,17 @@ export default function ProductDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+    <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900/20 to-gray-900">
       <Navbar />
 
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:py-24 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-3 sm:px-4 md:px-6 lg:px-8 py-16 sm:py-20 md:py-24">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="mb-4 sm:mb-6 flex items-center min-h-[44px] text-sm sm:text-base text-gray-400 transition hover:text-purple-400 active:scale-95"
+          className="mb-4 sm:mb-6 flex items-center gap-2 text-base sm:text-lg text-gray-400 transition hover:text-purple-400 active:scale-95 min-h-[48px]"
         >
           <svg
-            className="mr-2 h-5 w-5 sm:h-6 sm:w-6"
+            className="h-5 w-5 sm:h-6 sm:w-6"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -96,14 +96,14 @@ export default function ProductDetail() {
               d="M15 19l-7-7 7-7"
             />
           </svg>
-          Volver
+          <span>Volver</span>
         </button>
 
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
           {/* Product Image */}
-          <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-gray-700 bg-gray-800/50 p-4 sm:p-8">
+          <div className="relative overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6 md:p-8">
             {product.featured && (
-              <div className="absolute left-3 sm:left-4 top-3 sm:top-4 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold text-white shadow-lg">
+              <div className="absolute left-3 sm:left-4 top-3 sm:top-4 rounded-full bg-linear-to-r from-purple-600 to-pink-600 px-3 sm:px-3.5 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold text-white shadow-lg">
                 ⭐ Destacado
               </div>
             )}
@@ -126,7 +126,7 @@ export default function ProductDetail() {
             <div className="mb-3 sm:mb-4">
               <button
                 onClick={() => navigate(`/categoria/${product.category.slug}`)}
-                className="rounded-full bg-purple-900/50 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-purple-300 transition hover:bg-purple-900/70 active:scale-95 min-h-[44px] flex items-center"
+                className="rounded-full bg-purple-900/50 px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base text-purple-300 transition hover:bg-purple-900/70 active:scale-95 min-h-[44px] inline-flex items-center"
               >
                 {product.category.name}
               </button>
@@ -139,7 +139,7 @@ export default function ProductDetail() {
 
             {/* Price */}
             <div className="mb-4 sm:mb-6">
-              <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-400">
+              <p className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-400">
                 ${product.clientPrice?.toLocaleString() || '0'}
               </p>
             </div>
@@ -181,19 +181,19 @@ export default function ProductDetail() {
 
             {/* Description */}
             <div className="mb-4 sm:mb-6">
-              <h2 className="mb-2 text-base sm:text-lg font-semibold text-white">
+              <h2 className="mb-2 sm:mb-3 text-lg sm:text-xl font-semibold text-white">
                 Descripción
               </h2>
-              <p className="text-sm sm:text-base text-gray-400 leading-relaxed">{product.description}</p>
+              <p className="text-sm sm:text-base md:text-lg text-gray-400 leading-relaxed">{product.description}</p>
             </div>
 
             {/* Ingredients */}
             {product.ingredients && product.ingredients.length > 0 && (
               <div className="mb-4 sm:mb-6">
-                <h2 className="mb-2 text-base sm:text-lg font-semibold text-white">
+                <h2 className="mb-2 sm:mb-3 text-lg sm:text-xl font-semibold text-white">
                   Ingredientes
                 </h2>
-                <ul className="list-inside list-disc space-y-1.5 sm:space-y-2 text-sm sm:text-base text-gray-400">
+                <ul className="list-inside list-disc space-y-2 text-sm sm:text-base md:text-lg text-gray-400">
                   {product.ingredients.map((ingredient, index) => (
                     <li key={index} className="leading-relaxed">{ingredient}</li>
                   ))}
@@ -204,10 +204,10 @@ export default function ProductDetail() {
             {/* Benefits */}
             {product.benefits && product.benefits.length > 0 && (
               <div className="mb-6 sm:mb-8">
-                <h2 className="mb-2 text-base sm:text-lg font-semibold text-white">
+                <h2 className="mb-2 sm:mb-3 text-lg sm:text-xl font-semibold text-white">
                   Beneficios
                 </h2>
-                <ul className="list-inside list-disc space-y-1.5 sm:space-y-2 text-sm sm:text-base text-gray-400">
+                <ul className="list-inside list-disc space-y-2 text-sm sm:text-base md:text-lg text-gray-400">
                   {product.benefits.map((benefit, index) => (
                     <li key={index} className="leading-relaxed">{benefit}</li>
                   ))}
@@ -218,10 +218,10 @@ export default function ProductDetail() {
             {/* WhatsApp Button */}
             <button
               onClick={handleWhatsAppContact}
-              className="flex items-center justify-center gap-2 sm:gap-3 rounded-lg sm:rounded-full bg-gradient-to-r from-green-600 to-green-500 px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-semibold text-white transition hover:from-green-700 hover:to-green-600 active:scale-[0.98] shadow-lg hover:shadow-xl min-h-[52px] w-full sm:w-auto"
+              className="flex items-center justify-center gap-2 sm:gap-3 rounded-xl bg-linear-to-r from-green-600 to-green-500 px-6 sm:px-8 py-4 sm:py-5 text-base sm:text-lg font-semibold text-white transition hover:from-green-700 hover:to-green-600 active:scale-[0.98] shadow-lg hover:shadow-xl min-h-[56px] w-full"
             >
               <svg
-                className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0"
+                className="h-6 w-6 sm:h-7 sm:w-7 shrink-0"
                 fill="currentColor"
                 viewBox="0 0 24 24"
               >

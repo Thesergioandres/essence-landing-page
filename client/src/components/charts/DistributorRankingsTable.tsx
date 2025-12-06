@@ -72,7 +72,7 @@ export const DistributorRankingsTable: React.FC<
       transition={{ duration: 0.5, delay: 0.3 }}
       className="bg-white rounded-lg shadow-lg overflow-hidden"
     >
-      <div className="p-6 bg-gradient-to-r from-purple-600 to-pink-600">
+      <div className="p-6 bg-linear-to-r from-purple-600 to-pink-600">
         <h3 className="text-2xl font-bold text-white flex items-center">
           <TrendingUp className="w-6 h-6 mr-2" />
           Ranking de Distribuidores

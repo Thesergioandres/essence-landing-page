@@ -71,11 +71,11 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 px-4 py-8">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-gray-900 via-purple-900 to-gray-900 px-4 py-8">
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="mb-6 sm:mb-8 text-center">
-          <h1 className="mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-3xl sm:text-4xl md:text-5xl font-bold text-transparent">
+          <h1 className="mb-2 bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-3xl sm:text-4xl md:text-5xl font-bold text-transparent">
             ESSENCE
           </h1>
           <p className="text-base sm:text-lg text-gray-400">Panel de Administración</p>
@@ -91,10 +91,10 @@ export default function Login() {
             <div className="space-y-3 sm:space-y-4">
               <button
                 onClick={() => setUserType("admin")}
-                className="w-full rounded-lg border-2 border-purple-600 bg-gradient-to-r from-purple-600 to-pink-600 p-4 sm:p-6 text-left transition hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 active:scale-[0.98]"
+                className="w-full rounded-lg border-2 border-purple-600 bg-linear-to-r from-purple-600 to-pink-600 p-4 sm:p-6 text-left transition hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 active:scale-[0.98]"
               >
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="flex h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0 items-center justify-center rounded-full bg-white/10">
+                  <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-full bg-white/10">
                     <svg className="h-6 w-6 sm:h-8 sm:w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
@@ -108,10 +108,10 @@ export default function Login() {
 
               <button
                 onClick={() => setUserType("distribuidor")}
-                className="w-full rounded-lg border-2 border-blue-600 bg-gradient-to-r from-blue-600 to-cyan-600 p-4 sm:p-6 text-left transition hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-[0.98]"
+                className="w-full rounded-lg border-2 border-blue-600 bg-linear-to-r from-blue-600 to-cyan-600 p-4 sm:p-6 text-left transition hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-[0.98]"
               >
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="flex h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0 items-center justify-center rounded-full bg-white/10">
+                  <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-full bg-white/10">
                     <svg className="h-6 w-6 sm:h-8 sm:w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
@@ -192,8 +192,8 @@ export default function Login() {
                   disabled={loading}
                   className={`w-full rounded-lg py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] ${
                     userType === "admin"
-                      ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:ring-purple-500"
-                      : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 focus:ring-blue-500"
+                      ? "bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:ring-purple-500"
+                      : "bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 focus:ring-blue-500"
                   }`}
                 >
                   {loading ? "Iniciando sesión..." : "Iniciar Sesión"}

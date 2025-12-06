@@ -175,7 +175,7 @@ const Rankings = () => {
           </div>
 
           {/* Info del Periodo */}
-          <div className="mb-6 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white shadow-md">
+          <div className="mb-6 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 p-6 text-white shadow-md">
             <h2 className="mb-2 text-2xl font-semibold">
               📅 Periodo: {rankingData.period.type.toUpperCase()}
             </h2>
@@ -247,7 +247,7 @@ const Rankings = () => {
 
           {/* Podio de los 3 primeros lugares */}
           {rankingData.rankings.length >= 3 && (
-            <div className="mb-6 rounded-lg border border-gray-700 bg-gradient-to-br from-gray-800 to-gray-900 p-6 shadow-lg">
+            <div className="mb-6 rounded-lg border border-gray-700 bg-linear-to-br from-gray-800 to-gray-900 p-6 shadow-lg">
               <h2 className="mb-4 text-center text-2xl font-bold text-white">
                 🏆 Podio Actual
               </h2>
@@ -269,7 +269,7 @@ const Rankings = () => {
 
                 {/* 1er Lugar */}
                 <div className="flex flex-col items-center">
-                  <div className="mb-2 flex h-40 w-40 flex-col items-center justify-center rounded-lg border-4 border-yellow-400 bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-2xl">
+                  <div className="mb-2 flex h-40 w-40 flex-col items-center justify-center rounded-lg border-4 border-yellow-400 bg-linear-to-br from-yellow-500 to-yellow-600 shadow-2xl">
                     <div className="text-5xl">🥇</div>
                     <div className="mt-2 text-sm font-bold text-yellow-900">1º LUGAR</div>
                   </div>

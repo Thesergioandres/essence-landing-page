@@ -61,17 +61,17 @@ export default function DistributorProducts() {
 
       {/* Stats Summary */}
       <div className="grid gap-6 md:grid-cols-3">
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-blue-900/50 to-gray-800/50 p-6">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-blue-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Total Productos</p>
           <p className="mt-2 text-3xl font-bold text-white">{stock.length}</p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-6">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-green-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Stock Normal</p>
           <p className="mt-2 text-3xl font-bold text-white">
             {stock.length - lowStockCount}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-red-900/50 to-gray-800/50 p-6">
+        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-red-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Stock Bajo</p>
           <p className="mt-2 text-3xl font-bold text-white">{lowStockCount}</p>
         </div>

@@ -109,7 +109,7 @@ export default function Categories() {
         </div>
         <button
           onClick={() => handleOpenModal()}
-          className="w-full sm:w-auto rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white transition hover:from-purple-700 hover:to-pink-700"
+          className="w-full sm:w-auto rounded-lg bg-linear-to-r from-purple-600 to-pink-600 px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white transition hover:from-purple-700 hover:to-pink-700"
         >
           + Nueva categoría
         </button>
@@ -220,7 +220,7 @@ export default function Categories() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white transition hover:from-purple-700 hover:to-pink-700"
+                  className="flex-1 rounded-lg bg-linear-to-r from-purple-600 to-pink-600 px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white transition hover:from-purple-700 hover:to-pink-700"
                 >
                   {editingCategory ? "Actualizar" : "Crear"}
                 </button>
