@@ -7,6 +7,7 @@ import {
   getSalesTimeline,
   getFinancialSummary,
   getAnalyticsDashboard,
+  getCombinedSummary,
 } from "../controllers/analytics.controller.js";
 import { protect, admin } from "../middleware/auth.middleware.js";
 import { cacheMiddleware } from "../middleware/cache.middleware.js";
@@ -21,5 +22,6 @@ router.get("/averages", protect, admin, cacheMiddleware(300, 'analytics'), getAv
 router.get("/sales-timeline", protect, admin, cacheMiddleware(300, 'analytics'), getSalesTimeline);
 router.get("/financial-summary", protect, admin, cacheMiddleware(300, 'analytics'), getFinancialSummary);
 router.get("/dashboard", protect, admin, cacheMiddleware(300, 'analytics'), getAnalyticsDashboard);
+router.get("/combined-summary", protect, admin, cacheMiddleware(300, 'analytics'), getCombinedSummary);
 
 export default router;

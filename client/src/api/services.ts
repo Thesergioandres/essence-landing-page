@@ -977,3 +977,166 @@ export const advancedAnalyticsService = {
     return response.data;
   },
 };
+
+// ========================================
+// SPECIAL SALES SERVICE
+// ========================================
+
+export const specialSaleService = {
+  async create(data: {
+    product: {
+      name: string;
+      productId?: string;
+    };
+    quantity: number;
+    specialPrice: number;
+    cost: number;
+    distribution: Array<{
+      name: string;
+      amount: number;
+      percentage?: number;
+      notes?: string;
+    }>;
+    observations?: string;
+    eventName?: string;
+    saleDate?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data: any;
+  }> {
+    const response = await api.post("/special-sales", data);
+    return response.data;
+  },
+
+  async getAll(params?: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+    status?: "active" | "cancelled" | "refunded";
+    productName?: string;
+    eventName?: string;
+    sortBy?: string;
+  }): Promise<{
+    success: boolean;
+    count: number;
+    total: number;
+    page: number;
+    pages: number;
+    data: any[];
+  }> {
+    const response = await api.get("/special-sales", { params });
+    return response.data;
+  },
+
+  async getById(id: string): Promise<{
+    success: boolean;
+    data: any;
+  }> {
+    const response = await api.get(`/special-sales/${id}`);
+    return response.data;
+  },
+
+  async update(
+    id: string,
+    data: {
+      product?: {
+        name: string;
+        productId?: string;
+      };
+      quantity?: number;
+      specialPrice?: number;
+      cost?: number;
+      distribution?: Array<{
+        name: string;
+        amount: number;
+        percentage?: number;
+        notes?: string;
+      }>;
+      observations?: string;
+      eventName?: string;
+      saleDate?: string;
+      status?: "active" | "cancelled" | "refunded";
+    }
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: any;
+  }> {
+    const response = await api.put(`/special-sales/${id}`, data);
+    return response.data;
+  },
+
+  async delete(id: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const response = await api.delete(`/special-sales/${id}`);
+    return response.data;
+  },
+
+  async cancel(id: string): Promise<{
+    success: boolean;
+    message: string;
+    data: any;
+  }> {
+    const response = await api.put(`/special-sales/${id}/cancel`);
+    return response.data;
+  },
+
+  async getStatistics(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{
+    success: boolean;
+    data: {
+      totalSales: number;
+      totalCosts: number;
+      totalProfit: number;
+      count: number;
+      averageSale: number;
+    };
+  }> {
+    const response = await api.get("/special-sales/stats/overview", { params });
+    return response.data;
+  },
+
+  async getDistributionByPerson(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{
+    success: boolean;
+    data: Array<{
+      _id: string;
+      totalAmount: number;
+      salesCount: number;
+    }>;
+  }> {
+    const response = await api.get("/special-sales/stats/distribution", {
+      params,
+    });
+    return response.data;
+  },
+
+  async getTopProducts(params?: {
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+  }): Promise<{
+    success: boolean;
+    data: Array<{
+      _id: string;
+      totalQuantity: number;
+      totalSales: number;
+      totalProfit: number;
+      salesCount: number;
+      averagePrice: number;
+    }>;
+  }> {
+    const response = await api.get("/special-sales/stats/top-products", {
+      params,
+    });
+    return response.data;
+  },
+};

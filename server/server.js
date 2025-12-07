@@ -16,6 +16,7 @@ import distributorRoutes from "./routes/distributor.routes.js";
 import gamificationRoutes from "./routes/gamification.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import saleRoutes from "./routes/sale.routes.js";
+import specialSaleRoutes from "./routes/specialSale.routes.js";
 import stockRoutes from "./routes/stock.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 
@@ -114,6 +115,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/distributors", distributorRoutes);
 app.use("/api/stock", stockRoutes);
 app.use("/api/sales", saleRoutes);
+app.use("/api/special-sales", specialSaleRoutes);
 app.use("/api/defective-products", defectiveProductRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/advanced-analytics", advancedAnalyticsRoutes);

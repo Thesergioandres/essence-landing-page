@@ -3,6 +3,7 @@ import Product from "../models/Product.js";
 import User from "../models/User.js";
 import DistributorStock from "../models/DistributorStock.js";
 import DefectiveProduct from "../models/DefectiveProduct.js";
+import SpecialSale from "../models/SpecialSale.js";
 
 // @desc    Obtener resumen de ganancias del mes actual
 // @route   GET /api/analytics/monthly-profit
@@ -511,5 +512,96 @@ export const getAnalyticsDashboard = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Obtener resumen combinado (ventas normales + especiales)
+// @route   GET /api/analytics/combined-summary
+// @access  Private/Admin
+export const getCombinedSummary = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    // Filtros para ventas normales
+    const salesFilter = { paymentStatus: "confirmado" };
+    if (startDate || endDate) {
+      salesFilter.saleDate = {};
+      if (startDate) {
+        const date = new Date(startDate);
+        salesFilter.saleDate.$gte = new Date(
+          Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 5, 0, 0)
+        );
+      }
+      if (endDate) {
+        const date = new Date(endDate);
+        salesFilter.saleDate.$lte = new Date(
+          Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 4, 59, 59, 999)
+        );
+      }
+    }
+
+    // Filtros para ventas especiales
+    const specialSalesFilter = { status: "active" };
+    if (startDate || endDate) {
+      specialSalesFilter.saleDate = {};
+      if (startDate) specialSalesFilter.saleDate.$gte = new Date(startDate);
+      if (endDate) specialSalesFilter.saleDate.$lte = new Date(endDate);
+    }
+
+    // Obtener ventas normales
+    const normalSales = await Sale.find(salesFilter);
+    const normalTotals = normalSales.reduce(
+      (acc, sale) => {
+        acc.revenue += sale.salePrice * sale.quantity;
+        acc.cost += sale.purchasePrice * sale.quantity;
+        acc.profit += sale.totalProfit;
+        acc.count += 1;
+        return acc;
+      },
+      { revenue: 0, cost: 0, profit: 0, count: 0 }
+    );
+
+    // Obtener ventas especiales
+    const specialSales = await SpecialSale.find(specialSalesFilter);
+    const specialTotals = specialSales.reduce(
+      (acc, sale) => {
+        acc.revenue += sale.specialPrice * sale.quantity;
+        acc.cost += sale.cost * sale.quantity;
+        acc.profit += sale.totalProfit;
+        acc.count += 1;
+        return acc;
+      },
+      { revenue: 0, cost: 0, profit: 0, count: 0 }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        normal: {
+          revenue: normalTotals.revenue,
+          cost: normalTotals.cost,
+          profit: normalTotals.profit,
+          count: normalTotals.count,
+        },
+        special: {
+          revenue: specialTotals.revenue,
+          cost: specialTotals.cost,
+          profit: specialTotals.profit,
+          count: specialTotals.count,
+        },
+        combined: {
+          revenue: normalTotals.revenue + specialTotals.revenue,
+          cost: normalTotals.cost + specialTotals.cost,
+          profit: normalTotals.profit + specialTotals.profit,
+          count: normalTotals.count + specialTotals.count,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener resumen combinado:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener el resumen combinado",
+    });
   }
 };

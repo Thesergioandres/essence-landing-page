@@ -38,6 +38,7 @@ const Rankings = lazy(() => import("./pages/Rankings"));
 const DefectiveProductsManagement = lazy(() => import("./pages/DefectiveProductsManagement"));
 const AdminRegisterSale = lazy(() => import("./pages/AdminRegisterSale"));
 const AdvancedDashboard = lazy(() => import("./pages/AdvancedDashboard"));
+const SpecialSales = lazy(() => import("./pages/SpecialSales"));
 
 // Distributor pages
 const DistributorDashboardLayout = lazy(() => import("./pages/DistributorDashboardLayout"));
@@ -83,6 +84,7 @@ export default function App() {
         <Route path="distributors/:id/edit" element={<EditDistributor />} />
         <Route path="stock-management" element={<StockManagement />} />
         <Route path="sales" element={<Sales />} />
+        <Route path="special-sales" element={<SpecialSales />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="advanced-analytics" element={<AdvancedDashboard />} />
         <Route path="audit-logs" element={<AuditLogs />} />
