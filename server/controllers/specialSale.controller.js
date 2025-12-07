@@ -115,13 +115,22 @@ export const createSpecialSale = async (req, res) => {
       }
     }
 
-    // Si product.productId existe, verificar que el producto exista
+    // Si product.productId existe, verificar que el producto exista y descontar stock
+    let productDoc = null;
     if (product.productId) {
-      const productExists = await Product.findById(product.productId);
-      if (!productExists) {
+      productDoc = await Product.findById(product.productId);
+      if (!productDoc) {
         return res.status(404).json({
           success: false,
           message: "El producto especificado no existe",
+        });
+      }
+
+      // Verificar que haya stock suficiente
+      if (productDoc.totalStock < quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Stock insuficiente. Disponible: ${productDoc.totalStock}, requerido: ${quantity}`,
         });
       }
     }
@@ -139,6 +148,13 @@ export const createSpecialSale = async (req, res) => {
       saleDate: saleDate || Date.now(),
       createdBy: req.user._id,
     });
+
+    // Descontar stock del producto si existe referencia
+    if (productDoc) {
+      productDoc.totalStock -= quantity;
+      productDoc.warehouseStock -= quantity;
+      await productDoc.save();
+    }
 
     // Poblar información del creador
     await specialSale.populate("createdBy", "name email");
@@ -413,6 +429,16 @@ export const cancelSpecialSale = async (req, res) => {
         success: false,
         message: "La venta especial ya está cancelada",
       });
+    }
+
+    // Devolver stock al producto si existe referencia
+    if (specialSale.product.productId) {
+      const product = await Product.findById(specialSale.product.productId);
+      if (product) {
+        product.totalStock += specialSale.quantity;
+        product.warehouseStock += specialSale.quantity;
+        await product.save();
+      }
     }
 
     specialSale.status = "cancelled";

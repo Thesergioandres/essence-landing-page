@@ -29,14 +29,26 @@ export const getMonthlyProfit = async (req, res) => {
       paymentStatus: "confirmado",
     });
 
+    // Ventas especiales del mes actual
+    const currentMonthSpecialSales = await SpecialSale.find({
+      saleDate: { $gte: startOfMonth, $lte: endOfMonth },
+      status: "active",
+    });
+
     // Ventas del mes anterior
     const lastMonthSales = await Sale.find({
       saleDate: { $gte: startOfLastMonth, $lte: endOfLastMonth },
       paymentStatus: "confirmado",
     });
 
-    const calculateTotals = (sales) => {
-      return sales.reduce(
+    // Ventas especiales del mes anterior
+    const lastMonthSpecialSales = await SpecialSale.find({
+      saleDate: { $gte: startOfLastMonth, $lte: endOfLastMonth },
+      status: "active",
+    });
+
+    const calculateTotals = (sales, specialSales) => {
+      const normalTotals = sales.reduce(
         (acc, sale) => {
           acc.adminProfit += sale.adminProfit;
           acc.distributorProfit += sale.distributorProfit;
@@ -57,10 +69,25 @@ export const getMonthlyProfit = async (req, res) => {
           unitsCount: 0,
         }
       );
+
+      // Agregar totales de ventas especiales
+      const specialTotals = specialSales.reduce(
+        (acc, sale) => {
+          acc.totalProfit += sale.totalProfit;
+          acc.revenue += sale.specialPrice * sale.quantity;
+          acc.cost += sale.cost * sale.quantity;
+          acc.salesCount += 1;
+          acc.unitsCount += sale.quantity;
+          return acc;
+        },
+        normalTotals
+      );
+
+      return specialTotals;
     };
 
-    const currentMonth = calculateTotals(currentMonthSales);
-    const lastMonth = calculateTotals(lastMonthSales);
+    const currentMonth = calculateTotals(currentMonthSales, currentMonthSpecialSales);
+    const lastMonth = calculateTotals(lastMonthSales, lastMonthSpecialSales);
 
     // Calcular porcentaje de crecimiento
     const growthPercentage =
@@ -313,6 +340,11 @@ export const getSalesTimeline = async (req, res) => {
       paymentStatus: "confirmado",
     }).sort({ saleDate: 1 });
 
+    const specialSales = await SpecialSale.find({
+      saleDate: { $gte: startDate },
+      status: "active",
+    }).sort({ saleDate: 1 });
+
     // Agrupar por día
     const salesByDay = {};
     sales.forEach((sale) => {
@@ -332,6 +364,26 @@ export const getSalesTimeline = async (req, res) => {
       salesByDay[day].profit += sale.totalProfit;
       salesByDay[day].units += sale.quantity;
       salesByDay[day].cost += sale.purchasePrice * sale.quantity;
+    });
+
+    // Agregar ventas especiales
+    specialSales.forEach((sale) => {
+      const day = sale.saleDate.toISOString().split("T")[0];
+      if (!salesByDay[day]) {
+        salesByDay[day] = {
+          date: day,
+          sales: 0,
+          revenue: 0,
+          profit: 0,
+          units: 0,
+          cost: 0,
+        };
+      }
+      salesByDay[day].sales += 1;
+      salesByDay[day].revenue += sale.specialPrice * sale.quantity;
+      salesByDay[day].profit += sale.totalProfit;
+      salesByDay[day].units += sale.quantity;
+      salesByDay[day].cost += sale.cost * sale.quantity;
     });
 
     const timeline = Object.values(salesByDay);
@@ -364,6 +416,22 @@ export const getFinancialSummary = async (req, res) => {
     }
 
     const sales = await Sale.find(filter);
+    
+    const specialFilter = { status: "active" };
+    if (startDate || endDate) {
+      specialFilter.saleDate = {};
+      if (startDate) {
+        const date = new Date(startDate);
+        specialFilter.saleDate.$gte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 5, 0, 0));
+      }
+      if (endDate) {
+        const date = new Date(endDate);
+        specialFilter.saleDate.$lte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 4, 59, 59, 999));
+      }
+    }
+    
+    const specialSales = await SpecialSale.find(specialFilter);
+    
     const defectiveProducts = await DefectiveProduct.find({
       status: "confirmado",
       ...(startDate && { reportDate: { $gte: new Date(startDate) } }),
@@ -392,6 +460,15 @@ export const getFinancialSummary = async (req, res) => {
         totalUnits: 0,
       }
     );
+
+    // Agregar ventas especiales a los totales
+    specialSales.forEach((sale) => {
+      totals.totalCost += sale.cost * sale.quantity;
+      totals.totalRevenue += sale.specialPrice * sale.quantity;
+      totals.totalProfit += sale.totalProfit;
+      totals.totalSales += 1;
+      totals.totalUnits += sale.quantity;
+    });
 
     // Calcular pérdidas por defectuosos
     const defectiveLoss = defectiveProducts.reduce((sum, def) => {
@@ -422,6 +499,12 @@ export const getAnalyticsDashboard = async (req, res) => {
     const monthlySales = await Sale.find({
       saleDate: { $gte: startOfMonth },
       paymentStatus: "confirmado",
+    });
+
+    // Ventas especiales del mes
+    const monthlySpecialSales = await SpecialSale.find({
+      saleDate: { $gte: startOfMonth },
+      status: "active",
     });
 
     // Top productos
@@ -504,6 +587,13 @@ export const getAnalyticsDashboard = async (req, res) => {
       },
       { totalRevenue: 0, totalProfit: 0, totalSales: 0 }
     );
+
+    // Agregar ventas especiales a los totales mensuales
+    monthlySpecialSales.forEach((sale) => {
+      monthlyTotals.totalRevenue += sale.specialPrice * sale.quantity;
+      monthlyTotals.totalProfit += sale.totalProfit;
+      monthlyTotals.totalSales += 1;
+    });
 
     res.json({
       monthlyTotals,
