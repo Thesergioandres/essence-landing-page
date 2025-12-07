@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm ci --omit=dev"]
+
+[phases.build]
+
+[start]
+cmd = "npm start"
+
+[variables]
+NODE_ENV = "production"
+MONGOMS_DISABLE_POSTINSTALL = "1"

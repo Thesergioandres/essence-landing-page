@@ -11,6 +11,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "postinstall": "if [ \"$NODE_ENV\" != \"production\" ]; then echo 'Development environment'; fi",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --detectOpenHandles --forceExit",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --detectOpenHandles --forceExit"
