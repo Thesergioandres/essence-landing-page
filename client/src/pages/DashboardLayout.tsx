@@ -35,20 +35,25 @@ export default function DashboardLayout() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 z-40 h-screen w-64 border-r border-gray-700 bg-gray-800/95 backdrop-blur-lg transition-transform duration-300 lg:translate-x-0 ${
+      <aside className={`fixed left-0 top-0 z-40 h-screen w-72 border-r border-gray-700 bg-gray-800/95 backdrop-blur-lg transition-transform duration-300 lg:translate-x-0 ${
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       }`}>
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col overflow-hidden">
           {/* Logo */}
-          <div className="px-4 py-6 border-b border-gray-700">
-            <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-3xl font-bold text-transparent">
+          <div className="shrink-0 px-4 py-4 sm:py-6 border-b border-gray-700">
+            <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl sm:text-3xl font-bold text-transparent">
               ESSENCE
             </h1>
-            <p className="mt-1 text-sm text-gray-400">Panel Admin</p>
+            <p className="mt-1 text-xs sm:text-sm text-gray-400">Panel Admin</p>
           </div>
 
-          {/* Navigation - Scrollable */}
-          <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+          {/* Navigation - Scrollable with better mobile handling */}
+          <nav className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 space-y-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
+            style={{ 
+              maxHeight: 'calc(100vh - 200px)',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
               <NavLink
                 to="/admin/register-sale"
                 className={({ isActive }): string => navLinkClasses(isActive)}
@@ -335,25 +340,25 @@ export default function DashboardLayout() {
             </NavLink>
           </nav>
 
-          {/* User Info & Logout */}
-          <div className="border-t border-gray-700 p-4 bg-gray-800/80">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-purple-600 to-pink-600 shrink-0">
-                <span className="text-sm font-bold text-white">
+          {/* User Info & Logout - Always visible at bottom */}
+          <div className="shrink-0 border-t border-gray-700 p-3 sm:p-4 bg-gray-800/90">
+            <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3">
+              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-linear-to-r from-purple-600 to-pink-600 shrink-0">
+                <span className="text-xs sm:text-sm font-bold text-white">
                   {user?.name?.charAt(0) || "A"}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-                <p className="text-xs text-gray-400">{user?.role}</p>
+                <p className="text-xs sm:text-sm font-medium text-white truncate">{user?.name}</p>
+                <p className="text-[10px] sm:text-xs text-gray-400 capitalize">{user?.role}</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600/20 px-4 py-2 text-red-400 transition hover:bg-red-600/30"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600/20 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-red-400 transition hover:bg-red-600/30 active:scale-[0.98] min-h-[44px]"
             >
               <svg
-                className="h-5 w-5"
+                className="h-4 w-4 sm:h-5 sm:w-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -365,25 +370,25 @@ export default function DashboardLayout() {
                   d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                 />
               </svg>
-              Cerrar Sesión
+              <span>Cerrar Sesión</span>
             </button>
           </div>
         </div>
       </aside>
 
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-gray-800/95 backdrop-blur-lg border-b border-gray-700">
-        <div className="flex items-center justify-between px-4 py-3">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-gray-800/95 backdrop-blur-lg border-b border-gray-700 h-14">
+        <div className="flex items-center justify-between px-3 sm:px-4 h-full">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 text-gray-300 hover:text-purple-400 transition"
+            className="p-2 text-gray-300 hover:text-purple-400 transition active:scale-95 -ml-2"
             aria-label="Open menu"
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-xl font-bold text-transparent">
+          <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-lg sm:text-xl font-bold text-transparent">
             ESSENCE
           </h1>
           <div className="w-10" />
@@ -391,8 +396,8 @@ export default function DashboardLayout() {
       </div>
 
       {/* Main Content */}
-      <main className="lg:ml-64 min-h-screen pt-16 lg:pt-0">
-        <div className="p-4 sm:p-6 lg:p-8">
+      <main className="lg:ml-72 min-h-screen pt-14 lg:pt-0">
+        <div className="p-3 sm:p-4 md:p-6 lg:p-8">
           <Outlet />
         </div>
       </main>
