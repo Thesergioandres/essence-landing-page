@@ -1,12 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
-import { productService, specialSaleService } from "../api/services";
-import type { Product } from "../types";
+import { productService, specialSaleService, distributorService } from "../api/services";
+import type { Product, User } from "../types";
 
 interface Distribution {
   name: string;
   amount: number;
   percentage: string;
   notes?: string;
+  useExisting?: boolean; // true = selector, false = input manual
+  distributorId?: string; // ID del distribuidor seleccionado
 }
 
 interface ProductItem {
@@ -30,12 +32,14 @@ export default function SpecialSaleForm({
 }: SpecialSaleFormProps) {
   const [loading, setLoading] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingDistributors, setLoadingDistributors] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
+  const [distributors, setDistributors] = useState<User[]>([]);
   const [productItems, setProductItems] = useState<ProductItem[]>([
     { productName: "", quantity: 1, specialPrice: 0, cost: 0 },
   ]);
   const [distribution, setDistribution] = useState<Distribution[]>([
-    { name: "", amount: 0, percentage: "" },
+    { name: "", amount: 0, percentage: "", useExisting: true },
   ]);
   const [observations, setObservations] = useState("");
   const [eventName, setEventName] = useState("");
@@ -70,9 +74,24 @@ export default function SpecialSaleForm({
     }
   }, []);
 
+  const loadDistributors = useCallback(async () => {
+    try {
+      const response = await distributorService.getAll(true); // Solo activos
+      // Extraer solo distribuidores (role: 'distribuidor')
+      const distData = Array.isArray(response) ? response : response.data;
+      const distributorUsers = distData.filter((user: User) => user.role === 'distribuidor');
+      setDistributors(distributorUsers);
+    } catch (error) {
+      console.error("Error al cargar distribuidores:", error);
+    } finally {
+      setLoadingDistributors(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadProducts();
-  }, [loadProducts]);
+    loadDistributors();
+  }, [loadProducts, loadDistributors]);
 
   useEffect(() => {
     if (editData) {
@@ -144,7 +163,7 @@ export default function SpecialSaleForm({
   };
 
   const addDistributor = () => {
-    setDistribution([...distribution, { name: "", amount: 0, percentage: "" }]);
+    setDistribution([...distribution, { name: "", amount: 0, percentage: "", useExisting: true }]);
   };
 
   const removeDistributor = (index: number) => {
@@ -156,7 +175,7 @@ export default function SpecialSaleForm({
   const updateDistributor = (
     index: number,
     field: keyof Distribution,
-    value: string | number
+    value: string | number | boolean
   ) => {
     const newDistribution = [...distribution];
     
@@ -179,6 +198,27 @@ export default function SpecialSaleForm({
         amount: amountValue,
         percentage: "", // Limpiar porcentaje cuando se ingresa monto manual
       };
+    } else if (field === "distributorId") {
+      // Cuando se selecciona un distribuidor existente
+      const distributorId = value as string;
+      if (distributorId === "custom") {
+        newDistribution[index] = {
+          ...newDistribution[index],
+          distributorId: undefined,
+          name: "",
+          useExisting: false,
+        };
+      } else {
+        const selectedDist = distributors.find(d => d._id === distributorId);
+        if (selectedDist) {
+          newDistribution[index] = {
+            ...newDistribution[index],
+            distributorId: distributorId,
+            name: selectedDist.name,
+            useExisting: true,
+          };
+        }
+      }
     } else {
       newDistribution[index] = {
         ...newDistribution[index],
@@ -635,16 +675,40 @@ export default function SpecialSaleForm({
                     <label className="mb-1 block text-xs text-gray-400">
                       Nombre *
                     </label>
-                    <input
-                      type="text"
-                      value={dist.name}
-                      onChange={(e) =>
-                        updateDistributor(index, "name", e.target.value)
-                      }
-                      placeholder="Nombre (ej: Nico)"
-                      required
-                      className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
-                    />
+                    {loadingDistributors ? (
+                      <p className="text-xs text-gray-400 py-2">Cargando...</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <select
+                          value={dist.distributorId || (dist.useExisting ? "" : "custom")}
+                          onChange={(e) => {
+                            updateDistributor(index, "distributorId", e.target.value);
+                          }}
+                          className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
+                        >
+                          <option value="">Seleccionar distribuidor...</option>
+                          <option value="custom">-- Persona personalizada --</option>
+                          {distributors.map((distributor) => (
+                            <option key={distributor._id} value={distributor._id}>
+                              {distributor.name}
+                            </option>
+                          ))}
+                        </select>
+
+                        {!dist.useExisting && (
+                          <input
+                            type="text"
+                            value={dist.name}
+                            onChange={(e) =>
+                              updateDistributor(index, "name", e.target.value)
+                            }
+                            placeholder="Nombre de la persona *"
+                            required
+                            className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                          />
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="mb-1 block text-xs text-gray-400">
