@@ -22,6 +22,7 @@ export interface Product {
   distributorPrice: number;
   clientPrice?: number;
   distributorCommission?: number;
+  cost?: number;
   // Stock
   totalStock: number;
   warehouseStock: number;

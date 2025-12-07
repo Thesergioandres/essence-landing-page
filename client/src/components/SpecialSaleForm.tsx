@@ -75,8 +75,8 @@ export default function SpecialSaleForm({
 
   const loadProducts = async () => {
     try {
-      const data = await productService.getAll();
-      setProducts(data);
+      const response = await productService.getAll();
+      setProducts(response.data || []);
     } catch (error) {
       console.error("Error al cargar productos:", error);
     } finally {
@@ -89,7 +89,7 @@ export default function SpecialSaleForm({
     const product = products.find((p) => p._id === productId);
     if (product) {
       setProductName(product.name);
-      setCost(product.cost || 0);
+      setCost(product.cost || product.purchasePrice || 0);
     }
   };
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { specialSaleService } from "../api/services";
 import SpecialSaleForm from "../components/SpecialSaleForm";
 
@@ -38,7 +38,7 @@ export default function SpecialSales() {
   const [stats, setStats] = useState<any>(null);
 
   // Filtros
-  const [filterStatus, setFilterStatus] = useState<string>("active");
+  const [filterStatus, setFilterStatus] = useState<"active" | "cancelled" | "refunded" | "">("active");
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
   const [filterEventName, setFilterEventName] = useState("");
@@ -47,12 +47,7 @@ export default function SpecialSales() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    loadSpecialSales();
-    loadStatistics();
-  }, [currentPage, filterStatus, filterStartDate, filterEndDate, filterEventName]);
-
-  const loadSpecialSales = async () => {
+  const loadSpecialSales = useCallback(async () => {
     try {
       setLoading(true);
       const data = await specialSaleService.getAll({
@@ -73,9 +68,9 @@ export default function SpecialSales() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, filterStatus, filterStartDate, filterEndDate, filterEventName]);
 
-  const loadStatistics = async () => {
+  const loadStatistics = useCallback(async () => {
     try {
       const data = await specialSaleService.getStatistics({
         startDate: filterStartDate || undefined,
@@ -85,7 +80,12 @@ export default function SpecialSales() {
     } catch (error) {
       console.error("Error al cargar estadísticas:", error);
     }
-  };
+  }, [filterStartDate, filterEndDate]);
+
+  useEffect(() => {
+    loadSpecialSales();
+    loadStatistics();
+  }, [loadSpecialSales, loadStatistics]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("¿Estás seguro de eliminar esta venta especial?")) return;
@@ -231,7 +231,7 @@ export default function SpecialSales() {
             <label className="mb-1 block text-xs text-gray-400">Estado</label>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              onChange={(e) => setFilterStatus(e.target.value as "" | "active" | "cancelled" | "refunded")}
               className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
             >
               <option value="">Todos</option>
