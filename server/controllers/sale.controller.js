@@ -288,8 +288,17 @@ export const registerSale = async (req, res) => {
     // Calcular el porcentaje total de ganancia del distribuidor (20% base + bonus)
     const distributorProfitPercentage = 20 + commissionBonus;
 
+    // Generar saleId manualmente por seguridad
+    const year = new Date().getFullYear();
+    const saleCount = await Sale.countDocuments({
+      saleId: { $regex: `^VTA-${year}-` }
+    });
+    const sequentialNumber = String(saleCount + 1).padStart(4, '0');
+    const saleId = `VTA-${year}-${sequentialNumber}`;
+
     // Crear la venta
     const saleData = {
+      saleId,
       distributor: distributorId,
       product: productId,
       quantity,
