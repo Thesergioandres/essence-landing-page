@@ -34,7 +34,7 @@ export default function Hero() {
               className="group relative w-full sm:flex-1 overflow-hidden rounded-lg sm:rounded-full bg-linear-to-r from-purple-600 to-pink-600 px-6 sm:px-8 py-3.5 sm:py-4 text-base sm:text-lg font-semibold text-white shadow-lg transition-all hover:shadow-purple-500/50 active:scale-[0.98] min-h-[52px]"
             >
               <span className="relative z-10">Ver Productos</span>
-              <div className="absolute inset-0 -z-0 bg-linear-to-r from-purple-700 to-pink-700 opacity-0 transition-opacity group-hover:opacity-100"></div>
+              <div className="absolute inset-0 z-0 bg-linear-to-r from-purple-700 to-pink-700 opacity-0 transition-opacity group-hover:opacity-100"></div>
             </button>
 
             <button

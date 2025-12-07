@@ -71,28 +71,28 @@ export default function Navbar() {
             <Link
               to="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-3 text-base text-gray-300 transition hover:bg-purple-600/10 hover:text-purple-400 rounded-lg active:scale-[0.98] min-h-[48px] flex items-center"
+              className="flex items-center px-3 py-3 text-base text-gray-300 transition hover:bg-purple-600/10 hover:text-purple-400 rounded-lg active:scale-[0.98] min-h-12"
             >
               Inicio
             </Link>
             <Link
               to="/productos"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-3 text-base text-gray-300 transition hover:bg-purple-600/10 hover:text-purple-400 rounded-lg active:scale-[0.98] min-h-[48px] flex items-center"
+              className="flex items-center px-3 py-3 text-base text-gray-300 transition hover:bg-purple-600/10 hover:text-purple-400 rounded-lg active:scale-[0.98] min-h-12"
             >
               Productos
             </Link>
             <Link
               to="/admin/register-sale"
               onClick={() => setMobileMenuOpen(false)}
-              className="block mx-3 px-4 py-3 text-center text-base font-medium text-purple-400 border border-purple-500 rounded-lg transition hover:bg-purple-500/10 active:scale-[0.98] min-h-[48px] flex items-center justify-center"
+              className="flex items-center justify-center mx-3 px-4 py-3 text-center text-base font-medium text-purple-400 border border-purple-500 rounded-lg transition hover:bg-purple-500/10 active:scale-[0.98] min-h-12"
             >
               Registrar Venta (Admin)
             </Link>
             <Link
               to="/login/distributor"
               onClick={() => setMobileMenuOpen(false)}
-              className="block mx-3 px-4 py-3 text-center text-base font-medium text-white bg-linear-to-r from-blue-600 to-cyan-600 rounded-lg transition hover:from-blue-700 hover:to-cyan-700 active:scale-[0.98] min-h-[48px] flex items-center justify-center"
+              className="flex items-center justify-center mx-3 px-4 py-3 text-center text-base font-medium text-white bg-linear-to-r from-blue-600 to-cyan-600 rounded-lg transition hover:from-blue-700 hover:to-cyan-700 active:scale-[0.98] min-h-12"
             >
               Distribuidor
             </Link>

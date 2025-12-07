@@ -355,7 +355,7 @@ export default function DashboardLayout() {
             </div>
             <button
               onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600/20 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-red-400 transition hover:bg-red-600/30 active:scale-[0.98] min-h-[44px]"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600/20 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-red-400 transition hover:bg-red-600/30 active:scale-[0.98] min-h-11"
             >
               <svg
                 className="h-4 w-4 sm:h-5 sm:w-5"

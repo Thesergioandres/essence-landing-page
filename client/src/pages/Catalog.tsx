@@ -113,7 +113,7 @@ export default function Catalog() {
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="Buscar productos..."
-              className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-4 py-3 sm:py-3.5 text-base text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[48px]"
+              className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-4 py-3 sm:py-3.5 text-base text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-12"
             />
           </div>
 
@@ -130,7 +130,7 @@ export default function Catalog() {
                 id="category"
                 value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
-                className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-4 py-3 sm:py-3.5 text-base text-white focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[48px]"
+                className="w-full rounded-lg border border-gray-600 bg-gray-700/50 px-4 py-3 sm:py-3.5 text-base text-white focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-12"
               >
                 <option value="all">Todas las categorías</option>
                 {categories.map(cat => (

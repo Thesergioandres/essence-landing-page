@@ -23,7 +23,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/"
-                  className="inline-block text-sm sm:text-base text-gray-400 transition hover:text-purple-400 active:scale-95 min-h-[44px] flex items-center justify-center sm:justify-start"
+                  className="flex items-center justify-center sm:justify-start text-sm sm:text-base text-gray-400 transition hover:text-purple-400 active:scale-95 min-h-11"
                 >
                   Inicio
                 </a>
@@ -31,7 +31,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/productos"
-                  className="inline-block text-sm sm:text-base text-gray-400 transition hover:text-purple-400 active:scale-95 min-h-[44px] flex items-center justify-center sm:justify-start"
+                  className="flex items-center justify-center sm:justify-start text-sm sm:text-base text-gray-400 transition hover:text-purple-400 active:scale-95 min-h-11"
                 >
                   Productos
                 </a>

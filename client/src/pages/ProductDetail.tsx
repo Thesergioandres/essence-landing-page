@@ -81,7 +81,7 @@ export default function ProductDetail() {
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="mb-4 sm:mb-6 flex items-center gap-2 text-base sm:text-lg text-gray-400 transition hover:text-purple-400 active:scale-95 min-h-[48px]"
+          className="mb-4 sm:mb-6 flex items-center gap-2 text-base sm:text-lg text-gray-400 transition hover:text-purple-400 active:scale-95 min-h-12"
         >
           <svg
             className="h-5 w-5 sm:h-6 sm:w-6"
@@ -126,7 +126,7 @@ export default function ProductDetail() {
             <div className="mb-3 sm:mb-4">
               <button
                 onClick={() => navigate(`/categoria/${product.category.slug}`)}
-                className="rounded-full bg-purple-900/50 px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base text-purple-300 transition hover:bg-purple-900/70 active:scale-95 min-h-[44px] inline-flex items-center"
+                className="rounded-full bg-purple-900/50 px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base text-purple-300 transition hover:bg-purple-900/70 active:scale-95 min-h-11 inline-flex items-center"
               >
                 {product.category.name}
               </button>
@@ -218,7 +218,7 @@ export default function ProductDetail() {
             {/* WhatsApp Button */}
             <button
               onClick={handleWhatsAppContact}
-              className="flex items-center justify-center gap-2 sm:gap-3 rounded-xl bg-linear-to-r from-green-600 to-green-500 px-6 sm:px-8 py-4 sm:py-5 text-base sm:text-lg font-semibold text-white transition hover:from-green-700 hover:to-green-600 active:scale-[0.98] shadow-lg hover:shadow-xl min-h-[56px] w-full"
+              className="flex items-center justify-center gap-2 sm:gap-3 rounded-xl bg-linear-to-r from-green-600 to-green-500 px-6 sm:px-8 py-4 sm:py-5 text-base sm:text-lg font-semibold text-white transition hover:from-green-700 hover:to-green-600 active:scale-[0.98] shadow-lg hover:shadow-xl min-h-14 w-full"
             >
               <svg
                 className="h-6 w-6 sm:h-7 sm:w-7 shrink-0"
