@@ -2,7 +2,11 @@
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = ["npm ci --omit=dev"]
+cmds = [
+  "npm config set legacy-peer-deps true",
+  "npm cache clean --force",
+  "npm install --production --no-optional --ignore-scripts"
+]
 
 [phases.build]
 
@@ -11,4 +15,5 @@ cmd = "npm start"
 
 [variables]
 NODE_ENV = "production"
+NPM_CONFIG_PRODUCTION = "true"
 MONGOMS_DISABLE_POSTINSTALL = "1"
