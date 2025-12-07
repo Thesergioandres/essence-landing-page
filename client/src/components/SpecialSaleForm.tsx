@@ -253,40 +253,7 @@ export default function SpecialSaleForm({
     setDistribution(newDistribution);
   };
 
-  const addAdminRemainder = () => {
-    const remainingAmount = totalProfit - distributionSum;
-    
-    if (remainingAmount <= 0) {
-      alert("No hay ganancia restante para asignar al admin");
-      return;
-    }
 
-    // Buscar si ya existe un distribuidor llamado "Admin"
-    const adminIndex = distribution.findIndex(
-      (d) => d.name.toLowerCase() === "admin"
-    );
-
-    if (adminIndex !== -1) {
-      // Actualizar el monto del admin existente
-      const newDistribution = [...distribution];
-      newDistribution[adminIndex] = {
-        ...newDistribution[adminIndex],
-        amount: parseFloat((newDistribution[adminIndex].amount + remainingAmount).toFixed(2)),
-        percentage: "",
-      };
-      setDistribution(newDistribution);
-    } else {
-      // Agregar nuevo distribuidor "Admin" con el monto restante
-      setDistribution([
-        ...distribution,
-        {
-          name: "Admin",
-          amount: parseFloat(remainingAmount.toFixed(2)),
-          percentage: "",
-        },
-      ]);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -637,30 +604,33 @@ export default function SpecialSaleForm({
             <label className="text-sm font-medium text-gray-300">
               Distribución de ganancias *
             </label>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={autoDistribute}
-                className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 transition"
-              >
-                Distribuir equitativamente
-              </button>
-              {distributionSum < totalProfit && distributionSum > 0 && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={addAdminRemainder}
-                  className="rounded-lg bg-amber-600 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700 transition"
+                  onClick={autoDistribute}
+                  className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 transition"
                 >
-                  Restante para Admin (${(totalProfit - distributionSum).toLocaleString()})
+                  Distribuir equitativamente
                 </button>
+                <button
+                  type="button"
+                  onClick={addDistributor}
+                  className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700 transition"
+                >
+                  + Agregar
+                </button>
+              </div>
+              {distributionSum < totalProfit && distributionSum > 0 && (
+                <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
+                  <svg className="h-4 w-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs text-amber-200">
+                    Restante ${(totalProfit - distributionSum).toLocaleString()} se asignará automáticamente a Admin
+                  </p>
+                </div>
               )}
-              <button
-                type="button"
-                onClick={addDistributor}
-                className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700 transition"
-              >
-                + Agregar
-              </button>
             </div>
           </div>
 

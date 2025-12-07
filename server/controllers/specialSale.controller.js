@@ -73,20 +73,46 @@ export const createSpecialSale = async (req, res) => {
     // Calcular ganancia total
     const totalProfit = specialPrice * quantity - cost * quantity;
 
-    // Validar que la suma de distribuciones coincida con la ganancia total
+    // Validar que la suma de distribuciones no exceda la ganancia total
     const distributionSum = distribution.reduce(
       (sum, dist) => sum + dist.amount,
       0
     );
 
     const tolerance = 0.01;
-    if (Math.abs(distributionSum - totalProfit) > tolerance) {
+    if (distributionSum > totalProfit + tolerance) {
       return res.status(400).json({
         success: false,
-        message: `La suma de distribuciones ($${distributionSum.toFixed(2)}) no coincide con la ganancia total ($${totalProfit.toFixed(2)})`,
+        message: `La suma de distribuciones ($${distributionSum.toFixed(2)}) excede la ganancia total ($${totalProfit.toFixed(2)})`,
         distributionSum,
         totalProfit,
       });
+    }
+
+    // Si hay ganancia restante, asignarla al Admin (usuario que crea la venta)
+    const remainingProfit = totalProfit - distributionSum;
+    let finalDistribution = [...distribution];
+
+    if (Math.abs(remainingProfit) > tolerance) {
+      // Buscar si ya existe "Admin" en la distribución
+      const adminIndex = finalDistribution.findIndex(
+        (d) => d.name.toLowerCase() === "admin"
+      );
+
+      if (adminIndex !== -1) {
+        // Si ya existe Admin, sumar al monto existente
+        finalDistribution[adminIndex].amount += remainingProfit;
+        finalDistribution[adminIndex].notes = finalDistribution[adminIndex].notes 
+          ? `${finalDistribution[adminIndex].notes} (incluye restante: $${remainingProfit.toFixed(2)})`
+          : `Incluye restante: $${remainingProfit.toFixed(2)}`;
+      } else {
+        // Si no existe, agregar nuevo distribuidor Admin
+        finalDistribution.push({
+          name: "Admin",
+          amount: parseFloat(remainingProfit.toFixed(2)),
+          notes: "Ganancia restante asignada automáticamente",
+        });
+      }
     }
 
     // Si product.productId existe, verificar que el producto exista
@@ -107,7 +133,7 @@ export const createSpecialSale = async (req, res) => {
       specialPrice,
       cost,
       totalProfit,
-      distribution,
+      distribution: finalDistribution,
       observations,
       eventName,
       saleDate: saleDate || Date.now(),
@@ -264,7 +290,54 @@ export const updateSpecialSale = async (req, res) => {
     if (quantity) specialSale.quantity = quantity;
     if (specialPrice !== undefined) specialSale.specialPrice = specialPrice;
     if (cost !== undefined) specialSale.cost = cost;
-    if (distribution) specialSale.distribution = distribution;
+    
+    // Si se actualiza la distribución, aplicar la misma lógica de ganancias restantes
+    if (distribution) {
+      const newTotalProfit = 
+        (specialPrice !== undefined ? specialPrice : specialSale.specialPrice) * 
+        (quantity !== undefined ? quantity : specialSale.quantity) - 
+        (cost !== undefined ? cost : specialSale.cost) * 
+        (quantity !== undefined ? quantity : specialSale.quantity);
+
+      const distributionSum = distribution.reduce(
+        (sum, dist) => sum + dist.amount,
+        0
+      );
+
+      const tolerance = 0.01;
+      if (distributionSum > newTotalProfit + tolerance) {
+        return res.status(400).json({
+          success: false,
+          message: `La suma de distribuciones ($${distributionSum.toFixed(2)}) excede la ganancia total ($${newTotalProfit.toFixed(2)})`,
+        });
+      }
+
+      // Si hay ganancia restante, asignarla al Admin
+      const remainingProfit = newTotalProfit - distributionSum;
+      let finalDistribution = [...distribution];
+
+      if (Math.abs(remainingProfit) > tolerance) {
+        const adminIndex = finalDistribution.findIndex(
+          (d) => d.name.toLowerCase() === "admin"
+        );
+
+        if (adminIndex !== -1) {
+          finalDistribution[adminIndex].amount += remainingProfit;
+          finalDistribution[adminIndex].notes = finalDistribution[adminIndex].notes 
+            ? `${finalDistribution[adminIndex].notes} (incluye restante: $${remainingProfit.toFixed(2)})`
+            : `Incluye restante: $${remainingProfit.toFixed(2)}`;
+        } else {
+          finalDistribution.push({
+            name: "Admin",
+            amount: parseFloat(remainingProfit.toFixed(2)),
+            notes: "Ganancia restante asignada automáticamente",
+          });
+        }
+      }
+
+      specialSale.distribution = finalDistribution;
+    }
+    
     if (observations !== undefined) specialSale.observations = observations;
     if (eventName !== undefined) specialSale.eventName = eventName;
     if (saleDate) specialSale.saleDate = saleDate;
