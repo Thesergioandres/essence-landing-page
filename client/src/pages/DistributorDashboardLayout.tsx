@@ -4,7 +4,7 @@ import { authService } from "../api/services.ts";
 
 const navLinkClasses = (isActive: boolean): string =>
   [
-    "flex items-center gap-2 sm:gap-3 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 transition text-xs sm:text-sm min-h-[44px]",
+    "flex items-center gap-2 sm:gap-3 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 transition text-xs sm:text-sm min-h-11",
     isActive
       ? "bg-blue-600/30 text-white shadow-lg shadow-blue-600/20"
       : "text-gray-300 hover:bg-blue-600/20 hover:text-blue-400 active:scale-95",
