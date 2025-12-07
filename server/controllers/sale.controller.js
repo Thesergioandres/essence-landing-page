@@ -164,7 +164,6 @@ import DistributorStock from "../models/DistributorStock.js";
 import GamificationConfig from "../models/GamificationConfig.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
-import SpecialSale from "../models/SpecialSale.js";
 import { invalidateCache } from "../middleware/cache.middleware.js";
 
 // Función auxiliar para obtener bonus de comisión por ranking
@@ -407,7 +406,7 @@ export const getDistributorSales = async (req, res) => {
   }
 };
 
-// @desc    Obtener todas las ventas (incluye ventas especiales)
+// @desc    Obtener todas las ventas
 // @route   GET /api/sales
 // @access  Private/Admin
 export const getAllSales = async (req, res) => {
@@ -415,18 +414,14 @@ export const getAllSales = async (req, res) => {
     const { startDate, endDate, distributorId, productId, paymentStatus, sortBy, page = 1, limit = 50 } = req.query;
 
     const filter = {};
-    const specialFilter = { status: "active" };
 
     if (startDate || endDate) {
       filter.saleDate = {};
-      specialFilter.saleDate = {};
       if (startDate) {
         filter.saleDate.$gte = new Date(startDate);
-        specialFilter.saleDate.$gte = new Date(startDate);
       }
       if (endDate) {
         filter.saleDate.$lte = new Date(endDate);
-        specialFilter.saleDate.$lte = new Date(endDate);
       }
     }
 
@@ -446,8 +441,7 @@ export const getAllSales = async (req, res) => {
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    // Obtener ventas normales
-    const [sales, normalTotal] = await Promise.all([
+    const [sales, total] = await Promise.all([
       Sale.find(filter)
         .populate("product", "name image")
         .populate("distributor", "name email")
@@ -458,44 +452,7 @@ export const getAllSales = async (req, res) => {
       Sale.countDocuments(filter)
     ]);
 
-    // Obtener ventas especiales (solo para stats, no paginadas)
-    const specialSales = await SpecialSale.find(specialFilter).lean();
-
-    // Transformar ventas especiales al formato de ventas normales
-    const transformedSpecialSales = specialSales.map(ss => ({
-      _id: ss._id,
-      saleId: `VSP-${ss._id.toString().slice(-6).toUpperCase()}`,
-      distributor: null,
-      product: {
-        _id: ss.product.productId,
-        name: `🌟 ${ss.product.name}${ss.eventName ? ` (${ss.eventName})` : ''}`,
-        image: null
-      },
-      quantity: ss.quantity,
-      purchasePrice: ss.cost,
-      distributorPrice: 0,
-      salePrice: ss.specialPrice,
-      distributorProfit: 0,
-      adminProfit: ss.totalProfit,
-      totalProfit: ss.totalProfit,
-      distributorProfitPercentage: 0,
-      notes: ss.observations || "Venta Especial",
-      saleDate: ss.saleDate,
-      paymentStatus: "confirmado",
-      paymentConfirmedAt: ss.createdAt,
-      createdAt: ss.createdAt,
-      updatedAt: ss.updatedAt,
-      isSpecialSale: true,
-      specialSaleData: {
-        eventName: ss.eventName,
-        distribution: ss.distribution
-      }
-    }));
-
-    // Combinar ventas normales con especiales para stats
-    const allSalesForStats = [...sales, ...transformedSpecialSales];
-
-    // Calcular totales combinados
+    // Calcular estadísticas
     const statsAgg = await Sale.aggregate([
       { $match: filter },
       {
@@ -517,7 +474,7 @@ export const getAllSales = async (req, res) => {
       }
     ]);
 
-    const normalStats = statsAgg[0] || {
+    const stats = statsAgg[0] || {
       totalSales: 0,
       totalQuantity: 0,
       totalDistributorProfit: 0,
@@ -528,47 +485,15 @@ export const getAllSales = async (req, res) => {
       totalProfit: 0
     };
 
-    // Agregar stats de ventas especiales
-    const specialStats = specialSales.reduce((acc, ss) => ({
-      totalSales: acc.totalSales + 1,
-      totalQuantity: acc.totalQuantity + ss.quantity,
-      totalRevenue: acc.totalRevenue + (ss.specialPrice * ss.quantity),
-      totalProfit: acc.totalProfit + ss.totalProfit,
-      adminProfit: acc.adminProfit + ss.totalProfit
-    }), { totalSales: 0, totalQuantity: 0, totalRevenue: 0, totalProfit: 0, adminProfit: 0 });
-
-    const summary = {
-      totalSales: normalStats.totalSales + specialStats.totalSales,
-      totalQuantity: normalStats.totalQuantity + specialStats.totalQuantity,
-      totalDistributorProfit: normalStats.totalDistributorProfit,
-      totalAdminProfit: normalStats.totalAdminProfit + specialStats.adminProfit,
-      totalRevenue: normalStats.totalRevenue + specialStats.totalRevenue,
-      confirmedSales: normalStats.confirmedSales + specialStats.totalSales,
-      pendingSales: normalStats.pendingSales,
-      totalProfit: normalStats.totalProfit + specialStats.totalProfit,
-      specialSalesCount: specialStats.totalSales,
-      normalSalesCount: normalStats.totalSales
-    };
-
-    // Incluir algunas ventas especiales en la lista (las más recientes)
-    const recentSpecialSales = transformedSpecialSales
-      .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime())
-      .slice(0, Math.min(5, limitNum));
-
-    // Combinar ventas normales con ventas especiales recientes
-    const combinedSales = [...sales, ...recentSpecialSales]
-      .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime())
-      .slice(0, limitNum);
-
     res.json({
-      sales: combinedSales,
-      stats: summary,
+      sales,
+      stats,
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total: normalTotal + specialSales.length,
-        pages: Math.ceil((normalTotal + specialSales.length) / limitNum),
-        hasMore: pageNum < Math.ceil((normalTotal + specialSales.length) / limitNum)
+        total,
+        pages: Math.ceil(total / limitNum),
+        hasMore: pageNum < Math.ceil(total / limitNum)
       }
     });
   } catch (error) {
