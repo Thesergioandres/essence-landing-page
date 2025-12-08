@@ -13,11 +13,15 @@ export default function Sales() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [dateFilters, setDateFilters] = useState({
+    startDate: '',
+    endDate: ''
+  });
 
   useEffect(() => {
     loadSales();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, filter, sortBy]);
+  }, [pagination.page, filter, sortBy, dateFilters]);
 
   const loadSales = async () => {
     try {
@@ -28,6 +32,8 @@ export default function Sales() {
         sortBy: sortBy,
       };
       if (filter !== "all") params.paymentStatus = filter;
+      if (dateFilters.startDate) params.startDate = dateFilters.startDate;
+      if (dateFilters.endDate) params.endDate = dateFilters.endDate;
 
       const response = await saleService.getAllSales(params);
       setSales(response.sales || response);
@@ -146,6 +152,47 @@ export default function Sales() {
 
       {/* Filtros y Ordenamiento */}
       <div className="bg-white p-4 rounded-lg shadow space-y-4">
+        {/* Filtros de fecha */}
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-2">Filtrar por fecha:</p>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-[180px]">
+              <label htmlFor="startDate" className="text-xs text-gray-600 block mb-1">
+                Fecha inicio
+              </label>
+              <input
+                type="date"
+                id="startDate"
+                value={dateFilters.startDate}
+                onChange={(e) => setDateFilters({...dateFilters, startDate: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+            <div className="flex-1 min-w-[180px]">
+              <label htmlFor="endDate" className="text-xs text-gray-600 block mb-1">
+                Fecha fin
+              </label>
+              <input
+                type="date"
+                id="endDate"
+                value={dateFilters.endDate}
+                onChange={(e) => setDateFilters({...dateFilters, endDate: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+            {(dateFilters.startDate || dateFilters.endDate) && (
+              <div className="flex items-end">
+                <button
+                  onClick={() => setDateFilters({ startDate: '', endDate: '' })}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                >
+                  Limpiar fechas
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div>
           <p className="text-sm font-medium text-gray-700 mb-2">Filtrar por estado:</p>
           <div className="flex flex-wrap gap-2">
