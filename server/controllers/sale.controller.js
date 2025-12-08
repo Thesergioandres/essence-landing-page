@@ -151,6 +151,14 @@ export const registerAdminSale = async (req, res) => {
     const populatedSale = await Sale.findById(sale._id)
       .populate("product", "name image");
 
+    // Registrar en historial de ganancias (no bloquear si falla)
+    try {
+      await recordSaleProfit(sale._id);
+    } catch (historyError) {
+      console.error("Error registrando historial de ganancias:", historyError);
+      // Continuar sin bloquear la venta
+    }
+
     res.status(201).json({
       message: "Venta registrada exitosamente (admin)",
       sale: populatedSale,
@@ -165,6 +173,7 @@ import GamificationConfig from "../models/GamificationConfig.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
 import { invalidateCache } from "../middleware/cache.middleware.js";
+import { recordSaleProfit } from "../services/profitHistory.service.js";
 
 // Función auxiliar para obtener bonus de comisión por ranking
 const getCommissionBonus = async (distributorId) => {
@@ -332,6 +341,14 @@ export const registerSale = async (req, res) => {
     // Invalidar caché de analytics y gamificación
     await invalidateCache('cache:analytics:*');
     await invalidateCache('cache:gamification:*');
+
+    // Registrar en historial de ganancias (no bloquear si falla)
+    try {
+      await recordSaleProfit(sale._id);
+    } catch (historyError) {
+      console.error("Error registrando historial de ganancias:", historyError);
+      // Continuar sin bloquear la venta
+    }
 
     res.status(201).json({
       message: "Venta registrada exitosamente",

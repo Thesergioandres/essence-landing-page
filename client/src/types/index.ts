@@ -232,6 +232,104 @@ export interface AnalyticsDashboard {
   }>;
 }
 
+// ==================== PROFIT HISTORY TYPES ====================
+export interface ProfitHistoryEntry {
+  _id: string;
+  user: User | string;
+  type: "venta_normal" | "venta_especial" | "ajuste" | "bonus";
+  amount: number;
+  sale?: Sale | string;
+  specialSale?: {
+    _id: string;
+    eventName?: string;
+  } | string;
+  product?: Product | string;
+  description: string;
+  date: string;
+  balanceAfter: number;
+  metadata?: {
+    quantity?: number;
+    salePrice?: number;
+    commission?: number;
+    eventName?: string;
+    saleId?: string;
+    percentage?: number;
+    distributionNotes?: string;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProfitHistoryResponse {
+  history: ProfitHistoryEntry[];
+  summary: {
+    totalAmount: number;
+    count: number;
+  };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+  user: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+}
+
+export interface UserBalance {
+  totalBalance: number;
+  breakdown: {
+    venta_normal: number;
+    venta_especial: number;
+    ajuste: number;
+    bonus: number;
+  };
+  transactionCount: number;
+  lastUpdate: string | null;
+}
+
+export interface ProfitSummary {
+  timeline: Array<{
+    _id: string;
+    totalAmount: number;
+    count: number;
+    types: string[];
+  }>;
+  byType: Array<{
+    _id: string;
+    totalAmount: number;
+    count: number;
+  }>;
+  topUsers: Array<{
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userRole: string;
+    totalAmount: number;
+    count: number;
+  }>;
+  groupBy: "day" | "week" | "month";
+}
+
+export interface ComparativeAnalysis {
+  currentMonth: {
+    total: number;
+    count: number;
+    avgAmount: number;
+  };
+  previousMonth: {
+    total: number;
+    count: number;
+    avgAmount: number;
+  };
+  difference: number;
+  percentageChange: number;
+}
+
 // ==================== AUDIT LOG TYPES ====================
 export interface AuditLog {
   _id: string;

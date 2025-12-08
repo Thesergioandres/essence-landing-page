@@ -15,6 +15,7 @@ import defectiveProductRoutes from "./routes/defectiveProduct.routes.js";
 import distributorRoutes from "./routes/distributor.routes.js";
 import gamificationRoutes from "./routes/gamification.routes.js";
 import productRoutes from "./routes/product.routes.js";
+import profitHistoryRoutes from "./routes/profitHistory.routes.js";
 import saleRoutes from "./routes/sale.routes.js";
 import specialSaleRoutes from "./routes/specialSale.routes.js";
 import stockRoutes from "./routes/stock.routes.js";
@@ -121,6 +122,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/advanced-analytics", advancedAnalyticsRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/gamification", gamificationRoutes);
+app.use("/api/profit-history", profitHistoryRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {

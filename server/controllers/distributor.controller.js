@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import DistributorStock from "../models/DistributorStock.js";
 import Sale from "../models/Sale.js";
 import User from "../models/User.js";
+import Product from "../models/Product.js";
 
 // @desc    Crear distribuidor
 // @route   POST /api/distributors
@@ -220,22 +221,44 @@ export const deleteDistributor = async (req, res) => {
       return res.status(404).json({ message: "Distribuidor no encontrado" });
     }
 
-    // Verificar si tiene stock asignado
-    const hasStock = await DistributorStock.findOne({
+    // Buscar todo el stock del distribuidor
+    const distributorStocks = await DistributorStock.find({
       distributor: distributor._id,
-      quantity: { $gt: 0 },
     });
 
-    if (hasStock) {
-      return res.status(400).json({
-        message:
-          "No se puede eliminar un distribuidor con stock asignado. Retira el stock primero.",
-      });
+    let returnedProducts = 0;
+    let totalQuantityReturned = 0;
+
+    // Devolver el inventario al stock de bodega
+    for (const stock of distributorStocks) {
+      if (stock.quantity > 0) {
+        const product = await Product.findById(stock.product);
+        
+        if (product) {
+          // Devolver al stock de bodega
+          product.warehouseStock += stock.quantity;
+          product.totalStock += stock.quantity;
+          await product.save();
+          
+          returnedProducts++;
+          totalQuantityReturned += stock.quantity;
+        }
+      }
+      
+      // Eliminar el registro de stock del distribuidor
+      await stock.deleteOne();
     }
 
+    // Eliminar el distribuidor
     await distributor.deleteOne();
 
-    res.json({ message: "Distribuidor eliminado correctamente" });
+    res.json({
+      message: "Distribuidor eliminado correctamente",
+      inventoryReturned: {
+        products: returnedProducts,
+        totalQuantity: totalQuantityReturned,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

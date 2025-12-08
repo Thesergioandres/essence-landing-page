@@ -6,6 +6,7 @@ import type {
   AuditStats,
   Averages,
   Category,
+  ComparativeAnalysis,
   DailySummary,
   DefectiveProduct,
   DistributorProfit,
@@ -19,6 +20,9 @@ import type {
   Product,
   ProductImage,
   ProductProfit,
+  ProfitHistoryEntry,
+  ProfitHistoryResponse,
+  ProfitSummary,
   RankingResponse,
   Sale,
   SaleStats,
@@ -26,6 +30,7 @@ import type {
   TimelineData,
   User,
   UserActivity,
+  UserBalance,
   WinnersResponse,
 } from "../types";
 import api from "./axios.ts";
@@ -79,6 +84,11 @@ export const authService = {
 
   async getProfile(): Promise<User> {
     const response = await api.get<User>("/auth/profile");
+    return response.data;
+  },
+
+  async getAllUsers(): Promise<{ success: boolean; data: User[] }> {
+    const response = await api.get("/users");
     return response.data;
   },
 };
@@ -1137,6 +1147,63 @@ export const specialSaleService = {
     const response = await api.get("/special-sales/stats/top-products", {
       params,
     });
+    return response.data;
+  },
+};
+
+// ========================================
+// PROFIT HISTORY SERVICE
+// ========================================
+
+export const profitHistoryService = {
+  async getUserHistory(
+    userId: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      type?: "venta_normal" | "venta_especial" | "ajuste" | "bonus";
+      startDate?: string;
+      endDate?: string;
+    }
+  ): Promise<ProfitHistoryResponse> {
+    const response = await api.get(`/profit-history/user/${userId}`, { params });
+    return response.data;
+  },
+
+  async getUserBalance(userId: string): Promise<UserBalance> {
+    const response = await api.get(`/profit-history/balance/${userId}`);
+    return response.data;
+  },
+
+  async getProfitSummary(params?: {
+    userId?: string;
+    startDate?: string;
+    endDate?: string;
+    groupBy?: "day" | "week" | "month";
+  }): Promise<ProfitSummary> {
+    const response = await api.get("/profit-history/summary", { params });
+    return response.data;
+  },
+
+  async getComparativeAnalysis(params?: {
+    userId?: string;
+  }): Promise<ComparativeAnalysis> {
+    const response = await api.get("/profit-history/comparative", { params });
+    return response.data;
+  },
+
+  async createEntry(data: {
+    userId: string;
+    type: "venta_normal" | "venta_especial" | "ajuste" | "bonus";
+    amount: number;
+    description?: string;
+    metadata?: Record<string, any>;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data: ProfitHistoryEntry;
+  }> {
+    const response = await api.post("/profit-history", data);
     return response.data;
   },
 };

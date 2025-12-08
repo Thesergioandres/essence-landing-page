@@ -1,6 +1,7 @@
 import SpecialSale from "../models/SpecialSale.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
+import { recordSpecialSaleProfit } from "../services/profitHistory.service.js";
 
 // @desc    Crear una venta especial
 // @route   POST /api/special-sales
@@ -160,6 +161,14 @@ export const createSpecialSale = async (req, res) => {
     await specialSale.populate("createdBy", "name email");
     if (specialSale.product.productId) {
       await specialSale.populate("product.productId", "name image");
+    }
+
+    // Registrar en historial de ganancias (no bloquear si falla)
+    try {
+      await recordSpecialSaleProfit(specialSale._id);
+    } catch (historyError) {
+      console.error("Error registrando historial de ganancias:", historyError);
+      // Continuar sin bloquear la venta especial
     }
 
     res.status(201).json({
