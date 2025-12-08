@@ -115,10 +115,24 @@ export const recordSaleProfit = async (sale) => {
 
 /**
  * Registra ganancia de venta especial (distribución múltiple)
- * @param {Object} specialSale - Documento de venta especial
+ * @param {mongoose.Types.ObjectId|Object} specialSaleIdOrDoc - ID o documento de venta especial
  */
-export const recordSpecialSaleProfit = async (specialSale) => {
+export const recordSpecialSaleProfit = async (specialSaleIdOrDoc) => {
   try {
+    const SpecialSale = mongoose.model("SpecialSale");
+    
+    // Si es un ID, buscar el documento completo
+    let specialSale;
+    if (typeof specialSaleIdOrDoc === 'string' || specialSaleIdOrDoc instanceof mongoose.Types.ObjectId) {
+      specialSale = await SpecialSale.findById(specialSaleIdOrDoc);
+      if (!specialSale) {
+        console.error("Venta especial no encontrada:", specialSaleIdOrDoc);
+        return;
+      }
+    } else {
+      specialSale = specialSaleIdOrDoc;
+    }
+
     const metadata = {
       quantity: specialSale.quantity,
       salePrice: specialSale.specialPrice,

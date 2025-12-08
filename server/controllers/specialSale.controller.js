@@ -165,7 +165,7 @@ export const createSpecialSale = async (req, res) => {
 
     // Registrar en historial de ganancias (no bloquear si falla)
     try {
-      await recordSpecialSaleProfit(specialSale._id);
+      await recordSpecialSaleProfit(specialSale);
     } catch (historyError) {
       console.error("Error registrando historial de ganancias:", historyError);
       // Continuar sin bloquear la venta especial
