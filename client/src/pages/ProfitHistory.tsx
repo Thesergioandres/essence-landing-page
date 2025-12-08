@@ -47,9 +47,16 @@ export default function ProfitHistory() {
         ...(dateRange.endDate && { endDate: dateRange.endDate }),
       };
 
+      // Cargar historial y balance en paralelo
       const [historyRes, balanceRes] = await Promise.all([
-        profitHistoryService.getUserHistory(selectedUser, filters),
-        profitHistoryService.getUserBalance(selectedUser),
+        profitHistoryService.getUserHistory(selectedUser, filters).catch(err => {
+          console.error("Error cargando historial:", err);
+          return { history: [], pagination: { page: 1, pages: 1, total: 0 }, summary: { totalAmount: 0, count: 0 } };
+        }),
+        profitHistoryService.getUserBalance(selectedUser).catch(err => {
+          console.error("Error cargando balance:", err);
+          return { totalBalance: 0, breakdown: {}, transactionCount: 0, lastUpdate: null };
+        }),
       ]);
 
       setHistory(historyRes.history);
@@ -58,10 +65,11 @@ export default function ProfitHistory() {
       setTotalPages(historyRes.pagination.pages);
       setTotalCount(historyRes.pagination.total);
 
-      // Load comparative if admin
+      // Load comparative if admin (no bloquear si falla)
       if (isAdmin) {
-        const comparativeRes = await profitHistoryService.getComparativeAnalysis({ userId: selectedUser });
-        setComparative(comparativeRes);
+        profitHistoryService.getComparativeAnalysis({ userId: selectedUser })
+          .then(comparativeRes => setComparative(comparativeRes))
+          .catch(err => console.error("Error cargando comparativo:", err));
       }
     } catch (error) {
       console.error("Error cargando datos:", error);

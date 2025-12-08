@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import ProfitHistory from "../models/ProfitHistory.js";
 import User from "../models/User.js";
 import Sale from "../models/Sale.js";
@@ -102,7 +103,7 @@ export const getUserBalance = async (req, res) => {
 
     // Calcular totales por tipo
     const totals = await ProfitHistory.aggregate([
-      { $match: { user: mongoose.Types.ObjectId(userId) } },
+      { $match: { user: new mongoose.Types.ObjectId(userId) } },
       {
         $group: {
           _id: "$type",
@@ -112,29 +113,32 @@ export const getUserBalance = async (req, res) => {
       },
     ]);
 
-    const totalByType = totals.reduce((acc, item) => {
-      acc[item._id] = {
-        total: item.total,
-        count: item.count,
-      };
-      return acc;
-    }, {});
+    // Construir breakdown por tipo
+    const breakdown = {
+      venta_normal: 0,
+      venta_especial: 0,
+      ajuste: 0,
+      bonus: 0,
+    };
+
+    totals.forEach(item => {
+      if (breakdown.hasOwnProperty(item._id)) {
+        breakdown[item._id] = item.total;
+      }
+    });
 
     // Calcular balance total
     const totalBalance = totals.reduce((sum, item) => sum + item.total, 0);
+    const transactionCount = totals.reduce((sum, item) => sum + item.count, 0);
 
     res.json({
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-      balance: lastEntry?.balanceAfter || totalBalance,
-      totalByType,
+      totalBalance: lastEntry?.balanceAfter || totalBalance,
+      breakdown,
+      transactionCount,
       lastUpdate: lastEntry?.date || null,
     });
   } catch (error) {
+    console.error("Error en getUserBalance:", error);
     res.status(500).json({ message: error.message });
   }
 };
