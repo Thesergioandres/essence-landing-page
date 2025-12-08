@@ -37,7 +37,7 @@ export default function ProductDetail() {
   const handleWhatsAppContact = () => {
     if (!product) return;
     const message = `Hola, estoy interesado en el producto: ${product.name}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/573185753007?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   };
 
