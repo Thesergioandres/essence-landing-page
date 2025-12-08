@@ -329,14 +329,24 @@ export const getComparativeAnalysis = async (req, res) => {
     const currentMonth = thisMonth[0] || { totalAmount: 0, count: 0, avgAmount: 0 };
     const previousMonth = lastMonth[0] || { totalAmount: 0, count: 0, avgAmount: 0 };
 
-    const growth = previousMonth.totalAmount > 0
+    const difference = currentMonth.totalAmount - previousMonth.totalAmount;
+    const percentageChange = previousMonth.totalAmount > 0
       ? ((currentMonth.totalAmount - previousMonth.totalAmount) / previousMonth.totalAmount) * 100
       : currentMonth.totalAmount > 0 ? 100 : 0;
 
     res.json({
-      currentMonth,
-      previousMonth,
-      growth: parseFloat(growth.toFixed(2)),
+      currentMonth: {
+        total: currentMonth.totalAmount || 0,
+        count: currentMonth.count || 0,
+        avgAmount: currentMonth.avgAmount || 0,
+      },
+      previousMonth: {
+        total: previousMonth.totalAmount || 0,
+        count: previousMonth.count || 0,
+        avgAmount: previousMonth.avgAmount || 0,
+      },
+      difference: difference || 0,
+      percentageChange: parseFloat(percentageChange.toFixed(2)) || 0,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

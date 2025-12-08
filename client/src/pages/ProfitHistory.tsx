@@ -222,37 +222,37 @@ export default function ProfitHistory() {
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-gray-600 text-sm font-medium">Mes Actual</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">
-              {formatCurrency(comparative.currentMonth.total)}
+              {formatCurrency(comparative.currentMonth?.total || 0)}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              {comparative.currentMonth.count} transacciones
+              {comparative.currentMonth?.count || 0} transacciones
             </p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-gray-600 text-sm font-medium">Mes Anterior</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">
-              {formatCurrency(comparative.previousMonth.total)}
+              {formatCurrency(comparative.previousMonth?.total || 0)}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              {comparative.previousMonth.count} transacciones
+              {comparative.previousMonth?.count || 0} transacciones
             </p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-gray-600 text-sm font-medium">Cambio</p>
             <p
               className={`text-2xl font-bold mt-1 ${
-                comparative.percentageChange >= 0 ? "text-green-600" : "text-red-600"
+                (comparative.percentageChange || 0) >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
-              {comparative.percentageChange >= 0 ? "+" : ""}
-              {comparative.percentageChange.toFixed(1)}%
+              {(comparative.percentageChange || 0) >= 0 ? "+" : ""}
+              {(comparative.percentageChange || 0).toFixed(1)}%
             </p>
             <p
               className={`text-sm mt-1 ${
-                comparative.difference >= 0 ? "text-green-600" : "text-red-600"
+                (comparative.difference || 0) >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
-              {formatCurrency(Math.abs(comparative.difference))}
+              {formatCurrency(Math.abs(comparative.difference || 0))}
             </p>
           </div>
         </div>
