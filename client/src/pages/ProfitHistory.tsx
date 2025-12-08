@@ -55,7 +55,17 @@ export default function ProfitHistory() {
         }),
         profitHistoryService.getUserBalance(selectedUser).catch(err => {
           console.error("Error cargando balance:", err);
-          return { totalBalance: 0, breakdown: {}, transactionCount: 0, lastUpdate: null };
+          return { 
+            totalBalance: 0, 
+            breakdown: {
+              venta_normal: 0,
+              venta_especial: 0,
+              ajuste: 0,
+              bonus: 0
+            }, 
+            transactionCount: 0, 
+            lastUpdate: null 
+          };
         }),
       ]);
 
