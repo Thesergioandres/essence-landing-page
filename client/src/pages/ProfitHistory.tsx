@@ -74,9 +74,21 @@ export default function ProfitHistory() {
     const loadUsers = async () => {
       try {
         const response = await authService.getAllUsers();
-        setUsers(response.data.filter((u: User) => u.role === "distribuidor"));
+        // Incluir admin y distribuidores
+        const relevantUsers = response.data.filter((u: User) => 
+          u.role === "distribuidor" || u.role === "admin"
+        );
+        setUsers(relevantUsers);
+        
+        // Si es admin, seleccionar el primer usuario (puede ser él mismo)
+        if (relevantUsers.length > 0) {
+          setSelectedUser(relevantUsers[0]._id);
+        } else {
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Error cargando usuarios:", error);
+        setLoading(false);
       }
     };
 
