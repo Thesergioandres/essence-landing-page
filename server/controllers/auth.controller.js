@@ -92,6 +92,24 @@ export const getProfile = async (req, res) => {
   }
 };
 
+// @desc    Obtener todos los usuarios (admin)
+// @route   GET /api/users
+// @access  Private/Admin
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({})
+      .select("-password")
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: users,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Crear administrador por única vez
 // @route   POST /api/auth/create-admin
 // @access  Public (solo si no existe un admin)

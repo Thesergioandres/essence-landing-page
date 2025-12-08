@@ -20,6 +20,7 @@ import saleRoutes from "./routes/sale.routes.js";
 import specialSaleRoutes from "./routes/specialSale.routes.js";
 import stockRoutes from "./routes/stock.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
+import userRoutes from "./routes/user.routes.js";
 
 // Configuración
 dotenv.config();
@@ -110,6 +111,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/upload", uploadRoutes);
