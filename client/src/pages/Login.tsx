@@ -75,6 +75,13 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="mb-6 sm:mb-8 text-center">
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/logo-essence.svg" 
+              alt="Essence Logo" 
+              className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 drop-shadow-2xl"
+            />
+          </div>
           <h1 className="mb-2 bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-3xl sm:text-4xl md:text-5xl font-bold text-transparent">
             ESSENCE
           </h1>

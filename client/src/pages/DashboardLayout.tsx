@@ -41,10 +41,19 @@ export default function DashboardLayout() {
         <div className="flex h-full flex-col overflow-hidden">
           {/* Logo */}
           <div className="shrink-0 px-4 py-4 sm:py-6 border-b border-gray-700">
-            <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl sm:text-3xl font-bold text-transparent">
-              ESSENCE
-            </h1>
-            <p className="mt-1 text-xs sm:text-sm text-gray-400">Panel Admin</p>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/logo-essence.svg" 
+                alt="Essence Logo" 
+                className="h-10 w-10 sm:h-12 sm:w-12 drop-shadow-lg"
+              />
+              <div>
+                <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl sm:text-3xl font-bold text-transparent">
+                  ESSENCE
+                </h1>
+                <p className="mt-0.5 text-xs sm:text-sm text-gray-400">Panel Admin</p>
+              </div>
+            </div>
           </div>
 
           {/* Navigation - Scrollable with better mobile handling */}
