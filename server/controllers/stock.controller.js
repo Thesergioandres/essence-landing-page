@@ -299,39 +299,46 @@ export const transferStockBetweenDistributors = async (req, res) => {
       console.log("ℹ️  Producto ya estaba asignado");
     }
 
-    // Crear registro de auditoría
-    const AuditLog = (await import("../models/AuditLog.js")).default;
-    await AuditLog.create({
-      user: fromDistributorId,
-      action: "transfer_stock",
-      entity: "DistributorStock",
-      entityId: fromStock._id,
-      details: {
-        fromDistributor: fromDistributor.name,
-        toDistributor: toDistributor.name,
-        product: product.name,
-        quantity,
-        fromStockRemaining: fromStock.quantity,
-        toStockNew: toStock.quantity
-      }
-    });
+    // Crear registro de auditoría (opcional, no debe fallar la transferencia)
+    try {
+      const AuditLog = (await import("../models/AuditLog.js")).default;
+      await AuditLog.create({
+        user: fromDistributorId,
+        action: "transfer_stock",
+        entity: "DistributorStock",
+        entityId: fromStock._id,
+        details: {
+          fromDistributor: fromDistributor.name,
+          toDistributor: toDistributor.name,
+          product: product.name,
+          quantity,
+          fromStockRemaining: fromStock.quantity,
+          toStockNew: toStock.quantity
+        }
+      });
+      console.log("✅ Registro de auditoría creado");
+    } catch (auditError) {
+      console.error("⚠️  Error al crear log de auditoría (no crítico):", auditError.message);
+    }
+
+    console.log("✅ Transferencia completada exitosamente");
 
     res.json({
       success: true,
       message: `Transferencia exitosa de ${quantity} unidades de ${product.name} a ${toDistributor.name}`,
       transfer: {
         from: {
-          distributorId: fromDistributorId,
+          distributorId: fromDistributorId.toString(),
           name: fromDistributor.name,
           remainingStock: fromStock.quantity
         },
         to: {
-          distributorId: toDistributorId,
+          distributorId: toDistributorId.toString(),
           name: toDistributor.name,
           newStock: toStock.quantity
         },
         product: {
-          id: product._id,
+          id: product._id.toString(),
           name: product.name
         },
         quantity
