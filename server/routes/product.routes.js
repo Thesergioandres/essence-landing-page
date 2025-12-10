@@ -14,12 +14,14 @@ import { upload } from "../config/cloudinary.js";
 
 const router = express.Router();
 
+// Rutas protegidas específicas (DEBEN ir ANTES de las rutas con parámetros)
+router.get("/my-catalog", protect, getDistributorCatalog); // Catálogo personal del distribuidor
+
 // Rutas públicas con caché
 router.get("/", cacheMiddleware(600, 'products'), getProducts); // 10 minutos
 router.get("/:id", cacheMiddleware(600, 'product'), getProduct); // 10 minutos
 
 // Rutas protegidas
-router.get("/my-catalog", protect, getDistributorCatalog); // Catálogo personal del distribuidor
 router.get("/:id/distributor-price/:distributorId", protect, getDistributorPrice);
 
 // Rutas protegidas (solo admin) - con upload de imagen
