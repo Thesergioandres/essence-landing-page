@@ -298,7 +298,7 @@ export const getDistributorCatalog = async (req, res) => {
     console.log("Usuario autenticado:", req.user);
     
     // Obtener el ID del distribuidor autenticado
-    const distributorId = req.user.userId;
+    const distributorId = req.user.userId || req.user.id;
     console.log("Distribuidor ID:", distributorId);
 
     // Verificar que el usuario sea distribuidor
@@ -332,6 +332,12 @@ export const getDistributorCatalog = async (req, res) => {
       });
 
     console.log(`📤 Enviando ${products.length} productos al frontend`);
+    
+    // Deshabilitar caché para este endpoint
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     res.json(products);
   } catch (error) {
     console.error("❌ Error en getDistributorCatalog:", error);
