@@ -201,7 +201,13 @@ export const getStockAlerts = async (req, res) => {
 export const transferStockBetweenDistributors = async (req, res) => {
   try {
     const { toDistributorId, productId, quantity } = req.body;
-    const fromDistributorId = req.user.userId; // Usuario autenticado que transfiere
+    const fromDistributorId = req.user.userId || req.user.id; // Usuario autenticado que transfiere
+
+    console.log("🔄 Transferencia iniciada:");
+    console.log("  De:", fromDistributorId);
+    console.log("  Para:", toDistributorId);
+    console.log("  Producto:", productId);
+    console.log("  Cantidad:", quantity);
 
     // Validaciones básicas
     if (!toDistributorId || !productId || !quantity) {
