@@ -122,11 +122,12 @@ export const getDistributorStock = async (req, res) => {
 
     // Si es "me", usar el ID del usuario autenticado
     if (distributorId === "me") {
-      distributorId = req.user._id;
+      distributorId = req.user.userId || req.user.id;
     }
 
     // Verificar permisos: admin puede ver cualquiera, distribuidor solo el suyo
-    if (req.user.role !== "admin" && req.user._id.toString() !== distributorId.toString()) {
+    const currentUserId = req.user.userId || req.user.id;
+    if (req.user.role !== "admin" && currentUserId !== distributorId) {
       return res.status(403).json({ 
         message: "No tienes permiso para ver este inventario" 
       });
@@ -146,6 +147,7 @@ export const getDistributorStock = async (req, res) => {
 
     res.json(stockWithAlerts);
   } catch (error) {
+    console.error("❌ Error en getDistributorStock:", error);
     res.status(500).json({ message: error.message });
   }
 };

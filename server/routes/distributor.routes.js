@@ -11,9 +11,11 @@ import { admin, protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Todas las rutas son solo para admin
+// Rutas que distribuidores también pueden usar
+router.get("/", protect, getDistributors); // Distribuidores pueden ver la lista (para transferencias)
+
+// Rutas solo para admin
 router.post("/", protect, admin, createDistributor);
-router.get("/", protect, admin, getDistributors);
 router.get("/:id", protect, admin, getDistributorById);
 router.put("/:id", protect, admin, updateDistributor);
 router.delete("/:id", protect, admin, deleteDistributor);
