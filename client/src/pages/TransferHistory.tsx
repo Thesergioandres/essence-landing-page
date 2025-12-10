@@ -254,8 +254,21 @@ export default function TransferHistory() {
 
         {/* Tabla de Transferencias */}
         {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-500"></div>
+          <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-12">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                <div className="h-16 w-16 animate-spin rounded-full border-b-4 border-t-4 border-purple-500"></div>
+                <div className="absolute inset-0 h-16 w-16 animate-ping rounded-full border-4 border-purple-500/30"></div>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-semibold text-white mb-2">Cargando transferencias</p>
+                <div className="flex gap-1 justify-center">
+                  <div className="h-2 w-2 animate-bounce rounded-full bg-purple-500 [animation-delay:-0.3s]"></div>
+                  <div className="h-2 w-2 animate-bounce rounded-full bg-pink-500 [animation-delay:-0.15s]"></div>
+                  <div className="h-2 w-2 animate-bounce rounded-full bg-purple-500"></div>
+                </div>
+              </div>
+            </div>
           </div>
         ) : transfers.length === 0 ? (
           <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-12 text-center">

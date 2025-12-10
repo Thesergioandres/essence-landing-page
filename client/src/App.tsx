@@ -1,13 +1,10 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import LoadingProgress from "./components/LoadingProgress";
 
-// Loading component
-const PageLoader = () => (
-  <div className="flex h-screen items-center justify-center bg-gray-900">
-    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-500"></div>
-  </div>
-);
+// Loading component con barra de progreso
+const PageLoader = () => <LoadingProgress message="Cargando aplicación..." duration={1500} />;
 
 // Lazy load all pages
 const Home = lazy(() => import("./pages/Home"));
