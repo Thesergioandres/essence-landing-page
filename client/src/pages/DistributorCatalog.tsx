@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { productService } from "../api/services";
 import type { Product } from "../types";
 import ProductCard from "../components/ProductCard";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 interface ProductWithStock extends Product {
   distributorStock?: number;
@@ -58,7 +59,7 @@ export default function DistributorCatalog() {
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-500"></div>
+        <LoadingSpinner size="lg" message="Cargando catálogo..." />
       </div>
     );
   }

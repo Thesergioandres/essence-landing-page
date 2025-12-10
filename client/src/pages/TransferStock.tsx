@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { distributorService, stockService } from "../api/services";
+import LoadingSpinner from "../components/LoadingSpinner";
 import type { User, DistributorStock } from "../types";
 
 export default function TransferStock() {
@@ -131,7 +132,7 @@ export default function TransferStock() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-500"></div>
+        <LoadingSpinner size="lg" variant="dots" message="Cargando datos de transferencia..." />
       </div>
     );
   }

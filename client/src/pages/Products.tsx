@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { categoryService, productService } from "../api/services.ts";
+import LoadingSpinner from "../components/LoadingSpinner";
 import type { Category, Product } from "../types";
 
 export default function Products() {
@@ -138,7 +139,7 @@ export default function Products() {
 
       {loading ? (
         <div className="flex h-64 sm:h-96 items-center justify-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-500"></div>
+          <LoadingSpinner size="lg" message="Cargando productos..." />
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="rounded-lg sm:rounded-xl border border-gray-700 bg-gray-800/50 p-8 sm:p-12 text-center text-sm sm:text-base text-gray-400">

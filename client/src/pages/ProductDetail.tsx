@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { productService } from "../api/services";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
+import LoadingSpinner from "../components/LoadingSpinner";
 import type { Product } from "../types";
 
 export default function ProductDetail() {
@@ -46,7 +47,7 @@ export default function ProductDetail() {
       <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900/20 to-gray-900">
         <Navbar />
         <div className="flex min-h-[60vh] items-center justify-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-500"></div>
+          <LoadingSpinner size="lg" message="Cargando producto..." />
         </div>
         <Footer />
       </div>

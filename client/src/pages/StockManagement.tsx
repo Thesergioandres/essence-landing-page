@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { distributorService, productService, stockService } from '../api/services';
 import { Button } from '../components/Button';
+import LoadingSpinner from '../components/LoadingSpinner';
 import type { DistributorStock, Product, User } from '../types';
 
 type OperationType = 'assign' | 'withdraw';
@@ -311,7 +312,7 @@ const StockManagement = () => {
                 Inventario de {distributors.find(d => d._id === selectedDistributor)?.name}
               </h2>
               {loadingDistributorStock && (
-                <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-500"></div>
+                <LoadingSpinner size="sm" />
               )}
             </div>
 

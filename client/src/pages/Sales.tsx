@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { saleService, authService } from "../api/services";
+import LoadingSpinner from "../components/LoadingSpinner";
 import type { Sale } from "../types";
 import SaleDetailModal from "../components/SaleDetailModal";
 
@@ -150,7 +151,16 @@ export default function Sales() {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" variant="dots" message="Cargando ventas..." />
+        </div>
+      )}
+
       {/* Filtros y Ordenamiento */}
+      {!loading && (
+      <>
       <div className="bg-white p-4 rounded-lg shadow space-y-4">
         {/* Filtros de fecha */}
         <div>
@@ -434,6 +444,8 @@ export default function Sales() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* Modal de Detalle */}
       <SaleDetailModal 

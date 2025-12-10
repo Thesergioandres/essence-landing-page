@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { distributorService } from "../api/services";
+import LoadingSpinner from "../components/LoadingSpinner";
 import type { User } from "../types";
 
 export default function Distributors() {
@@ -130,7 +131,7 @@ export default function Distributors() {
 
       {loading ? (
         <div className="flex h-96 items-center justify-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-500"></div>
+          <LoadingSpinner size="lg" message="Cargando distribuidores..." />
         </div>
       ) : distributors.length === 0 ? (
         <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-12 text-center text-gray-400">

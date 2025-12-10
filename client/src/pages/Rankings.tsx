@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { gamificationService } from "../api/services";
+import LoadingSpinner from "../components/LoadingSpinner";
 import type { PeriodWinner, RankingResponse } from "../types";
 
 const Rankings = () => {
@@ -430,7 +431,9 @@ const Rankings = () => {
       {view === "history" && (
         <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800 shadow-md">
           {winnersLoading ? (
-            <div className="px-6 py-8 text-center text-white">Cargando historial...</div>
+            <div className="px-6 py-8 flex justify-center">
+              <LoadingSpinner size="md" variant="dots" message="Cargando historial..." />
+            </div>
           ) : winners.length === 0 ? (
             <div className="px-6 py-8 text-center text-gray-400">
               No hay ganadores registrados aún

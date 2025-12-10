@@ -5,6 +5,7 @@ import { useDebounce } from "../hooks";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import ProductCard from "../components/ProductCard";
+import LoadingSpinner from "../components/LoadingSpinner";
 import type { Category, Product } from "../types";
 
 export default function Catalog() {
@@ -269,12 +270,8 @@ export default function Catalog() {
 
         {/* Products Grid/List */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="relative">
-              <div className="h-16 w-16 rounded-full border-4 border-gray-700"></div>
-              <div className="absolute top-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-purple-500"></div>
-            </div>
-            <p className="mt-4 text-gray-400 animate-pulse">Cargando productos...</p>
+          <div className="flex justify-center items-center py-20">
+            <LoadingSpinner size="lg" variant="dots" message="Cargando productos..." />
           </div>
         ) : filteredProducts.length > 0 ? (
           <div

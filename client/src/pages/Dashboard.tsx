@@ -7,8 +7,9 @@ import {
   productService,
   saleService,
   stockService,
-} from "../api/services.ts";
-import type { Category, MonthlyProfitData, Product, User } from "../types";
+} from "../api/services";
+import LoadingSpinner from "../components/LoadingSpinner";
+import type { Category, MonthlyProfitData, Product } from "../types";
 
 export default function Dashboard() {
   interface DashboardStats {
@@ -172,7 +173,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-500"></div>
+        <LoadingSpinner size="lg" variant="pulse" message="Cargando estadísticas..." />
       </div>
     );
   }

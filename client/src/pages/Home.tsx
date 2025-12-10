@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import Hero from "../components/Hero";
 import Navbar from "../components/Navbar";
 import ProductCard from "../components/ProductCard";
+import LoadingSpinner from "../components/LoadingSpinner";
 import type { Product } from "../types";
 
 export default function Home() {
@@ -78,20 +79,8 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 xs:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="rounded-xl border border-gray-700 bg-gray-800/50 overflow-hidden">
-                  <div className="aspect-square bg-gray-700"></div>
-                  <div className="p-4 sm:p-5 space-y-3">
-                    <div className="h-3 bg-gray-700 rounded w-1/3"></div>
-                    <div className="h-4 bg-gray-700 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-700 rounded w-full"></div>
-                    <div className="h-3 bg-gray-700 rounded w-2/3"></div>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="flex justify-center items-center py-20">
+            <LoadingSpinner size="lg" message="Cargando productos destacados..." />
           </div>
         ) : featuredProducts.length > 0 ? (
           <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 xs:grid-cols-2 lg:grid-cols-3">
