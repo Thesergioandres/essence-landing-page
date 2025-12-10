@@ -59,7 +59,7 @@ export default function Footer() {
                     d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                   />
                 </svg>
-                <span className="break-all">info@essence.com</span>
+                <span className="break-all">serguito2003@gmail.com</span>
               </li>
               <li className="flex items-center justify-center sm:justify-start gap-2.5 text-sm sm:text-base text-gray-400">
                 <svg
