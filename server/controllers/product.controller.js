@@ -294,11 +294,16 @@ export const getDistributorPrice = async (req, res) => {
 
 export const getDistributorCatalog = async (req, res) => {
   try {
+    console.log("📦 getDistributorCatalog llamado");
+    console.log("Usuario autenticado:", req.user);
+    
     // Obtener el ID del distribuidor autenticado
     const distributorId = req.user.userId;
+    console.log("Distribuidor ID:", distributorId);
 
     // Verificar que el usuario sea distribuidor
     if (req.user.role !== "distribuidor") {
+      console.log("❌ Acceso denegado: rol", req.user.role);
       return res.status(403).json({ message: "Solo los distribuidores pueden acceder a su catálogo" });
     }
 
@@ -312,6 +317,8 @@ export const getDistributorCatalog = async (req, res) => {
       populate: { path: "category" }
     });
 
+    console.log(`✅ Encontrados ${distributorStocks.length} productos en stock`);
+
     // Extraer los productos y agregar la cantidad disponible del distribuidor
     // Filtrar productos nulos (por si fueron eliminados)
     const products = distributorStocks
@@ -324,9 +331,10 @@ export const getDistributorCatalog = async (req, res) => {
         };
       });
 
+    console.log(`📤 Enviando ${products.length} productos al frontend`);
     res.json(products);
   } catch (error) {
-    console.error("Error en getDistributorCatalog:", error);
+    console.error("❌ Error en getDistributorCatalog:", error);
     res.status(500).json({ message: error.message });
   }
 };
