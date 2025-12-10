@@ -283,9 +283,20 @@ export const transferStockBetweenDistributors = async (req, res) => {
     }
 
     // 3. Asignar producto al distribuidor destino si no lo tiene
-    if (!toDistributor.assignedProducts.includes(productId)) {
+    if (!toDistributor.assignedProducts) {
+      toDistributor.assignedProducts = [];
+    }
+    
+    const hasProduct = toDistributor.assignedProducts.some(
+      p => p.toString() === productId.toString()
+    );
+    
+    if (!hasProduct) {
       toDistributor.assignedProducts.push(productId);
       await toDistributor.save();
+      console.log("✅ Producto asignado al distribuidor destino");
+    } else {
+      console.log("ℹ️  Producto ya estaba asignado");
     }
 
     // Crear registro de auditoría
@@ -327,7 +338,11 @@ export const transferStockBetweenDistributors = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error en transferencia de stock:", error);
-    res.status(500).json({ message: error.message });
+    console.error("❌ Error en transferencia de stock:", error);
+    console.error("Stack trace:", error.stack);
+    res.status(500).json({ 
+      message: error.message,
+      error: process.env.NODE_ENV === "development" ? error.stack : undefined
+    });
   }
 };
