@@ -49,6 +49,8 @@ const RegisterSale = lazy(() => import("./pages/RegisterSale"));
 const DistributorSales = lazy(() => import("./pages/DistributorSales"));
 const DistributorStats = lazy(() => import("./pages/DistributorStats"));
 const DefectiveReports = lazy(() => import("./pages/DefectiveReports"));
+const DistributorCatalog = lazy(() => import("./pages/DistributorCatalog"));
+const TransferStock = lazy(() => import("./pages/TransferStock"));
 
 export default function App() {
   return (
@@ -64,6 +66,9 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/login/admin" element={<LoginAdmin />} />
       <Route path="/login/distributor" element={<LoginDistributor />} />
+
+      {/* Shared authenticated route - accessible by admin and distributor */}
+      <Route path="/catalog" element={<ProtectedRoute allowedRoles={["admin", "distribuidor"]}><Catalog /></ProtectedRoute>} />
 
       {/* Admin Routes */}
       <Route
@@ -107,6 +112,8 @@ export default function App() {
       >
         <Route path="dashboard" element={<DistributorDashboard />} />
         <Route path="products" element={<DistributorProducts />} />
+        <Route path="catalog" element={<DistributorCatalog />} />
+        <Route path="transfer-stock" element={<TransferStock />} />
         <Route path="register-sale" element={<RegisterSale />} />
         <Route path="sales" element={<DistributorSales />} />
         <Route path="stats" element={<DistributorStats />} />

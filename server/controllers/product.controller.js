@@ -291,3 +291,38 @@ export const getDistributorPrice = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getDistributorCatalog = async (req, res) => {
+  try {
+    // Obtener el ID del distribuidor autenticado
+    const distributorId = req.user.userId;
+
+    // Verificar que el usuario sea distribuidor
+    if (req.user.role !== "distribuidor") {
+      return res.status(403).json({ message: "Solo los distribuidores pueden acceder a su catálogo" });
+    }
+
+    // Buscar productos que tiene en stock el distribuidor
+    const DistributorStock = (await import("../models/DistributorStock.js")).default;
+    const distributorStocks = await DistributorStock.find({ 
+      distributor: distributorId,
+      quantity: { $gt: 0 } // Solo productos con stock disponible
+    }).populate({
+      path: "product",
+      populate: { path: "category" }
+    });
+
+    // Extraer los productos y agregar la cantidad disponible del distribuidor
+    const products = distributorStocks.map(stock => {
+      const product = stock.product.toObject();
+      return {
+        ...product,
+        distributorStock: stock.quantity
+      };
+    });
+
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

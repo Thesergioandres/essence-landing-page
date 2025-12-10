@@ -192,3 +192,134 @@ export const getStockAlerts = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Transferir stock entre distribuidores
+// @route   POST /api/stock/transfer
+// @access  Private/Distributor
+export const transferStockBetweenDistributors = async (req, res) => {
+  try {
+    const { toDistributorId, productId, quantity } = req.body;
+    const fromDistributorId = req.user.userId; // Usuario autenticado que transfiere
+
+    // Validaciones básicas
+    if (!toDistributorId || !productId || !quantity) {
+      return res.status(400).json({ 
+        message: "Faltan datos requeridos: destinatario, producto y cantidad" 
+      });
+    }
+
+    if (quantity <= 0) {
+      return res.status(400).json({ 
+        message: "La cantidad debe ser mayor a 0" 
+      });
+    }
+
+    if (fromDistributorId === toDistributorId) {
+      return res.status(400).json({ 
+        message: "No puedes transferir stock a ti mismo" 
+      });
+    }
+
+    // Verificar que ambos usuarios sean distribuidores
+    const [fromDistributor, toDistributor] = await Promise.all([
+      User.findById(fromDistributorId),
+      User.findById(toDistributorId)
+    ]);
+
+    if (!fromDistributor || fromDistributor.role !== "distribuidor") {
+      return res.status(403).json({ message: "Usuario origen no es distribuidor" });
+    }
+
+    if (!toDistributor || toDistributor.role !== "distribuidor") {
+      return res.status(400).json({ message: "Usuario destino no es distribuidor válido" });
+    }
+
+    // Verificar que el producto existe
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    // Verificar stock del distribuidor origen
+    const fromStock = await DistributorStock.findOne({
+      distributor: fromDistributorId,
+      product: productId
+    });
+
+    if (!fromStock || fromStock.quantity < quantity) {
+      return res.status(400).json({
+        message: `Stock insuficiente. Disponible: ${fromStock?.quantity || 0}, Solicitado: ${quantity}`
+      });
+    }
+
+    // Realizar la transferencia
+    // 1. Restar del distribuidor origen
+    fromStock.quantity -= quantity;
+    await fromStock.save();
+
+    // 2. Buscar o crear stock del distribuidor destino
+    let toStock = await DistributorStock.findOne({
+      distributor: toDistributorId,
+      product: productId
+    });
+
+    if (toStock) {
+      toStock.quantity += quantity;
+      await toStock.save();
+    } else {
+      toStock = await DistributorStock.create({
+        distributor: toDistributorId,
+        product: productId,
+        quantity
+      });
+    }
+
+    // 3. Asignar producto al distribuidor destino si no lo tiene
+    if (!toDistributor.assignedProducts.includes(productId)) {
+      toDistributor.assignedProducts.push(productId);
+      await toDistributor.save();
+    }
+
+    // Crear registro de auditoría
+    const AuditLog = (await import("../models/AuditLog.js")).default;
+    await AuditLog.create({
+      user: fromDistributorId,
+      action: "transfer_stock",
+      entity: "DistributorStock",
+      entityId: fromStock._id,
+      details: {
+        fromDistributor: fromDistributor.name,
+        toDistributor: toDistributor.name,
+        product: product.name,
+        quantity,
+        fromStockRemaining: fromStock.quantity,
+        toStockNew: toStock.quantity
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `Transferencia exitosa de ${quantity} unidades de ${product.name} a ${toDistributor.name}`,
+      transfer: {
+        from: {
+          distributorId: fromDistributorId,
+          name: fromDistributor.name,
+          remainingStock: fromStock.quantity
+        },
+        to: {
+          distributorId: toDistributorId,
+          name: toDistributor.name,
+          newStock: toStock.quantity
+        },
+        product: {
+          id: product._id,
+          name: product.name
+        },
+        quantity
+      }
+    });
+  } catch (error) {
+    console.error("Error en transferencia de stock:", error);
+    res.status(500).json({ message: error.message });
+  }
+};

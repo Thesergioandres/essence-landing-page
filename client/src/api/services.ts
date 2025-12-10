@@ -184,6 +184,11 @@ export const productService = {
     const response = await api.get(`/products/${productId}/distributor-price/${distributorId}`);
     return response.data;
   },
+
+  async getDistributorProducts(): Promise<{ data: Product[] }> {
+    const response = await api.get("/products/my-catalog");
+    return { data: Array.isArray(response.data) ? response.data : response.data.data || [] };
+  },
 };
 
 export const uploadService = {
@@ -351,6 +356,35 @@ export const stockService = {
 
   async getAlerts(): Promise<StockAlert> {
     const response = await api.get<StockAlert>("/stock/alerts");
+    return response.data;
+  },
+
+  async transferStock(data: {
+    toDistributorId: string;
+    productId: string;
+    quantity: number;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    transfer: {
+      from: {
+        distributorId: string;
+        name: string;
+        remainingStock: number;
+      };
+      to: {
+        distributorId: string;
+        name: string;
+        newStock: number;
+      };
+      product: {
+        id: string;
+        name: string;
+      };
+      quantity: number;
+    };
+  }> {
+    const response = await api.post("/stock/transfer", data);
     return response.data;
   },
 };
