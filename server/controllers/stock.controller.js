@@ -1,6 +1,7 @@
 import DistributorStock from "../models/DistributorStock.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
+import StockTransfer from "../models/StockTransfer.js";
 
 // @desc    Asignar stock a un distribuidor
 // @route   POST /api/stock/assign
@@ -260,17 +261,23 @@ export const transferStockBetweenDistributors = async (req, res) => {
       });
     }
 
+    // Guardar estados antes de la transferencia
+    const fromStockBefore = fromStock.quantity;
+    
+    // 2. Buscar stock del distribuidor destino
+    let toStock = await DistributorStock.findOne({
+      distributor: toDistributorId,
+      product: productId
+    });
+    
+    const toStockBefore = toStock?.quantity || 0;
+
     // Realizar la transferencia
     // 1. Restar del distribuidor origen
     fromStock.quantity -= quantity;
     await fromStock.save();
 
-    // 2. Buscar o crear stock del distribuidor destino
-    let toStock = await DistributorStock.findOne({
-      distributor: toDistributorId,
-      product: productId
-    });
-
+    // 2. Actualizar o crear stock del distribuidor destino
     if (toStock) {
       toStock.quantity += quantity;
       await toStock.save();
@@ -298,6 +305,20 @@ export const transferStockBetweenDistributors = async (req, res) => {
     } else {
       console.log("ℹ️  Producto ya estaba asignado");
     }
+
+    // 4. Registrar transferencia en el historial
+    await StockTransfer.create({
+      fromDistributor: fromDistributorId,
+      toDistributor: toDistributorId,
+      product: productId,
+      quantity,
+      fromStockBefore,
+      fromStockAfter: fromStock.quantity,
+      toStockBefore,
+      toStockAfter: toStock.quantity,
+      status: "completed",
+    });
+    console.log("✅ Transferencia registrada en historial");
 
     // Crear registro de auditoría (opcional, no debe fallar la transferencia)
     try {
@@ -351,5 +372,83 @@ export const transferStockBetweenDistributors = async (req, res) => {
       message: error.message,
       error: process.env.NODE_ENV === "development" ? error.stack : undefined
     });
+  }
+};
+
+// @desc    Obtener historial de transferencias con filtros
+// @route   GET /api/stock/transfers
+// @access  Private/Admin
+export const getTransferHistory = async (req, res) => {
+  try {
+    const {
+      fromDistributor,
+      toDistributor,
+      product,
+      startDate,
+      endDate,
+      status,
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    // Construir filtros
+    const filters = {};
+
+    if (fromDistributor) filters.fromDistributor = fromDistributor;
+    if (toDistributor) filters.toDistributor = toDistributor;
+    if (product) filters.product = product;
+    if (status) filters.status = status;
+
+    // Filtro de fechas
+    if (startDate || endDate) {
+      filters.createdAt = {};
+      if (startDate) filters.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filters.createdAt.$lte = end;
+      }
+    }
+
+    // Paginación
+    const skip = (page - 1) * limit;
+
+    // Obtener transferencias
+    const [transfers, total] = await Promise.all([
+      StockTransfer.find(filters)
+        .populate("fromDistributor", "name email")
+        .populate("toDistributor", "name email")
+        .populate("product", "name image")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      StockTransfer.countDocuments(filters),
+    ]);
+
+    // Estadísticas
+    const stats = await StockTransfer.aggregate([
+      { $match: filters },
+      {
+        $group: {
+          _id: null,
+          totalTransfers: { $sum: 1 },
+          totalQuantity: { $sum: "$quantity" },
+        },
+      },
+    ]);
+
+    res.json({
+      transfers,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / limit),
+      },
+      stats: stats[0] || { totalTransfers: 0, totalQuantity: 0 },
+    });
+  } catch (error) {
+    console.error("❌ Error al obtener historial:", error);
+    res.status(500).json({ message: error.message });
   }
 };

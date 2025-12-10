@@ -387,6 +387,32 @@ export const stockService = {
     const response = await api.post("/stock/transfer", data);
     return response.data;
   },
+
+  async getTransferHistory(params: {
+    fromDistributor?: string;
+    toDistributor?: string;
+    product?: string;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    transfers: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+    stats: {
+      totalTransfers: number;
+      totalQuantity: number;
+    };
+  }> {
+    const response = await api.get("/stock/transfers", { params });
+    return response.data;
+  },
 };
 
 // ==================== SALE SERVICE ====================

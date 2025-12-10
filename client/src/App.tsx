@@ -51,6 +51,7 @@ const DistributorStats = lazy(() => import("./pages/DistributorStats"));
 const DefectiveReports = lazy(() => import("./pages/DefectiveReports"));
 const DistributorCatalog = lazy(() => import("./pages/DistributorCatalog"));
 const TransferStock = lazy(() => import("./pages/TransferStock"));
+const TransferHistory = lazy(() => import("./pages/TransferHistory"));
 
 export default function App() {
   return (
@@ -99,6 +100,7 @@ export default function App() {
         <Route path="rankings" element={<Rankings />} />
         <Route path="defective-products" element={<DefectiveProductsManagement />} />
         <Route path="register-sale" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRegisterSale /></ProtectedRoute>} />
+        <Route path="transfer-history" element={<TransferHistory />} />
       </Route>
 
       {/* Distributor Routes */}
