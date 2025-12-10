@@ -9,7 +9,7 @@ import {
   stockService,
 } from "../api/services";
 import LoadingSpinner from "../components/LoadingSpinner";
-import type { Category, MonthlyProfitData, Product } from "../types";
+import type { Category, MonthlyProfitData, Product, User } from "../types";
 
 export default function Dashboard() {
   interface DashboardStats {
