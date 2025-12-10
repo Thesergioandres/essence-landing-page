@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { distributorService, stockService } from "../api/services";
 import type { User, DistributorStock } from "../types";
 
@@ -14,11 +14,7 @@ export default function TransferStock() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -52,7 +48,11 @@ export default function TransferStock() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const getAvailableStock = () => {
     if (!selectedProduct) return 0;

@@ -137,12 +137,14 @@ export const getDistributorStock = async (req, res) => {
     const stock = await DistributorStock.find({
       distributor: distributorId,
     })
+      .select('product distributor quantity lowStockAlert createdAt updatedAt')
       .populate("product", "name image purchasePrice distributorPrice clientPrice")
-      .populate("distributor", "name email");
+      .populate("distributor", "name email")
+      .lean();
 
     // Agregar alertas de stock bajo
     const stockWithAlerts = stock.map((item) => ({
-      ...item.toObject(),
+      ...item,
       isLowStock: item.quantity <= item.lowStockAlert,
     }));
 
@@ -159,8 +161,10 @@ export const getDistributorStock = async (req, res) => {
 export const getAllDistributorsStock = async (req, res) => {
   try {
     const stock = await DistributorStock.find()
+      .select('product distributor quantity lowStockAlert')
       .populate("product", "name image warehouseStock totalStock")
-      .populate("distributor", "name email active");
+      .populate("distributor", "name email active")
+      .lean();
 
     res.json(stock);
   } catch (error) {
@@ -416,12 +420,14 @@ export const getTransferHistory = async (req, res) => {
     // Obtener transferencias
     const [transfers, total] = await Promise.all([
       StockTransfer.find(filters)
+        .select('fromDistributor toDistributor product quantity fromStockBefore fromStockAfter toStockBefore toStockAfter status createdAt')
         .populate("fromDistributor", "name email")
         .populate("toDistributor", "name email")
         .populate("product", "name image")
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit)),
+        .limit(parseInt(limit))
+        .lean(),
       StockTransfer.countDocuments(filters),
     ]);
 

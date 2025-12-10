@@ -30,5 +30,7 @@ const distributorStockSchema = new mongoose.Schema(
 
 // Índice compuesto para evitar duplicados
 distributorStockSchema.index({ distributor: 1, product: 1 }, { unique: true });
+// Índice adicional para queries por distribuidor
+distributorStockSchema.index({ distributor: 1, quantity: 1 });
 
 export default mongoose.model("DistributorStock", distributorStockSchema);

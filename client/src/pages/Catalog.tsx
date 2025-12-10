@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { categoryService, productService } from "../api/services";
+import { useDebounce } from "../hooks";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import ProductCard from "../components/ProductCard";
@@ -15,6 +16,7 @@ export default function Catalog() {
   const [searchTerm, setSearchTerm] = useState(
     searchParams.get("search") || ""
   );
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState(
     searchParams.get("category") || "all"
   );
@@ -40,15 +42,16 @@ export default function Catalog() {
     loadData();
   }, []);
 
-  useEffect(() => {
+  const filteredProducts = useMemo(() => {
     let filtered = [...products];
 
     // Filter by search term
-    if (searchTerm) {
+    if (debouncedSearchTerm) {
+      const term = debouncedSearchTerm.toLowerCase();
       filtered = filtered.filter(
         p =>
-          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.description.toLowerCase().includes(searchTerm.toLowerCase())
+          p.name.toLowerCase().includes(term) ||
+          p.description.toLowerCase().includes(term)
       );
     }
 
@@ -73,15 +76,17 @@ export default function Catalog() {
         break;
     }
 
-    setFilteredProducts(filtered);
+    return filtered;
+  }, [products, debouncedSearchTerm, selectedCategory, sortBy]);
 
+  useEffect(() => {
     // Update URL params
     const params = new URLSearchParams();
     if (searchTerm) params.set("search", searchTerm);
     if (selectedCategory !== "all") params.set("category", selectedCategory);
     if (sortBy !== "name") params.set("sort", sortBy);
     setSearchParams(params, { replace: true });
-  }, [products, searchTerm, selectedCategory, sortBy, setSearchParams]);
+  }, [searchTerm, selectedCategory, sortBy, setSearchParams]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900">

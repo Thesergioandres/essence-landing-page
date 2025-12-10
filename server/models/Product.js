@@ -73,4 +73,10 @@ const productSchema = new mongoose.Schema(
   }
 );
 
+// Índices para optimizar consultas
+productSchema.index({ category: 1, createdAt: -1 });
+productSchema.index({ featured: 1 });
+productSchema.index({ name: 'text', description: 'text' });
+productSchema.index({ warehouseStock: 1 });
+
 export default mongoose.model("Product", productSchema);

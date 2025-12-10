@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { stockService, distributorService, productService } from "../api/services";
 import type { User, Product } from "../types";
 
@@ -35,15 +35,7 @@ export default function TransferHistory() {
   const [totalPages, setTotalPages] = useState(1);
   const [stats, setStats] = useState({ totalTransfers: 0, totalQuantity: 0 });
 
-  useEffect(() => {
-    loadFiltersData();
-  }, []);
-
-  useEffect(() => {
-    loadTransfers();
-  }, [page, fromDistributor, toDistributor, product, startDate, endDate, status]);
-
-  const loadFiltersData = async () => {
+  const loadFiltersData = useCallback(async () => {
     try {
       const [distData, prodData] = await Promise.all([
         distributorService.getAll({}),
@@ -54,9 +46,13 @@ export default function TransferHistory() {
     } catch (error) {
       console.error("Error cargando datos de filtros:", error);
     }
-  };
+  }, []);
 
-  const loadTransfers = async () => {
+  useEffect(() => {
+    loadFiltersData();
+  }, [loadFiltersData]);
+
+  const loadTransfers = useCallback(async () => {
     try {
       setLoading(true);
       const params: any = { page, limit: 20 };
@@ -76,9 +72,17 @@ export default function TransferHistory() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, fromDistributor, toDistributor, product, startDate, endDate, status]);
 
-  const clearFilters = () => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadTransfers();
+    }, 300); // Debounce de 300ms
+
+    return () => clearTimeout(timer);
+  }, [loadTransfers]);
+
+  const clearFilters = useCallback(() => {
     setFromDistributor("");
     setToDistributor("");
     setProduct("");
@@ -86,9 +90,9 @@ export default function TransferHistory() {
     setEndDate("");
     setStatus("");
     setPage(1);
-  };
+  }, []);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleString("es-CO", {
       year: "numeric",
       month: "short",
@@ -96,7 +100,7 @@ export default function TransferHistory() {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 py-8">
