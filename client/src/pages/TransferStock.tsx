@@ -23,9 +23,16 @@ export default function TransferStock() {
       setLoading(true);
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       
+      // Verificar que tengamos un ID de usuario válido
+      if (!user._id) {
+        setMessage({ type: 'error', text: 'No se encontró información del usuario. Por favor, inicia sesión nuevamente.' });
+        setLoading(false);
+        return;
+      }
+      
       const [distributorsData, stockData] = await Promise.all([
         distributorService.getAll({ active: true }),
-        stockService.getDistributorStock(user.userId)
+        stockService.getDistributorStock(user._id)
       ]);
 
       // Filtrar el distribuidor actual de la lista
@@ -34,7 +41,7 @@ export default function TransferStock() {
         : distributorsData.data || [];
       
       const filteredDistributors = allDistributors.filter(
-        (d: User) => d._id !== user.userId && d.active
+        (d: User) => d._id !== user._id && d.active
       );
       
       setDistributors(filteredDistributors);
