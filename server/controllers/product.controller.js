@@ -313,16 +313,20 @@ export const getDistributorCatalog = async (req, res) => {
     });
 
     // Extraer los productos y agregar la cantidad disponible del distribuidor
-    const products = distributorStocks.map(stock => {
-      const product = stock.product.toObject();
-      return {
-        ...product,
-        distributorStock: stock.quantity
-      };
-    });
+    // Filtrar productos nulos (por si fueron eliminados)
+    const products = distributorStocks
+      .filter(stock => stock.product) // Solo incluir si el producto existe
+      .map(stock => {
+        const product = stock.product.toObject();
+        return {
+          ...product,
+          distributorStock: stock.quantity
+        };
+      });
 
     res.json(products);
   } catch (error) {
+    console.error("Error en getDistributorCatalog:", error);
     res.status(500).json({ message: error.message });
   }
 };

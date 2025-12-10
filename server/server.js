@@ -32,7 +32,8 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
-  "https://ssence-landing-page-client.vercel.app",
+  "https://essence-landing-page-client.vercel.app",
+  "https://ssence-landing-page-client.vercel.app",  // URL con doble 's'
   "https://essence-landing-page-production.up.railway.app",
   /\.vercel\.app$/,  // Todos los subdominios de Vercel
   /\.railway\.app$/  // Todos los subdominios de Railway
