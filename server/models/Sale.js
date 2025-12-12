@@ -99,10 +99,11 @@ const saleSchema = new mongoose.Schema(
   }
 );
 
-// Generar saleId único antes de guardar
-saleSchema.pre("save", async function (next) {
-  try {
-    if (this.isNew && !this.saleId) {
+// Generar saleId único antes de guardar (DEBE SER SINCRÓNICO Y ANTES DE VALIDACIONES)
+saleSchema.pre("save", function (next) {
+  // Generar saleId si no existe
+  if (!this.saleId) {
+    try {
       // Formato simple: SALE-YYYYMMDD-HHMMSS-RANDOM
       const now = new Date();
       const year = now.getFullYear();
@@ -115,13 +116,13 @@ saleSchema.pre("save", async function (next) {
       
       this.saleId = `SALE-${year}${month}${day}-${hours}${mins}${secs}-${random}`;
       console.log(`✅ saleId generado automáticamente: ${this.saleId}`);
+    } catch (error) {
+      console.error("❌ Error generando saleId:", error?.message);
+      return next(error);
     }
-    
-    next();
-  } catch (error) {
-    console.error("❌ Error generando saleId:", error?.message);
-    next(error);
   }
+  
+  next();
 });
 
 // Calcular ganancias antes de guardar
