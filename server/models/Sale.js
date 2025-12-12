@@ -103,22 +103,23 @@ const saleSchema = new mongoose.Schema(
 saleSchema.pre("save", async function (next) {
   try {
     if (this.isNew && !this.saleId) {
-      const year = new Date().getFullYear();
-      const Sale = mongoose.model("Sale");
+      // Formato simple: SALE-YYYYMMDD-HHMMSS-RANDOM
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      const secs = String(now.getSeconds()).padStart(2, '0');
+      const random = Math.random().toString(36).substring(2, 8).toUpperCase();
       
-      // Contar ventas del año actual para generar número secuencial
-      const count = await Sale.countDocuments({
-        saleId: { $regex: `^VTA-${year}-` }
-      });
-      
-      // Generar ID con formato VTA-2025-0001
-      const sequentialNumber = String(count + 1).padStart(4, '0');
-      this.saleId = `VTA-${year}-${sequentialNumber}`;
+      this.saleId = `SALE-${year}${month}${day}-${hours}${mins}${secs}-${random}`;
+      console.log(`✅ saleId generado automáticamente: ${this.saleId}`);
     }
     
     next();
   } catch (error) {
-    console.error("Error generando saleId:", error);
+    console.error("❌ Error generando saleId:", error?.message);
     next(error);
   }
 });
