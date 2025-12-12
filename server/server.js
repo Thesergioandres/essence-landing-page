@@ -91,9 +91,14 @@ app.options('*', cors());
 
 // Middleware de logging para debugging
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  console.log('Origin:', req.headers.origin);
-  console.log('Headers:', req.headers);
+  const reqId = Date.now() + Math.random();
+  req.reqId = reqId;
+  console.log(`\n[${reqId}] ${new Date().toISOString()}`);
+  console.log(`[${reqId}] ${req.method} ${req.path}`);
+  console.log(`[${reqId}] Origin: ${req.headers.origin}`);
+  if (req.method === 'POST' || req.method === 'PUT') {
+    console.log(`[${reqId}] Body:`, JSON.stringify(req.body).substring(0, 500));
+  }
   next();
 });
 
@@ -127,12 +132,19 @@ app.use("/api/audit", auditRoutes);
 app.use("/api/gamification", gamificationRoutes);
 app.use("/api/profit-history", profitHistoryRoutes);
 
-// Manejo de errores
+// Manejo global de errores
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    message: "Error interno del servidor",
-    error: process.env.NODE_ENV === "development" ? err.message : undefined,
+  const reqId = req.reqId || 'no-id';
+  console.error(`\n[${reqId}] ❌ ERROR NO CAPTURADO`);
+  console.error(`[${reqId}] Mensaje:`, err?.message);
+  console.error(`[${reqId}] Stack:`, err?.stack);
+  console.error(`[${reqId}] Type:`, err?.name);
+  
+  res.status(err.status || 500).json({
+    message: err?.message || "Error interno del servidor",
+    requestId: reqId,
+    error: process.env.NODE_ENV === "development" ? err?.message : undefined,
+    stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
   });
 });
 
