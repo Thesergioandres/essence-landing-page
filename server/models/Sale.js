@@ -100,28 +100,28 @@ const saleSchema = new mongoose.Schema(
 );
 
 // Generar saleId único antes de guardar (DEBE SER SINCRÓNICO Y ANTES DE VALIDACIONES)
-saleSchema.pre("save", function (next) {
-  // Generar saleId si no existe
+saleSchema.pre("validate", function (next) {
+  // Generar saleId si no existe - SE EJECUTA ANTES DE VALIDACIONES
   if (!this.saleId) {
     try {
-      // Formato simple: SALE-YYYYMMDD-HHMMSS-RANDOM
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
       const hours = String(now.getHours()).padStart(2, '0');
-      const mins = String(now.getMinutes()).padStart(2, '0');
-      const secs = String(now.getSeconds()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
       const random = Math.random().toString(36).substring(2, 8).toUpperCase();
       
-      this.saleId = `SALE-${year}${month}${day}-${hours}${mins}${secs}-${random}`;
-      console.log(`✅ saleId generado automáticamente: ${this.saleId}`);
+      this.saleId = `SALE-${year}${month}${day}-${hours}${minutes}${seconds}-${random}`;
+      console.log(`✅ saleId generado automáticamente en pre-validate: ${this.saleId}`);
     } catch (error) {
       console.error("❌ Error generando saleId:", error?.message);
-      return next(error);
+      // Pasa el error, pero no lo devuelvas directamente si quieres continuar
+      // Puedes asignar un valor por defecto
+      this.saleId = `FALLBACK-${Date.now()}`;
     }
   }
-  
   next();
 });
 
