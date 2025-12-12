@@ -1,3 +1,10 @@
+import DistributorStock from "../models/DistributorStock.js";
+import GamificationConfig from "../models/GamificationConfig.js";
+import Product from "../models/Product.js";
+import Sale from "../models/Sale.js";
+import { invalidateCache } from "../middleware/cache.middleware.js";
+import { recordSaleProfit } from "../services/profitHistory.service.js";
+
 // @desc    Eliminar una venta (admin)
 // @route   DELETE /api/sales/:id
 // @access  Private/Admin
@@ -168,12 +175,6 @@ export const registerAdminSale = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-import DistributorStock from "../models/DistributorStock.js";
-import GamificationConfig from "../models/GamificationConfig.js";
-import Product from "../models/Product.js";
-import Sale from "../models/Sale.js";
-import { invalidateCache } from "../middleware/cache.middleware.js";
-import { recordSaleProfit } from "../services/profitHistory.service.js";
 
 // Función auxiliar para obtener bonus de comisión por ranking
 const getCommissionBonus = async (distributorId) => {
