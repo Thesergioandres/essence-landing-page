@@ -108,7 +108,12 @@ export const fixAdminSales = async (req, res) => {
 // @route   POST /api/sales/admin
 // @access  Private/Admin
 export const registerAdminSale = async (req, res) => {
+  const reqId = Date.now() + Math.random();
   try {
+    console.log(`[${reqId}] 📝 registerAdminSale START`);
+    console.log(`[${reqId}] User:`, req.user);
+    console.log(`[${reqId}] Body:`, req.body);
+
     const {
       productId,
       quantity,
@@ -119,18 +124,28 @@ export const registerAdminSale = async (req, res) => {
       paymentProofMimeType,
     } = req.body;
 
+    if (!productId || !quantity || !salePrice) {
+      console.warn(`[${reqId}] ❌ Campos faltantes - productId: ${productId}, quantity: ${quantity}, salePrice: ${salePrice}`);
+      return res.status(400).json({ message: "Campos obligatorios: productId, quantity, salePrice" });
+    }
+
     // Validar producto
+    console.log(`[${reqId}] 🔍 Buscando producto:`, productId);
     const product = await Product.findById(productId);
     if (!product) {
+      console.warn(`[${reqId}] ❌ Producto no encontrado:`, productId);
       return res.status(404).json({ message: "Producto no encontrado" });
     }
+    console.log(`[${reqId}] ✅ Producto encontrado:`, product.name);
 
     // Validar stock general
     if (product.totalStock < quantity) {
+      console.warn(`[${reqId}] ❌ Stock insuficiente. Disponible: ${product.totalStock}, solicitado: ${quantity}`);
       return res.status(400).json({ message: `Stock insuficiente. Disponible: ${product.totalStock}` });
     }
 
     // Crear la venta (sin distribuidor)
+    console.log(`[${reqId}] 💾 Creando venta...`);
     const saleData = {
       distributor: null,
       product: productId,
@@ -139,40 +154,55 @@ export const registerAdminSale = async (req, res) => {
       distributorPrice: product.distributorPrice,
       salePrice,
       notes,
-      saleDate,
+      saleDate: saleDate || new Date(),
       paymentProof,
       paymentProofMimeType: paymentProof ? (paymentProofMimeType || "image/jpeg") : undefined,
       paymentStatus: "confirmado", // Las ventas admin están confirmadas automáticamente
       paymentConfirmedAt: new Date(),
-      paymentConfirmedBy: req.user.id,
+      paymentConfirmedBy: req.user?.id || req.user?.userId,
       commissionBonus: 0, // Admin no tiene bonus
       distributorProfitPercentage: 0, // Admin no tiene porcentaje de ganancia
     };
+    console.log(`[${reqId}] Sale data:`, saleData);
 
     const sale = await Sale.create(saleData);
+    console.log(`[${reqId}] ✅ Venta creada:`, sale._id);
 
     // Descontar del stock total del producto
+    console.log(`[${reqId}] 📦 Actualizando stock...`);
     product.totalStock -= quantity;
     await product.save();
+    console.log(`[${reqId}] ✅ Stock actualizado. Nuevo stock:`, product.totalStock);
 
+    console.log(`[${reqId}] 🔄 Obteniendo venta con populate...`);
     const populatedSale = await Sale.findById(sale._id)
       .populate("product", "name image");
+    console.log(`[${reqId}] ✅ Venta obtenida`);
 
     // Registrar en historial de ganancias (no bloquear si falla)
     try {
+      console.log(`[${reqId}] 📊 Registrando ganancia...`);
       await recordSaleProfit(sale._id);
+      console.log(`[${reqId}] ✅ Ganancia registrada`);
     } catch (historyError) {
-      console.error("Error registrando historial de ganancias:", historyError);
+      console.error(`[${reqId}] ⚠️ Error registrando historial de ganancias:`, historyError?.message);
       // Continuar sin bloquear la venta
     }
 
+    console.log(`[${reqId}] ✅ registerAdminSale SUCCESS`);
     res.status(201).json({
       message: "Venta registrada exitosamente (admin)",
       sale: populatedSale,
       remainingStock: product.totalStock,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(`[${reqId}] ❌ FATAL ERROR:`, error?.message);
+    console.error(`[${reqId}] Stack:`, error?.stack);
+    res.status(500).json({ 
+      message: error?.message || "Error interno al registrar venta",
+      requestId: reqId,
+      stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+    });
   }
 };
 
