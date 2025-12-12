@@ -95,9 +95,14 @@ app.use((req, res, next) => {
   req.reqId = reqId;
   console.log(`\n[${reqId}] ${new Date().toISOString()}`);
   console.log(`[${reqId}] ${req.method} ${req.path}`);
-  console.log(`[${reqId}] Origin: ${req.headers.origin}`);
+  console.log(`[${reqId}] Origin: ${req.headers.origin || 'sin origin'}`);
   if (req.method === 'POST' || req.method === 'PUT') {
-    console.log(`[${reqId}] Body:`, JSON.stringify(req.body).substring(0, 500));
+    try {
+      const bodyStr = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      console.log(`[${reqId}] Body:`, bodyStr.substring(0, 500));
+    } catch (e) {
+      console.log(`[${reqId}] Body: [no serializable]`);
+    }
   }
   next();
 });
