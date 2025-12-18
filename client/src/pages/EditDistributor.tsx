@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { distributorService } from '../api/services';
-import { Button } from '../components/Button';
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { distributorService } from "../api/services";
+import { Button } from "../components/Button";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 interface FormState {
   name: string;
@@ -14,15 +15,15 @@ const EditDistributor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [formData, setFormData] = useState<FormState>({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
   });
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     const loadDistributor = async () => {
@@ -34,13 +35,12 @@ const EditDistributor = () => {
         setFormData({
           name: distributor.name,
           email: distributor.email,
-          phone: distributor.phone || '',
-          address: distributor.address || '',
+          phone: distributor.phone || "",
+          address: distributor.address || "",
         });
-        setError('');
-       
+        setError("");
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Error al cargar distribuidor');
+        setError(err.response?.data?.message || "Error al cargar distribuidor");
       } finally {
         setLoadingData(false);
       }
@@ -49,9 +49,11 @@ const EditDistributor = () => {
     void loadDistributor();
   }, [id]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
@@ -59,16 +61,16 @@ const EditDistributor = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     // Validación básica
     if (!formData.name.trim()) {
-      setError('El nombre es requerido');
+      setError("El nombre es requerido");
       return;
     }
     if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) {
-      setError('Email inválido');
+      setError("Email inválido");
       return;
     }
 
@@ -76,13 +78,14 @@ const EditDistributor = () => {
       setLoading(true);
       if (!id) return;
       await distributorService.update(id, formData);
-      setSuccess('Distribuidor actualizado correctamente');
+      setSuccess("Distribuidor actualizado correctamente");
       setTimeout(() => {
         navigate(`/admin/distributors/${id}`);
       }, 1500);
-     
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al actualizar distribuidor');
+      setError(
+        err.response?.data?.message || "Error al actualizar distribuidor"
+      );
     } finally {
       setLoading(false);
     }
@@ -90,38 +93,48 @@ const EditDistributor = () => {
 
   if (loadingData) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-xl">Cargando...</div>
+      <div className="flex h-96 items-center justify-center">
+        <LoadingSpinner size="lg" message="Cargando distribuidor..." />
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="mx-auto max-w-2xl p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Editar Distribuidor</h1>
-        <p className="text-gray-600 mt-2">Actualiza la información del distribuidor</p>
+        <h1 className="text-4xl font-bold text-white">Editar Distribuidor</h1>
+        <p className="mt-2 text-gray-400">
+          Actualiza la información del distribuidor
+        </p>
       </div>
 
       {error && (
-        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div className="mb-4 rounded-lg border border-red-500 bg-red-500/10 p-4 text-sm text-red-400">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+        <div className="mb-4 rounded-lg border border-green-500 bg-green-500/10 p-4 text-sm text-green-300">
           {success}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 rounded-xl border border-gray-700 bg-gray-800/50 p-6"
+      >
         {/* Información Personal */}
         <div>
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Información Personal</h2>
+          <h2 className="mb-4 text-xl font-semibold text-white">
+            Información Personal
+          </h2>
           <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="name"
+                className="mb-2 block text-sm font-medium text-gray-300"
+              >
                 Nombre Completo *
               </label>
               <input
@@ -130,13 +143,16 @@ const EditDistributor = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-gray-100 placeholder:text-gray-500 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="email"
+                className="mb-2 block text-sm font-medium text-gray-300"
+              >
                 Email *
               </label>
               <input
@@ -145,13 +161,16 @@ const EditDistributor = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-gray-100 placeholder:text-gray-500 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="phone"
+                className="mb-2 block text-sm font-medium text-gray-300"
+              >
                 Teléfono
               </label>
               <input
@@ -160,12 +179,15 @@ const EditDistributor = () => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-gray-100 placeholder:text-gray-500 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
               />
             </div>
 
             <div>
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="address"
+                className="mb-2 block text-sm font-medium text-gray-300"
+              >
                 Dirección
               </label>
               <textarea
@@ -174,16 +196,18 @@ const EditDistributor = () => {
                 value={formData.address}
                 onChange={handleChange}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-gray-100 placeholder:text-gray-500 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
               />
             </div>
           </div>
         </div>
 
         {/* Nota sobre contraseña */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-800">
-            <strong>Nota:</strong> Para cambiar la contraseña del distribuidor, contacta al administrador del sistema.
+        <div className="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
+          <p className="text-sm text-gray-300">
+            <span className="font-semibold text-white">Nota:</span> Para cambiar
+            la contraseña del distribuidor, contacta al administrador del
+            sistema.
           </p>
         </div>
 
@@ -192,14 +216,15 @@ const EditDistributor = () => {
           <Button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400"
+            className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600"
           >
-            {loading ? 'Actualizando...' : 'Actualizar Distribuidor'}
+            {loading ? "Actualizando..." : "Actualizar Distribuidor"}
           </Button>
           <Button
             type="button"
             onClick={() => navigate(`/admin/distributors/${id}`)}
-            className="px-6 bg-gray-500 hover:bg-gray-600"
+            variant="outline"
+            className="border-gray-700 bg-transparent px-6 text-gray-200 hover:bg-gray-800"
           >
             Cancelar
           </Button>
