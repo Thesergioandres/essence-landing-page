@@ -1,46 +1,60 @@
 import Sale from "../models/Sale.js";
 import GamificationConfig from "../models/GamificationConfig.js";
 
-/**
- * Calcula el porcentaje de ganancia del distribuidor según su posición en el ranking
- * @param {String} distributorId - ID del distribuidor
- * @returns {Promise<Number>} - Porcentaje de ganancia (20, 21, 23, o 25)
- */
-export const getDistributorProfitPercentage = async (distributorId) => {
+const BASE_PROFIT_PERCENTAGE = 20;
+
+const getPeriodRange = (config) => {
+  const now = new Date();
+  let startDate;
+  let endDate;
+
+  if (config?.evaluationPeriod === "biweekly") {
+    startDate = config.currentPeriodStart || now;
+    endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 15);
+  } else if (config?.evaluationPeriod === "weekly") {
+    const dayOfWeek = now.getDay();
+    startDate = new Date(now);
+    startDate.setDate(now.getDate() - dayOfWeek);
+    startDate.setHours(0, 0, 0, 0);
+    endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+    endDate.setHours(23, 59, 59, 999);
+  } else if (config?.evaluationPeriod === "monthly") {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  } else {
+    // Por defecto, mes actual
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  }
+
+  return { startDate, endDate };
+};
+
+export const getDistributorCommissionInfo = async (distributorId) => {
   try {
     const config = await GamificationConfig.findOne();
-    
+
     if (!config) {
-      return 20; // Porcentaje base si no hay configuración
+      return {
+        position: null,
+        bonusCommission: 0,
+        profitPercentage: BASE_PROFIT_PERCENTAGE,
+        periodStart: null,
+        periodEnd: null,
+        totalDistributors: 0,
+      };
     }
 
-    // Obtener período actual
-    const now = new Date();
-    let startDate, endDate;
+    const { startDate, endDate } = getPeriodRange(config);
 
-    if (config.evaluationPeriod === "biweekly") {
-      startDate = config.currentPeriodStart || now;
-      endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 15);
-    } else if (config.evaluationPeriod === "monthly") {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-    } else if (config.evaluationPeriod === "weekly") {
-      const dayOfWeek = now.getDay();
-      startDate = new Date(now);
-      startDate.setDate(now.getDate() - dayOfWeek);
-      startDate.setHours(0, 0, 0, 0);
-      endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
-      endDate.setHours(23, 59, 59);
-    } else {
-      // Por defecto, mes actual
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-    }
+    const minAdminProfitForRanking =
+      typeof config.minAdminProfitForRanking === "number"
+        ? config.minAdminProfitForRanking
+        : 0;
 
-    // Calcular ranking actual
-    const rankings = await Sale.aggregate([
+    const pipeline = [
       {
         $match: {
           distributor: { $exists: true, $ne: null },
@@ -52,25 +66,63 @@ export const getDistributorProfitPercentage = async (distributorId) => {
         $group: {
           _id: "$distributor",
           totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+          totalAdminProfit: { $sum: "$adminProfit" },
         },
       },
-      { $sort: { totalRevenue: -1 } },
-    ]);
+    ];
 
-    // Encontrar posición del distribuidor
-    const position = rankings.findIndex(
-      (r) => r._id.toString() === distributorId.toString()
-    ) + 1;
+    if (minAdminProfitForRanking > 0) {
+      pipeline.push({
+        $match: { totalAdminProfit: { $gte: minAdminProfitForRanking } },
+      });
+    }
 
-    // Asignar porcentaje según posición
-    if (position === 1) return 25; // 🥇 +5% sobre base de 20%
-    if (position === 2) return 23; // 🥈 +3% sobre base de 20%
-    if (position === 3) return 21; // 🥉 +1% sobre base de 20%
-    
-    return 20; // Resto mantiene el 20% base
+    pipeline.push({ $sort: { totalRevenue: -1 } });
+
+    const rankings = await Sale.aggregate(pipeline);
+
+    const position =
+      rankings.findIndex((r) => r._id.toString() === distributorId.toString()) +
+      1;
+
+    let bonusCommission = 0;
+    if (position === 1) bonusCommission = config.top1CommissionBonus || 0;
+    else if (position === 2) bonusCommission = config.top2CommissionBonus || 0;
+    else if (position === 3) bonusCommission = config.top3CommissionBonus || 0;
+
+    return {
+      position: position || null,
+      bonusCommission,
+      profitPercentage: BASE_PROFIT_PERCENTAGE + bonusCommission,
+      periodStart: startDate,
+      periodEnd: endDate,
+      totalDistributors: rankings.length,
+    };
+  } catch (error) {
+    console.error("Error calculando comisión distribuidor:", error);
+    return {
+      position: null,
+      bonusCommission: 0,
+      profitPercentage: BASE_PROFIT_PERCENTAGE,
+      periodStart: null,
+      periodEnd: null,
+      totalDistributors: 0,
+    };
+  }
+};
+
+/**
+ * Calcula el porcentaje de ganancia del distribuidor según su posición en el ranking
+ * @param {String} distributorId - ID del distribuidor
+ * @returns {Promise<Number>} - Porcentaje de ganancia (20, 21, 23, o 25)
+ */
+export const getDistributorProfitPercentage = async (distributorId) => {
+  try {
+    const info = await getDistributorCommissionInfo(distributorId);
+    return info.profitPercentage;
   } catch (error) {
     console.error("Error calculando porcentaje distribuidor:", error);
-    return 20; // En caso de error, retornar base
+    return BASE_PROFIT_PERCENTAGE; // En caso de error, retornar base
   }
 };
 

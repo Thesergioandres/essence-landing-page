@@ -1,9 +1,9 @@
+import { invalidateCache } from "../middleware/cache.middleware.js";
 import DistributorStock from "../models/DistributorStock.js";
-import GamificationConfig from "../models/GamificationConfig.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
-import { invalidateCache } from "../middleware/cache.middleware.js";
 import { recordSaleProfit } from "../services/profitHistory.service.js";
+import { getDistributorCommissionInfo } from "../utils/distributorPricing.js";
 
 // @desc    Eliminar una venta (admin)
 // @route   DELETE /api/sales/:id
@@ -32,8 +32,8 @@ export const deleteSale = async (req, res) => {
     }
 
     // Invalidar caché (si está activo)
-    await invalidateCache('cache:analytics:*');
-    await invalidateCache('cache:gamification:*');
+    await invalidateCache("cache:analytics:*");
+    await invalidateCache("cache:gamification:*");
 
     // Eliminar la venta
     await sale.deleteOne();
@@ -52,18 +52,25 @@ export const fixAdminSales = async (req, res) => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-    
+    const endOfLastMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      0,
+      23,
+      59,
+      59
+    );
+
     // Obtener todas las ventas admin
     const adminSales = await Sale.find({ distributor: null });
-    
+
     let updated = 0;
     let datesUpdated = 0;
-    
+
     // Actualizar cada venta para recalcular ganancias
     for (const sale of adminSales) {
       let needsUpdate = false;
-      
+
       // Actualizar estado de pago si está pendiente
       if (sale.paymentStatus === "pendiente") {
         sale.paymentStatus = "confirmado";
@@ -71,35 +78,46 @@ export const fixAdminSales = async (req, res) => {
         sale.paymentConfirmedBy = req.user.id;
         needsUpdate = true;
       }
-      
+
       // Solo actualizar fechas si la venta es del mes anterior inmediato
       // NO tocar ventas de meses más antiguos (histórico)
       const saleDate = new Date(sale.saleDate);
       if (saleDate >= startOfLastMonth && saleDate <= endOfLastMonth) {
         // La venta es del mes anterior, moverla al mes actual
         const saleDay = saleDate.getDate();
-        const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysInCurrentMonth = new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0
+        ).getDate();
         const dayToUse = Math.min(saleDay, daysInCurrentMonth);
-        
+
         sale.saleDate = new Date(now.getFullYear(), now.getMonth(), dayToUse);
         needsUpdate = true;
         datesUpdated++;
       }
-      
+
       // Recalcular ganancias (el pre-save hook lo hará automáticamente)
-      if (needsUpdate || sale.distributorProfit !== 0 || sale.totalProfit !== sale.adminProfit) {
+      if (
+        needsUpdate ||
+        sale.distributorProfit !== 0 ||
+        sale.totalProfit !== sale.adminProfit
+      ) {
         await sale.save(); // Esto ejecuta el pre-save hook que recalcula ganancias
         updated++;
       }
     }
 
     // Obtener resumen actualizado
-    const confirmedSales = await Sale.find({ 
-      distributor: null, 
+    const confirmedSales = await Sale.find({
+      distributor: null,
       paymentStatus: "confirmado",
-      saleDate: { $gte: startOfMonth }
+      saleDate: { $gte: startOfMonth },
     });
-    const pendingSales = await Sale.find({ distributor: null, paymentStatus: "pendiente" });
+    const pendingSales = await Sale.find({
+      distributor: null,
+      paymentStatus: "pendiente",
+    });
 
     res.json({
       message: `✅ ${updated} ventas admin actualizadas`,
@@ -108,9 +126,10 @@ export const fixAdminSales = async (req, res) => {
       pending: pendingSales.length,
       updated: updated,
       datesUpdated: datesUpdated,
-      note: datesUpdated > 0 
-        ? `Ganancias recalculadas y ${datesUpdated} ventas del mes anterior movidas al mes actual` 
-        : "Ganancias recalculadas correctamente"
+      note:
+        datesUpdated > 0
+          ? `Ganancias recalculadas y ${datesUpdated} ventas del mes anterior movidas al mes actual`
+          : "Ganancias recalculadas correctamente",
     });
   } catch (error) {
     console.error("Error en fixAdminSales:", error);
@@ -138,8 +157,14 @@ export const registerAdminSale = async (req, res) => {
     } = req.body;
 
     if (!productId || !quantity || !salePrice) {
-      console.warn(`[${reqId}] ❌ Campos faltantes - productId: ${productId}, quantity: ${quantity}, salePrice: ${salePrice}`);
-      return res.status(400).json({ message: "Campos obligatorios: productId, quantity, salePrice" });
+      console.warn(
+        `[${reqId}] ❌ Campos faltantes - productId: ${productId}, quantity: ${quantity}, salePrice: ${salePrice}`
+      );
+      return res
+        .status(400)
+        .json({
+          message: "Campos obligatorios: productId, quantity, salePrice",
+        });
     }
 
     // Validar producto
@@ -153,8 +178,14 @@ export const registerAdminSale = async (req, res) => {
 
     // Validar stock general
     if (product.totalStock < quantity) {
-      console.warn(`[${reqId}] ❌ Stock insuficiente. Disponible: ${product.totalStock}, solicitado: ${quantity}`);
-      return res.status(400).json({ message: `Stock insuficiente. Disponible: ${product.totalStock}` });
+      console.warn(
+        `[${reqId}] ❌ Stock insuficiente. Disponible: ${product.totalStock}, solicitado: ${quantity}`
+      );
+      return res
+        .status(400)
+        .json({
+          message: `Stock insuficiente. Disponible: ${product.totalStock}`,
+        });
     }
 
     // Crear la venta (sin distribuidor)
@@ -169,7 +200,9 @@ export const registerAdminSale = async (req, res) => {
       notes,
       saleDate: saleDate || new Date(),
       paymentProof,
-      paymentProofMimeType: paymentProof ? (paymentProofMimeType || "image/jpeg") : undefined,
+      paymentProofMimeType: paymentProof
+        ? paymentProofMimeType || "image/jpeg"
+        : undefined,
       paymentStatus: "confirmado", // Las ventas admin están confirmadas automáticamente
       paymentConfirmedAt: new Date(),
       paymentConfirmedBy: req.user?.id || req.user?.userId,
@@ -185,11 +218,16 @@ export const registerAdminSale = async (req, res) => {
     console.log(`[${reqId}] 📦 Actualizando stock...`);
     product.totalStock -= quantity;
     await product.save();
-    console.log(`[${reqId}] ✅ Stock actualizado. Nuevo stock:`, product.totalStock);
+    console.log(
+      `[${reqId}] ✅ Stock actualizado. Nuevo stock:`,
+      product.totalStock
+    );
 
     console.log(`[${reqId}] 🔄 Obteniendo venta con populate...`);
-    const populatedSale = await Sale.findById(sale._id)
-      .populate("product", "name image");
+    const populatedSale = await Sale.findById(sale._id).populate(
+      "product",
+      "name image"
+    );
     console.log(`[${reqId}] ✅ Venta obtenida`);
 
     // Registrar en historial de ganancias (no bloquear si falla)
@@ -198,7 +236,10 @@ export const registerAdminSale = async (req, res) => {
       await recordSaleProfit(sale._id);
       console.log(`[${reqId}] ✅ Ganancia registrada`);
     } catch (historyError) {
-      console.error(`[${reqId}] ⚠️ Error registrando historial de ganancias:`, historyError?.message);
+      console.error(
+        `[${reqId}] ⚠️ Error registrando historial de ganancias:`,
+        historyError?.message
+      );
       // Continuar sin bloquear la venta
     }
 
@@ -211,76 +252,11 @@ export const registerAdminSale = async (req, res) => {
   } catch (error) {
     console.error(`[${reqId}] ❌ FATAL ERROR:`, error?.message);
     console.error(`[${reqId}] Stack:`, error?.stack);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error?.message || "Error interno al registrar venta",
       requestId: reqId,
-      stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      stack: process.env.NODE_ENV === "development" ? error?.stack : undefined,
     });
-  }
-};
-
-// Función auxiliar para obtener bonus de comisión por ranking
-const getCommissionBonus = async (distributorId) => {
-  try {
-    const config = await GamificationConfig.findOne();
-    if (!config) return 0;
-
-    const now = new Date();
-    let startDate = config.currentPeriodStart || now;
-    let endDate = new Date(startDate);
-
-    // Calcular periodo según configuración (ahora default es weekly)
-    if (config.evaluationPeriod === "biweekly") {
-      endDate.setDate(endDate.getDate() + 15);
-    } else if (config.evaluationPeriod === "monthly") {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    } else if (config.evaluationPeriod === "weekly") {
-      const dayOfWeek = now.getDay();
-      startDate = new Date(now);
-      startDate.setDate(now.getDate() - dayOfWeek);
-      endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
-    }
-
-    // Calcular rankings con ganancia total del admin por distribuidor
-    const rankings = await Sale.aggregate([
-      {
-        $match: {
-          saleDate: { $gte: startDate, $lte: endDate },
-          paymentStatus: "confirmado",
-          distributor: { $ne: null }, // Solo ventas de distribuidores
-        },
-      },
-      {
-        $group: {
-          _id: "$distributor",
-          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
-          totalAdminProfit: { $sum: "$adminProfit" }, // Ganancia generada al admin
-        },
-      },
-      {
-        $match: {
-          totalAdminProfit: { $gte: config.minAdminProfitForRanking || 100000 }, // Filtrar por requisito mínimo
-        },
-      },
-      { $sort: { totalRevenue: -1 } },
-    ]);
-
-    const position =
-      rankings.findIndex((r) => r._id.toString() === distributorId.toString()) +
-      1;
-
-    // Si no cumple el requisito mínimo o no está en top 3, retorna 0
-    if (position === 0) return 0; // No está en el ranking (no cumplió requisito)
-    if (position === 1) return config.top1CommissionBonus || 0;
-    if (position === 2) return config.top2CommissionBonus || 0;
-    if (position === 3) return config.top3CommissionBonus || 0;
-
-    return 0;
-  } catch (error) {
-    console.error("Error calculando bonus de comisión:", error);
-    return 0;
   }
 };
 
@@ -325,27 +301,27 @@ export const registerSale = async (req, res) => {
 
     // Validar que el producto tenga los campos necesarios
     if (!product.purchasePrice || !product.distributorPrice) {
-      return res.status(400).json({ 
-        message: "El producto no tiene configurados todos los precios necesarios",
+      return res.status(400).json({
+        message:
+          "El producto no tiene configurados todos los precios necesarios",
         details: {
           purchasePrice: product.purchasePrice || "No configurado",
-          distributorPrice: product.distributorPrice || "No configurado"
-        }
+          distributorPrice: product.distributorPrice || "No configurado",
+        },
       });
     }
 
-    // Obtener el bonus de comisión del distribuidor según su ranking
-    const commissionBonus = await getCommissionBonus(distributorId);
-    
-    // Calcular el porcentaje total de ganancia del distribuidor (20% base + bonus)
-    const distributorProfitPercentage = 20 + commissionBonus;
+    // Obtener el bonus/porcentaje del distribuidor según el ranking (misma lógica que usa el frontend)
+    const commissionInfo = await getDistributorCommissionInfo(distributorId);
+    const commissionBonus = commissionInfo.bonusCommission;
+    const distributorProfitPercentage = commissionInfo.profitPercentage;
 
     // Generar saleId manualmente por seguridad
     const year = new Date().getFullYear();
     const saleCount = await Sale.countDocuments({
-      saleId: { $regex: `^VTA-${year}-` }
+      saleId: { $regex: `^VTA-${year}-` },
     });
-    const sequentialNumber = String(saleCount + 1).padStart(4, '0');
+    const sequentialNumber = String(saleCount + 1).padStart(4, "0");
     const saleId = `VTA-${year}-${sequentialNumber}`;
 
     // Crear la venta
@@ -383,8 +359,8 @@ export const registerSale = async (req, res) => {
       .populate("distributor", "name email");
 
     // Invalidar caché de analytics y gamificación
-    await invalidateCache('cache:analytics:*');
-    await invalidateCache('cache:gamification:*');
+    await invalidateCache("cache:analytics:*");
+    await invalidateCache("cache:gamification:*");
 
     // Registrar en historial de ganancias (no bloquear si falla)
     try {
@@ -472,7 +448,16 @@ export const getDistributorSales = async (req, res) => {
 // @access  Private/Admin
 export const getAllSales = async (req, res) => {
   try {
-    const { startDate, endDate, distributorId, productId, paymentStatus, sortBy, page = 1, limit = 50 } = req.query;
+    const {
+      startDate,
+      endDate,
+      distributorId,
+      productId,
+      paymentStatus,
+      sortBy,
+      page = 1,
+      limit = 50,
+    } = req.query;
 
     const filter = {};
 
@@ -492,10 +477,10 @@ export const getAllSales = async (req, res) => {
 
     // Determinar ordenamiento
     let sortOption = { saleDate: -1 }; // default: más reciente primero
-    if (sortBy === 'date-asc') {
+    if (sortBy === "date-asc") {
       sortOption = { saleDate: 1 };
-    } else if (sortBy === 'distributor') {
-      sortOption = { 'distributor.name': 1 };
+    } else if (sortBy === "distributor") {
+      sortOption = { "distributor.name": 1 };
     }
 
     const pageNum = parseInt(page);
@@ -510,7 +495,7 @@ export const getAllSales = async (req, res) => {
         .skip(skip)
         .limit(limitNum)
         .lean(),
-      Sale.countDocuments(filter)
+      Sale.countDocuments(filter),
     ]);
 
     // Calcular estadísticas
@@ -525,14 +510,16 @@ export const getAllSales = async (req, res) => {
           totalAdminProfit: { $sum: "$adminProfit" },
           totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
           confirmedSales: {
-            $sum: { $cond: [{ $eq: ["$paymentStatus", "confirmado"] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$paymentStatus", "confirmado"] }, 1, 0] },
           },
           pendingSales: {
-            $sum: { $cond: [{ $eq: ["$paymentStatus", "pendiente"] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$paymentStatus", "pendiente"] }, 1, 0] },
           },
-          totalProfit: { $sum: { $add: ["$distributorProfit", "$adminProfit"] } }
-        }
-      }
+          totalProfit: {
+            $sum: { $add: ["$distributorProfit", "$adminProfit"] },
+          },
+        },
+      },
     ]);
 
     const stats = statsAgg[0] || {
@@ -543,7 +530,7 @@ export const getAllSales = async (req, res) => {
       totalRevenue: 0,
       confirmedSales: 0,
       pendingSales: 0,
-      totalProfit: 0
+      totalProfit: 0,
     };
 
     res.json({
@@ -554,8 +541,8 @@ export const getAllSales = async (req, res) => {
         limit: limitNum,
         total,
         pages: Math.ceil(total / limitNum),
-        hasMore: pageNum < Math.ceil(total / limitNum)
-      }
+        hasMore: pageNum < Math.ceil(total / limitNum),
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -2,6 +2,7 @@ import DistributorStats from "../models/DistributorStats.js";
 import GamificationConfig from "../models/GamificationConfig.js";
 import PeriodWinner from "../models/PeriodWinner.js";
 import Sale from "../models/Sale.js";
+import { getDistributorCommissionInfo } from "../utils/distributorPricing.js";
 
 // @desc    Obtener comisión ajustada por ranking para un distribuidor
 // @route   GET /api/gamification/commission/:distributorId
@@ -9,73 +10,14 @@ import Sale from "../models/Sale.js";
 export const getAdjustedCommission = async (req, res) => {
   try {
     const { distributorId } = req.params;
-    const config = await GamificationConfig.findOne();
-
-    if (!config) {
-      return res.json({
-        baseCommission: 0,
-        bonusCommission: 0,
-        totalCommission: 0,
-        position: null,
-      });
-    }
-
-    // Obtener período actual
-    const now = new Date();
-    let startDate, endDate;
-
-    if (config.evaluationPeriod === "biweekly") {
-      startDate = config.currentPeriodStart || new Date();
-      endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 15);
-    } else if (config.evaluationPeriod === "monthly") {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-    } else if (config.evaluationPeriod === "weekly") {
-      const dayOfWeek = now.getDay();
-      startDate = new Date(now);
-      startDate.setDate(now.getDate() - dayOfWeek);
-      startDate.setHours(0, 0, 0, 0);
-      endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
-      endDate.setHours(23, 59, 59);
-    }
-
-    // Obtener ranking actual
-    const rankings = await Sale.aggregate([
-      {
-        $match: {
-          saleDate: { $gte: startDate, $lte: endDate },
-          paymentStatus: "confirmado",
-        },
-      },
-      {
-        $group: {
-          _id: "$distributor",
-          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
-        },
-      },
-      { $sort: { totalRevenue: -1 } },
-    ]);
-
-    const position =
-      rankings.findIndex((r) => r._id.toString() === distributorId) + 1;
-
-    let bonusCommission = 0;
-    if (position === 1) {
-      bonusCommission = config.top1CommissionBonus || 0;
-    } else if (position === 2) {
-      bonusCommission = config.top2CommissionBonus || 0;
-    } else if (position === 3) {
-      bonusCommission = config.top3CommissionBonus || 0;
-    }
+    const info = await getDistributorCommissionInfo(distributorId);
 
     res.json({
-      position: position || null,
-      bonusCommission,
-      periodStart: startDate,
-      periodEnd: endDate,
-      totalDistributors: rankings.length,
+      position: info.position,
+      bonusCommission: info.bonusCommission,
+      periodStart: info.periodStart,
+      periodEnd: info.periodEnd,
+      totalDistributors: info.totalDistributors,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -1,6 +1,10 @@
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
-import { calculateDistributorPrice, getDistributorProfitPercentage } from "../utils/distributorPricing.js";
+import {
+  calculateDistributorPrice,
+  getDistributorCommissionInfo,
+  getDistributorProfitPercentage,
+} from "../utils/distributorPricing.js";
 import { invalidateCache } from "../middleware/cache.middleware.js";
 import { deleteImage } from "../config/cloudinary.js";
 
@@ -258,26 +262,9 @@ export const getDistributorPrice = async (req, res) => {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
+    const commissionInfo = await getDistributorCommissionInfo(distributorId);
     const profitPercentage = await getDistributorProfitPercentage(distributorId);
-    const ranking = await Sale.aggregate([
-      {
-        $match: {
-          distributor: { $exists: true, $ne: null },
-          paymentStatus: "confirmado",
-        },
-      },
-      {
-        $group: {
-          _id: "$distributor",
-          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
-        },
-      },
-      { $sort: { totalRevenue: -1 } },
-    ]);
-    
-    const position = ranking.findIndex(
-      (r) => r._id.toString() === distributorId.toString()
-    ) + 1;
+    const position = commissionInfo.position;
 
     res.json({
       productId: product._id,
