@@ -63,32 +63,46 @@ export const recordProfitHistory = async (data) => {
  */
 export const recordSaleProfit = async (sale) => {
   try {
+    // Aceptar saleId (string/ObjectId) o documento
+    let saleDoc = sale;
+    if (
+      typeof sale === "string" ||
+      sale instanceof mongoose.Types.ObjectId
+    ) {
+      const Sale = mongoose.model("Sale");
+      saleDoc = await Sale.findById(sale).lean();
+      if (!saleDoc) {
+        console.warn("Venta no encontrada para registrar ganancia:", sale);
+        return;
+      }
+    }
+
     const metadata = {
-      quantity: sale.quantity,
-      salePrice: sale.salePrice,
-      saleId: sale.saleId,
+      quantity: saleDoc.quantity,
+      salePrice: saleDoc.salePrice,
+      saleId: saleDoc.saleId,
     };
 
     // Registrar ganancia del distribuidor (si existe)
-    if (sale.distributor && sale.distributorProfit > 0) {
+    if (saleDoc.distributor && saleDoc.distributorProfit > 0) {
       await recordProfitHistory({
-        userId: sale.distributor,
+        userId: saleDoc.distributor,
         type: "venta_normal",
-        amount: sale.distributorProfit,
-        description: `Comisión por venta ${sale.saleId}`,
-        saleId: sale._id,
-        productId: sale.product,
+        amount: saleDoc.distributorProfit,
+        description: `Comisión por venta ${saleDoc.saleId}`,
+        saleId: saleDoc._id,
+        productId: saleDoc.product,
         metadata: {
           ...metadata,
-          commission: sale.distributorProfitPercentage,
-          commissionBonus: sale.commissionBonus,
+          commission: saleDoc.distributorProfitPercentage,
+          commissionBonus: saleDoc.commissionBonus,
         },
-        date: sale.saleDate,
+        date: saleDoc.saleDate,
       });
     }
 
     // Registrar ganancia del admin
-    if (sale.adminProfit > 0) {
+    if (saleDoc.adminProfit > 0) {
       // Obtener ID del admin
       const User = mongoose.model("User");
       const admin = await User.findOne({ role: "admin" });
@@ -97,14 +111,14 @@ export const recordSaleProfit = async (sale) => {
         await recordProfitHistory({
           userId: admin._id,
           type: "venta_normal",
-          amount: sale.adminProfit,
-          description: sale.distributor 
-            ? `Ganancia de venta ${sale.saleId} (distribuidor)`
-            : `Venta directa ${sale.saleId}`,
-          saleId: sale._id,
-          productId: sale.product,
+          amount: saleDoc.adminProfit,
+          description: saleDoc.distributor 
+            ? `Ganancia de venta ${saleDoc.saleId} (distribuidor)`
+            : `Venta directa ${saleDoc.saleId}`,
+          saleId: saleDoc._id,
+          productId: saleDoc.product,
           metadata,
-          date: sale.saleDate,
+          date: saleDoc.saleDate,
         });
       }
     }

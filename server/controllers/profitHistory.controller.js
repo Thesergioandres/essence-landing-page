@@ -3,6 +3,10 @@ import ProfitHistory from "../models/ProfitHistory.js";
 import User from "../models/User.js";
 import Sale from "../models/Sale.js";
 import SpecialSale from "../models/SpecialSale.js";
+import {
+  recordProfitHistory,
+  recalculateUserBalance,
+} from "../services/profitHistory.service.js";
 
 // @desc    Obtener historial de ganancias de un usuario
 // @route   GET /api/profit-history/user/:userId
@@ -280,6 +284,135 @@ export const createProfitEntry = async (req, res) => {
       message: "Movimiento registrado exitosamente",
       entry: populatedEntry,
       newBalance,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Backfill de historial desde ventas normales (sin borrar historial)
+// @route   POST /api/profit-history/backfill/sales
+// @access  Private/Admin
+export const backfillProfitHistoryFromSales = async (req, res) => {
+  try {
+    const { startDate, endDate, distributorId, saleId } = req.body || {};
+
+    const adminUser = await User.findOne({ role: "admin" }).select("_id").lean();
+    if (!adminUser?._id) {
+      return res.status(500).json({ message: "No se encontró usuario admin" });
+    }
+
+    const salesFilter = {};
+
+    if (saleId) {
+      if (!mongoose.isValidObjectId(saleId)) {
+        return res.status(400).json({ message: "saleId inválido" });
+      }
+      salesFilter._id = new mongoose.Types.ObjectId(saleId);
+    }
+
+    if (distributorId) {
+      if (!mongoose.isValidObjectId(distributorId)) {
+        return res.status(400).json({ message: "distributorId inválido" });
+      }
+      salesFilter.distributor = new mongoose.Types.ObjectId(distributorId);
+    }
+
+    if (startDate || endDate) {
+      salesFilter.saleDate = {};
+      if (startDate) salesFilter.saleDate.$gte = new Date(startDate);
+      if (endDate) salesFilter.saleDate.$lte = new Date(endDate);
+    }
+
+    const sales = await Sale.find(salesFilter)
+      .select(
+        "_id saleId distributor product quantity salePrice saleDate distributorProfit adminProfit distributorProfitPercentage commissionBonus"
+      )
+      .sort({ saleDate: 1 })
+      .lean();
+
+    let created = 0;
+    let skipped = 0;
+    const affectedUsers = new Set();
+
+    for (const sale of sales) {
+      const desiredEntries = [];
+
+      if (sale.distributor && sale.distributorProfit > 0) {
+        desiredEntries.push({
+          userId: sale.distributor,
+          amount: sale.distributorProfit,
+          description: `Comisión por venta ${sale.saleId}`,
+          metadata: {
+            quantity: sale.quantity,
+            salePrice: sale.salePrice,
+            saleId: sale.saleId,
+            commission: sale.distributorProfitPercentage,
+            commissionBonus: sale.commissionBonus,
+          },
+        });
+      }
+
+      if (sale.adminProfit > 0) {
+        desiredEntries.push({
+          userId: adminUser._id,
+          amount: sale.adminProfit,
+          description: sale.distributor
+            ? `Ganancia de venta ${sale.saleId} (distribuidor)`
+            : `Venta directa ${sale.saleId}`,
+          metadata: {
+            quantity: sale.quantity,
+            salePrice: sale.salePrice,
+            saleId: sale.saleId,
+          },
+        });
+      }
+
+      for (const entry of desiredEntries) {
+        const exists = await ProfitHistory.findOne({
+          sale: sale._id,
+          user: entry.userId,
+          type: "venta_normal",
+        })
+          .select("_id")
+          .lean();
+
+        if (exists?._id) {
+          skipped++;
+          continue;
+        }
+
+        await recordProfitHistory({
+          userId: entry.userId,
+          type: "venta_normal",
+          amount: entry.amount,
+          description: entry.description,
+          saleId: sale._id,
+          productId: sale.product,
+          metadata: entry.metadata,
+          date: sale.saleDate,
+        });
+
+        created++;
+        affectedUsers.add(String(entry.userId));
+      }
+    }
+
+    // Recalcular balances para mantener balanceAfter correcto
+    for (const userId of affectedUsers) {
+      try {
+        await recalculateUserBalance(userId);
+      } catch (e) {
+        console.error("Error recalculando balance para", userId, e?.message);
+      }
+    }
+
+    res.json({
+      message: "Backfill completado",
+      scannedSales: sales.length,
+      created,
+      skipped,
+      usersUpdated: affectedUsers.size,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

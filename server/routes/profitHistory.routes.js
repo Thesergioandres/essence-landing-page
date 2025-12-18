@@ -5,6 +5,7 @@ import {
   getProfitSummary,
   createProfitEntry,
   getComparativeAnalysis,
+  backfillProfitHistoryFromSales,
 } from "../controllers/profitHistory.controller.js";
 import { protect, admin } from "../middleware/auth.middleware.js";
 
@@ -18,5 +19,6 @@ router.get("/balance/:userId", protect, getUserBalance);
 router.get("/summary", protect, admin, getProfitSummary);
 router.get("/comparative", protect, admin, getComparativeAnalysis);
 router.post("/", protect, admin, createProfitEntry);
+router.post("/backfill/sales", protect, admin, backfillProfitHistoryFromSales);
 
 export default router;
