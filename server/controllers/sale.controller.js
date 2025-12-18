@@ -15,12 +15,25 @@ export const deleteSale = async (req, res) => {
       return res.status(404).json({ message: "Venta no encontrada" });
     }
 
+    // Si la venta pertenece a un distribuidor, restaurar su stock
+    if (sale.distributor) {
+      await DistributorStock.findOneAndUpdate(
+        { distributor: sale.distributor, product: sale.product },
+        { $inc: { quantity: sale.quantity } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+
     // Restaurar stock del producto
     const product = await Product.findById(sale.product);
     if (product) {
       product.totalStock += sale.quantity;
       await product.save();
     }
+
+    // Invalidar caché (si está activo)
+    await invalidateCache('cache:analytics:*');
+    await invalidateCache('cache:gamification:*');
 
     // Eliminar la venta
     await sale.deleteOne();

@@ -1,10 +1,13 @@
 import mongoose from 'mongoose';
+import { jest } from '@jest/globals';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import Sale from '../../models/Sale.js';
 import Product from '../../models/Product.js';
 import User from '../../models/User.js';
 import Category from '../../models/Category.js';
 import GamificationConfig from '../../models/GamificationConfig.js';
+import DistributorStock from '../../models/DistributorStock.js';
+import { deleteSale } from '../../controllers/sale.controller.js';
 
 let mongoServer;
 
@@ -173,6 +176,72 @@ describe('Sale Controller - registerSale Logic', () => {
     expect(sale.distributorProfitPercentage).toBe(0);
     expect(sale.distributor).toBeNull();
     expect(sale.distributorProfit).toBe(0);
+  });
+});
+
+describe('Sale Controller - deleteSale restores inventory', () => {
+  test('Debe restaurar stock del producto y del distribuidor al eliminar una venta', async () => {
+    const category = await Category.create({
+      name: 'Categoría Test',
+      description: 'Test',
+    });
+
+    const product = await Product.create({
+      name: 'Producto Test',
+      description: 'Test',
+      purchasePrice: 100,
+      distributorPrice: 150,
+      salePrice: 200,
+      totalStock: 9, // stock ya descontado por la venta
+      category: category._id,
+    });
+
+    const distributor = await User.create({
+      name: 'Distribuidor Test',
+      email: 'distributor2@test.com',
+      password: 'password123',
+      role: 'distribuidor',
+    });
+
+    await DistributorStock.create({
+      distributor: distributor._id,
+      product: product._id,
+      quantity: 1, // stock ya descontado por la venta
+      lowStockAlert: 5,
+    });
+
+    const sale = await Sale.create({
+      saleId: 'VTA-2025-0001',
+      distributor: distributor._id,
+      product: product._id,
+      quantity: 1,
+      purchasePrice: 100,
+      distributorPrice: 150,
+      salePrice: 200,
+      commissionBonus: 0,
+      distributorProfitPercentage: 20,
+      paymentStatus: 'pendiente',
+    });
+
+    const req = { params: { id: sale._id.toString() } };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+
+    await deleteSale(req, res);
+
+    const updatedProduct = await Product.findById(product._id);
+    const updatedDistributorStock = await DistributorStock.findOne({
+      distributor: distributor._id,
+      product: product._id,
+    });
+    const deletedSale = await Sale.findById(sale._id);
+
+    expect(updatedProduct.totalStock).toBe(10);
+    expect(updatedDistributorStock.quantity).toBe(2);
+    expect(deletedSale).toBeNull();
+    expect(res.json).toHaveBeenCalledWith({ message: 'Venta eliminada y stock restaurado' });
   });
 });
 
