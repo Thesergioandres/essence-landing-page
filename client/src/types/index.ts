@@ -84,6 +84,17 @@ export interface Sale {
   updatedAt?: string;
 }
 
+export interface Expense {
+  _id: string;
+  category: string;
+  amount: number;
+  description?: string;
+  expenseDate: string;
+  createdBy?: User | string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface SaleStats {
   totalSales: number;
   totalQuantity: number;
@@ -239,10 +250,12 @@ export interface ProfitHistoryEntry {
   type: "venta_normal" | "venta_especial" | "ajuste" | "bonus";
   amount: number;
   sale?: Sale | string;
-  specialSale?: {
-    _id: string;
-    eventName?: string;
-  } | string;
+  specialSale?:
+    | {
+        _id: string;
+        eventName?: string;
+      }
+    | string;
   product?: Product | string;
   description: string;
   date: string;

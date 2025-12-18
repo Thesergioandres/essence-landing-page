@@ -1,18 +1,19 @@
+import compression from "compression";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
-import compression from "compression";
 import connectDB from "./config/database.js";
 import { initRedis } from "./config/redis.js";
 
 // Importar rutas
-import analyticsRoutes from "./routes/analytics.routes.js";
 import advancedAnalyticsRoutes from "./routes/advancedAnalytics.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import defectiveProductRoutes from "./routes/defectiveProduct.routes.js";
 import distributorRoutes from "./routes/distributor.routes.js";
+import expenseRoutes from "./routes/expense.routes.js";
 import gamificationRoutes from "./routes/gamification.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import profitHistoryRoutes from "./routes/profitHistory.routes.js";
@@ -33,10 +34,10 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
   "https://essence-landing-page-client.vercel.app",
-  "https://ssence-landing-page-client.vercel.app",  // URL con doble 's'
+  "https://ssence-landing-page-client.vercel.app", // URL con doble 's'
   "https://essence-landing-page-production.up.railway.app",
-  /\.vercel\.app$/,  // Todos los subdominios de Vercel
-  /\.railway\.app$/  // Todos los subdominios de Railway
+  /\.vercel\.app$/, // Todos los subdominios de Vercel
+  /\.railway\.app$/, // Todos los subdominios de Railway
 ];
 
 // Conectar a MongoDB y Redis
@@ -44,15 +45,17 @@ connectDB();
 initRedis();
 
 // Compression middleware (debe ir antes de las rutas)
-app.use(compression({
-  filter: (req, res) => {
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    return compression.filter(req, res);
-  },
-  level: 6
-}));
+app.use(
+  compression({
+    filter: (req, res) => {
+      if (req.headers["x-no-compression"]) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+    level: 6,
+  })
+);
 
 // Middlewares - CORS Configuration v5.0 - Enhanced for Production
 app.use(
@@ -60,21 +63,21 @@ app.use(
     origin: function (origin, callback) {
       // Permitir requests sin origin (mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
-      
+
       // Verificar si el origin está en la lista permitida
-      const isAllowed = allowedOrigins.some(allowed => {
-        if (typeof allowed === 'string') {
+      const isAllowed = allowedOrigins.some((allowed) => {
+        if (typeof allowed === "string") {
           return allowed === origin;
         } else if (allowed instanceof RegExp) {
           return allowed.test(origin);
         }
         return false;
       });
-      
+
       if (isAllowed) {
         callback(null, true);
       } else {
-        console.log('❌ Origin bloqueado:', origin);
+        console.log("❌ Origin bloqueado:", origin);
         callback(null, true); // Temporalmente permitir todos para debug
       }
     },
@@ -82,12 +85,12 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     exposedHeaders: ["Content-Length", "X-Requested-With"],
-    maxAge: 86400 // 24 horas de cache para preflight
+    maxAge: 86400, // 24 horas de cache para preflight
   })
 );
 
 // Manejo explícito de preflight requests
-app.options('*', cors());
+app.options("*", cors());
 
 // Middleware de logging para debugging
 app.use((req, res, next) => {
@@ -95,10 +98,11 @@ app.use((req, res, next) => {
   req.reqId = reqId;
   console.log(`\n[${reqId}] ${new Date().toISOString()}`);
   console.log(`[${reqId}] ${req.method} ${req.path}`);
-  console.log(`[${reqId}] Origin: ${req.headers.origin || 'sin origin'}`);
-  if (req.method === 'POST' || req.method === 'PUT') {
+  console.log(`[${reqId}] Origin: ${req.headers.origin || "sin origin"}`);
+  if (req.method === "POST" || req.method === "PUT") {
     try {
-      const bodyStr = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      const bodyStr =
+        typeof req.body === "string" ? req.body : JSON.stringify(req.body);
       console.log(`[${reqId}] Body:`, bodyStr.substring(0, 500));
     } catch (e) {
       console.log(`[${reqId}] Body: [no serializable]`);
@@ -136,15 +140,16 @@ app.use("/api/advanced-analytics", advancedAnalyticsRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/gamification", gamificationRoutes);
 app.use("/api/profit-history", profitHistoryRoutes);
+app.use("/api/expenses", expenseRoutes);
 
 // Manejo global de errores
 app.use((err, req, res, next) => {
-  const reqId = req.reqId || 'no-id';
+  const reqId = req.reqId || "no-id";
   console.error(`\n[${reqId}] ❌ ERROR NO CAPTURADO`);
   console.error(`[${reqId}] Mensaje:`, err?.message);
   console.error(`[${reqId}] Stack:`, err?.stack);
   console.error(`[${reqId}] Type:`, err?.name);
-  
+
   res.status(err.status || 500).json({
     message: err?.message || "Error interno del servidor",
     requestId: reqId,

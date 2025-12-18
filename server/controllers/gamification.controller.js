@@ -354,12 +354,12 @@ export const getRanking = async (req, res) => {
         const stats = await DistributorStats.findOne({
           distributor: rank.distributorId,
         });
-        
+
         const position = index + 1;
         let positionBadge = "";
         let positionLabel = "";
         let profitPercentage = 20;
-        
+
         if (position === 1) {
           positionBadge = "🥇";
           positionLabel = "PRIMER LUGAR";
@@ -377,7 +377,7 @@ export const getRanking = async (req, res) => {
           positionLabel = `POSICIÓN ${position}`;
           profitPercentage = 20;
         }
-        
+
         return {
           ...rank,
           position,

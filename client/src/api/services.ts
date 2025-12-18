@@ -13,6 +13,7 @@ import type {
   DistributorStatsResponse,
   DistributorStock,
   EntityHistory,
+  Expense,
   FinancialSummary,
   GamificationConfig,
   MonthlyProfitData,
@@ -96,14 +97,26 @@ export const authService = {
 export const productService = {
   async getAll(
     filters: Record<string, string | boolean | number> = {}
-  ): Promise<{ data: Product[]; pagination?: { page: number; limit: number; total: number; pages: number; hasMore: boolean } }> {
+  ): Promise<{
+    data: Product[];
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+      hasMore: boolean;
+    };
+  }> {
     const response = await api.get("/products", { params: filters });
     // Si viene con paginación (formato nuevo), retornar tal cual
     if (response.data.data && response.data.pagination) {
       return response.data;
     }
     // Si viene como array (formato antiguo sin paginación), adaptarlo
-    return { data: Array.isArray(response.data) ? response.data : [], pagination: undefined };
+    return {
+      data: Array.isArray(response.data) ? response.data : [],
+      pagination: undefined,
+    };
   },
 
   async getById(id: string): Promise<Product> {
@@ -115,26 +128,31 @@ export const productService = {
     return categoryService.getAll();
   },
 
-  async create(productData: ProductPayload & { imageFile?: File }): Promise<Product> {
+  async create(
+    productData: ProductPayload & { imageFile?: File }
+  ): Promise<Product> {
     const formData = new FormData();
-    
+
     // Agregar todos los campos del producto
     Object.entries(productData).forEach(([key, value]) => {
-      if (key === 'imageFile') return; // El imageFile se maneja aparte
-      if (key === 'image') return; // No enviar el objeto image antiguo
+      if (key === "imageFile") return; // El imageFile se maneja aparte
+      if (key === "image") return; // No enviar el objeto image antiguo
       if (value !== undefined && value !== null) {
-        formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+        formData.append(
+          key,
+          typeof value === "object" ? JSON.stringify(value) : String(value)
+        );
       }
     });
-    
+
     // Agregar la imagen si existe
     if (productData.imageFile) {
-      formData.append('image', productData.imageFile);
+      formData.append("image", productData.imageFile);
     }
-    
+
     const response = await api.post<Product>("/products", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
@@ -145,24 +163,27 @@ export const productService = {
     productData: Partial<ProductPayload> & { imageFile?: File }
   ): Promise<Product> {
     const formData = new FormData();
-    
+
     // Agregar todos los campos del producto
     Object.entries(productData).forEach(([key, value]) => {
-      if (key === 'imageFile') return; // El imageFile se maneja aparte
-      if (key === 'image') return; // No enviar el objeto image antiguo
+      if (key === "imageFile") return; // El imageFile se maneja aparte
+      if (key === "image") return; // No enviar el objeto image antiguo
       if (value !== undefined && value !== null) {
-        formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+        formData.append(
+          key,
+          typeof value === "object" ? JSON.stringify(value) : String(value)
+        );
       }
     });
-    
+
     // Agregar la imagen si existe
     if (productData.imageFile) {
-      formData.append('image', productData.imageFile);
+      formData.append("image", productData.imageFile);
     }
-    
+
     const response = await api.put<Product>(`/products/${id}`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
@@ -173,7 +194,10 @@ export const productService = {
     return response.data;
   },
 
-  async getDistributorPrice(productId: string, distributorId: string): Promise<{
+  async getDistributorPrice(
+    productId: string,
+    distributorId: string
+  ): Promise<{
     productId: string;
     distributorId: string;
     purchasePrice: number;
@@ -181,13 +205,19 @@ export const productService = {
     profitPercentage: number;
     rankingPosition: number;
   }> {
-    const response = await api.get(`/products/${productId}/distributor-price/${distributorId}`);
+    const response = await api.get(
+      `/products/${productId}/distributor-price/${distributorId}`
+    );
     return response.data;
   },
 
   async getDistributorProducts(): Promise<{ data: Product[] }> {
     const response = await api.get("/products/my-catalog");
-    return { data: Array.isArray(response.data) ? response.data : response.data.data || [] };
+    return {
+      data: Array.isArray(response.data)
+        ? response.data
+        : response.data.data || [],
+    };
   },
 };
 
@@ -248,16 +278,41 @@ export const categoryService = {
 
 // ==================== DISTRIBUTOR SERVICE ====================
 export const distributorService = {
-  async getAll(active?: boolean | { active?: boolean; page?: number; limit?: number }): Promise<User[] | { data: User[]; pagination: { page: number; limit: number; total: number; pages: number; hasMore: boolean } }> {
+  async getAll(
+    active?: boolean | { active?: boolean; page?: number; limit?: number }
+  ): Promise<
+    | User[]
+    | {
+        data: User[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          pages: number;
+          hasMore: boolean;
+        };
+      }
+  > {
     let params: any = {};
-    if (typeof active === 'boolean') {
+    if (typeof active === "boolean") {
       params = { active };
-    } else if (typeof active === 'object') {
+    } else if (typeof active === "object") {
       params = active;
     }
     const response = await api.get("/distributors", { params });
     // Compatibilidad: si viene con .data, es paginado
-    return response.data.data ? response.data : { data: response.data, pagination: { page: 1, limit: response.data.length, total: response.data.length, pages: 1, hasMore: false } };
+    return response.data.data
+      ? response.data
+      : {
+          data: response.data,
+          pagination: {
+            page: 1,
+            limit: response.data.length,
+            total: response.data.length,
+            pages: 1,
+            hasMore: false,
+          },
+        };
   },
 
   async getById(id: string): Promise<{
@@ -471,9 +526,13 @@ export const saleService = {
     sortBy?: string;
     page?: number;
     limit?: number;
-  }): Promise<{ 
-    sales: Sale[]; 
-    stats: SaleStats & { confirmedSales?: number; pendingSales?: number; totalProfit?: number };
+  }): Promise<{
+    sales: Sale[];
+    stats: SaleStats & {
+      confirmedSales?: number;
+      pendingSales?: number;
+      totalProfit?: number;
+    };
     pagination?: {
       page: number;
       limit: number;
@@ -963,9 +1022,7 @@ export const advancedAnalyticsService = {
     return response.data;
   },
 
-  async getProductRotation(params?: {
-    days?: number;
-  }): Promise<{
+  async getProductRotation(params?: { days?: number }): Promise<{
     productRotation: Array<{
       productId: string;
       productName: string;
@@ -1226,7 +1283,9 @@ export const profitHistoryService = {
       endDate?: string;
     }
   ): Promise<ProfitHistoryResponse> {
-    const response = await api.get(`/profit-history/user/${userId}`, { params });
+    const response = await api.get(`/profit-history/user/${userId}`, {
+      params,
+    });
     return response.data;
   },
 
@@ -1264,6 +1323,54 @@ export const profitHistoryService = {
     data: ProfitHistoryEntry;
   }> {
     const response = await api.post("/profit-history", data);
+    return response.data;
+  },
+};
+
+// ==================== EXPENSES (ADMIN) ====================
+export const expenseService = {
+  async getAll(params?: {
+    startDate?: string;
+    endDate?: string;
+    category?: string;
+  }): Promise<{ expenses: Expense[] }> {
+    const response = await api.get("/expenses", { params });
+    // Formato esperado: { expenses }
+    if (response.data?.expenses) return response.data;
+    // Compatibilidad: si viene como array
+    return { expenses: Array.isArray(response.data) ? response.data : [] };
+  },
+
+  async create(payload: {
+    category: string;
+    amount: number;
+    description?: string;
+    expenseDate?: string;
+  }): Promise<{ expense: Expense }> {
+    const response = await api.post("/expenses", payload);
+    return response.data;
+  },
+
+  async getById(id: string): Promise<{ expense: Expense }> {
+    const response = await api.get(`/expenses/${id}`);
+    return response.data;
+  },
+
+  async update(
+    id: string,
+    payload: Partial<{
+      category: string;
+      amount: number;
+      description: string;
+      expenseDate: string;
+    }>
+  ): Promise<{ expense: Expense }> {
+    const response = await api.put(`/expenses/${id}`, payload);
+    return response.data;
+  },
+
+  async delete(id: string): Promise<{ message: string }> {
+    const response = await api.delete(`/expenses/${id}`);
     return response.data;
   },
 };

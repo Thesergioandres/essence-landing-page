@@ -1,5 +1,5 @@
-import Sale from "../models/Sale.js";
 import GamificationConfig from "../models/GamificationConfig.js";
+import Sale from "../models/Sale.js";
 
 const BASE_PROFIT_PERCENTAGE = 20;
 
@@ -22,11 +22,27 @@ const getPeriodRange = (config) => {
     endDate.setHours(23, 59, 59, 999);
   } else if (config?.evaluationPeriod === "monthly") {
     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    endDate = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999
+    );
   } else {
     // Por defecto, mes actual
     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    endDate = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999
+    );
   }
 
   return { startDate, endDate };
@@ -133,13 +149,16 @@ export const getDistributorProfitPercentage = async (distributorId) => {
  * @param {String} distributorId - ID del distribuidor
  * @returns {Promise<Number>} - Precio de venta para distribuidor
  */
-export const calculateDistributorPrice = async (purchasePrice, distributorId) => {
+export const calculateDistributorPrice = async (
+  purchasePrice,
+  distributorId
+) => {
   const profitPercentage = await getDistributorProfitPercentage(distributorId);
-  
+
   // Calcular precio para que el distribuidor gane exactamente su porcentaje
   // Si el distribuidor gana X% del precio de venta:
   // Precio de venta = Precio compra / (1 - X/100)
   const distributorPrice = purchasePrice / (1 - profitPercentage / 100);
-  
+
   return Math.round(distributorPrice); // Redondear a entero
 };

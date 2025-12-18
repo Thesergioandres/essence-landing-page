@@ -25,7 +25,7 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900 to-gray-900">
+    <div className="bg-linear-to-br min-h-screen from-gray-900 via-purple-900 to-gray-900">
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
@@ -35,72 +35,77 @@ export default function DashboardLayout() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 z-40 h-screen w-72 border-r border-gray-700 bg-gray-800/95 backdrop-blur-lg transition-transform duration-300 lg:translate-x-0 ${
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      }`}>
+      <aside
+        className={`fixed left-0 top-0 z-40 h-screen w-72 border-r border-gray-700 bg-gray-800/95 backdrop-blur-lg transition-transform duration-300 lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="flex h-full flex-col overflow-hidden">
           {/* Logo */}
-          <div className="shrink-0 px-4 py-4 sm:py-6 border-b border-gray-700">
+          <div className="shrink-0 border-b border-gray-700 px-4 py-4 sm:py-6">
             <div className="flex items-center gap-3">
-              <img 
-                src="/logo-essence.svg" 
-                alt="Essence Logo" 
-                className="h-10 w-10 sm:h-12 sm:w-12 drop-shadow-lg"
+              <img
+                src="/logo-essence.svg"
+                alt="Essence Logo"
+                className="h-10 w-10 drop-shadow-lg sm:h-12 sm:w-12"
               />
               <div>
-                <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl sm:text-3xl font-bold text-transparent">
+                <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl font-bold text-transparent sm:text-3xl">
                   ESSENCE
                 </h1>
-                <p className="mt-0.5 text-xs sm:text-sm text-gray-400">Panel Admin</p>
+                <p className="mt-0.5 text-xs text-gray-400 sm:text-sm">
+                  Panel Admin
+                </p>
               </div>
             </div>
           </div>
 
           {/* Navigation - Scrollable with better mobile handling */}
-          <nav className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 space-y-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
-            style={{ 
-              maxHeight: 'calc(100vh - 200px)',
-              WebkitOverflowScrolling: 'touch'
+          <nav
+            className="scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent flex-1 space-y-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4"
+            style={{
+              maxHeight: "calc(100vh - 200px)",
+              WebkitOverflowScrolling: "touch",
             }}
           >
-              <NavLink
-                to="/admin/register-sale"
-                className={({ isActive }): string => navLinkClasses(isActive)}
+            <NavLink
+              to="/admin/register-sale"
+              className={({ isActive }): string => navLinkClasses(isActive)}
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Registrar Venta (Admin)
-              </NavLink>
-              <NavLink
-                to="/admin/dashboard"
-                className={({ isActive }): string => navLinkClasses(isActive)}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Registrar Venta (Admin)
+            </NavLink>
+            <NavLink
+              to="/admin/dashboard"
+              className={({ isActive }): string => navLinkClasses(isActive)}
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                  />
-                </svg>
-                Dashboard
-              </NavLink>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
+              </svg>
+              Dashboard
+            </NavLink>
 
             <NavLink
               to="/admin/products"
@@ -240,6 +245,26 @@ export default function DashboardLayout() {
                 />
               </svg>
               Ventas
+            </NavLink>
+
+            <NavLink
+              to="/admin/expenses"
+              className={({ isActive }): string => navLinkClasses(isActive)}
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-10V6m0 12v-2m9-4a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Gastos
             </NavLink>
 
             <NavLink
@@ -430,21 +455,25 @@ export default function DashboardLayout() {
           </nav>
 
           {/* User Info & Logout - Always visible at bottom */}
-          <div className="shrink-0 border-t border-gray-700 p-3 sm:p-4 bg-gray-800/90">
-            <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3">
-              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-linear-to-r from-purple-600 to-pink-600 shrink-0">
-                <span className="text-xs sm:text-sm font-bold text-white">
+          <div className="shrink-0 border-t border-gray-700 bg-gray-800/90 p-3 sm:p-4">
+            <div className="mb-2 flex items-center gap-2 sm:mb-3 sm:gap-3">
+              <div className="bg-linear-to-r flex h-9 w-9 shrink-0 items-center justify-center rounded-full from-purple-600 to-pink-600 sm:h-10 sm:w-10">
+                <span className="text-xs font-bold text-white sm:text-sm">
                   {user?.name?.charAt(0) || "A"}
                 </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-white truncate">{user?.name}</p>
-                <p className="text-[10px] sm:text-xs text-gray-400 capitalize">{user?.role}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium text-white sm:text-sm">
+                  {user?.name}
+                </p>
+                <p className="text-[10px] capitalize text-gray-400 sm:text-xs">
+                  {user?.role}
+                </p>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600/20 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-red-400 transition hover:bg-red-600/30 active:scale-[0.98] min-h-11"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-red-600/20 px-3 py-2 text-xs font-medium text-red-400 transition hover:bg-red-600/30 active:scale-[0.98] sm:px-4 sm:py-2.5 sm:text-sm"
             >
               <svg
                 className="h-4 w-4 sm:h-5 sm:w-5"
@@ -466,18 +495,28 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-gray-800/95 backdrop-blur-lg border-b border-gray-700 h-14">
-        <div className="flex items-center justify-between px-3 sm:px-4 h-full">
+      <div className="fixed left-0 right-0 top-0 z-20 h-14 border-b border-gray-700 bg-gray-800/95 backdrop-blur-lg lg:hidden">
+        <div className="flex h-full items-center justify-between px-3 sm:px-4">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 text-gray-300 hover:text-purple-400 transition active:scale-95 -ml-2"
+            className="-ml-2 p-2 text-gray-300 transition hover:text-purple-400 active:scale-95"
             aria-label="Open menu"
           >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
-          <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-lg sm:text-xl font-bold text-transparent">
+          <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-lg font-bold text-transparent sm:text-xl">
             ESSENCE
           </h1>
           <div className="w-10" />
@@ -485,7 +524,7 @@ export default function DashboardLayout() {
       </div>
 
       {/* Main Content */}
-      <main className="lg:ml-72 min-h-screen pt-14 lg:pt-0">
+      <main className="min-h-screen pt-14 lg:ml-72 lg:pt-0">
         <div className="p-3 sm:p-4 md:p-6 lg:p-8">
           <Outlet />
         </div>

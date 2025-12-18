@@ -160,11 +160,9 @@ export const registerAdminSale = async (req, res) => {
       console.warn(
         `[${reqId}] ❌ Campos faltantes - productId: ${productId}, quantity: ${quantity}, salePrice: ${salePrice}`
       );
-      return res
-        .status(400)
-        .json({
-          message: "Campos obligatorios: productId, quantity, salePrice",
-        });
+      return res.status(400).json({
+        message: "Campos obligatorios: productId, quantity, salePrice",
+      });
     }
 
     // Validar producto
@@ -181,11 +179,9 @@ export const registerAdminSale = async (req, res) => {
       console.warn(
         `[${reqId}] ❌ Stock insuficiente. Disponible: ${product.totalStock}, solicitado: ${quantity}`
       );
-      return res
-        .status(400)
-        .json({
-          message: `Stock insuficiente. Disponible: ${product.totalStock}`,
-        });
+      return res.status(400).json({
+        message: `Stock insuficiente. Disponible: ${product.totalStock}`,
+      });
     }
 
     // Crear la venta (sin distribuidor)
