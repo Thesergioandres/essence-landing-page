@@ -167,9 +167,9 @@ export default function Expenses() {
         <h1 className="text-3xl font-bold text-white">Gastos / Inversiones</h1>
       </div>
 
-      <div className="rounded-lg bg-white p-6 shadow">
-        <h2 className="text-lg font-semibold text-gray-900">Registrar gasto</h2>
-        <p className="mt-1 text-sm text-gray-600">
+      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+        <h2 className="text-lg font-semibold text-white">Registrar gasto</h2>
+        <p className="mt-1 text-sm text-gray-400">
           Registra inversiones como envíos, marketing, publicidad, etc.
         </p>
 
@@ -178,11 +178,11 @@ export default function Expenses() {
           className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-4"
         >
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-300">
               Tipo de gasto
             </label>
             <input
-              className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-2 text-gray-100 placeholder:text-gray-500 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
               type="text"
               placeholder="Ej: Envíos, Marketing, Publicidad..."
               value={form.type}
@@ -194,11 +194,11 @@ export default function Expenses() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-300">
               Monto (COP)
             </label>
             <input
-              className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-2 text-gray-100 placeholder:text-gray-500 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
               type="number"
               inputMode="numeric"
               min={0}
@@ -212,11 +212,11 @@ export default function Expenses() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-300">
               Fecha
             </label>
             <input
-              className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-2 text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
               type="date"
               value={form.expenseDate}
               onChange={e =>
@@ -232,7 +232,12 @@ export default function Expenses() {
                 {editingId ? "Guardar cambios" : "Guardar gasto"}
               </Button>
               {editingId && (
-                <Button type="button" variant="outline" onClick={cancelEdit}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-gray-700 bg-transparent text-gray-200 hover:bg-gray-800"
+                  onClick={cancelEdit}
+                >
                   Cancelar edición
                 </Button>
               )}
@@ -241,12 +246,12 @@ export default function Expenses() {
         </form>
       </div>
 
-      <div className="rounded-lg bg-white p-6 shadow">
+      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-white">
             Gastos registrados
           </h2>
-          <div className="text-sm text-gray-700">
+          <div className="text-sm text-gray-300">
             Total:{" "}
             <span className="font-semibold">{formatCurrency(total)}</span>
           </div>
@@ -257,38 +262,38 @@ export default function Expenses() {
             <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-purple-600" />
           </div>
         ) : expenses.length === 0 ? (
-          <div className="py-10 text-center text-gray-600">
+          <div className="py-10 text-center text-gray-400">
             Aún no hay gastos registrados.
           </div>
         ) : (
           <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-700">
+              <thead className="bg-gray-900/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
                     Fecha
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
                     Tipo de gasto
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-600">
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">
                     Monto
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-600">
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-gray-700">
                 {expenses.map(exp => (
-                  <tr key={exp._id}>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                  <tr key={exp._id} className="hover:bg-gray-900/30">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-200">
                       {new Date(exp.expenseDate).toLocaleDateString("es-CO")}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-200">
                       {exp.type || exp.category || exp.description || "—"}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-200">
                       {formatCurrency(exp.amount)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
@@ -297,6 +302,7 @@ export default function Expenses() {
                           size="sm"
                           variant="outline"
                           type="button"
+                          className="border-gray-700 bg-transparent text-gray-200 hover:bg-gray-800"
                           onClick={() => startEdit(exp)}
                         >
                           Editar

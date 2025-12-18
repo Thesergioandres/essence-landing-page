@@ -11,12 +11,17 @@ import type {
 
 export default function Analytics() {
   const [loading, setLoading] = useState(true);
-  const [monthlyData, setMonthlyData] = useState<MonthlyProfitData | null>(null);
+  const [monthlyData, setMonthlyData] = useState<MonthlyProfitData | null>(
+    null
+  );
   const [productProfits, setProductProfits] = useState<ProductProfit[]>([]);
-  const [distributorProfits, setDistributorProfits] = useState<DistributorProfit[]>([]);
+  const [distributorProfits, setDistributorProfits] = useState<
+    DistributorProfit[]
+  >([]);
   const [averages, setAverages] = useState<Averages | null>(null);
   const [timeline, setTimeline] = useState<TimelineData[]>([]);
-  const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
+  const [financialSummary, setFinancialSummary] =
+    useState<FinancialSummary | null>(null);
 
   const [dateRange, setDateRange] = useState({
     startDate: "",
@@ -33,14 +38,15 @@ export default function Analytics() {
   const loadAnalytics = async () => {
     try {
       setLoading(true);
-      const [monthly, products, distributors, avg, time, financial] = await Promise.all([
-        analyticsService.getMonthlyProfit(),
-        analyticsService.getProfitByProduct(),
-        analyticsService.getProfitByDistributor(),
-        analyticsService.getAverages("month"),
-        analyticsService.getSalesTimeline(30),
-        analyticsService.getFinancialSummary(),
-      ]);
+      const [monthly, products, distributors, avg, time, financial] =
+        await Promise.all([
+          analyticsService.getMonthlyProfit(),
+          analyticsService.getProfitByProduct(),
+          analyticsService.getProfitByDistributor(),
+          analyticsService.getAverages("month"),
+          analyticsService.getSalesTimeline(30),
+          analyticsService.getFinancialSummary(),
+        ]);
 
       setMonthlyData(monthly);
       setProductProfits(products);
@@ -116,14 +122,17 @@ export default function Analytics() {
     const headers = Object.keys(data[0]);
     const csvContent = [
       headers.join(","),
-      ...data.map((row) => headers.map((h) => row[h]).join(",")),
+      ...data.map(row => headers.map(h => row[h]).join(",")),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `${filename}_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute(
+      "download",
+      `${filename}_${new Date().toISOString().split("T")[0]}.csv`
+    );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
@@ -132,42 +141,52 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl">Cargando analytics...</div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-xl text-gray-200">Cargando analytics...</div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">📊 Analytics y Reportes</h1>
+      <h1 className="mb-8 text-4xl font-bold text-white">
+        📊 Analytics y Reportes
+      </h1>
 
       {/* Filtros de Fecha */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Filtros</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+        <h2 className="mb-4 text-2xl font-semibold text-white">Filtros</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium mb-2">Fecha Inicio</label>
+            <label className="mb-2 block text-sm font-medium text-gray-300">
+              Fecha Inicio
+            </label>
             <input
               type="date"
               value={dateRange.startDate}
-              onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              onChange={e =>
+                setDateRange({ ...dateRange, startDate: e.target.value })
+              }
+              className="w-full rounded-md border border-gray-700 bg-gray-900/40 px-3 py-2 text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Fecha Fin</label>
+            <label className="mb-2 block text-sm font-medium text-gray-300">
+              Fecha Fin
+            </label>
             <input
               type="date"
               value={dateRange.endDate}
-              onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              onChange={e =>
+                setDateRange({ ...dateRange, endDate: e.target.value })
+              }
+              className="w-full rounded-md border border-gray-700 bg-gray-900/40 px-3 py-2 text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
             />
           </div>
           <div className="flex items-end">
             <button
               onClick={applyFilters}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              className="w-full rounded-md bg-purple-600 px-4 py-2 text-white hover:bg-purple-700"
             >
               Aplicar Filtros
             </button>
@@ -177,54 +196,91 @@ export default function Analytics() {
 
       {/* Resumen Mensual */}
       {monthlyData && (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-4">📅 Resumen del Mes</h2>
-          
+        <div className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+          <h2 className="mb-4 text-2xl font-semibold text-white">
+            📅 Resumen del Mes
+          </h2>
+
           {/* Debug Info - TEMPORAL */}
           {monthlyData._debug && (
-            <div className="mb-4 rounded border-2 border-yellow-500 bg-yellow-50 p-3 text-sm">
-              <p className="font-bold text-yellow-800">🐛 DEBUG INFO (Backend):</p>
-              <p className="text-yellow-700">Hora UTC: {new Date(monthlyData._debug.nowUTC).toLocaleString("es-CO")}</p>
-              <p className="text-yellow-700">Hora Colombia: {new Date(monthlyData._debug.nowColombia).toLocaleString("es-CO")}</p>
-              <p className="text-yellow-700">Rango mes actual: {new Date(monthlyData._debug.startOfMonth).toLocaleDateString("es-CO")} - {new Date(monthlyData._debug.endOfMonth).toLocaleDateString("es-CO")}</p>
-              <p className="text-yellow-700">Ventas encontradas mes actual: {monthlyData._debug.currentMonthSalesCount}</p>
-              <p className="text-yellow-700">Ventas encontradas mes anterior: {monthlyData._debug.lastMonthSalesCount}</p>
+            <div className="mb-4 rounded border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm">
+              <p className="font-bold text-yellow-300">
+                🐛 DEBUG INFO (Backend):
+              </p>
+              <p className="text-yellow-200">
+                Hora UTC:{" "}
+                {new Date(monthlyData._debug.nowUTC).toLocaleString("es-CO")}
+              </p>
+              <p className="text-yellow-200">
+                Hora Colombia:{" "}
+                {new Date(monthlyData._debug.nowColombia).toLocaleString(
+                  "es-CO"
+                )}
+              </p>
+              <p className="text-yellow-200">
+                Rango mes actual:{" "}
+                {new Date(monthlyData._debug.startOfMonth).toLocaleDateString(
+                  "es-CO"
+                )}{" "}
+                -{" "}
+                {new Date(monthlyData._debug.endOfMonth).toLocaleDateString(
+                  "es-CO"
+                )}
+              </p>
+              <p className="text-yellow-200">
+                Ventas encontradas mes actual:{" "}
+                {monthlyData._debug.currentMonthSalesCount}
+              </p>
+              <p className="text-yellow-200">
+                Ventas encontradas mes anterior:{" "}
+                {monthlyData._debug.lastMonthSalesCount}
+              </p>
             </div>
           )}
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-gray-600">Ganancia Total</p>
-              <p className="text-2xl font-bold text-green-600">
+
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <p className="text-sm text-gray-400">Ganancia Total</p>
+              <p className="text-2xl font-bold text-green-400">
                 {formatCurrency(monthlyData.currentMonth.totalProfit)}
               </p>
-              <p className={`text-sm ${monthlyData.growthPercentage >= 0 ? "text-green-600" : "text-red-600"}`}>
+              <p
+                className={`text-sm ${monthlyData.growthPercentage >= 0 ? "text-green-600" : "text-red-600"}`}
+              >
                 {formatPercent(monthlyData.growthPercentage)} vs mes anterior
               </p>
             </div>
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-gray-600">Ingresos</p>
-              <p className="text-2xl font-bold text-blue-600">
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <p className="text-sm text-gray-400">Ingresos</p>
+              <p className="text-2xl font-bold text-blue-400">
                 {formatCurrency(monthlyData.currentMonth.revenue)}
               </p>
             </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm text-gray-600">Ventas</p>
-              <p className="text-2xl font-bold text-purple-600">{monthlyData.currentMonth.salesCount}</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <p className="text-sm text-gray-400">Ventas</p>
+              <p className="text-2xl font-bold text-purple-300">
+                {monthlyData.currentMonth.salesCount}
+              </p>
             </div>
-            <div className="p-4 bg-orange-50 rounded-lg">
-              <p className="text-sm text-gray-600">Ticket Promedio</p>
-              <p className="text-2xl font-bold text-orange-600">{formatCurrency(monthlyData.averageTicket)}</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <p className="text-sm text-gray-400">Ticket Promedio</p>
+              <p className="text-2xl font-bold text-orange-300">
+                {formatCurrency(monthlyData.averageTicket)}
+              </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 text-gray-200 md:grid-cols-2">
             <div>
-              <h3 className="text-lg font-semibold mb-2">Mes Actual</h3>
+              <h3 className="mb-2 text-lg font-semibold text-white">
+                Mes Actual
+              </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Ganancia Admin:</span>
-                  <span className="font-semibold">{formatCurrency(monthlyData.currentMonth.adminProfit)}</span>
+                  <span className="font-semibold">
+                    {formatCurrency(monthlyData.currentMonth.adminProfit)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Ganancia Distribuidores:</span>
@@ -234,33 +290,47 @@ export default function Analytics() {
                 </div>
                 <div className="flex justify-between">
                   <span>Costos:</span>
-                  <span className="font-semibold">{formatCurrency(monthlyData.currentMonth.cost)}</span>
+                  <span className="font-semibold">
+                    {formatCurrency(monthlyData.currentMonth.cost)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Unidades Vendidas:</span>
-                  <span className="font-semibold">{monthlyData.currentMonth.unitsCount}</span>
+                  <span className="font-semibold">
+                    {monthlyData.currentMonth.unitsCount}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold mb-2">Mes Anterior</h3>
+              <h3 className="mb-2 text-lg font-semibold text-white">
+                Mes Anterior
+              </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Ganancia Admin:</span>
-                  <span className="font-semibold">{formatCurrency(monthlyData.lastMonth.adminProfit)}</span>
+                  <span className="font-semibold">
+                    {formatCurrency(monthlyData.lastMonth.adminProfit)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Ganancia Distribuidores:</span>
-                  <span className="font-semibold">{formatCurrency(monthlyData.lastMonth.distributorProfit)}</span>
+                  <span className="font-semibold">
+                    {formatCurrency(monthlyData.lastMonth.distributorProfit)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Costos:</span>
-                  <span className="font-semibold">{formatCurrency(monthlyData.lastMonth.cost)}</span>
+                  <span className="font-semibold">
+                    {formatCurrency(monthlyData.lastMonth.cost)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Unidades Vendidas:</span>
-                  <span className="font-semibold">{monthlyData.lastMonth.unitsCount}</span>
+                  <span className="font-semibold">
+                    {monthlyData.lastMonth.unitsCount}
+                  </span>
                 </div>
               </div>
             </div>
@@ -270,40 +340,58 @@ export default function Analytics() {
 
       {/* Resumen Financiero */}
       {financialSummary && (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-4">💰 Resumen Financiero</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-600">Ingresos Totales</p>
-              <p className="text-xl font-bold">{formatCurrency(financialSummary.totalRevenue)}</p>
+        <div className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+          <h2 className="mb-4 text-2xl font-semibold text-white">
+            💰 Resumen Financiero
+          </h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+              <p className="text-sm text-gray-400">Ingresos Totales</p>
+              <p className="text-xl font-bold text-white">
+                {formatCurrency(financialSummary.totalRevenue)}
+              </p>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-600">Costos Totales</p>
-              <p className="text-xl font-bold">{formatCurrency(financialSummary.totalCost)}</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+              <p className="text-sm text-gray-400">Costos Totales</p>
+              <p className="text-xl font-bold text-white">
+                {formatCurrency(financialSummary.totalCost)}
+              </p>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-600">Ganancia Total</p>
-              <p className="text-xl font-bold text-green-600">{formatCurrency(financialSummary.totalProfit)}</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+              <p className="text-sm text-gray-400">Ganancia Total</p>
+              <p className="text-xl font-bold text-green-400">
+                {formatCurrency(financialSummary.totalProfit)}
+              </p>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-600">Margen de Ganancia</p>
-              <p className="text-xl font-bold">{financialSummary.profitMargin.toFixed(2)}%</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+              <p className="text-sm text-gray-400">Margen de Ganancia</p>
+              <p className="text-xl font-bold text-white">
+                {financialSummary.profitMargin.toFixed(2)}%
+              </p>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-600">Ganancia Admin</p>
-              <p className="text-xl font-bold">{formatCurrency(financialSummary.totalAdminProfit)}</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+              <p className="text-sm text-gray-400">Ganancia Admin</p>
+              <p className="text-xl font-bold text-white">
+                {formatCurrency(financialSummary.totalAdminProfit)}
+              </p>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-600">Ganancia Distribuidores</p>
-              <p className="text-xl font-bold">{formatCurrency(financialSummary.totalDistributorProfit)}</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+              <p className="text-sm text-gray-400">Ganancia Distribuidores</p>
+              <p className="text-xl font-bold text-white">
+                {formatCurrency(financialSummary.totalDistributorProfit)}
+              </p>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-600">Productos Defectuosos</p>
-              <p className="text-xl font-bold text-red-600">{financialSummary.defectiveUnits}</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+              <p className="text-sm text-gray-400">Productos Defectuosos</p>
+              <p className="text-xl font-bold text-red-400">
+                {financialSummary.defectiveUnits}
+              </p>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-600">Tasa de Defectuosos</p>
-              <p className="text-xl font-bold">{financialSummary.defectiveRate.toFixed(2)}%</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+              <p className="text-sm text-gray-400">Tasa de Defectuosos</p>
+              <p className="text-xl font-bold text-white">
+                {financialSummary.defectiveRate.toFixed(2)}%
+              </p>
             </div>
           </div>
         </div>
@@ -311,30 +399,36 @@ export default function Analytics() {
 
       {/* Promedios */}
       {averages && (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold">📈 Promedios</h2>
+        <div className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-semibold text-white">📈 Promedios</h2>
             <div className="flex gap-2">
               <button
                 onClick={() => updatePeriod("day")}
-                className={`px-4 py-2 rounded-md ${
-                  period === "day" ? "bg-blue-600 text-white" : "bg-gray-200"
+                className={`rounded-md px-4 py-2 ${
+                  period === "day"
+                    ? "bg-purple-600 text-white"
+                    : "border border-gray-700 text-gray-200 hover:bg-gray-800"
                 }`}
               >
                 Día
               </button>
               <button
                 onClick={() => updatePeriod("week")}
-                className={`px-4 py-2 rounded-md ${
-                  period === "week" ? "bg-blue-600 text-white" : "bg-gray-200"
+                className={`rounded-md px-4 py-2 ${
+                  period === "week"
+                    ? "bg-purple-600 text-white"
+                    : "border border-gray-700 text-gray-200 hover:bg-gray-800"
                 }`}
               >
                 Semana
               </button>
               <button
                 onClick={() => updatePeriod("month")}
-                className={`px-4 py-2 rounded-md ${
-                  period === "month" ? "bg-blue-600 text-white" : "bg-gray-200"
+                className={`rounded-md px-4 py-2 ${
+                  period === "month"
+                    ? "bg-purple-600 text-white"
+                    : "border border-gray-700 text-gray-200 hover:bg-gray-800"
                 }`}
               >
                 Mes
@@ -342,35 +436,45 @@ export default function Analytics() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-gray-600">Ingresos / Día</p>
-              <p className="text-xl font-bold">{formatCurrency(averages.averageRevenuePerDay)}</p>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <p className="text-sm text-gray-400">Ingresos / Día</p>
+              <p className="text-xl font-bold text-white">
+                {formatCurrency(averages.averageRevenuePerDay)}
+              </p>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-gray-600">Ganancia / Día</p>
-              <p className="text-xl font-bold">{formatCurrency(averages.averageProfitPerDay)}</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <p className="text-sm text-gray-400">Ganancia / Día</p>
+              <p className="text-xl font-bold text-white">
+                {formatCurrency(averages.averageProfitPerDay)}
+              </p>
             </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm text-gray-600">Ventas / Día</p>
-              <p className="text-xl font-bold">{averages.averageSalesPerDay.toFixed(1)}</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <p className="text-sm text-gray-400">Ventas / Día</p>
+              <p className="text-xl font-bold text-white">
+                {averages.averageSalesPerDay.toFixed(1)}
+              </p>
             </div>
-            <div className="p-4 bg-orange-50 rounded-lg">
-              <p className="text-sm text-gray-600">Unidades / Día</p>
-              <p className="text-xl font-bold">{averages.averageUnitsPerDay.toFixed(1)}</p>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <p className="text-sm text-gray-400">Unidades / Día</p>
+              <p className="text-xl font-bold text-white">
+                {averages.averageUnitsPerDay.toFixed(1)}
+              </p>
             </div>
           </div>
         </div>
       )}
 
       {/* Ganancia por Producto */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold">🏆 Ganancia por Producto</h2>
+      <div className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-white">
+            🏆 Ganancia por Producto
+          </h2>
           <button
             onClick={() =>
               exportToCSV(
-                productProfits.map((p) => ({
+                productProfits.map(p => ({
                   Producto: p.productName,
                   Cantidad: p.totalQuantity,
                   Ventas: p.totalSales,
@@ -381,7 +485,7 @@ export default function Analytics() {
                 "ganancia_por_producto"
               )
             }
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700"
           >
             Exportar CSV
           </button>
@@ -389,7 +493,7 @@ export default function Analytics() {
 
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-900/50 text-gray-300">
               <tr>
                 <th className="px-4 py-3 text-left">Producto</th>
                 <th className="px-4 py-3 text-right">Cantidad</th>
@@ -399,28 +503,36 @@ export default function Analytics() {
                 <th className="px-4 py-3 text-right">Margen</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
-              {productProfits.slice(0, 10).map((product) => (
-                <tr key={product.productId} className="hover:bg-gray-50">
+            <tbody className="divide-y divide-gray-700 text-gray-200">
+              {productProfits.slice(0, 10).map(product => (
+                <tr key={product.productId} className="hover:bg-gray-900/30">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {product.productImage && (
                         <img
                           src={product.productImage.url}
                           alt={product.productName}
-                          className="w-10 h-10 object-cover rounded"
+                          className="h-10 w-10 rounded object-cover"
                         />
                       )}
-                      <span className="font-medium">{product.productName}</span>
+                      <span className="font-medium text-gray-200">
+                        {product.productName}
+                      </span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right">{product.totalQuantity}</td>
+                  <td className="px-4 py-3 text-right">
+                    {product.totalQuantity}
+                  </td>
                   <td className="px-4 py-3 text-right">{product.totalSales}</td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(product.totalRevenue)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-green-600">
+                  <td className="px-4 py-3 text-right">
+                    {formatCurrency(product.totalRevenue)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-green-400">
                     {formatCurrency(product.totalProfit)}
                   </td>
-                  <td className="px-4 py-3 text-right">{product.profitMargin.toFixed(2)}%</td>
+                  <td className="px-4 py-3 text-right">
+                    {product.profitMargin.toFixed(2)}%
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -429,13 +541,15 @@ export default function Analytics() {
       </div>
 
       {/* Ganancia por Distribuidor */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold">👥 Ganancia por Distribuidor</h2>
+      <div className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-white">
+            👥 Ganancia por Distribuidor
+          </h2>
           <button
             onClick={() =>
               exportToCSV(
-                distributorProfits.map((d) => ({
+                distributorProfits.map(d => ({
                   Distribuidor: d.distributorName,
                   Email: d.distributorEmail,
                   Ventas: d.totalSales,
@@ -447,7 +561,7 @@ export default function Analytics() {
                 "ganancia_por_distribuidor"
               )
             }
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700"
           >
             Exportar CSV
           </button>
@@ -455,7 +569,7 @@ export default function Analytics() {
 
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-900/50 text-gray-300">
               <tr>
                 <th className="px-4 py-3 text-left">Distribuidor</th>
                 <th className="px-4 py-3 text-right">Ventas</th>
@@ -465,24 +579,37 @@ export default function Analytics() {
                 <th className="px-4 py-3 text-right">Venta Prom.</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
-              {distributorProfits.map((distributor) => (
-                <tr key={distributor.distributorId} className="hover:bg-gray-50">
+            <tbody className="divide-y divide-gray-700 text-gray-200">
+              {distributorProfits.map(distributor => (
+                <tr
+                  key={distributor.distributorId}
+                  className="hover:bg-gray-900/30"
+                >
                   <td className="px-4 py-3">
                     <div>
-                      <p className="font-medium">{distributor.distributorName}</p>
-                      <p className="text-sm text-gray-500">{distributor.distributorEmail}</p>
+                      <p className="font-medium text-gray-200">
+                        {distributor.distributorName}
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        {distributor.distributorEmail}
+                      </p>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right">{distributor.totalSales}</td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(distributor.totalRevenue)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-green-600">
+                  <td className="px-4 py-3 text-right">
+                    {distributor.totalSales}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {formatCurrency(distributor.totalRevenue)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-green-400">
                     {formatCurrency(distributor.totalAdminProfit)}
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold text-blue-600">
+                  <td className="px-4 py-3 text-right font-semibold text-blue-400">
                     {formatCurrency(distributor.totalDistributorProfit)}
                   </td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(distributor.averageSale)}</td>
+                  <td className="px-4 py-3 text-right">
+                    {formatCurrency(distributor.averageSale)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -491,25 +618,27 @@ export default function Analytics() {
       </div>
 
       {/* Timeline de Ventas */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold">📅 Timeline de Ventas</h2>
+      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-white">
+            📅 Timeline de Ventas
+          </h2>
           <div className="flex gap-2">
             <button
               onClick={() => updateTimeline(7)}
-              className={`px-4 py-2 rounded-md ${timelineDays === 7 ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+              className={`rounded-md px-4 py-2 ${timelineDays === 7 ? "bg-purple-600 text-white" : "border border-gray-700 text-gray-200 hover:bg-gray-800"}`}
             >
               7 días
             </button>
             <button
               onClick={() => updateTimeline(30)}
-              className={`px-4 py-2 rounded-md ${timelineDays === 30 ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+              className={`rounded-md px-4 py-2 ${timelineDays === 30 ? "bg-purple-600 text-white" : "border border-gray-700 text-gray-200 hover:bg-gray-800"}`}
             >
               30 días
             </button>
             <button
               onClick={() => updateTimeline(90)}
-              className={`px-4 py-2 rounded-md ${timelineDays === 90 ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+              className={`rounded-md px-4 py-2 ${timelineDays === 90 ? "bg-purple-600 text-white" : "border border-gray-700 text-gray-200 hover:bg-gray-800"}`}
             >
               90 días
             </button>
@@ -518,7 +647,7 @@ export default function Analytics() {
 
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-900/50 text-gray-300">
               <tr>
                 <th className="px-4 py-3 text-left">Fecha</th>
                 <th className="px-4 py-3 text-right">Ventas</th>
@@ -528,15 +657,21 @@ export default function Analytics() {
                 <th className="px-4 py-3 text-right">Ganancia</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
-              {timeline.map((day) => (
-                <tr key={day.date} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">{new Date(day.date).toLocaleDateString("es-MX")}</td>
+            <tbody className="divide-y divide-gray-700 text-gray-200">
+              {timeline.map(day => (
+                <tr key={day.date} className="hover:bg-gray-900/30">
+                  <td className="px-4 py-3">
+                    {new Date(day.date).toLocaleDateString("es-MX")}
+                  </td>
                   <td className="px-4 py-3 text-right">{day.sales}</td>
                   <td className="px-4 py-3 text-right">{day.units}</td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(day.revenue)}</td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(day.cost)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-green-600">
+                  <td className="px-4 py-3 text-right">
+                    {formatCurrency(day.revenue)}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {formatCurrency(day.cost)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-green-400">
                     {formatCurrency(day.profit)}
                   </td>
                 </tr>

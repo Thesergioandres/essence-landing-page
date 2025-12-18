@@ -175,36 +175,32 @@ export default function Sales() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Gestión de Ventas</h1>
+        <h1 className="text-3xl font-bold text-white">Gestión de Ventas</h1>
       </div>
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
-        <div className="rounded-lg bg-white p-6 shadow">
-          <p className="text-sm text-gray-600">Total Ventas</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+          <p className="text-sm text-gray-400">Total Ventas</p>
+          <p className="text-2xl font-bold text-white">{stats.total}</p>
         </div>
-        <div className="rounded-lg bg-yellow-50 p-6 shadow">
-          <p className="text-sm text-yellow-700">Pendientes</p>
-          <p className="text-2xl font-bold text-yellow-900">
-            {stats.pendiente}
-          </p>
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+          <p className="text-sm text-gray-400">Pendientes</p>
+          <p className="text-2xl font-bold text-white">{stats.pendiente}</p>
         </div>
-        <div className="rounded-lg bg-green-50 p-6 shadow">
-          <p className="text-sm text-green-700">Confirmadas</p>
-          <p className="text-2xl font-bold text-green-900">
-            {stats.confirmado}
-          </p>
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+          <p className="text-sm text-gray-400">Confirmadas</p>
+          <p className="text-2xl font-bold text-white">{stats.confirmado}</p>
         </div>
-        <div className="rounded-lg bg-purple-50 p-6 shadow">
-          <p className="text-sm text-purple-700">Ingresos Totales</p>
-          <p className="text-2xl font-bold text-purple-900">
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+          <p className="text-sm text-gray-400">Ingresos Totales</p>
+          <p className="text-2xl font-bold text-white">
             ${stats.totalRevenue.toLocaleString()}
           </p>
         </div>
-        <div className="rounded-lg bg-blue-50 p-6 shadow">
-          <p className="text-sm text-blue-700">Ganancia Admin</p>
-          <p className="text-2xl font-bold text-blue-900">
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+          <p className="text-sm text-gray-400">Ganancia Admin</p>
+          <p className="text-2xl font-bold text-white">
             ${stats.totalProfit.toLocaleString()}
           </p>
         </div>
@@ -224,17 +220,17 @@ export default function Sales() {
       {/* Filtros y Ordenamiento */}
       {!loading && (
         <>
-          <div className="space-y-4 rounded-lg bg-white p-4 shadow">
+          <div className="space-y-4 rounded-xl border border-gray-700 bg-gray-800/50 p-4">
             {/* Filtros de fecha */}
             <div>
-              <p className="mb-2 text-sm font-medium text-gray-700">
+              <p className="mb-2 text-sm font-medium text-gray-300">
                 Filtrar por fecha:
               </p>
               <div className="flex flex-wrap gap-4">
                 <div className="min-w-[180px] flex-1">
                   <label
                     htmlFor="startDate"
-                    className="mb-1 block text-xs text-gray-600"
+                    className="mb-1 block text-xs text-gray-400"
                   >
                     Fecha inicio
                   </label>
@@ -248,13 +244,13 @@ export default function Sales() {
                         startDate: e.target.value,
                       })
                     }
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-2 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
                   />
                 </div>
                 <div className="min-w-[180px] flex-1">
                   <label
                     htmlFor="endDate"
-                    className="mb-1 block text-xs text-gray-600"
+                    className="mb-1 block text-xs text-gray-400"
                   >
                     Fecha fin
                   </label>
@@ -268,7 +264,7 @@ export default function Sales() {
                         endDate: e.target.value,
                       })
                     }
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-2 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
                   />
                 </div>
                 {(dateFilters.startDate || dateFilters.endDate) && (
@@ -277,7 +273,7 @@ export default function Sales() {
                       onClick={() =>
                         setDateFilters({ startDate: "", endDate: "" })
                       }
-                      className="rounded-lg bg-gray-500 px-4 py-2 text-sm text-white transition-colors hover:bg-gray-600"
+                      className="rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-gray-800"
                     >
                       Limpiar fechas
                     </button>
@@ -287,7 +283,7 @@ export default function Sales() {
             </div>
 
             <div>
-              <p className="mb-2 text-sm font-medium text-gray-700">
+              <p className="mb-2 text-sm font-medium text-gray-300">
                 Filtrar por estado:
               </p>
               <div className="flex flex-wrap gap-2">
@@ -296,7 +292,7 @@ export default function Sales() {
                   className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
                     filter === "all"
                       ? "bg-purple-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "border border-gray-700 text-gray-300 hover:bg-gray-800"
                   }`}
                 >
                   Todas ({stats.total})
@@ -306,7 +302,7 @@ export default function Sales() {
                   className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
                     filter === "pendiente"
                       ? "bg-yellow-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "border border-gray-700 text-gray-300 hover:bg-gray-800"
                   }`}
                 >
                   Pendientes ({stats.pendiente})
@@ -316,7 +312,7 @@ export default function Sales() {
                   className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
                     filter === "confirmado"
                       ? "bg-green-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "border border-gray-700 text-gray-300 hover:bg-gray-800"
                   }`}
                 >
                   Confirmadas ({stats.confirmado})
@@ -327,7 +323,7 @@ export default function Sales() {
             <div>
               <label
                 htmlFor="sortBy"
-                className="mb-2 block text-sm font-medium text-gray-700"
+                className="mb-2 block text-sm font-medium text-gray-300"
               >
                 Ordenar por:
               </label>
@@ -335,7 +331,7 @@ export default function Sales() {
                 id="sortBy"
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as any)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-purple-500"
+                className="rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
               >
                 <option value="date-desc">Fecha (Más reciente primero)</option>
                 <option value="date-asc">Fecha (Más antigua primero)</option>
@@ -345,44 +341,44 @@ export default function Sales() {
           </div>
 
           {/* Tabla de ventas */}
-          <div className="overflow-hidden rounded-lg bg-white shadow">
+          <div className="overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50">
             <div className="table-responsive overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-700">
+                <thead className="bg-gray-900/50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Fecha
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Distribuidor
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Rango
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Comisión
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Producto
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Cantidad
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Total Venta
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Ganancia Admin
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Estado
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Acciones
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
+                <tbody className="divide-y divide-gray-700">
                   {sales.map(sale => {
                     const product =
                       typeof sale.product === "object" ? sale.product : null;
@@ -395,7 +391,7 @@ export default function Sales() {
                     let rankBadge = {
                       emoji: "👑",
                       text: "Admin",
-                      color: "bg-purple-100 text-purple-800",
+                      color: "bg-purple-500/20 text-purple-300",
                     };
                     if (distributor) {
                       const percentage = sale.distributorProfitPercentage || 20;
@@ -403,25 +399,25 @@ export default function Sales() {
                         rankBadge = {
                           emoji: "🥇",
                           text: "1º",
-                          color: "bg-yellow-100 text-yellow-800",
+                          color: "bg-yellow-500/20 text-yellow-300",
                         };
                       } else if (percentage === 23) {
                         rankBadge = {
                           emoji: "🥈",
                           text: "2º",
-                          color: "bg-gray-100 text-gray-800",
+                          color: "bg-gray-500/20 text-gray-200",
                         };
                       } else if (percentage === 21) {
                         rankBadge = {
                           emoji: "🥉",
                           text: "3º",
-                          color: "bg-orange-100 text-orange-800",
+                          color: "bg-orange-500/20 text-orange-300",
                         };
                       } else {
                         rankBadge = {
                           emoji: "📊",
                           text: "Normal",
-                          color: "bg-blue-100 text-blue-800",
+                          color: "bg-blue-500/20 text-blue-300",
                         };
                       }
                     }
@@ -429,7 +425,7 @@ export default function Sales() {
                     return (
                       <tr
                         key={sale._id}
-                        className="cursor-pointer hover:bg-gray-50"
+                        className="cursor-pointer hover:bg-gray-900/30"
                         onClick={e => {
                           // No abrir modal si se hace clic en botones
                           if ((e.target as HTMLElement).closest("button"))
@@ -437,7 +433,7 @@ export default function Sales() {
                           setSelectedSale(sale);
                         }}
                       >
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-200">
                           {new Date(sale.saleDate).toLocaleDateString("es-ES", {
                             year: "numeric",
                             month: "short",
@@ -445,10 +441,10 @@ export default function Sales() {
                           })}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-gray-200">
                             {distributor?.name || "Admin"}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-400">
                             {distributor?.email || ""}
                           </div>
                         </td>
@@ -459,7 +455,7 @@ export default function Sales() {
                             {rankBadge.emoji} {rankBadge.text}
                           </span>
                         </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-200">
                           {distributor
                             ? `${sale.distributorProfitPercentage ?? 20}%`
                             : "—"}
@@ -473,27 +469,27 @@ export default function Sales() {
                                 className="mr-3 h-10 w-10 rounded object-cover"
                               />
                             )}
-                            <span className="text-sm text-gray-900">
+                            <span className="text-sm text-gray-200">
                               {product?.name || "N/A"}
                             </span>
                           </div>
                         </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-200">
                           {sale.quantity}
                         </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-200">
                           ${(sale.salePrice * sale.quantity).toLocaleString()}
                         </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-green-600">
+                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-green-400">
                           ${sale.adminProfit.toLocaleString()}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4">
                           {sale.paymentStatus === "pendiente" ? (
-                            <span className="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold leading-5 text-yellow-800">
+                            <span className="inline-flex rounded-full bg-yellow-500/20 px-3 py-1 text-xs font-semibold leading-5 text-yellow-300">
                               Pendiente
                             </span>
                           ) : (
-                            <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold leading-5 text-green-800">
+                            <span className="inline-flex rounded-full bg-green-500/20 px-3 py-1 text-xs font-semibold leading-5 text-green-300">
                               Confirmado
                             </span>
                           )}
@@ -504,7 +500,7 @@ export default function Sales() {
                               <button
                                 onClick={() => handleConfirmPayment(sale._id)}
                                 disabled={confirmingId === sale._id}
-                                className="font-medium text-green-600 hover:text-green-900 disabled:opacity-50"
+                                className="font-medium text-green-400 hover:text-green-300 disabled:opacity-50"
                               >
                                 {confirmingId === sale._id
                                   ? "Confirmando..."
@@ -524,7 +520,7 @@ export default function Sales() {
                               <button
                                 onClick={() => handleDeleteSale(sale._id)}
                                 disabled={deletingId === sale._id}
-                                className="font-medium text-red-600 hover:text-red-900 disabled:opacity-50"
+                                className="font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
                               >
                                 {deletingId === sale._id
                                   ? "Eliminando..."
@@ -541,15 +537,15 @@ export default function Sales() {
 
               {sales.length === 0 && (
                 <div className="py-12 text-center">
-                  <p className="text-gray-500">No hay ventas que mostrar</p>
+                  <p className="text-gray-400">No hay ventas que mostrar</p>
                 </div>
               )}
             </div>
 
             {/* Controles de Paginación */}
             {pagination.pages > 1 && (
-              <div className="mt-4 flex flex-col items-center justify-between gap-4 bg-gray-50 px-6 py-4 sm:flex-row">
-                <div className="text-sm text-gray-600">
+              <div className="mt-4 flex flex-col items-center justify-between gap-4 border-t border-gray-700 bg-gray-900/30 px-6 py-4 sm:flex-row">
+                <div className="text-sm text-gray-300">
                   Página {pagination.page} de {pagination.pages} • Total:{" "}
                   {pagination.total} ventas
                 </div>
@@ -557,14 +553,14 @@ export default function Sales() {
                   <button
                     onClick={() => handlePageChange(pagination.page - 1)}
                     disabled={pagination.page === 1}
-                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
+                    className="rounded-lg border border-gray-700 bg-transparent px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     ← Anterior
                   </button>
                   <button
                     onClick={() => handlePageChange(pagination.page + 1)}
                     disabled={!pagination.hasMore}
-                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
+                    className="rounded-lg border border-gray-700 bg-transparent px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Siguiente →
                   </button>

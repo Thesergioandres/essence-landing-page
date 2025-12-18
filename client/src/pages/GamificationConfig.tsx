@@ -122,27 +122,27 @@ const GamificationConfigPage = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="text-xl">Cargando configuración...</div>
+        <div className="text-xl text-gray-200">Cargando configuración...</div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">⚙️ Configuración de Gamificación</h1>
+      <h1 className="text-3xl font-bold text-white mb-8">⚙️ Configuración de Gamificación</h1>
 
       {/* Periodo de Evaluación */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 className="text-2xl font-semibold mb-4">Periodo de Evaluación</h2>
+      <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg mb-6">
+        <h2 className="text-2xl font-semibold text-white mb-4">Periodo de Evaluación</h2>
 
         <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">
+          <label className="block text-gray-300 font-medium mb-2">
             Tipo de Periodo
           </label>
           <select
             value={evaluationPeriod}
             onChange={(e) => setEvaluationPeriod(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
           >
             <option value="daily">Diario</option>
             <option value="weekly">Semanal</option>
@@ -154,7 +154,7 @@ const GamificationConfigPage = () => {
 
         {evaluationPeriod === "custom" && (
           <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-gray-300 font-medium mb-2">
               Días del Periodo Personalizado
             </label>
             <input
@@ -162,74 +162,74 @@ const GamificationConfigPage = () => {
               min="1"
               value={customPeriodDays}
               onChange={(e) => setCustomPeriodDays(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </div>
         )}
       </div>
 
       {/* Bonos */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 className="text-2xl font-semibold mb-4">💰 Bonos por Posición</h2>
+      <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg mb-6">
+        <h2 className="text-2xl font-semibold text-white mb-4">💰 Bonos por Posición</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-gray-300 font-medium mb-2">
               🥇 Primer Lugar
             </label>
             <input
               type="number"
               value={topPerformerBonus}
               onChange={(e) => setTopPerformerBonus(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-gray-300 font-medium mb-2">
               🥈 Segundo Lugar
             </label>
             <input
               type="number"
               value={secondPlaceBonus}
               onChange={(e) => setSecondPlaceBonus(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-gray-300 font-medium mb-2">
               🥉 Tercer Lugar
             </label>
             <input
               type="number"
               value={thirdPlaceBonus}
               onChange={(e) => setThirdPlaceBonus(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
       </div>
 
       {/* Sistema de Puntos */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 className="text-2xl font-semibold mb-4">⭐ Sistema de Puntos</h2>
+      <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg mb-6">
+        <h2 className="text-2xl font-semibold text-white mb-4">⭐ Sistema de Puntos</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-gray-300 font-medium mb-2">
               Puntos por Venta
             </label>
             <input
               type="number"
               value={pointsPerSale}
               onChange={(e) => setPointsPerSale(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-gray-300 font-medium mb-2">
               Puntos por Peso
             </label>
             <input
@@ -237,56 +237,56 @@ const GamificationConfigPage = () => {
               step="0.001"
               value={pointsPerPeso}
               onChange={(e) => setPointsPerPeso(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
       </div>
 
       {/* Metas de Ventas */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 className="text-2xl font-semibold mb-4">🎯 Metas de Ventas</h2>
+      <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg mb-6">
+        <h2 className="text-2xl font-semibold text-white mb-4">🎯 Metas de Ventas</h2>
 
         {salesTargets.map((target, index) => (
-          <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 p-4 border border-gray-200 rounded">
+          <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 p-4 border border-gray-800 rounded">
             <div>
-              <label className="block text-gray-700 text-sm mb-1">Nivel</label>
+              <label className="block text-gray-300 text-sm mb-1">Nivel</label>
               <input
                 type="text"
                 value={target.level}
                 onChange={(e) => updateSalesTarget(index, "level", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded text-sm"
                 placeholder="Bronce"
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 text-sm mb-1">Monto Mínimo</label>
+              <label className="block text-gray-300 text-sm mb-1">Monto Mínimo</label>
               <input
                 type="number"
                 value={target.minAmount}
                 onChange={(e) => updateSalesTarget(index, "minAmount", Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 text-sm mb-1">Bono</label>
+              <label className="block text-gray-300 text-sm mb-1">Bono</label>
               <input
                 type="number"
                 value={target.bonus}
                 onChange={(e) => updateSalesTarget(index, "bonus", Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 text-sm mb-1">Badge</label>
+              <label className="block text-gray-300 text-sm mb-1">Badge</label>
               <input
                 type="text"
                 value={target.badge}
                 onChange={(e) => updateSalesTarget(index, "badge", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded text-sm"
                 placeholder="🥉"
               />
             </div>
@@ -335,7 +335,7 @@ const GamificationConfigPage = () => {
               type="date"
               value={evalStartDate}
               onChange={(e) => setEvalStartDate(e.target.value)}
-              className="w-full px-4 py-2 border border-white rounded-md text-gray-900 focus:ring-2 focus:ring-white"
+              className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:ring-2 focus:ring-white"
             />
           </div>
 
@@ -345,7 +345,7 @@ const GamificationConfigPage = () => {
               type="date"
               value={evalEndDate}
               onChange={(e) => setEvalEndDate(e.target.value)}
-              className="w-full px-4 py-2 border border-white rounded-md text-gray-900 focus:ring-2 focus:ring-white"
+              className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:ring-2 focus:ring-white"
             />
           </div>
         </div>
@@ -355,7 +355,7 @@ const GamificationConfigPage = () => {
           <textarea
             value={evalNotes}
             onChange={(e) => setEvalNotes(e.target.value)}
-            className="w-full px-4 py-2 border border-white rounded-md text-gray-900 focus:ring-2 focus:ring-white"
+            className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:ring-2 focus:ring-white"
             rows={3}
             placeholder="Notas sobre este periodo..."
           />

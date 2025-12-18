@@ -1,51 +1,57 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { distributorService, stockService } from "../api/services";
 import LoadingSpinner from "../components/LoadingSpinner";
-import type { User, DistributorStock } from "../types";
+import type { DistributorStock, User } from "../types";
 
 export default function TransferStock() {
   const [distributors, setDistributors] = useState<User[]>([]);
   const [myStock, setMyStock] = useState<DistributorStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [selectedDistributor, setSelectedDistributor] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const user = JSON.parse(localStorage.getItem("user") || "{}");
-      
+
       // Verificar que tengamos un ID de usuario válido
       if (!user._id) {
-        setMessage({ type: 'error', text: 'No se encontró información del usuario. Por favor, inicia sesión nuevamente.' });
+        setMessage({
+          type: "error",
+          text: "No se encontró información del usuario. Por favor, inicia sesión nuevamente.",
+        });
         setLoading(false);
         return;
       }
-      
+
       const [distributorsData, stockData] = await Promise.all([
         distributorService.getAll({ active: true }),
-        stockService.getDistributorStock(user._id)
+        stockService.getDistributorStock(user._id),
       ]);
 
       // Filtrar el distribuidor actual de la lista
-      const allDistributors = Array.isArray(distributorsData) 
-        ? distributorsData 
+      const allDistributors = Array.isArray(distributorsData)
+        ? distributorsData
         : distributorsData.data || [];
-      
+
       const filteredDistributors = allDistributors.filter(
         (d: User) => d._id !== user._id && d.active
       );
-      
+
       setDistributors(filteredDistributors);
       setMyStock(stockData);
     } catch (error) {
       console.error("Error al cargar datos:", error);
-      setMessage({ type: 'error', text: 'Error al cargar los datos' });
+      setMessage({ type: "error", text: "Error al cargar los datos" });
     } finally {
       setLoading(false);
     }
@@ -57,8 +63,9 @@ export default function TransferStock() {
 
   const getAvailableStock = () => {
     if (!selectedProduct) return 0;
-    const stock = myStock.find((s) => {
-      const productId = typeof s.product === 'string' ? s.product : s.product._id;
+    const stock = myStock.find(s => {
+      const productId =
+        typeof s.product === "string" ? s.product : s.product._id;
       return productId === selectedProduct;
     });
     return stock?.quantity || 0;
@@ -72,24 +79,25 @@ export default function TransferStock() {
       const result = await stockService.transferStock({
         toDistributorId: selectedDistributor,
         productId: selectedProduct,
-        quantity
+        quantity,
       });
 
-      setMessage({ type: 'success', text: result.message });
-      
+      setMessage({ type: "success", text: result.message });
+
       // Limpiar formulario
       setSelectedDistributor("");
       setSelectedProduct("");
       setQuantity(1);
       setShowConfirmation(false);
-      
+
       // Recargar stock
       await loadData();
     } catch (error: any) {
       console.error("Error en transferencia:", error);
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Error al realizar la transferencia' 
+      setMessage({
+        type: "error",
+        text:
+          error.response?.data?.message || "Error al realizar la transferencia",
       });
     } finally {
       setSubmitting(false);
@@ -98,17 +106,20 @@ export default function TransferStock() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedDistributor || !selectedProduct || quantity <= 0) {
-      setMessage({ type: 'error', text: 'Completa todos los campos correctamente' });
+      setMessage({
+        type: "error",
+        text: "Completa todos los campos correctamente",
+      });
       return;
     }
 
     const availableStock = getAvailableStock();
     if (quantity > availableStock) {
-      setMessage({ 
-        type: 'error', 
-        text: `Stock insuficiente. Disponible: ${availableStock}` 
+      setMessage({
+        type: "error",
+        text: `Stock insuficiente. Disponible: ${availableStock}`,
       });
       return;
     }
@@ -117,22 +128,27 @@ export default function TransferStock() {
   };
 
   const getDistributorName = () => {
-    return distributors.find(d => d._id === selectedDistributor)?.name || '';
+    return distributors.find(d => d._id === selectedDistributor)?.name || "";
   };
 
   const getProductName = () => {
     const stock = myStock.find(s => {
-      const productId = typeof s.product === 'string' ? s.product : s.product._id;
+      const productId =
+        typeof s.product === "string" ? s.product : s.product._id;
       return productId === selectedProduct;
     });
-    if (!stock) return '';
-    return typeof stock.product === 'string' ? '' : stock.product.name;
+    if (!stock) return "";
+    return typeof stock.product === "string" ? "" : stock.product.name;
   };
 
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <LoadingSpinner size="lg" variant="dots" message="Cargando datos de transferencia..." />
+        <LoadingSpinner
+          size="lg"
+          variant="dots"
+          message="Cargando datos de transferencia..."
+        />
       </div>
     );
   }
@@ -140,8 +156,8 @@ export default function TransferStock() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">Transferir Inventario</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-3xl font-bold text-white">Transferir Inventario</h1>
+        <p className="mt-2 text-gray-300">
           Transfiere productos de tu inventario a otro distribuidor
         </p>
       </div>
@@ -149,32 +165,32 @@ export default function TransferStock() {
       {message && (
         <div
           className={`rounded-lg p-4 ${
-            message.type === 'success'
-              ? 'bg-green-50 text-green-800 border border-green-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
+            message.type === "success"
+              ? "border border-green-500/30 bg-green-500/10 text-green-300"
+              : "border border-red-500/30 bg-red-500/10 text-red-300"
           }`}
         >
           <p className="flex items-center gap-2">
-            {message.type === 'success' ? '✓' : '✕'} {message.text}
+            {message.type === "success" ? "✓" : "✕"} {message.text}
           </p>
         </div>
       )}
 
-      <div className="rounded-lg bg-white p-6 shadow-md">
+      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Seleccionar distribuidor */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-gray-300">
               Distribuidor Destino *
             </label>
             <select
               value={selectedDistributor}
-              onChange={(e) => setSelectedDistributor(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              onChange={e => setSelectedDistributor(e.target.value)}
+              className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2.5 text-gray-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500/40"
               required
             >
               <option value="">Selecciona un distribuidor</option>
-              {distributors.map((dist) => (
+              {distributors.map(dist => (
                 <option key={dist._id} value={dist._id}>
                   {dist.name} - {dist.email}
                 </option>
@@ -184,24 +200,30 @@ export default function TransferStock() {
 
           {/* Seleccionar producto */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-gray-300">
               Producto *
             </label>
             <select
               value={selectedProduct}
-              onChange={(e) => {
+              onChange={e => {
                 setSelectedProduct(e.target.value);
                 setQuantity(1);
               }}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2.5 text-gray-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500/40"
               required
             >
               <option value="">Selecciona un producto</option>
               {myStock
-                .filter((s) => s.quantity > 0)
-                .map((stock) => {
-                  const productId = typeof stock.product === 'string' ? stock.product : stock.product._id;
-                  const productName = typeof stock.product === 'string' ? 'Producto' : stock.product.name;
+                .filter(s => s.quantity > 0)
+                .map(stock => {
+                  const productId =
+                    typeof stock.product === "string"
+                      ? stock.product
+                      : stock.product._id;
+                  const productName =
+                    typeof stock.product === "string"
+                      ? "Producto"
+                      : stock.product.name;
                   return (
                     <option key={productId} value={productId}>
                       {productName} - Disponible: {stock.quantity} unidades
@@ -213,7 +235,7 @@ export default function TransferStock() {
 
           {/* Cantidad */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-gray-300">
               Cantidad *
             </label>
             <input
@@ -221,12 +243,12 @@ export default function TransferStock() {
               min="1"
               max={getAvailableStock()}
               value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              onChange={e => setQuantity(Number(e.target.value))}
+              className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2.5 text-gray-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500/40"
               required
             />
             {selectedProduct && (
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-400">
                 Disponible: {getAvailableStock()} unidades
               </p>
             )}
@@ -247,9 +269,11 @@ export default function TransferStock() {
       {/* Modal de confirmación */}
       {showConfirmation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-800">Confirmar Transferencia</h3>
-            <div className="mt-4 space-y-2 text-gray-600">
+          <div className="w-full max-w-md rounded-xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
+            <h3 className="text-xl font-bold text-white">
+              Confirmar Transferencia
+            </h3>
+            <div className="mt-4 space-y-2 text-gray-200">
               <p>
                 <strong>Producto:</strong> {getProductName()}
               </p>
@@ -259,16 +283,17 @@ export default function TransferStock() {
               <p>
                 <strong>Destino:</strong> {getDistributorName()}
               </p>
-              <p className="mt-4 text-sm text-amber-600">
-                ⚠️ Esta acción no se puede deshacer. El stock se restará de tu inventario
-                y se agregará al inventario del distribuidor seleccionado.
+              <p className="mt-4 text-sm text-amber-300">
+                ⚠️ Esta acción no se puede deshacer. El stock se restará de tu
+                inventario y se agregará al inventario del distribuidor
+                seleccionado.
               </p>
             </div>
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setShowConfirmation(false)}
                 disabled={submitting}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                className="flex-1 rounded-lg border border-gray-700 bg-transparent px-4 py-2 font-medium text-gray-200 transition-colors hover:bg-gray-800 disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -285,24 +310,36 @@ export default function TransferStock() {
       )}
 
       {/* Resumen de mi inventario */}
-      <div className="rounded-lg bg-white p-6 shadow-md">
-        <h2 className="mb-4 text-xl font-bold text-gray-800">Mi Inventario Actual</h2>
+      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+        <h2 className="mb-4 text-xl font-bold text-white">
+          Mi Inventario Actual
+        </h2>
         <div className="space-y-2">
           {myStock.length === 0 ? (
-            <p className="text-gray-500">No tienes productos en tu inventario</p>
+            <p className="text-gray-400">
+              No tienes productos en tu inventario
+            </p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {myStock.map((stock) => {
-                const productId = typeof stock.product === 'string' ? stock.product : stock.product._id;
-                const productName = typeof stock.product === 'string' ? 'Producto' : stock.product.name;
+              {myStock.map(stock => {
+                const productId =
+                  typeof stock.product === "string"
+                    ? stock.product
+                    : stock.product._id;
+                const productName =
+                  typeof stock.product === "string"
+                    ? "Producto"
+                    : stock.product.name;
                 return (
                   <div
                     key={productId}
-                    className="rounded-lg border border-gray-200 p-4"
+                    className="rounded-lg border border-gray-700 bg-gray-900/30 p-4"
                   >
-                    <h3 className="font-medium text-gray-800">{productName}</h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Stock: <span className="font-semibold">{stock.quantity}</span> unidades
+                    <h3 className="font-medium text-gray-200">{productName}</h3>
+                    <p className="mt-1 text-sm text-gray-300">
+                      Stock:{" "}
+                      <span className="font-semibold">{stock.quantity}</span>{" "}
+                      unidades
                     </p>
                   </div>
                 );

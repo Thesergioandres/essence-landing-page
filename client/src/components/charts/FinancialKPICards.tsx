@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
-import { advancedAnalyticsService } from "../../api/services";
 import { motion } from "framer-motion";
 import {
-  TrendingUp,
-  TrendingDown,
   DollarSign,
   ShoppingCart,
   Target,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { advancedAnalyticsService } from "../../api/services";
 
 interface KPI {
   label: string;
@@ -41,11 +41,11 @@ export const FinancialKPICards: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[1, 2, 3, 4].map((i) => (
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map(i => (
           <div
             key={i}
-            className="bg-white p-6 rounded-lg shadow animate-pulse h-32"
+            className="h-32 animate-pulse rounded-lg border border-gray-800 bg-gray-900/60 p-6"
           ></div>
         ))}
       </div>
@@ -63,66 +63,66 @@ export const FinancialKPICards: React.FC = () => {
     {
       label: "Ventas Hoy",
       value: safeNumber(kpis.daily?.sales),
-      icon: <ShoppingCart className="w-8 h-8" />,
+      icon: <ShoppingCart className="h-8 w-8" />,
       color: "bg-purple-500",
     },
     {
       label: "Ingresos del Mes",
       value: `$${safeNumber(kpis.monthly?.revenue).toFixed(2)}`,
-      icon: <DollarSign className="w-8 h-8" />,
+      icon: <DollarSign className="h-8 w-8" />,
       color: "bg-green-500",
     },
     {
       label: "Ganancia del Mes",
       value: `$${safeNumber(kpis.monthly?.profit).toFixed(2)}`,
-      icon: <TrendingUp className="w-8 h-8" />,
+      icon: <TrendingUp className="h-8 w-8" />,
       color: "bg-blue-500",
     },
     {
       label: "Ticket Promedio",
       value: `$${safeNumber(kpis.avgTicket).toFixed(2)}`,
-      icon: <Target className="w-8 h-8" />,
+      icon: <Target className="h-8 w-8" />,
       color: "bg-orange-500",
     },
     {
       label: "Ventas Semana",
       value: safeNumber(kpis.weekly?.sales),
-      icon: <ShoppingCart className="w-8 h-8" />,
+      icon: <ShoppingCart className="h-8 w-8" />,
       color: "bg-pink-500",
     },
     {
       label: "Ingresos Semana",
       value: `$${safeNumber(kpis.weekly?.revenue).toFixed(2)}`,
-      icon: <DollarSign className="w-8 h-8" />,
+      icon: <DollarSign className="h-8 w-8" />,
       color: "bg-teal-500",
     },
     {
       label: "Ventas del Día",
       value: safeNumber(kpis.daily?.sales),
-      icon: <ShoppingCart className="w-8 h-8" />,
+      icon: <ShoppingCart className="h-8 w-8" />,
       color: "bg-indigo-500",
     },
     {
       label: "Ingresos del Día",
       value: `$${safeNumber(kpis.daily?.revenue).toFixed(2)}`,
-      icon: <DollarSign className="w-8 h-8" />,
+      icon: <DollarSign className="h-8 w-8" />,
       color: "bg-violet-500",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
       {kpiCards.map((kpi, index) => (
         <motion.div
           key={kpi.label}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3, delay: index * 0.05 }}
-          className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+          className="overflow-hidden rounded-lg border border-gray-800 bg-gray-900"
         >
           <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`${kpi.color} text-white p-3 rounded-lg`}>
+            <div className="mb-4 flex items-center justify-between">
+              <div className={`${kpi.color} rounded-lg p-3 text-white`}>
                 {kpi.icon}
               </div>
               {kpi.change !== undefined && (
@@ -132,19 +132,17 @@ export const FinancialKPICards: React.FC = () => {
                   }`}
                 >
                   {kpi.change >= 0 ? (
-                    <TrendingUp className="w-5 h-5 mr-1" />
+                    <TrendingUp className="mr-1 h-5 w-5" />
                   ) : (
-                    <TrendingDown className="w-5 h-5 mr-1" />
+                    <TrendingDown className="mr-1 h-5 w-5" />
                   )}
-                  <span className="font-semibold">
-                    {Math.abs(kpi.change)}%
-                  </span>
+                  <span className="font-semibold">{Math.abs(kpi.change)}%</span>
                 </div>
               )}
             </div>
             <div>
-              <p className="text-gray-500 text-sm mb-1">{kpi.label}</p>
-              <p className="text-3xl font-bold text-gray-800">{kpi.value}</p>
+              <p className="mb-1 text-sm text-gray-400">{kpi.label}</p>
+              <p className="text-3xl font-bold text-white">{kpi.value}</p>
             </div>
           </div>
         </motion.div>

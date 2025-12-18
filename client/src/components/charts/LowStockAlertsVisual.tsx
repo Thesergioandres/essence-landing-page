@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { advancedAnalyticsService } from "../../api/services";
 import { motion } from "framer-motion";
-import { AlertTriangle, AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { advancedAnalyticsService } from "../../api/services";
 
 export const LowStockAlertsVisual: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
@@ -37,11 +37,11 @@ export const LowStockAlertsVisual: React.FC = () => {
   const getUrgencyIcon = (urgency: string) => {
     switch (urgency) {
       case "critical":
-        return <AlertTriangle className="w-5 h-5 text-red-500" />;
+        return <AlertTriangle className="h-5 w-5 text-red-500" />;
       case "warning":
-        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
       default:
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
     }
   };
 
@@ -58,8 +58,8 @@ export const LowStockAlertsVisual: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96 bg-white rounded-lg shadow">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="flex h-96 items-center justify-center rounded-lg border border-gray-800 bg-gray-900/60">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-600"></div>
       </div>
     );
   }
@@ -69,13 +69,13 @@ export const LowStockAlertsVisual: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-8 rounded-lg shadow-lg text-center"
+        className="rounded-lg border border-gray-800 bg-gray-900 p-8 text-center"
       >
-        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-        <h3 className="text-xl font-bold text-gray-800 mb-2">
+        <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-500" />
+        <h3 className="mb-2 text-xl font-bold text-white">
           Stock en Buenos Niveles
         </h3>
-        <p className="text-gray-600">
+        <p className="text-gray-300">
           No hay productos con stock bajo en este momento
         </p>
       </motion.div>
@@ -87,13 +87,11 @@ export const LowStockAlertsVisual: React.FC = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.4 }}
-      className="bg-white p-6 rounded-lg shadow-lg"
+      className="rounded-lg border border-gray-800 bg-gray-900 p-6"
     >
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-800">
-          Alertas de Stock Bajo
-        </h3>
-        <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold">
+      <div className="mb-6 flex items-center justify-between">
+        <h3 className="text-xl font-bold text-white">Alertas de Stock Bajo</h3>
+        <span className="rounded-full bg-red-500/15 px-3 py-1 text-sm font-semibold text-red-300">
           {products.length} producto{products.length !== 1 ? "s" : ""}
         </span>
       </div>
@@ -105,22 +103,22 @@ export const LowStockAlertsVisual: React.FC = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
-            className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            className="rounded-lg border border-gray-800 p-4 transition-colors hover:bg-white/5"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 {getUrgencyIcon(product.urgency)}
                 <div>
-                  <h4 className="font-semibold text-gray-800">
+                  <h4 className="font-semibold text-white">
                     {product.productName}
                   </h4>
                   <span
-                    className={`text-xs font-semibold px-2 py-1 rounded ${
+                    className={`rounded px-2 py-1 text-xs font-semibold ${
                       product.urgency === "critical"
-                        ? "bg-red-100 text-red-800"
+                        ? "bg-red-500/15 text-red-300"
                         : product.urgency === "warning"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-green-100 text-green-800"
+                          ? "bg-yellow-500/15 text-yellow-300"
+                          : "bg-green-500/15 text-green-300"
                     }`}
                   >
                     {getUrgencyText(product.urgency)}
@@ -128,34 +126,34 @@ export const LowStockAlertsVisual: React.FC = () => {
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-gray-800">
+                <div className="text-2xl font-bold text-white">
                   {product.currentStock}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-400">
                   Mínimo: {product.lowStockAlert}
                 </div>
               </div>
             </div>
 
             <div className="relative pt-1">
-              <div className="flex mb-2 items-center justify-between">
+              <div className="mb-2 flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-semibold inline-block text-gray-600">
+                  <span className="inline-block text-xs font-semibold text-gray-300">
                     Nivel de Stock
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-semibold inline-block text-gray-600">
+                  <span className="inline-block text-xs font-semibold text-gray-300">
                     {(Number(product.stockPercentage) || 0).toFixed(0)}%
                   </span>
                 </div>
               </div>
-              <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
+              <div className="flex h-2 overflow-hidden rounded bg-gray-800 text-xs">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${product.stockPercentage}%` }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${getUrgencyColor(
+                  className={`flex flex-col justify-center whitespace-nowrap text-center text-white shadow-none ${getUrgencyColor(
                     product.urgency
                   )}`}
                 />

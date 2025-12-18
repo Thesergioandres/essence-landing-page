@@ -38,7 +38,7 @@ export const ComparativeAnalysisView: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96 bg-white rounded-lg shadow">
+      <div className="flex items-center justify-center h-96 bg-gray-900/60 border border-gray-800 rounded-lg">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
@@ -75,9 +75,9 @@ export const ComparativeAnalysisView: React.FC = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.5 }}
-      className="bg-white p-6 rounded-lg shadow-lg"
+      className="bg-gray-900 border border-gray-800 p-6 rounded-lg"
     >
-      <h3 className="text-xl font-bold text-gray-800 mb-6">
+      <h3 className="text-xl font-bold text-white mb-6">
         Análisis Comparativo (Mes Actual vs Mes Anterior)
       </h3>
 
@@ -88,17 +88,17 @@ export const ComparativeAnalysisView: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
-            className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+            className="border border-gray-800 rounded-lg p-6 hover:bg-white/5 transition-colors"
           >
-            <div className="text-sm text-gray-500 mb-2">{metric.label}</div>
+            <div className="text-sm text-gray-400 mb-2">{metric.label}</div>
 
             <div className="flex items-end justify-between mb-4">
               <div>
-                <div className="text-3xl font-bold text-gray-800 mb-1">
+                <div className="text-3xl font-bold text-white mb-1">
                   {metric.prefix}
                   {(Number(metric.current) || 0).toFixed(metric.prefix === "$" ? 2 : 0)}
                 </div>
-                <div className="text-xs text-gray-500">Mes Actual</div>
+                <div className="text-xs text-gray-400">Mes Actual</div>
               </div>
               <div className={`flex items-center ${getGrowthColor(metric.growth)}`}>
                 {getGrowthIcon(metric.growth)}
@@ -109,23 +109,23 @@ export const ComparativeAnalysisView: React.FC = () => {
               </div>
             </div>
 
-            <div className="border-t pt-4 mt-4">
+            <div className="border-t border-gray-800 pt-4 mt-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Mes Anterior:</span>
-                <span className="font-semibold text-gray-700">
+                <span className="text-sm text-gray-300">Mes Anterior:</span>
+                <span className="font-semibold text-gray-200">
                   {metric.prefix}
                   {(Number(metric.previous) || 0).toFixed(metric.prefix === "$" ? 2 : 0)}
                 </span>
               </div>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-sm text-gray-600">Diferencia:</span>
+                <span className="text-sm text-gray-300">Diferencia:</span>
                 <span
                   className={`font-semibold ${
                     metric.current - metric.previous > 0
                       ? "text-green-600"
                       : metric.current - metric.previous < 0
                       ? "text-red-600"
-                      : "text-gray-600"
+                      : "text-gray-300"
                   }`}
                 >
                   {metric.current - metric.previous > 0 ? "+" : ""}
@@ -139,7 +139,7 @@ export const ComparativeAnalysisView: React.FC = () => {
 
             <div className="mt-4">
               <div className="relative pt-1">
-                <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
+                <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-800">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{

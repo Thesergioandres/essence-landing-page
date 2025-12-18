@@ -1,28 +1,28 @@
-import { useState } from "react";
+import { endOfMonth, format, startOfMonth, subDays } from "date-fns";
 import { motion } from "framer-motion";
 import {
   BarChart3,
-  Download,
   Calendar,
-  TrendingUp,
+  Download,
   FileText,
+  TrendingUp,
 } from "lucide-react";
+import { useState } from "react";
+import { advancedAnalyticsService } from "../api/services";
 import {
+  CategoryDistributionChart,
+  ComparativeAnalysisView,
+  DistributorRankingsTable,
+  FinancialKPICards,
+  LowStockAlertsVisual,
   SalesTimelineChart,
   TopProductsChart,
-  CategoryDistributionChart,
-  FinancialKPICards,
-  DistributorRankingsTable,
-  LowStockAlertsVisual,
-  ComparativeAnalysisView,
 } from "../components/charts";
-import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import {
   exportKPIsToPDF,
-  exportRankingsToPDF,
   exportRankingsToExcel,
+  exportRankingsToPDF,
 } from "../utils/exportUtils";
-import { advancedAnalyticsService } from "../api/services";
 
 export default function AdvancedDashboard() {
   const [period, setPeriod] = useState<"day" | "week" | "month">("week");
@@ -77,21 +77,21 @@ export default function AdvancedDashboard() {
       >
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center">
-              <BarChart3 className="w-10 h-10 mr-3 text-purple-600" />
+            <h1 className="mb-2 flex items-center text-4xl font-bold text-white">
+              <BarChart3 className="mr-3 h-10 w-10 text-purple-600" />
               Analíticas Avanzadas
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-300">
               Dashboard completo de métricas y análisis de rendimiento
             </p>
           </div>
 
-          <div className="flex items-center space-x-4 mt-4 md:mt-0">
+          <div className="mt-4 flex items-center space-x-4 md:mt-0">
             <button
               onClick={handleExportKPIs}
-              className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="flex items-center rounded-lg bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-700"
             >
-              <Download className="w-4 h-4 mr-2" />
+              <Download className="mr-2 h-4 w-4" />
               Exportar KPIs
             </button>
           </div>
@@ -103,20 +103,20 @@ export default function AdvancedDashboard() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1 }}
-        className="bg-white p-6 rounded-lg shadow-lg mb-8"
+        className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6"
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <Calendar className="w-4 h-4 inline mr-2" />
+            <label className="mb-2 block text-sm font-medium text-gray-300">
+              <Calendar className="mr-2 inline h-4 w-4" />
               Periodo
             </label>
             <select
               value={period}
-              onChange={(e) =>
+              onChange={e =>
                 setPeriod(e.target.value as "day" | "week" | "month")
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
             >
               <option value="day">Diario</option>
               <option value="week">Semanal</option>
@@ -125,35 +125,35 @@ export default function AdvancedDashboard() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-300">
               Fecha Inicio
             </label>
             <input
               type="date"
               value={dateRange.startDate}
-              onChange={(e) =>
+              onChange={e =>
                 setDateRange({ ...dateRange, startDate: e.target.value })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-300">
               Fecha Fin
             </label>
             <input
               type="date"
               value={dateRange.endDate}
-              onChange={(e) =>
+              onChange={e =>
                 setDateRange({ ...dateRange, endDate: e.target.value })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
             />
           </div>
         </div>
 
-        <div className="flex space-x-2 mt-4">
+        <div className="mt-4 flex space-x-2">
           <button
             onClick={() =>
               setDateRange({
@@ -161,7 +161,7 @@ export default function AdvancedDashboard() {
                 endDate: format(new Date(), "yyyy-MM-dd"),
               })
             }
-            className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            className="rounded-lg border border-gray-700 px-3 py-1 text-sm text-gray-200 transition-colors hover:bg-gray-800"
           >
             Últimos 7 días
           </button>
@@ -172,7 +172,7 @@ export default function AdvancedDashboard() {
                 endDate: format(new Date(), "yyyy-MM-dd"),
               })
             }
-            className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            className="rounded-lg border border-gray-700 px-3 py-1 text-sm text-gray-200 transition-colors hover:bg-gray-800"
           >
             Últimos 30 días
           </button>
@@ -183,7 +183,7 @@ export default function AdvancedDashboard() {
                 endDate: format(endOfMonth(new Date()), "yyyy-MM-dd"),
               })
             }
-            className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            className="rounded-lg border border-gray-700 px-3 py-1 text-sm text-gray-200 transition-colors hover:bg-gray-800"
           >
             Este mes
           </button>
@@ -192,9 +192,9 @@ export default function AdvancedDashboard() {
 
       {/* Tabs */}
       <div className="mb-8">
-        <div className="border-b border-gray-200">
+        <div className="border-b border-gray-700">
           <nav className="-mb-px flex space-x-8">
-            {tabs.map((tab) => {
+            {tabs.map(tab => {
               const Icon = tab.icon;
               return (
                 <button
@@ -203,10 +203,10 @@ export default function AdvancedDashboard() {
                   className={`${
                     activeTab === tab.id
                       ? "border-purple-500 text-purple-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors`}
+                      : "border-transparent text-gray-400 hover:border-gray-600 hover:text-gray-200"
+                  } flex items-center whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium transition-colors`}
                 >
-                  <Icon className="w-5 h-5 mr-2" />
+                  <Icon className="mr-2 h-5 w-5" />
                   {tab.label}
                 </button>
               );
@@ -261,16 +261,16 @@ export default function AdvancedDashboard() {
             >
               <button
                 onClick={() => handleExportRankings("pdf")}
-                className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex items-center rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700"
               >
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="mr-2 h-4 w-4" />
                 PDF
               </button>
               <button
                 onClick={() => handleExportRankings("excel")}
-                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="flex items-center rounded-lg bg-green-600 px-4 py-2 text-white transition-colors hover:bg-green-700"
               >
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="mr-2 h-4 w-4" />
                 Excel
               </button>
             </motion.div>
