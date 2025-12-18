@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { advancedAnalyticsService } from "../../api/services";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { advancedAnalyticsService } from "../../api/services";
 
 export const ComparativeAnalysisView: React.FC = () => {
   const [comparison, setComparison] = useState<any>(null);
@@ -25,9 +25,9 @@ export const ComparativeAnalysisView: React.FC = () => {
   }, []);
 
   const getGrowthIcon = (growth: number) => {
-    if (growth > 0) return <TrendingUp className="w-5 h-5" />;
-    if (growth < 0) return <TrendingDown className="w-5 h-5" />;
-    return <Minus className="w-5 h-5" />;
+    if (growth > 0) return <TrendingUp className="h-5 w-5" />;
+    if (growth < 0) return <TrendingDown className="h-5 w-5" />;
+    return <Minus className="h-5 w-5" />;
   };
 
   const getGrowthColor = (growth: number) => {
@@ -38,8 +38,8 @@ export const ComparativeAnalysisView: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96 bg-gray-900/60 border border-gray-800 rounded-lg">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="flex h-96 items-center justify-center rounded-lg border border-gray-800 bg-gray-900/60">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-600"></div>
       </div>
     );
   }
@@ -75,57 +75,63 @@ export const ComparativeAnalysisView: React.FC = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.5 }}
-      className="bg-gray-900 border border-gray-800 p-6 rounded-lg"
+      className="rounded-lg border border-gray-800 bg-gray-900 p-6"
     >
-      <h3 className="text-xl font-bold text-white mb-6">
+      <h3 className="mb-6 text-xl font-bold text-white">
         Análisis Comparativo (Mes Actual vs Mes Anterior)
       </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.label}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
-            className="border border-gray-800 rounded-lg p-6 hover:bg-white/5 transition-colors"
+            className="rounded-lg border border-gray-800 p-6 transition-colors hover:bg-white/5"
           >
-            <div className="text-sm text-gray-400 mb-2">{metric.label}</div>
+            <div className="mb-2 text-sm text-gray-400">{metric.label}</div>
 
-            <div className="flex items-end justify-between mb-4">
+            <div className="mb-4 flex items-end justify-between">
               <div>
-                <div className="text-3xl font-bold text-white mb-1">
+                <div className="mb-1 text-3xl font-bold text-white">
                   {metric.prefix}
-                  {(Number(metric.current) || 0).toFixed(metric.prefix === "$" ? 2 : 0)}
+                  {(Number(metric.current) || 0).toFixed(
+                    metric.prefix === "$" ? 2 : 0
+                  )}
                 </div>
                 <div className="text-xs text-gray-400">Mes Actual</div>
               </div>
-              <div className={`flex items-center ${getGrowthColor(metric.growth)}`}>
+              <div
+                className={`flex items-center ${getGrowthColor(metric.growth)}`}
+              >
                 {getGrowthIcon(metric.growth)}
-                <span className="font-bold text-lg ml-1">
+                <span className="ml-1 text-lg font-bold">
                   {metric.growth > 0 ? "+" : ""}
                   {(Number(metric.growth) || 0).toFixed(1)}%
                 </span>
               </div>
             </div>
 
-            <div className="border-t border-gray-800 pt-4 mt-4">
+            <div className="mt-4 border-t border-gray-800 pt-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-300">Mes Anterior:</span>
                 <span className="font-semibold text-gray-200">
                   {metric.prefix}
-                  {(Number(metric.previous) || 0).toFixed(metric.prefix === "$" ? 2 : 0)}
+                  {(Number(metric.previous) || 0).toFixed(
+                    metric.prefix === "$" ? 2 : 0
+                  )}
                 </span>
               </div>
-              <div className="flex items-center justify-between mt-2">
+              <div className="mt-2 flex items-center justify-between">
                 <span className="text-sm text-gray-300">Diferencia:</span>
                 <span
                   className={`font-semibold ${
                     metric.current - metric.previous > 0
                       ? "text-green-600"
                       : metric.current - metric.previous < 0
-                      ? "text-red-600"
-                      : "text-gray-300"
+                        ? "text-red-600"
+                        : "text-gray-300"
                   }`}
                 >
                   {metric.current - metric.previous > 0 ? "+" : ""}
@@ -139,7 +145,7 @@ export const ComparativeAnalysisView: React.FC = () => {
 
             <div className="mt-4">
               <div className="relative pt-1">
-                <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-800">
+                <div className="flex h-2 overflow-hidden rounded bg-gray-800 text-xs">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{
@@ -149,12 +155,12 @@ export const ComparativeAnalysisView: React.FC = () => {
                       )}%`,
                     }}
                     transition={{ duration: 0.5, delay: index * 0.15 }}
-                    className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
+                    className={`flex flex-col justify-center whitespace-nowrap text-center text-white shadow-none ${
                       metric.growth > 0
                         ? "bg-green-500"
                         : metric.growth < 0
-                        ? "bg-red-500"
-                        : "bg-gray-500"
+                          ? "bg-red-500"
+                          : "bg-gray-500"
                     }`}
                   />
                 </div>

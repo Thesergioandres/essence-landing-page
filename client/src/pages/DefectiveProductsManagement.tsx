@@ -12,15 +12,28 @@ export default function DefectiveProductsManagement() {
       rechazado: number;
       totalQuantity: number;
     };
-  }>({ reports: [], stats: { total: 0, pendiente: 0, confirmado: 0, rechazado: 0, totalQuantity: 0 } });
+  }>({
+    reports: [],
+    stats: {
+      total: 0,
+      pendiente: 0,
+      confirmado: 0,
+      rechazado: 0,
+      totalQuantity: 0,
+    },
+  });
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pendiente" | "confirmado" | "rechazado">("all");
+  const [filter, setFilter] = useState<
+    "all" | "pendiente" | "confirmado" | "rechazado"
+  >("all");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<DefectiveProduct | null>(null);
+  const [selectedReport, setSelectedReport] = useState<DefectiveProduct | null>(
+    null
+  );
   const [adminNotes, setAdminNotes] = useState("");
   const [actionType, setActionType] = useState<"confirm" | "reject">("confirm");
-  
+
   // Estados para reportar desde admin
   const [showReportModal, setShowReportModal] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -58,7 +71,10 @@ export default function DefectiveProductsManagement() {
     }
   };
 
-  const handleAction = (report: DefectiveProduct, action: "confirm" | "reject") => {
+  const handleAction = (
+    report: DefectiveProduct,
+    action: "confirm" | "reject"
+  ) => {
     setSelectedReport(report);
     setActionType(action);
     setAdminNotes("");
@@ -70,7 +86,7 @@ export default function DefectiveProductsManagement() {
 
     try {
       setProcessingId(selectedReport._id);
-      
+
       if (actionType === "confirm") {
         await defectiveProductService.confirm(selectedReport._id, adminNotes);
       } else {
@@ -81,7 +97,6 @@ export default function DefectiveProductsManagement() {
       setShowNotesModal(false);
       setSelectedReport(null);
       setAdminNotes("");
-     
     } catch (error: any) {
       console.error("Error al procesar reporte:", error);
       alert(error.response?.data?.message || "Error al procesar el reporte");
@@ -92,8 +107,12 @@ export default function DefectiveProductsManagement() {
 
   const handleReportFromWarehouse = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!reportForm.productId || reportForm.quantity <= 0 || !reportForm.reason.trim()) {
+
+    if (
+      !reportForm.productId ||
+      reportForm.quantity <= 0 ||
+      !reportForm.reason.trim()
+    ) {
       alert("Por favor completa todos los campos");
       return;
     }
@@ -108,11 +127,11 @@ export default function DefectiveProductsManagement() {
 
       // Recargar datos
       await Promise.all([loadReports(), loadProducts()]);
-      
+
       // Limpiar y cerrar
       setReportForm({ productId: "", quantity: 1, reason: "" });
       setShowReportModal(false);
-      
+
       alert("Producto defectuoso reportado desde bodega");
     } catch (error: any) {
       console.error("Error al reportar:", error);
@@ -122,61 +141,69 @@ export default function DefectiveProductsManagement() {
     }
   };
 
-  const filteredReports = data.reports.filter((report) => {
+  const filteredReports = data.reports.filter(report => {
     if (filter === "all") return true;
     return report.status === filter;
   });
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-600"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-white">Productos Defectuosos</h1>
         <button
           onClick={() => setShowReportModal(true)}
-          className="bg-linear-to-r from-red-600 to-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition shadow-lg"
+          className="bg-linear-to-r rounded-lg from-red-600 to-orange-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:from-red-700 hover:to-orange-700"
         >
           + Reportar desde Bodega
         </button>
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
+        <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
           <p className="text-sm text-gray-400">Total Reportes</p>
           <p className="text-2xl font-bold text-white">{data.stats.total}</p>
         </div>
-        <div className="bg-yellow-500/10 border border-yellow-500/20 p-6 rounded-lg">
+        <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-6">
           <p className="text-sm text-yellow-300">Pendientes</p>
-          <p className="text-2xl font-bold text-yellow-200">{data.stats.pendiente}</p>
+          <p className="text-2xl font-bold text-yellow-200">
+            {data.stats.pendiente}
+          </p>
         </div>
-        <div className="bg-green-500/10 border border-green-500/20 p-6 rounded-lg">
+        <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-6">
           <p className="text-sm text-green-300">Confirmados</p>
-          <p className="text-2xl font-bold text-green-200">{data.stats.confirmado}</p>
+          <p className="text-2xl font-bold text-green-200">
+            {data.stats.confirmado}
+          </p>
         </div>
-        <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-lg">
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6">
           <p className="text-sm text-red-300">Rechazados</p>
-          <p className="text-2xl font-bold text-red-200">{data.stats.rechazado}</p>
+          <p className="text-2xl font-bold text-red-200">
+            {data.stats.rechazado}
+          </p>
         </div>
-        <div className="bg-purple-500/10 border border-purple-500/20 p-6 rounded-lg">
+        <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 p-6">
           <p className="text-sm text-purple-300">Total Unidades</p>
-          <p className="text-2xl font-bold text-purple-200">{data.stats.totalQuantity}</p>
+          <p className="text-2xl font-bold text-purple-200">
+            {data.stats.totalQuantity}
+          </p>
         </div>
       </div>
 
       {/* Filtros */}
-      <div className="bg-gray-900 border border-gray-800 p-4 rounded-lg">
+      <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`rounded-lg px-4 py-2 font-medium transition-colors ${
               filter === "all"
                 ? "bg-purple-600 text-white"
                 : "bg-gray-800 text-gray-200 hover:bg-white/5"
@@ -186,7 +213,7 @@ export default function DefectiveProductsManagement() {
           </button>
           <button
             onClick={() => setFilter("pendiente")}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`rounded-lg px-4 py-2 font-medium transition-colors ${
               filter === "pendiente"
                 ? "bg-yellow-500 text-white"
                 : "bg-gray-800 text-gray-200 hover:bg-white/5"
@@ -196,7 +223,7 @@ export default function DefectiveProductsManagement() {
           </button>
           <button
             onClick={() => setFilter("confirmado")}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`rounded-lg px-4 py-2 font-medium transition-colors ${
               filter === "confirmado"
                 ? "bg-green-500 text-white"
                 : "bg-gray-800 text-gray-200 hover:bg-white/5"
@@ -206,7 +233,7 @@ export default function DefectiveProductsManagement() {
           </button>
           <button
             onClick={() => setFilter("rechazado")}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`rounded-lg px-4 py-2 font-medium transition-colors ${
               filter === "rechazado"
                 ? "bg-red-500 text-white"
                 : "bg-gray-800 text-gray-200 hover:bg-white/5"
@@ -218,49 +245,53 @@ export default function DefectiveProductsManagement() {
       </div>
 
       {/* Tabla de reportes */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+      <div className="overflow-hidden rounded-lg border border-gray-800 bg-gray-900">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-800">
             <thead className="bg-gray-800/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                   Fecha
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                   Distribuidor
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                   Producto
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                   Cantidad
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                   Razón
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-gray-900 divide-y divide-gray-800">
-              {filteredReports.map((report) => {
-                const product = typeof report.product === "object" ? report.product : null;
-                const distributor = typeof report.distributor === "object" ? report.distributor : null;
+            <tbody className="divide-y divide-gray-800 bg-gray-900">
+              {filteredReports.map(report => {
+                const product =
+                  typeof report.product === "object" ? report.product : null;
+                const distributor =
+                  typeof report.distributor === "object"
+                    ? report.distributor
+                    : null;
 
                 return (
                   <tr key={report._id} className="hover:bg-white/5">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-white">
                       {new Date(report.reportDate).toLocaleDateString("es-ES", {
                         year: "numeric",
                         month: "short",
                         day: "numeric",
                       })}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-6 py-4">
                       {report.distributor ? (
                         <>
                           <div className="text-sm font-medium text-white">
@@ -272,19 +303,19 @@ export default function DefectiveProductsManagement() {
                         </>
                       ) : (
                         <div className="flex items-center">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/15 text-purple-300">
+                          <span className="inline-flex items-center rounded-full bg-purple-500/15 px-2.5 py-0.5 text-xs font-medium text-purple-300">
                             🏢 Bodega (Admin)
                           </span>
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-6 py-4">
                       <div className="flex items-center">
                         {product?.image?.url && (
                           <img
                             src={product.image.url}
                             alt={product.name}
-                            className="h-10 w-10 rounded object-cover mr-3"
+                            className="mr-3 h-10 w-10 rounded object-cover"
                           />
                         )}
                         <span className="text-sm text-white">
@@ -292,52 +323,55 @@ export default function DefectiveProductsManagement() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-white">
                       {report.quantity}
                     </td>
-                    <td className="px-6 py-4 text-sm text-white max-w-xs">
+                    <td className="max-w-xs px-6 py-4 text-sm text-white">
                       <div className="line-clamp-2" title={report.reason}>
                         {report.reason}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-6 py-4">
                       {report.status === "pendiente" && (
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-500/15 text-yellow-300">
+                        <span className="inline-flex rounded-full bg-yellow-500/15 px-3 py-1 text-xs font-semibold leading-5 text-yellow-300">
                           Pendiente
                         </span>
                       )}
                       {report.status === "confirmado" && (
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-500/15 text-green-300">
+                        <span className="inline-flex rounded-full bg-green-500/15 px-3 py-1 text-xs font-semibold leading-5 text-green-300">
                           Confirmado
                         </span>
                       )}
                       {report.status === "rechazado" && (
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-500/15 text-red-300">
+                        <span className="inline-flex rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold leading-5 text-red-300">
                           Rechazado
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm">
                       {report.status === "pendiente" ? (
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleAction(report, "confirm")}
                             disabled={processingId === report._id}
-                            className="text-green-400 hover:text-green-300 font-medium disabled:opacity-50"
+                            className="font-medium text-green-400 hover:text-green-300 disabled:opacity-50"
                           >
                             Confirmar
                           </button>
                           <button
                             onClick={() => handleAction(report, "reject")}
                             disabled={processingId === report._id}
-                            className="text-red-400 hover:text-red-300 font-medium disabled:opacity-50"
+                            className="font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
                           >
                             Rechazar
                           </button>
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-xs">
-                          {report.status === "confirmado" ? "Confirmado" : "Rechazado"} el{" "}
+                        <span className="text-xs text-gray-400">
+                          {report.status === "confirmado"
+                            ? "Confirmado"
+                            : "Rechazado"}{" "}
+                          el{" "}
                           {report.confirmedAt &&
                             new Date(report.confirmedAt).toLocaleDateString()}
                         </span>
@@ -350,7 +384,7 @@ export default function DefectiveProductsManagement() {
           </table>
 
           {filteredReports.length === 0 && (
-            <div className="text-center py-12">
+            <div className="py-12 text-center">
               <p className="text-gray-400">No hay reportes</p>
             </div>
           )}
@@ -359,10 +393,12 @@ export default function DefectiveProductsManagement() {
 
       {/* Modal de notas */}
       {showNotesModal && selectedReport && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              {actionType === "confirm" ? "Confirmar Recepción" : "Rechazar Reporte"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-lg border border-gray-800 bg-gray-900 p-6">
+            <h2 className="mb-4 text-2xl font-bold text-white">
+              {actionType === "confirm"
+                ? "Confirmar Recepción"
+                : "Rechazar Reporte"}
             </h2>
 
             <div className="mb-4">
@@ -375,21 +411,21 @@ export default function DefectiveProductsManagement() {
               <p className="text-sm text-gray-300">
                 <strong>Cantidad:</strong> {selectedReport.quantity}
               </p>
-              <p className="text-sm text-gray-300 mt-2">
+              <p className="mt-2 text-sm text-gray-300">
                 <strong>Razón:</strong> {selectedReport.reason}
               </p>
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="mb-2 block text-sm font-medium text-gray-300">
                 Notas (opcional)
               </label>
               <textarea
                 value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
+                onChange={e => setAdminNotes(e.target.value)}
                 rows={3}
                 placeholder="Agregar notas adicionales..."
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                className="w-full resize-none rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-transparent focus:ring-2 focus:ring-purple-500"
               />
             </div>
 
@@ -401,7 +437,7 @@ export default function DefectiveProductsManagement() {
                   setSelectedReport(null);
                   setAdminNotes("");
                 }}
-                className="flex-1 px-4 py-2 border border-gray-700 text-gray-200 rounded-lg hover:bg-white/5 transition"
+                className="flex-1 rounded-lg border border-gray-700 px-4 py-2 text-gray-200 transition hover:bg-white/5"
                 disabled={processingId !== null}
               >
                 Cancelar
@@ -409,17 +445,17 @@ export default function DefectiveProductsManagement() {
               <button
                 onClick={executeAction}
                 disabled={processingId !== null}
-                className={`flex-1 px-4 py-2 rounded-lg font-semibold transition disabled:opacity-50 ${
+                className={`flex-1 rounded-lg px-4 py-2 font-semibold transition disabled:opacity-50 ${
                   actionType === "confirm"
-                    ? "bg-green-600 hover:bg-green-700 text-white"
-                    : "bg-red-600 hover:bg-red-700 text-white"
+                    ? "bg-green-600 text-white hover:bg-green-700"
+                    : "bg-red-600 text-white hover:bg-red-700"
                 }`}
               >
                 {processingId !== null
                   ? "Procesando..."
                   : actionType === "confirm"
-                  ? "Confirmar"
-                  : "Rechazar"}
+                    ? "Confirmar"
+                    : "Rechazar"}
               </button>
             </div>
           </div>
@@ -428,36 +464,42 @@ export default function DefectiveProductsManagement() {
 
       {/* Modal para reportar desde bodega */}
       {showReportModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-lg border border-gray-800 bg-gray-900 p-6">
+            <h2 className="mb-4 text-2xl font-bold text-white">
               Reportar Producto Defectuoso (Bodega)
             </h2>
 
             <form onSubmit={handleReportFromWarehouse} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-300">
                   Producto *
                 </label>
                 <select
                   value={reportForm.productId}
-                  onChange={(e) =>
-                    setReportForm({ ...reportForm, productId: e.target.value, quantity: 1 })
+                  onChange={e =>
+                    setReportForm({
+                      ...reportForm,
+                      productId: e.target.value,
+                      quantity: 1,
+                    })
                   }
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-transparent focus:ring-2 focus:ring-red-500"
                   required
                 >
                   <option value="">Selecciona un producto</option>
-                  {products.map((product) => (
+                  {products.map(product => (
                     <option key={product._id} value={product._id}>
-                      {product.name} | Stock: {product.warehouseStock} | Compra: ${product.purchasePrice} | Cliente: ${product.clientPrice || 0}
+                      {product.name} | Stock: {product.warehouseStock} | Compra:
+                      ${product.purchasePrice} | Cliente: $
+                      {product.clientPrice || 0}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-300">
                   Cantidad *
                 </label>
                 <input
@@ -465,37 +507,42 @@ export default function DefectiveProductsManagement() {
                   min="1"
                   max={
                     reportForm.productId
-                      ? products.find((p) => p._id === reportForm.productId)
+                      ? products.find(p => p._id === reportForm.productId)
                           ?.warehouseStock || 1
                       : 1
                   }
                   value={reportForm.quantity}
-                  onChange={(e) =>
-                    setReportForm({ ...reportForm, quantity: parseInt(e.target.value) })
+                  onChange={e =>
+                    setReportForm({
+                      ...reportForm,
+                      quantity: parseInt(e.target.value),
+                    })
                   }
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-transparent focus:ring-2 focus:ring-red-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-300">
                   Razón del defecto *
                 </label>
                 <textarea
                   value={reportForm.reason}
-                  onChange={(e) => setReportForm({ ...reportForm, reason: e.target.value })}
+                  onChange={e =>
+                    setReportForm({ ...reportForm, reason: e.target.value })
+                  }
                   rows={3}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                  className="w-full resize-none rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-transparent focus:ring-2 focus:ring-red-500"
                   placeholder="Describe el defecto del producto..."
                   required
                 />
               </div>
 
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+              <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3">
                 <p className="text-sm text-yellow-200">
-                  ℹ️ Los reportes desde bodega se auto-confirman automáticamente y descuentan
-                  del stock de bodega.
+                  ℹ️ Los reportes desde bodega se auto-confirman automáticamente
+                  y descuentan del stock de bodega.
                 </p>
               </div>
 
@@ -506,7 +553,7 @@ export default function DefectiveProductsManagement() {
                     setShowReportModal(false);
                     setReportForm({ productId: "", quantity: 1, reason: "" });
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-700 text-gray-200 rounded-lg hover:bg-white/5 transition"
+                  className="flex-1 rounded-lg border border-gray-700 px-4 py-2 text-gray-200 transition hover:bg-white/5"
                   disabled={submitting}
                 >
                   Cancelar
@@ -514,7 +561,7 @@ export default function DefectiveProductsManagement() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 bg-linear-to-r from-red-600 to-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition disabled:opacity-50"
+                  className="bg-linear-to-r flex-1 rounded-lg from-red-600 to-orange-600 px-4 py-2 font-semibold text-white transition hover:from-red-700 hover:to-orange-700 disabled:opacity-50"
                 >
                   {submitting ? "Reportando..." : "Reportar"}
                 </button>

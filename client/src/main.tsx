@@ -4,18 +4,10 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
 import "./index.css";
 
-// Registrar Service Worker para PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .then(registration => {
-        console.log('✅ Service Worker registrado:', registration.scope);
-      })
-      .catch(error => {
-        console.error('❌ Error registrando Service Worker:', error);
-      });
-  });
-}
+import { registerSW } from "virtual:pwa-register";
+
+// Registrar Service Worker (VitePWA) con auto-update
+registerSW({ immediate: true });
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

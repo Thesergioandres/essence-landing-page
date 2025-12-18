@@ -93,15 +93,15 @@ export default function AuditLogs() {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "info":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-500/15 text-blue-200";
       case "warning":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-500/15 text-yellow-200";
       case "error":
-        return "bg-red-100 text-red-800";
+        return "bg-red-500/15 text-red-200";
       case "critical":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-500/15 text-purple-200";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-500/20 text-gray-200";
     }
   };
 

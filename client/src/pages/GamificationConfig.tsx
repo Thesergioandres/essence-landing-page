@@ -52,7 +52,12 @@ const GamificationConfigPage = () => {
     try {
       setSaving(true);
       await gamificationService.updateConfig({
-        evaluationPeriod: evaluationPeriod as "daily" | "weekly" | "biweekly" | "monthly" | "custom",
+        evaluationPeriod: evaluationPeriod as
+          | "daily"
+          | "weekly"
+          | "biweekly"
+          | "monthly"
+          | "custom",
         customPeriodDays,
         topPerformerBonus,
         secondPlaceBonus,
@@ -93,7 +98,6 @@ const GamificationConfigPage = () => {
       setEvalStartDate("");
       setEvalEndDate("");
       setEvalNotes("");
-     
     } catch (error: any) {
       console.error("Error evaluating period:", error);
       alert(error.response?.data?.message || "Error al evaluar el periodo");
@@ -113,7 +117,11 @@ const GamificationConfigPage = () => {
     setSalesTargets(salesTargets.filter((_, i) => i !== index));
   };
 
-  const updateSalesTarget = (index: number, field: keyof SalesTarget, value: string | number) => {
+  const updateSalesTarget = (
+    index: number,
+    field: keyof SalesTarget,
+    value: string | number
+  ) => {
     const updated = [...salesTargets];
     updated[index] = { ...updated[index], [field]: value };
     setSalesTargets(updated);
@@ -121,7 +129,7 @@ const GamificationConfigPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-xl text-gray-200">Cargando configuración...</div>
       </div>
     );
@@ -129,20 +137,24 @@ const GamificationConfigPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-white mb-8">⚙️ Configuración de Gamificación</h1>
+      <h1 className="mb-8 text-3xl font-bold text-white">
+        ⚙️ Configuración de Gamificación
+      </h1>
 
       {/* Periodo de Evaluación */}
-      <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg mb-6">
-        <h2 className="text-2xl font-semibold text-white mb-4">Periodo de Evaluación</h2>
+      <div className="mb-6 rounded-lg border border-gray-800 bg-gray-900 p-6">
+        <h2 className="mb-4 text-2xl font-semibold text-white">
+          Periodo de Evaluación
+        </h2>
 
         <div className="mb-4">
-          <label className="block text-gray-300 font-medium mb-2">
+          <label className="mb-2 block font-medium text-gray-300">
             Tipo de Periodo
           </label>
           <select
             value={evaluationPeriod}
-            onChange={(e) => setEvaluationPeriod(e.target.value)}
-            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
+            onChange={e => setEvaluationPeriod(e.target.value)}
+            className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500"
           >
             <option value="daily">Diario</option>
             <option value="weekly">Semanal</option>
@@ -154,139 +166,158 @@ const GamificationConfigPage = () => {
 
         {evaluationPeriod === "custom" && (
           <div className="mb-4">
-            <label className="block text-gray-300 font-medium mb-2">
+            <label className="mb-2 block font-medium text-gray-300">
               Días del Periodo Personalizado
             </label>
             <input
               type="number"
               min="1"
               value={customPeriodDays}
-              onChange={(e) => setCustomPeriodDays(Number(e.target.value))}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
+              onChange={e => setCustomPeriodDays(Number(e.target.value))}
+              className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500"
             />
           </div>
         )}
       </div>
 
       {/* Bonos */}
-      <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg mb-6">
-        <h2 className="text-2xl font-semibold text-white mb-4">💰 Bonos por Posición</h2>
+      <div className="mb-6 rounded-lg border border-gray-800 bg-gray-900 p-6">
+        <h2 className="mb-4 text-2xl font-semibold text-white">
+          💰 Bonos por Posición
+        </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="block text-gray-300 font-medium mb-2">
+            <label className="mb-2 block font-medium text-gray-300">
               🥇 Primer Lugar
             </label>
             <input
               type="number"
               value={topPerformerBonus}
-              onChange={(e) => setTopPerformerBonus(Number(e.target.value))}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
+              onChange={e => setTopPerformerBonus(Number(e.target.value))}
+              className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-gray-300 font-medium mb-2">
+            <label className="mb-2 block font-medium text-gray-300">
               🥈 Segundo Lugar
             </label>
             <input
               type="number"
               value={secondPlaceBonus}
-              onChange={(e) => setSecondPlaceBonus(Number(e.target.value))}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
+              onChange={e => setSecondPlaceBonus(Number(e.target.value))}
+              className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-gray-300 font-medium mb-2">
+            <label className="mb-2 block font-medium text-gray-300">
               🥉 Tercer Lugar
             </label>
             <input
               type="number"
               value={thirdPlaceBonus}
-              onChange={(e) => setThirdPlaceBonus(Number(e.target.value))}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
+              onChange={e => setThirdPlaceBonus(Number(e.target.value))}
+              className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
       </div>
 
       {/* Sistema de Puntos */}
-      <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg mb-6">
-        <h2 className="text-2xl font-semibold text-white mb-4">⭐ Sistema de Puntos</h2>
+      <div className="mb-6 rounded-lg border border-gray-800 bg-gray-900 p-6">
+        <h2 className="mb-4 text-2xl font-semibold text-white">
+          ⭐ Sistema de Puntos
+        </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-gray-300 font-medium mb-2">
+            <label className="mb-2 block font-medium text-gray-300">
               Puntos por Venta
             </label>
             <input
               type="number"
               value={pointsPerSale}
-              onChange={(e) => setPointsPerSale(Number(e.target.value))}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
+              onChange={e => setPointsPerSale(Number(e.target.value))}
+              className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-gray-300 font-medium mb-2">
+            <label className="mb-2 block font-medium text-gray-300">
               Puntos por Peso
             </label>
             <input
               type="number"
               step="0.001"
               value={pointsPerPeso}
-              onChange={(e) => setPointsPerPeso(Number(e.target.value))}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:ring-2 focus:ring-blue-500"
+              onChange={e => setPointsPerPeso(Number(e.target.value))}
+              className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
       </div>
 
       {/* Metas de Ventas */}
-      <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg mb-6">
-        <h2 className="text-2xl font-semibold text-white mb-4">🎯 Metas de Ventas</h2>
+      <div className="mb-6 rounded-lg border border-gray-800 bg-gray-900 p-6">
+        <h2 className="mb-4 text-2xl font-semibold text-white">
+          🎯 Metas de Ventas
+        </h2>
 
         {salesTargets.map((target, index) => (
-          <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 p-4 border border-gray-800 rounded">
+          <div
+            key={index}
+            className="mb-4 grid grid-cols-1 gap-4 rounded border border-gray-800 p-4 md:grid-cols-5"
+          >
             <div>
-              <label className="block text-gray-300 text-sm mb-1">Nivel</label>
+              <label className="mb-1 block text-sm text-gray-300">Nivel</label>
               <input
                 type="text"
                 value={target.level}
-                onChange={(e) => updateSalesTarget(index, "level", e.target.value)}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded text-sm"
+                onChange={e =>
+                  updateSalesTarget(index, "level", e.target.value)
+                }
+                className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
                 placeholder="Bronce"
               />
             </div>
 
             <div>
-              <label className="block text-gray-300 text-sm mb-1">Monto Mínimo</label>
+              <label className="mb-1 block text-sm text-gray-300">
+                Monto Mínimo
+              </label>
               <input
                 type="number"
                 value={target.minAmount}
-                onChange={(e) => updateSalesTarget(index, "minAmount", Number(e.target.value))}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded text-sm"
+                onChange={e =>
+                  updateSalesTarget(index, "minAmount", Number(e.target.value))
+                }
+                className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
               />
             </div>
 
             <div>
-              <label className="block text-gray-300 text-sm mb-1">Bono</label>
+              <label className="mb-1 block text-sm text-gray-300">Bono</label>
               <input
                 type="number"
                 value={target.bonus}
-                onChange={(e) => updateSalesTarget(index, "bonus", Number(e.target.value))}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded text-sm"
+                onChange={e =>
+                  updateSalesTarget(index, "bonus", Number(e.target.value))
+                }
+                className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
               />
             </div>
 
             <div>
-              <label className="block text-gray-300 text-sm mb-1">Badge</label>
+              <label className="mb-1 block text-sm text-gray-300">Badge</label>
               <input
                 type="text"
                 value={target.badge}
-                onChange={(e) => updateSalesTarget(index, "badge", e.target.value)}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded text-sm"
+                onChange={e =>
+                  updateSalesTarget(index, "badge", e.target.value)
+                }
+                className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
                 placeholder="🥉"
               />
             </div>
@@ -294,7 +325,7 @@ const GamificationConfigPage = () => {
             <div className="flex items-end">
               <button
                 onClick={() => removeSalesTarget(index)}
-                className="w-full px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                className="w-full rounded bg-red-500 px-3 py-2 text-sm text-white hover:bg-red-600"
               >
                 Eliminar
               </button>
@@ -304,58 +335,60 @@ const GamificationConfigPage = () => {
 
         <button
           onClick={addSalesTarget}
-          className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          className="mt-2 rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600"
         >
           + Agregar Meta
         </button>
       </div>
 
       {/* Guardar Configuración */}
-      <div className="flex justify-end mb-8">
+      <div className="mb-8 flex justify-end">
         <button
           onClick={handleSaveConfig}
           disabled={saving}
-          className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+          className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:bg-gray-400"
         >
           {saving ? "Guardando..." : "💾 Guardar Configuración"}
         </button>
       </div>
 
       {/* Evaluación Manual */}
-      <div className="bg-linear-to-r from-purple-500 to-indigo-600 p-6 rounded-lg shadow-md text-white">
-        <h2 className="text-2xl font-semibold mb-4">🏆 Evaluar Periodo Manualmente</h2>
+      <div className="bg-linear-to-r rounded-lg from-purple-500 to-indigo-600 p-6 text-white shadow-md">
+        <h2 className="mb-4 text-2xl font-semibold">
+          🏆 Evaluar Periodo Manualmente
+        </h2>
         <p className="mb-4 opacity-90">
           Calcula el ganador del periodo y asigna bonos automáticamente
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block font-medium mb-2">Fecha de Inicio</label>
+            <label className="mb-2 block font-medium">Fecha de Inicio</label>
             <input
               type="date"
               value={evalStartDate}
-              onChange={(e) => setEvalStartDate(e.target.value)}
-              className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:ring-2 focus:ring-white"
+              onChange={e => setEvalStartDate(e.target.value)}
+              className="w-full rounded-md border border-white/20 bg-white/10 px-4 py-2 text-white focus:ring-2 focus:ring-white"
             />
           </div>
 
           <div>
-            <label className="block font-medium mb-2">Fecha de Fin</label>
+            <label className="mb-2 block font-medium">Fecha de Fin</label>
             <input
               type="date"
               value={evalEndDate}
-              onChange={(e) => setEvalEndDate(e.target.value)}
-              className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:ring-2 focus:ring-white"
+              onChange={e => setEvalEndDate(e.target.value)}
+              className="w-full rounded-md border border-white/20 bg-white/10 px-4 py-2 text-white focus:ring-2 focus:ring-white"
             />
           </div>
         </div>
 
         <div className="mb-4">
-          <label className="block font-medium mb-2">Notas (Opcional)</label>
+          <label className="mb-2 block font-medium">Notas (Opcional)</label>
           <textarea
             value={evalNotes}
-            onChange={(e) => setEvalNotes(e.target.value)}
-            className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:ring-2 focus:ring-white"
+            onChange={e => setEvalNotes(e.target.value)}
+            className="w-full rounded-md border border-white/20 bg-white/10 px-4 py-2 text-white focus:ring-2 focus:ring-white"
             rows={3}
             placeholder="Notas sobre este periodo..."
           />
@@ -364,7 +397,7 @@ const GamificationConfigPage = () => {
         <button
           onClick={handleEvaluatePeriod}
           disabled={evaluating}
-          className="w-full px-6 py-3 bg-white text-purple-600 font-semibold rounded-lg hover:bg-gray-100 disabled:bg-gray-300 disabled:text-gray-600"
+          className="w-full rounded-lg border border-white/20 bg-white/10 px-6 py-3 font-semibold text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-white/50"
         >
           {evaluating ? "Evaluando..." : "🚀 Evaluar Periodo"}
         </button>

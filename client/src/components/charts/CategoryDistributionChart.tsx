@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import {
-  PieChart,
-  Pie,
   Cell,
-  ResponsiveContainer,
   Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
   Tooltip,
 } from "recharts";
 import { advancedAnalyticsService } from "../../api/services";
-import { motion } from "framer-motion";
 
 interface CategoryDistributionChartProps {
   startDate?: string;
@@ -41,11 +41,13 @@ export const CategoryDistributionChart: React.FC<
           endDate,
         });
         console.log("Category Distribution Response:", response);
-        const validatedData = (response.categoryDistribution || []).map((item: any) => ({
-          ...item,
-          totalSales: Number(item.totalSales) || 0,
-          totalRevenue: Number(item.totalRevenue) || 0
-        }));
+        const validatedData = (response.categoryDistribution || []).map(
+          (item: any) => ({
+            ...item,
+            totalSales: Number(item.totalSales) || 0,
+            totalRevenue: Number(item.totalRevenue) || 0,
+          })
+        );
         setData(validatedData);
       } catch (error) {
         console.error("Error al cargar distribución por categoría:", error);
@@ -60,8 +62,8 @@ export const CategoryDistributionChart: React.FC<
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96 bg-gray-900/60 border border-gray-800 rounded-lg">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="flex h-96 items-center justify-center rounded-lg border border-gray-800 bg-gray-900/60">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-600"></div>
       </div>
     );
   }
@@ -72,18 +74,35 @@ export const CategoryDistributionChart: React.FC<
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="bg-gray-900 border border-gray-800 p-6 rounded-lg"
+        className="rounded-lg border border-gray-800 bg-gray-900 p-6"
       >
-        <h3 className="text-xl font-bold text-white mb-4">
+        <h3 className="mb-4 text-xl font-bold text-white">
           Distribución por Categoría
         </h3>
-        <div className="flex flex-col items-center justify-center h-96 text-gray-400">
-          <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+        <div className="flex h-96 flex-col items-center justify-center text-gray-400">
+          <svg
+            className="mb-4 h-16 w-16"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
+            />
           </svg>
           <p className="text-lg font-medium">No hay ventas por categoría</p>
-          <p className="text-sm mt-2">Los datos aparecer án cuando haya ventas registradas</p>
+          <p className="mt-2 text-sm">
+            Los datos aparecer án cuando haya ventas registradas
+          </p>
         </div>
       </motion.div>
     );
@@ -101,7 +120,7 @@ export const CategoryDistributionChart: React.FC<
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    
+
     const percentage = Number(percent) || 0;
 
     return (
@@ -123,9 +142,9 @@ export const CategoryDistributionChart: React.FC<
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="bg-gray-900 border border-gray-800 p-6 rounded-lg"
+      className="rounded-lg border border-gray-800 bg-gray-900 p-6"
     >
-      <h3 className="text-xl font-bold text-white mb-4">
+      <h3 className="mb-4 text-xl font-bold text-white">
         Distribución de Ventas por Categoría
       </h3>
       <ResponsiveContainer width="100%" height={400}>
@@ -142,7 +161,10 @@ export const CategoryDistributionChart: React.FC<
             nameKey="name"
           >
             {data.map((_, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Cell
+                key={`cell-${index}`}
+                fill={COLORS[index % COLORS.length]}
+              />
             ))}
           </Pie>
           <Tooltip
@@ -151,7 +173,7 @@ export const CategoryDistributionChart: React.FC<
               const revenue = Number(props?.payload?.totalRevenue) || 0;
               return [
                 `${val} ventas ($${revenue.toFixed(2)})`,
-                props?.payload?.name || 'Categoría',
+                props?.payload?.name || "Categoría",
               ];
             }}
             contentStyle={{
@@ -166,7 +188,7 @@ export const CategoryDistributionChart: React.FC<
             height={36}
             wrapperStyle={{ color: "#d1d5db" }}
             formatter={(_value, entry: any) => {
-              const name = entry?.payload?.name || 'Categoría';
+              const name = entry?.payload?.name || "Categoría";
               return `${name}`;
             }}
           />
