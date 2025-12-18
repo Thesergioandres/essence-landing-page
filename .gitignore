@@ -54,4 +54,7 @@ coverage
 *~
 .cache
 
+# Script reports (local)
+server/recalc-commissions-*.txt
+
 .vercel
