@@ -713,19 +713,33 @@ export const analyticsService = {
   },
 
   async getAverages(
-    period: "day" | "week" | "month" = "month"
+    period: "day" | "week" | "month" = "month",
+    filters?: {
+      startDate?: string;
+      endDate?: string;
+    }
   ): Promise<Averages> {
     const response = await api.get<Averages>("/analytics/averages", {
-      params: { period },
+      params: { period, ...filters },
     });
     return response.data;
   },
 
-  async getSalesTimeline(days: number = 30): Promise<TimelineData[]> {
+  async getSalesTimeline(
+    params:
+      | number
+      | {
+          days?: number;
+          startDate?: string;
+          endDate?: string;
+        } = 30
+  ): Promise<TimelineData[]> {
+    const resolvedParams =
+      typeof params === "number" ? { days: params } : { days: 30, ...params };
     const response = await api.get<TimelineData[]>(
       "/analytics/sales-timeline",
       {
-        params: { days },
+        params: resolvedParams,
       }
     );
     return response.data;
@@ -1024,13 +1038,12 @@ export const advancedAnalyticsService = {
 
   async getProductRotation(params?: { days?: number }): Promise<{
     productRotation: Array<{
-      productId: string;
-      productName: string;
+      _id: string;
+      name: string;
       totalSold: number;
-      daysAnalyzed: number;
+      frequency: number;
+      currentStock: number;
       rotationRate: number;
-      averageDailySales: number;
-      status: "high" | "medium" | "low";
     }>;
   }> {
     const response = await api.get("/advanced-analytics/product-rotation", {
@@ -1086,7 +1099,10 @@ export const advancedAnalyticsService = {
     return response.data;
   },
 
-  async getSalesFunnel(): Promise<{
+  async getSalesFunnel(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{
     funnel: {
       pending: {
         count: number;
@@ -1097,10 +1113,11 @@ export const advancedAnalyticsService = {
         totalValue: number;
       };
       conversionRate: number;
-      averageConversionTime: number;
     };
   }> {
-    const response = await api.get("/advanced-analytics/sales-funnel");
+    const response = await api.get("/advanced-analytics/sales-funnel", {
+      params,
+    });
     return response.data;
   },
 };

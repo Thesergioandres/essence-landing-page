@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { analyticsService } from "../api/services";
 import type {
+  AnalyticsDashboard,
   Averages,
   DistributorProfit,
   FinancialSummary,
@@ -14,6 +15,7 @@ export default function Analytics() {
   const [monthlyData, setMonthlyData] = useState<MonthlyProfitData | null>(
     null
   );
+  const [dashboard, setDashboard] = useState<AnalyticsDashboard | null>(null);
   const [productProfits, setProductProfits] = useState<ProductProfit[]>([]);
   const [distributorProfits, setDistributorProfits] = useState<
     DistributorProfit[]
@@ -22,6 +24,11 @@ export default function Analytics() {
   const [timeline, setTimeline] = useState<TimelineData[]>([]);
   const [financialSummary, setFinancialSummary] =
     useState<FinancialSummary | null>(null);
+
+  const [filtersError, setFiltersError] = useState<string | null>(null);
+  const [productSearch, setProductSearch] = useState("");
+  const [distributorSearch, setDistributorSearch] = useState("");
+  const [topLimit, setTopLimit] = useState(25);
 
   const [dateRange, setDateRange] = useState({
     startDate: "",
@@ -38,9 +45,10 @@ export default function Analytics() {
   const loadAnalytics = async () => {
     try {
       setLoading(true);
-      const [monthly, products, distributors, avg, time, financial] =
+      const [monthly, dash, products, distributors, avg, time, financial] =
         await Promise.all([
           analyticsService.getMonthlyProfit(),
+          analyticsService.getAnalyticsDashboard(),
           analyticsService.getProfitByProduct(),
           analyticsService.getProfitByDistributor(),
           analyticsService.getAverages("month"),
@@ -49,6 +57,7 @@ export default function Analytics() {
         ]);
 
       setMonthlyData(monthly);
+      setDashboard(dash);
       setProductProfits(products);
       setDistributorProfits(distributors);
       setAverages(avg);
@@ -61,23 +70,59 @@ export default function Analytics() {
     }
   };
 
+  const validateDateRange = (start: string, end: string) => {
+    if (!start || !end) return true;
+    return start <= end;
+  };
+
+  const setQuickRange = (days: number) => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - days);
+
+    const toInput = (d: Date) => d.toISOString().slice(0, 10);
+    setDateRange({ startDate: toInput(start), endDate: toInput(end) });
+  };
+
+  const clearFilters = async () => {
+    setFiltersError(null);
+    setDateRange({ startDate: "", endDate: "" });
+    setPeriod("month");
+    setTimelineDays(30);
+    setProductSearch("");
+    setDistributorSearch("");
+    setTopLimit(25);
+    await loadAnalytics();
+  };
+
   const applyFilters = async () => {
     try {
+      setFiltersError(null);
+
+      if (!validateDateRange(dateRange.startDate, dateRange.endDate)) {
+        setFiltersError("La fecha inicio no puede ser mayor que la fecha fin.");
+        return;
+      }
+
       setLoading(true);
       const filters = {
         ...(dateRange.startDate && { startDate: dateRange.startDate }),
         ...(dateRange.endDate && { endDate: dateRange.endDate }),
       };
 
-      const [products, distributors, financial] = await Promise.all([
+      const [products, distributors, financial, avg, time] = await Promise.all([
         analyticsService.getProfitByProduct(filters),
         analyticsService.getProfitByDistributor(filters),
         analyticsService.getFinancialSummary(filters),
+        analyticsService.getAverages(period, filters),
+        analyticsService.getSalesTimeline({ days: timelineDays, ...filters }),
       ]);
 
       setProductProfits(products);
       setDistributorProfits(distributors);
       setFinancialSummary(financial);
+      setAverages(avg);
+      setTimeline(time);
     } catch (error) {
       console.error("Error aplicando filtros:", error);
     } finally {
@@ -88,7 +133,11 @@ export default function Analytics() {
   const updatePeriod = async (newPeriod: "day" | "week" | "month") => {
     setPeriod(newPeriod);
     try {
-      const avg = await analyticsService.getAverages(newPeriod);
+      const filters = {
+        ...(dateRange.startDate && { startDate: dateRange.startDate }),
+        ...(dateRange.endDate && { endDate: dateRange.endDate }),
+      };
+      const avg = await analyticsService.getAverages(newPeriod, filters);
       setAverages(avg);
     } catch (error) {
       console.error("Error actualizando período:", error);
@@ -98,7 +147,14 @@ export default function Analytics() {
   const updateTimeline = async (days: number) => {
     setTimelineDays(days);
     try {
-      const time = await analyticsService.getSalesTimeline(days);
+      const filters = {
+        ...(dateRange.startDate && { startDate: dateRange.startDate }),
+        ...(dateRange.endDate && { endDate: dateRange.endDate }),
+      };
+      const time = await analyticsService.getSalesTimeline({
+        days,
+        ...filters,
+      });
       setTimeline(time);
     } catch (error) {
       console.error("Error actualizando timeline:", error);
@@ -116,13 +172,39 @@ export default function Analytics() {
     return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
   };
 
+  const normalizedIncludes = (haystack: string, needle: string) => {
+    const h = (haystack || "").toLowerCase();
+    const n = (needle || "").trim().toLowerCase();
+    if (!n) return true;
+    return h.includes(n);
+  };
+
+  const visibleProductProfits = productProfits
+    .filter(p => normalizedIncludes(p.productName || "", productSearch))
+    .slice(0, topLimit);
+
+  const visibleDistributorProfits = distributorProfits
+    .filter(d => normalizedIncludes(d.distributorName || "", distributorSearch))
+    .slice(0, topLimit);
+
   const exportToCSV = (data: Record<string, unknown>[], filename: string) => {
     if (data.length === 0) return;
 
     const headers = Object.keys(data[0]);
+
+    const escapeCell = (value: unknown) => {
+      if (value === null || value === undefined) return "";
+      const str = String(value);
+      // Escape RFC4180-ish
+      if (/[\n\r",]/.test(str)) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
     const csvContent = [
       headers.join(","),
-      ...data.map(row => headers.map(h => row[h]).join(",")),
+      ...data.map(row => headers.map(h => escapeCell(row[h])).join(",")),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -156,7 +238,7 @@ export default function Analytics() {
       {/* Filtros de Fecha */}
       <div className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
         <h2 className="mb-4 text-2xl font-semibold text-white">Filtros</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-300">
               Fecha Inicio
@@ -183,6 +265,20 @@ export default function Analytics() {
               className="w-full rounded-md border border-gray-700 bg-gray-900/40 px-3 py-2 text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
             />
           </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-300">
+              Promedios
+            </label>
+            <select
+              value={period}
+              onChange={e => updatePeriod(e.target.value as any)}
+              className="w-full rounded-md border border-gray-700 bg-gray-900/40 px-3 py-2 text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+            >
+              <option value="day">Diario</option>
+              <option value="week">Semanal</option>
+              <option value="month">Mensual</option>
+            </select>
+          </div>
           <div className="flex items-end">
             <button
               onClick={applyFilters}
@@ -190,9 +286,173 @@ export default function Analytics() {
             >
               Aplicar Filtros
             </button>
+            <button
+              onClick={clearFilters}
+              className="w-full rounded-md border border-gray-700 bg-gray-900/40 px-4 py-2 text-gray-100 hover:bg-gray-800"
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+
+        {filtersError && (
+          <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+            {filtersError}
+          </div>
+        )}
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            onClick={() => setQuickRange(7)}
+            className="rounded-md border border-gray-700 px-3 py-1 text-sm text-gray-200 hover:bg-gray-800"
+          >
+            Últimos 7 días
+          </button>
+          <button
+            onClick={() => setQuickRange(30)}
+            className="rounded-md border border-gray-700 px-3 py-1 text-sm text-gray-200 hover:bg-gray-800"
+          >
+            Últimos 30 días
+          </button>
+          <button
+            onClick={() => setQuickRange(90)}
+            className="rounded-md border border-gray-700 px-3 py-1 text-sm text-gray-200 hover:bg-gray-800"
+          >
+            Últimos 90 días
+          </button>
+
+          <div className="ml-auto flex items-center gap-2">
+            <label className="text-sm text-gray-300">Timeline</label>
+            <select
+              value={timelineDays}
+              onChange={e => updateTimeline(parseInt(e.target.value, 10))}
+              className="rounded-md border border-gray-700 bg-gray-900/40 px-3 py-1 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+            >
+              <option value={7}>7 días</option>
+              <option value={30}>30 días</option>
+              <option value={90}>90 días</option>
+            </select>
           </div>
         </div>
       </div>
+
+      {/* Dashboard del Mes */}
+      {dashboard && (
+        <div className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+          <h2 className="mb-4 text-2xl font-semibold text-white">
+            ⭐ Vista rápida (este mes)
+          </h2>
+
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <p className="text-sm text-gray-400">Ingresos</p>
+              <p className="text-2xl font-bold text-blue-400">
+                {formatCurrency(dashboard.monthlyTotals.totalRevenue)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <p className="text-sm text-gray-400">Ganancia</p>
+              <p className="text-2xl font-bold text-green-400">
+                {formatCurrency(dashboard.monthlyTotals.totalProfit)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <p className="text-sm text-gray-400">Ventas</p>
+              <p className="text-2xl font-bold text-purple-400">
+                {dashboard.monthlyTotals.totalSales}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">
+                  Top productos
+                </h3>
+                <button
+                  onClick={() =>
+                    exportToCSV(
+                      (dashboard.topProducts || []).map(p => ({
+                        name: p.name,
+                        totalQuantity: p.totalQuantity,
+                        totalProfit: p.totalProfit,
+                      })),
+                      "top_products_mes"
+                    )
+                  }
+                  className="rounded-md border border-gray-700 px-3 py-1 text-sm text-gray-200 hover:bg-gray-800"
+                >
+                  CSV
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(dashboard.topProducts || []).slice(0, 5).map(p => (
+                  <div
+                    key={p._id}
+                    className="flex items-center justify-between rounded-md border border-gray-700/60 bg-gray-950/20 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-gray-100">
+                        {p.name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {p.totalQuantity} unidades
+                      </p>
+                    </div>
+                    <p className="text-sm font-semibold text-green-300">
+                      {formatCurrency(p.totalProfit)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">
+                  Top distribuidores
+                </h3>
+                <button
+                  onClick={() =>
+                    exportToCSV(
+                      (dashboard.topDistributors || []).map(d => ({
+                        name: d.name,
+                        totalSales: d.totalSales,
+                        totalProfit: d.totalProfit,
+                      })),
+                      "top_distributors_mes"
+                    )
+                  }
+                  className="rounded-md border border-gray-700 px-3 py-1 text-sm text-gray-200 hover:bg-gray-800"
+                >
+                  CSV
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(dashboard.topDistributors || []).slice(0, 5).map(d => (
+                  <div
+                    key={d._id}
+                    className="flex items-center justify-between rounded-md border border-gray-700/60 bg-gray-950/20 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-gray-100">
+                        {d.name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {d.totalSales} ventas
+                      </p>
+                    </div>
+                    <p className="text-sm font-semibold text-purple-300">
+                      {formatCurrency(d.totalProfit)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Resumen Mensual */}
       {monthlyData && (
@@ -202,7 +462,7 @@ export default function Analytics() {
           </h2>
 
           {/* Debug Info - TEMPORAL */}
-          {monthlyData._debug && (
+          {import.meta.env.DEV && monthlyData._debug && (
             <div className="mb-4 rounded border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm">
               <p className="font-bold text-yellow-300">
                 🐛 DEBUG INFO (Backend):
@@ -471,24 +731,47 @@ export default function Analytics() {
           <h2 className="text-2xl font-semibold text-white">
             🏆 Ganancia por Producto
           </h2>
-          <button
-            onClick={() =>
-              exportToCSV(
-                productProfits.map(p => ({
-                  Producto: p.productName,
-                  Cantidad: p.totalQuantity,
-                  Ventas: p.totalSales,
-                  Ingresos: p.totalRevenue,
-                  Ganancia: p.totalProfit,
-                  Margen: `${p.profitMargin.toFixed(2)}%`,
-                })),
-                "ganancia_por_producto"
-              )
-            }
-            className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-          >
-            Exportar CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <select
+              value={topLimit}
+              onChange={e => setTopLimit(parseInt(e.target.value, 10))}
+              className="rounded-md border border-gray-700 bg-gray-900/40 px-3 py-2 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+            >
+              <option value={10}>Top 10</option>
+              <option value={25}>Top 25</option>
+              <option value={50}>Top 50</option>
+            </select>
+            <button
+              onClick={() =>
+                exportToCSV(
+                  visibleProductProfits.map(p => ({
+                    Producto: p.productName,
+                    Cantidad: p.totalQuantity,
+                    Ventas: p.totalSales,
+                    Ingresos: p.totalRevenue,
+                    Ganancia: p.totalProfit,
+                    Margen: `${p.profitMargin.toFixed(2)}%`,
+                  })),
+                  "ganancia_por_producto"
+                )
+              }
+              className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+            >
+              Exportar CSV
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <input
+            value={productSearch}
+            onChange={e => setProductSearch(e.target.value)}
+            placeholder="Buscar producto…"
+            className="w-full rounded-md border border-gray-700 bg-gray-900/40 px-3 py-2 text-gray-100 placeholder:text-gray-500 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+          />
+          <p className="mt-2 text-sm text-gray-400">
+            Mostrando {visibleProductProfits.length} de {productProfits.length}
+          </p>
         </div>
 
         <div className="overflow-x-auto">
@@ -504,7 +787,7 @@ export default function Analytics() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700 text-gray-200">
-              {productProfits.slice(0, 10).map(product => (
+              {visibleProductProfits.map(product => (
                 <tr key={product.productId} className="hover:bg-gray-900/30">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -546,25 +829,49 @@ export default function Analytics() {
           <h2 className="text-2xl font-semibold text-white">
             👥 Ganancia por Distribuidor
           </h2>
-          <button
-            onClick={() =>
-              exportToCSV(
-                distributorProfits.map(d => ({
-                  Distribuidor: d.distributorName,
-                  Email: d.distributorEmail,
-                  Ventas: d.totalSales,
-                  Ingresos: d.totalRevenue,
-                  "Ganancia Admin": d.totalAdminProfit,
-                  "Ganancia Distribuidor": d.totalDistributorProfit,
-                  "Venta Promedio": d.averageSale,
-                })),
-                "ganancia_por_distribuidor"
-              )
-            }
-            className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-          >
-            Exportar CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <select
+              value={topLimit}
+              onChange={e => setTopLimit(parseInt(e.target.value, 10))}
+              className="rounded-md border border-gray-700 bg-gray-900/40 px-3 py-2 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+            >
+              <option value={10}>Top 10</option>
+              <option value={25}>Top 25</option>
+              <option value={50}>Top 50</option>
+            </select>
+            <button
+              onClick={() =>
+                exportToCSV(
+                  visibleDistributorProfits.map(d => ({
+                    Distribuidor: d.distributorName,
+                    Email: d.distributorEmail,
+                    Ventas: d.totalSales,
+                    Ingresos: d.totalRevenue,
+                    "Ganancia Admin": d.totalAdminProfit,
+                    "Ganancia Distribuidor": d.totalDistributorProfit,
+                    "Venta Promedio": d.averageSale,
+                  })),
+                  "ganancia_por_distribuidor"
+                )
+              }
+              className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+            >
+              Exportar CSV
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <input
+            value={distributorSearch}
+            onChange={e => setDistributorSearch(e.target.value)}
+            placeholder="Buscar distribuidor…"
+            className="w-full rounded-md border border-gray-700 bg-gray-900/40 px-3 py-2 text-gray-100 placeholder:text-gray-500 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+          />
+          <p className="mt-2 text-sm text-gray-400">
+            Mostrando {visibleDistributorProfits.length} de{" "}
+            {distributorProfits.length}
+          </p>
         </div>
 
         <div className="overflow-x-auto">
@@ -580,7 +887,7 @@ export default function Analytics() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700 text-gray-200">
-              {distributorProfits.map(distributor => (
+              {visibleDistributorProfits.map(distributor => (
                 <tr
                   key={distributor.distributorId}
                   className="hover:bg-gray-900/30"

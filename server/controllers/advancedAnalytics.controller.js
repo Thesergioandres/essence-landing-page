@@ -1,27 +1,69 @@
-import Sale from "../models/Sale.js";
+import { subDays } from "date-fns";
 import Product from "../models/Product.js";
-import User from "../models/User.js";
-import DistributorStock from "../models/DistributorStock.js";
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, subMonths, format } from "date-fns";
+import Sale from "../models/Sale.js";
+
+const buildColombiaSaleDateFilter = (startDateStr, endDateStr) => {
+  if (!startDateStr && !endDateStr) return null;
+
+  const saleDate = {};
+
+  if (startDateStr) {
+    // 00:00 Colombia = 05:00 UTC
+    const date = new Date(startDateStr);
+    saleDate.$gte = new Date(
+      Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        5,
+        0,
+        0,
+        0
+      )
+    );
+  }
+
+  if (endDateStr) {
+    // 23:59:59 Colombia = 04:59:59 UTC del día siguiente
+    const date = new Date(endDateStr);
+    saleDate.$lte = new Date(
+      Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate() + 1,
+        4,
+        59,
+        59,
+        999
+      )
+    );
+  }
+
+  return saleDate;
+};
 
 // @desc    Get sales timeline data
 // @route   GET /api/advanced-analytics/sales-timeline
 // @access  Private/Admin
 export const getSalesTimeline = async (req, res) => {
   try {
-    const { period = 'month', startDate: customStartDate, endDate: customEndDate } = req.query;
-    
+    const {
+      period = "month",
+      startDate: customStartDate,
+      endDate: customEndDate,
+    } = req.query;
+
     let groupBy;
-    
+
     // Determinar agrupación según período
-    switch(period) {
-      case 'day':
+    switch (period) {
+      case "day":
         groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } };
         break;
-      case 'week':
+      case "week":
         groupBy = { $dateToString: { format: "%Y-W%V", date: "$saleDate" } };
         break;
-      case 'month':
+      case "month":
         groupBy = { $dateToString: { format: "%Y-%m", date: "$saleDate" } };
         break;
       default:
@@ -29,8 +71,8 @@ export const getSalesTimeline = async (req, res) => {
     }
 
     // Construir filtro - SIN restricción de fecha por defecto
-    const matchFilter = { paymentStatus: 'confirmado' };
-    
+    const matchFilter = { paymentStatus: "confirmado" };
+
     // Solo aplicar filtros de fecha si se proporcionan explícitamente
     if (customStartDate || customEndDate) {
       matchFilter.saleDate = {};
@@ -49,21 +91,21 @@ export const getSalesTimeline = async (req, res) => {
           _id: groupBy,
           totalSales: { $sum: 1 },
           totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
-          totalProfit: { $sum: "$totalProfit" }
-        }
+          totalProfit: { $sum: "$totalProfit" },
+        },
       },
       { $sort: { _id: 1 } },
-      { $limit: 100 } // Limitar a últimos 100 períodos para no sobrecargar
+      { $limit: 100 }, // Limitar a últimos 100 períodos para no sobrecargar
     ]);
 
     console.log(`Sales Timeline - Found ${timeline.length} records`);
 
     // Map the response to match frontend expectations
-    const formattedTimeline = timeline.map(item => ({
+    const formattedTimeline = timeline.map((item) => ({
       period: item._id,
       salesCount: item.totalSales,
       revenue: item.totalRevenue || 0,
-      profit: item.totalProfit || 0
+      profit: item.totalProfit || 0,
     }));
 
     res.json({ timeline: formattedTimeline });
@@ -77,17 +119,23 @@ export const getSalesTimeline = async (req, res) => {
 // @access  Private/Admin
 export const getTopProducts = async (req, res) => {
   try {
-    const { limit = 10 } = req.query;
+    const { limit = 10, startDate, endDate } = req.query;
+
+    const matchFilter = { paymentStatus: "confirmado" };
+    const saleDateFilter = buildColombiaSaleDateFilter(startDate, endDate);
+    if (saleDateFilter) {
+      matchFilter.saleDate = saleDateFilter;
+    }
 
     const topProducts = await Sale.aggregate([
-      { $match: { paymentStatus: 'confirmado' } },
+      { $match: matchFilter },
       {
         $group: {
           _id: "$product",
           totalQuantity: { $sum: "$quantity" },
           totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
-          salesCount: { $sum: 1 }
-        }
+          salesCount: { $sum: 1 },
+        },
       },
       { $sort: { totalQuantity: -1 } },
       { $limit: parseInt(limit) },
@@ -96,8 +144,8 @@ export const getTopProducts = async (req, res) => {
           from: "products",
           localField: "_id",
           foreignField: "_id",
-          as: "productInfo"
-        }
+          as: "productInfo",
+        },
       },
       { $unwind: "$productInfo" },
       {
@@ -106,9 +154,9 @@ export const getTopProducts = async (req, res) => {
           totalQuantity: 1,
           totalRevenue: 1,
           salesCount: 1,
-          image: "$productInfo.image"
-        }
-      }
+          image: "$productInfo.image",
+        },
+      },
     ]);
 
     res.json({ topProducts });
@@ -122,15 +170,22 @@ export const getTopProducts = async (req, res) => {
 // @access  Private/Admin
 export const getSalesByCategory = async (req, res) => {
   try {
+    const { startDate, endDate } = req.query;
+    const matchFilter = { paymentStatus: "confirmado" };
+    const saleDateFilter = buildColombiaSaleDateFilter(startDate, endDate);
+    if (saleDateFilter) {
+      matchFilter.saleDate = saleDateFilter;
+    }
+
     const salesByCategory = await Sale.aggregate([
-      { $match: { paymentStatus: 'confirmado' } },
+      { $match: matchFilter },
       {
         $lookup: {
           from: "products",
           localField: "product",
           foreignField: "_id",
-          as: "productInfo"
-        }
+          as: "productInfo",
+        },
       },
       { $unwind: "$productInfo" },
       {
@@ -138,8 +193,8 @@ export const getSalesByCategory = async (req, res) => {
           from: "categories",
           localField: "productInfo.category",
           foreignField: "_id",
-          as: "categoryInfo"
-        }
+          as: "categoryInfo",
+        },
       },
       { $unwind: "$categoryInfo" },
       {
@@ -148,10 +203,10 @@ export const getSalesByCategory = async (req, res) => {
           name: { $first: "$categoryInfo.name" },
           totalSales: { $sum: "$quantity" },
           totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
-          color: { $first: "$categoryInfo.color" }
-        }
+          color: { $first: "$categoryInfo.color" },
+        },
       },
-      { $sort: { totalRevenue: -1 } }
+      { $sort: { totalRevenue: -1 } },
     ]);
 
     res.json({ categoryDistribution: salesByCategory });
@@ -165,12 +220,23 @@ export const getSalesByCategory = async (req, res) => {
 // @access  Private/Admin
 export const getDistributorRankings = async (req, res) => {
   try {
+    const { startDate, endDate } = req.query;
+    const saleDateFilter = buildColombiaSaleDateFilter(startDate, endDate);
+
+    const confirmedMatch = {
+      paymentStatus: "confirmado",
+      distributor: { $exists: true, $ne: null },
+    };
+
+    if (saleDateFilter) {
+      confirmedMatch.saleDate = saleDateFilter;
+    }
+
     const rankings = await Sale.aggregate([
-      { 
-        $match: { 
-          paymentStatus: 'confirmado',
-          distributor: { $exists: true, $ne: null }
-        } 
+      {
+        $match: {
+          ...confirmedMatch,
+        },
       },
       {
         $group: {
@@ -178,66 +244,72 @@ export const getDistributorRankings = async (req, res) => {
           totalSales: { $sum: 1 },
           totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
           totalProfit: { $sum: "$totalProfit" },
-          avgOrderValue: { $avg: { $multiply: ["$salePrice", "$quantity"] } }
-        }
+          avgOrderValue: { $avg: { $multiply: ["$salePrice", "$quantity"] } },
+        },
       },
       {
         $lookup: {
           from: "users",
           localField: "_id",
           foreignField: "_id",
-          as: "distributorInfo"
-        }
+          as: "distributorInfo",
+        },
       },
-      { 
-        $unwind: { 
+      {
+        $unwind: {
           path: "$distributorInfo",
-          preserveNullAndEmptyArrays: true 
-        } 
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $project: {
-          name: { $ifNull: ["$distributorInfo.name", "Distribuidor desconocido"] },
+          name: {
+            $ifNull: ["$distributorInfo.name", "Distribuidor desconocido"],
+          },
           email: { $ifNull: ["$distributorInfo.email", ""] },
           totalSales: 1,
           totalRevenue: 1,
           totalProfit: 1,
-          avgOrderValue: 1
-        }
+          avgOrderValue: 1,
+        },
       },
-      { $sort: { totalRevenue: -1 } }
+      { $sort: { totalRevenue: -1 } },
     ]);
 
     // Calculate conversion rate
+    const allMatch = {
+      distributor: { $exists: true, $ne: null },
+    };
+    if (saleDateFilter) {
+      allMatch.saleDate = saleDateFilter;
+    }
+
     const allSales = await Sale.aggregate([
-      {
-        $match: {
-          distributor: { $exists: true, $ne: null }
-        }
-      },
+      { $match: allMatch },
       {
         $group: {
           _id: "$distributor",
           pendiente: {
-            $sum: { $cond: [{ $eq: ["$paymentStatus", "pendiente"] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$paymentStatus", "pendiente"] }, 1, 0] },
           },
           confirmado: {
-            $sum: { $cond: [{ $eq: ["$paymentStatus", "confirmado"] }, 1, 0] }
-          }
-        }
-      }
+            $sum: { $cond: [{ $eq: ["$paymentStatus", "confirmado"] }, 1, 0] },
+          },
+        },
+      },
     ]);
 
-    const rankingsWithConversion = rankings.map(rank => {
-      const salesData = allSales.find(s => s._id && rank._id && s._id.toString() === rank._id.toString());
-      const total = salesData ? (salesData.confirmado + salesData.pendiente) : 0;
-      const conversionRate = total > 0
-        ? ((salesData.confirmado / total) * 100).toFixed(2)
-        : 0;
-      
+    const rankingsWithConversion = rankings.map((rank) => {
+      const salesData = allSales.find(
+        (s) => s._id && rank._id && s._id.toString() === rank._id.toString()
+      );
+      const total = salesData ? salesData.confirmado + salesData.pendiente : 0;
+      const conversionRate =
+        total > 0 ? ((salesData.confirmado / total) * 100).toFixed(2) : 0;
+
       return {
         ...rank,
-        conversionRate: parseFloat(conversionRate)
+        conversionRate: parseFloat(conversionRate),
       };
     });
 
@@ -253,27 +325,35 @@ export const getDistributorRankings = async (req, res) => {
 export const getLowStockVisual = async (req, res) => {
   try {
     const lowStockProducts = await Product.find({
-      $expr: { $lte: ["$warehouseStock", "$lowStockAlert"] }
+      $expr: { $lte: ["$warehouseStock", "$lowStockAlert"] },
     })
-    .populate('category', 'name')
-    .sort({ warehouseStock: 1 })
-    .lean();
+      .populate("category", "name")
+      .sort({ warehouseStock: 1 })
+      .lean();
 
-    const visualData = lowStockProducts.map(product => {
+    const visualData = lowStockProducts.map((product) => {
       // Calcular porcentaje basado en el nivel de alerta como 100%
       const maxStock = product.lowStockAlert * 2 || 100; // Asumimos que el doble del alert es el máximo
-      const percentage = Math.min(((product.warehouseStock / maxStock) * 100), 100);
-      
+      const percentage = Math.min(
+        (product.warehouseStock / maxStock) * 100,
+        100
+      );
+
       return {
         productId: product._id,
         productName: product.name,
         currentStock: product.warehouseStock,
         lowStockAlert: product.lowStockAlert,
-        categoryName: product.category?.name || 'Sin categoría',
+        categoryName: product.category?.name || "Sin categoría",
         stockPercentage: parseFloat(percentage.toFixed(1)),
-        urgency: product.warehouseStock === 0 ? 'critical' : 
-                 product.warehouseStock <= product.lowStockAlert * 0.5 ? 'critical' :
-                 product.warehouseStock <= product.lowStockAlert ? 'warning' : 'normal'
+        urgency:
+          product.warehouseStock === 0
+            ? "critical"
+            : product.warehouseStock <= product.lowStockAlert * 0.5
+            ? "critical"
+            : product.warehouseStock <= product.lowStockAlert
+            ? "warning"
+            : "normal",
       };
     });
 
@@ -294,24 +374,24 @@ export const getProductRotation = async (req, res) => {
     const rotation = await Sale.aggregate([
       {
         $match: {
-          paymentStatus: 'confirmado',
-          saleDate: { $gte: startDate }
-        }
+          paymentStatus: "confirmado",
+          saleDate: { $gte: startDate },
+        },
       },
       {
         $group: {
           _id: "$product",
           totalSold: { $sum: "$quantity" },
-          frequency: { $sum: 1 }
-        }
+          frequency: { $sum: 1 },
+        },
       },
       {
         $lookup: {
           from: "products",
           localField: "_id",
           foreignField: "_id",
-          as: "productInfo"
-        }
+          as: "productInfo",
+        },
       },
       { $unwind: "$productInfo" },
       {
@@ -321,11 +401,14 @@ export const getProductRotation = async (req, res) => {
           frequency: 1,
           currentStock: "$productInfo.totalStock",
           rotationRate: {
-            $divide: ["$totalSold", { $add: ["$totalSold", "$productInfo.totalStock"] }]
-          }
-        }
+            $divide: [
+              "$totalSold",
+              { $add: ["$totalSold", "$productInfo.totalStock"] },
+            ],
+          },
+        },
       },
-      { $sort: { rotationRate: -1 } }
+      { $sort: { rotationRate: -1 } },
     ]);
 
     res.json({ productRotation: rotation });
@@ -340,95 +423,121 @@ export const getProductRotation = async (req, res) => {
 export const getFinancialKPIs = async (req, res) => {
   try {
     const today = new Date();
-    
+
     // Ajustar a zona horaria de Colombia (UTC-5)
     // El día en Colombia comienza a las 5:00 AM UTC y termina a las 4:59:59 AM UTC del día siguiente
     const colombiaOffset = -5 * 60; // -5 horas en minutos
     const colombiaTime = new Date(today.getTime() + colombiaOffset * 60000);
-    
+
     // Inicio del día actual en Colombia (medianoche Colombia = 5:00 AM UTC)
-    const startOfToday = new Date(Date.UTC(
-      colombiaTime.getUTCFullYear(),
-      colombiaTime.getUTCMonth(),
-      colombiaTime.getUTCDate(),
-      5, 0, 0, 0
-    ));
-    
+    const startOfToday = new Date(
+      Date.UTC(
+        colombiaTime.getUTCFullYear(),
+        colombiaTime.getUTCMonth(),
+        colombiaTime.getUTCDate(),
+        5,
+        0,
+        0,
+        0
+      )
+    );
+
     // Inicio de la semana en Colombia
     const dayOfWeek = colombiaTime.getUTCDay();
     const startOfThisWeek = new Date(startOfToday);
     startOfThisWeek.setUTCDate(startOfToday.getUTCDate() - dayOfWeek);
-    
-    // Inicio del mes en Colombia
-    const startOfThisMonth = new Date(Date.UTC(
-      colombiaTime.getUTCFullYear(),
-      colombiaTime.getUTCMonth(),
-      1,
-      5, 0, 0, 0
-    ));
 
-    console.log('KPI Dates:', {
+    // Inicio del mes en Colombia
+    const startOfThisMonth = new Date(
+      Date.UTC(
+        colombiaTime.getUTCFullYear(),
+        colombiaTime.getUTCMonth(),
+        1,
+        5,
+        0,
+        0,
+        0
+      )
+    );
+
+    console.log("KPI Dates:", {
       now: today.toISOString(),
       colombiaTime: colombiaTime.toISOString(),
       startOfToday: startOfToday.toISOString(),
       startOfThisWeek: startOfThisWeek.toISOString(),
-      startOfThisMonth: startOfThisMonth.toISOString()
+      startOfThisMonth: startOfThisMonth.toISOString(),
     });
 
-    const [dailyStats, weeklyStats, monthlyStats, avgTicket] = await Promise.all([
-      // Daily stats
-      Sale.aggregate([
-        { $match: { saleDate: { $gte: startOfToday }, paymentStatus: 'confirmado' } },
-        {
-          $group: {
-            _id: null,
-            revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
-            profit: { $sum: "$totalProfit" },
-            sales: { $sum: 1 }
-          }
-        }
-      ]),
-      // Weekly stats
-      Sale.aggregate([
-        { $match: { saleDate: { $gte: startOfThisWeek }, paymentStatus: 'confirmado' } },
-        {
-          $group: {
-            _id: null,
-            revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
-            profit: { $sum: "$totalProfit" },
-            sales: { $sum: 1 }
-          }
-        }
-      ]),
-      // Monthly stats
-      Sale.aggregate([
-        { $match: { saleDate: { $gte: startOfThisMonth }, paymentStatus: 'confirmado' } },
-        {
-          $group: {
-            _id: null,
-            revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
-            profit: { $sum: "$totalProfit" },
-            sales: { $sum: 1 }
-          }
-        }
-      ]),
-      // Average ticket
-      Sale.aggregate([
-        { $match: { paymentStatus: 'confirmado' } },
-        {
-          $group: {
-            _id: null,
-            avgTicket: { $avg: { $multiply: ["$salePrice", "$quantity"] } }
-          }
-        }
-      ])
-    ]);
+    const [dailyStats, weeklyStats, monthlyStats, avgTicket] =
+      await Promise.all([
+        // Daily stats
+        Sale.aggregate([
+          {
+            $match: {
+              saleDate: { $gte: startOfToday },
+              paymentStatus: "confirmado",
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+              profit: { $sum: "$totalProfit" },
+              sales: { $sum: 1 },
+            },
+          },
+        ]),
+        // Weekly stats
+        Sale.aggregate([
+          {
+            $match: {
+              saleDate: { $gte: startOfThisWeek },
+              paymentStatus: "confirmado",
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+              profit: { $sum: "$totalProfit" },
+              sales: { $sum: 1 },
+            },
+          },
+        ]),
+        // Monthly stats
+        Sale.aggregate([
+          {
+            $match: {
+              saleDate: { $gte: startOfThisMonth },
+              paymentStatus: "confirmado",
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+              profit: { $sum: "$totalProfit" },
+              sales: { $sum: 1 },
+            },
+          },
+        ]),
+        // Average ticket
+        Sale.aggregate([
+          { $match: { paymentStatus: "confirmado" } },
+          {
+            $group: {
+              _id: null,
+              avgTicket: { $avg: { $multiply: ["$salePrice", "$quantity"] } },
+            },
+          },
+        ]),
+      ]);
 
     res.json({
       daily: dailyStats[0] || { revenue: 0, profit: 0, sales: 0 },
       weekly: weeklyStats[0] || { revenue: 0, profit: 0, sales: 0 },
       monthly: monthlyStats[0] || { revenue: 0, profit: 0, sales: 0 },
-      avgTicket: avgTicket[0]?.avgTicket || 0
+      avgTicket: avgTicket[0]?.avgTicket || 0,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -441,32 +550,43 @@ export const getFinancialKPIs = async (req, res) => {
 export const getComparativeAnalysis = async (req, res) => {
   try {
     const now = new Date();
-    
+
     // Ajustar a zona horaria de Colombia (UTC-5)
     const colombiaOffset = -5 * 60; // -5 horas en minutos
     const colombiaTime = new Date(now.getTime() + colombiaOffset * 60000);
-    
+
     // Inicio del mes actual en Colombia (día 1 a las 00:00 Colombia = 05:00 UTC)
-    const thisMonthStart = new Date(Date.UTC(
-      colombiaTime.getUTCFullYear(),
-      colombiaTime.getUTCMonth(),
-      1,
-      5, 0, 0, 0
-    ));
-    
+    const thisMonthStart = new Date(
+      Date.UTC(
+        colombiaTime.getUTCFullYear(),
+        colombiaTime.getUTCMonth(),
+        1,
+        5,
+        0,
+        0,
+        0
+      )
+    );
+
     // Mes anterior
-    const lastMonthYear = colombiaTime.getUTCMonth() === 0 ? colombiaTime.getUTCFullYear() - 1 : colombiaTime.getUTCFullYear();
-    const lastMonthNum = colombiaTime.getUTCMonth() === 0 ? 11 : colombiaTime.getUTCMonth() - 1;
-    
-    const lastMonthStart = new Date(Date.UTC(lastMonthYear, lastMonthNum, 1, 5, 0, 0, 0));
+    const lastMonthYear =
+      colombiaTime.getUTCMonth() === 0
+        ? colombiaTime.getUTCFullYear() - 1
+        : colombiaTime.getUTCFullYear();
+    const lastMonthNum =
+      colombiaTime.getUTCMonth() === 0 ? 11 : colombiaTime.getUTCMonth() - 1;
+
+    const lastMonthStart = new Date(
+      Date.UTC(lastMonthYear, lastMonthNum, 1, 5, 0, 0, 0)
+    );
     const lastMonthEnd = new Date(thisMonthStart.getTime() - 1); // 1 milisegundo antes del inicio del mes actual
 
-    console.log('Comparative Analysis Dates:', {
+    console.log("Comparative Analysis Dates:", {
       now: now.toISOString(),
       colombiaTime: colombiaTime.toISOString(),
       lastMonthStart: lastMonthStart.toISOString(),
       lastMonthEnd: lastMonthEnd.toISOString(),
-      thisMonthStart: thisMonthStart.toISOString()
+      thisMonthStart: thisMonthStart.toISOString(),
     });
 
     const [lastMonth, thisMonth] = await Promise.all([
@@ -474,34 +594,34 @@ export const getComparativeAnalysis = async (req, res) => {
         {
           $match: {
             saleDate: { $gte: lastMonthStart, $lte: lastMonthEnd },
-            paymentStatus: 'confirmado'
-          }
+            paymentStatus: "confirmado",
+          },
         },
         {
           $group: {
             _id: null,
             revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
             profit: { $sum: "$totalProfit" },
-            sales: { $sum: 1 }
-          }
-        }
+            sales: { $sum: 1 },
+          },
+        },
       ]),
       Sale.aggregate([
         {
           $match: {
             saleDate: { $gte: thisMonthStart },
-            paymentStatus: 'confirmado'
-          }
+            paymentStatus: "confirmado",
+          },
         },
         {
           $group: {
             _id: null,
             revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
             profit: { $sum: "$totalProfit" },
-            sales: { $sum: 1 }
-          }
-        }
-      ])
+            sales: { $sum: 1 },
+          },
+        },
+      ]),
     ]);
 
     const lastMonthData = lastMonth[0] || { revenue: 0, profit: 0, sales: 0 };
@@ -517,11 +637,17 @@ export const getComparativeAnalysis = async (req, res) => {
         previousMonth: lastMonthData,
         currentMonth: thisMonthData,
         growth: {
-          salesGrowth: parseFloat(calculateGrowth(thisMonthData.sales, lastMonthData.sales)),
-          revenueGrowth: parseFloat(calculateGrowth(thisMonthData.revenue, lastMonthData.revenue)),
-          profitGrowth: parseFloat(calculateGrowth(thisMonthData.profit, lastMonthData.profit))
-        }
-      }
+          salesGrowth: parseFloat(
+            calculateGrowth(thisMonthData.sales, lastMonthData.sales)
+          ),
+          revenueGrowth: parseFloat(
+            calculateGrowth(thisMonthData.revenue, lastMonthData.revenue)
+          ),
+          profitGrowth: parseFloat(
+            calculateGrowth(thisMonthData.profit, lastMonthData.profit)
+          ),
+        },
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -533,23 +659,42 @@ export const getComparativeAnalysis = async (req, res) => {
 // @access  Private/Admin
 export const getSalesFunnel = async (req, res) => {
   try {
+    const { startDate, endDate } = req.query;
+    const matchFilter = {};
+    const saleDateFilter = buildColombiaSaleDateFilter(startDate, endDate);
+    if (saleDateFilter) {
+      matchFilter.saleDate = saleDateFilter;
+    }
+
     const funnelData = await Sale.aggregate([
+      {
+        $match: matchFilter,
+      },
       {
         $group: {
           _id: "$paymentStatus",
           count: { $sum: 1 },
-          totalValue: { $sum: { $multiply: ["$salePrice", "$quantity"] } }
-        }
-      }
+          totalValue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+        },
+      },
     ]);
 
     const funnel = {
-      pending: funnelData.find(f => f._id === 'pendiente') || { count: 0, totalValue: 0 },
-      confirmed: funnelData.find(f => f._id === 'confirmado') || { count: 0, totalValue: 0 }
+      pending: funnelData.find((f) => f._id === "pendiente") || {
+        count: 0,
+        totalValue: 0,
+      },
+      confirmed: funnelData.find((f) => f._id === "confirmado") || {
+        count: 0,
+        totalValue: 0,
+      },
     };
 
     const total = funnel.pending.count + funnel.confirmed.count;
-    funnel.conversionRate = total > 0 ? parseFloat(((funnel.confirmed.count / total) * 100).toFixed(2)) : 0;
+    funnel.conversionRate =
+      total > 0
+        ? parseFloat(((funnel.confirmed.count / total) * 100).toFixed(2))
+        : 0;
 
     res.json({ funnel });
   } catch (error) {

@@ -1,12 +1,12 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 
-import Sale from "../models/Sale.js";
 import ProfitHistory from "../models/ProfitHistory.js";
+import Sale from "../models/Sale.js";
 import User from "../models/User.js";
 import {
-  recordProfitHistory,
   recalculateUserBalance,
+  recordProfitHistory,
 } from "../services/profitHistory.service.js";
 
 dotenv.config();
@@ -39,7 +39,7 @@ async function main() {
       .lean(),
   ]);
 
-  const existingKeys = new Set(existing.map(e => toKey(e.sale, e.user)));
+  const existingKeys = new Set(existing.map((e) => toKey(e.sale, e.user)));
   const affectedUsers = new Set();
 
   let created = 0;
@@ -105,7 +105,9 @@ async function main() {
 
     if ((i + 1) % 250 === 0) {
       console.log(
-        `Progreso: ${i + 1}/${sales.length} ventas procesadas | created=${created} skipped=${skipped}`
+        `Progreso: ${i + 1}/${
+          sales.length
+        } ventas procesadas | created=${created} skipped=${skipped}`
       );
     }
   }
@@ -115,7 +117,9 @@ async function main() {
     await recalculateUserBalance(userId);
     usersUpdated++;
     if (usersUpdated % 25 === 0) {
-      console.log(`Recalculando balances: ${usersUpdated}/${affectedUsers.size}`);
+      console.log(
+        `Recalculando balances: ${usersUpdated}/${affectedUsers.size}`
+      );
     }
   }
 
@@ -125,7 +129,7 @@ async function main() {
   await mongoose.disconnect();
 }
 
-main().catch(async err => {
+main().catch(async (err) => {
   console.error("❌ Backfill falló:", err?.message || err);
   try {
     await mongoose.disconnect();

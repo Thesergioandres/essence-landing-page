@@ -1,5 +1,5 @@
-import ProfitHistory from "../models/ProfitHistory.js";
 import mongoose from "mongoose";
+import ProfitHistory from "../models/ProfitHistory.js";
 
 /**
  * Registra una entrada en el historial de ganancias
@@ -65,10 +65,7 @@ export const recordSaleProfit = async (sale) => {
   try {
     // Aceptar saleId (string/ObjectId) o documento
     let saleDoc = sale;
-    if (
-      typeof sale === "string" ||
-      sale instanceof mongoose.Types.ObjectId
-    ) {
+    if (typeof sale === "string" || sale instanceof mongoose.Types.ObjectId) {
       const Sale = mongoose.model("Sale");
       saleDoc = await Sale.findById(sale).lean();
       if (!saleDoc) {
@@ -106,13 +103,13 @@ export const recordSaleProfit = async (sale) => {
       // Obtener ID del admin
       const User = mongoose.model("User");
       const admin = await User.findOne({ role: "admin" });
-      
+
       if (admin) {
         await recordProfitHistory({
           userId: admin._id,
           type: "venta_normal",
           amount: saleDoc.adminProfit,
-          description: saleDoc.distributor 
+          description: saleDoc.distributor
             ? `Ganancia de venta ${saleDoc.saleId} (distribuidor)`
             : `Venta directa ${saleDoc.saleId}`,
           saleId: saleDoc._id,
@@ -134,10 +131,13 @@ export const recordSaleProfit = async (sale) => {
 export const recordSpecialSaleProfit = async (specialSaleIdOrDoc) => {
   try {
     const SpecialSale = mongoose.model("SpecialSale");
-    
+
     // Si es un ID, buscar el documento completo
     let specialSale;
-    if (typeof specialSaleIdOrDoc === 'string' || specialSaleIdOrDoc instanceof mongoose.Types.ObjectId) {
+    if (
+      typeof specialSaleIdOrDoc === "string" ||
+      specialSaleIdOrDoc instanceof mongoose.Types.ObjectId
+    ) {
       specialSale = await SpecialSale.findById(specialSaleIdOrDoc);
       if (!specialSale) {
         console.error("Venta especial no encontrada:", specialSaleIdOrDoc);
@@ -160,7 +160,7 @@ export const recordSpecialSaleProfit = async (specialSaleIdOrDoc) => {
       let user;
 
       const nameLower = dist.name?.toLowerCase() || "";
-      
+
       if (nameLower.includes("admin")) {
         user = await User.findOne({ role: "admin" });
       } else {
@@ -176,7 +176,9 @@ export const recordSpecialSaleProfit = async (specialSaleIdOrDoc) => {
           userId: user._id,
           type: "venta_especial",
           amount: dist.amount,
-          description: `Venta especial: ${specialSale.product.name}${specialSale.eventName ? ` (${specialSale.eventName})` : ""}`,
+          description: `Venta especial: ${specialSale.product.name}${
+            specialSale.eventName ? ` (${specialSale.eventName})` : ""
+          }`,
           specialSaleId: specialSale._id,
           productId: specialSale.product.productId,
           metadata: {
@@ -208,7 +210,7 @@ export const recalculateUserBalance = async (userId) => {
 
     for (const entry of entries) {
       balance += entry.amount;
-      
+
       if (entry.balanceAfter !== balance) {
         updates.push({
           updateOne: {

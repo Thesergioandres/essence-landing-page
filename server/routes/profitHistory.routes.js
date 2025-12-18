@@ -1,13 +1,13 @@
 import express from "express";
 import {
-  getUserProfitHistory,
-  getUserBalance,
-  getProfitSummary,
+  backfillProfitHistoryFromSales,
   createProfitEntry,
   getComparativeAnalysis,
-  backfillProfitHistoryFromSales,
+  getProfitSummary,
+  getUserBalance,
+  getUserProfitHistory,
 } from "../controllers/profitHistory.controller.js";
-import { protect, admin } from "../middleware/auth.middleware.js";
+import { admin, protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 

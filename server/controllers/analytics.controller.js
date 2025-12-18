@@ -1,8 +1,5 @@
-import Sale from "../models/Sale.js";
-import Product from "../models/Product.js";
-import User from "../models/User.js";
-import DistributorStock from "../models/DistributorStock.js";
 import DefectiveProduct from "../models/DefectiveProduct.js";
+import Sale from "../models/Sale.js";
 import SpecialSale from "../models/SpecialSale.js";
 
 // @desc    Obtener resumen de ganancias del mes actual
@@ -14,14 +11,38 @@ export const getMonthlyProfit = async (req, res) => {
     const now = new Date();
     const colombiaOffset = 5 * 60; // Colombia es UTC-5 (5 horas * 60 minutos)
     const localOffset = now.getTimezoneOffset(); // Offset del servidor en minutos (positivo al oeste de UTC)
-    const colombiaTime = new Date(now.getTime() - (localOffset + colombiaOffset) * 60000);
-    
-    const startOfMonth = new Date(colombiaTime.getFullYear(), colombiaTime.getMonth(), 1);
-    const endOfMonth = new Date(colombiaTime.getFullYear(), colombiaTime.getMonth() + 1, 0, 23, 59, 59);
+    const colombiaTime = new Date(
+      now.getTime() - (localOffset + colombiaOffset) * 60000
+    );
+
+    const startOfMonth = new Date(
+      colombiaTime.getFullYear(),
+      colombiaTime.getMonth(),
+      1
+    );
+    const endOfMonth = new Date(
+      colombiaTime.getFullYear(),
+      colombiaTime.getMonth() + 1,
+      0,
+      23,
+      59,
+      59
+    );
 
     // Mes anterior para comparación
-    const startOfLastMonth = new Date(colombiaTime.getFullYear(), colombiaTime.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(colombiaTime.getFullYear(), colombiaTime.getMonth(), 0, 23, 59, 59);
+    const startOfLastMonth = new Date(
+      colombiaTime.getFullYear(),
+      colombiaTime.getMonth() - 1,
+      1
+    );
+    const endOfLastMonth = new Date(
+      colombiaTime.getFullYear(),
+      colombiaTime.getMonth(),
+      0,
+      23,
+      59,
+      59
+    );
 
     // Ventas del mes actual
     const currentMonthSales = await Sale.find({
@@ -71,28 +92,30 @@ export const getMonthlyProfit = async (req, res) => {
       );
 
       // Agregar totales de ventas especiales
-      const specialTotals = specialSales.reduce(
-        (acc, sale) => {
-          acc.totalProfit += sale.totalProfit;
-          acc.revenue += sale.specialPrice * sale.quantity;
-          acc.cost += sale.cost * sale.quantity;
-          acc.salesCount += 1;
-          acc.unitsCount += sale.quantity;
-          return acc;
-        },
-        normalTotals
-      );
+      const specialTotals = specialSales.reduce((acc, sale) => {
+        acc.totalProfit += sale.totalProfit;
+        acc.revenue += sale.specialPrice * sale.quantity;
+        acc.cost += sale.cost * sale.quantity;
+        acc.salesCount += 1;
+        acc.unitsCount += sale.quantity;
+        return acc;
+      }, normalTotals);
 
       return specialTotals;
     };
 
-    const currentMonth = calculateTotals(currentMonthSales, currentMonthSpecialSales);
+    const currentMonth = calculateTotals(
+      currentMonthSales,
+      currentMonthSpecialSales
+    );
     const lastMonth = calculateTotals(lastMonthSales, lastMonthSpecialSales);
 
     // Calcular porcentaje de crecimiento
     const growthPercentage =
       lastMonth.totalProfit > 0
-        ? ((currentMonth.totalProfit - lastMonth.totalProfit) / lastMonth.totalProfit) * 100
+        ? ((currentMonth.totalProfit - lastMonth.totalProfit) /
+            lastMonth.totalProfit) *
+          100
         : currentMonth.totalProfit > 0
         ? 100
         : 0;
@@ -101,7 +124,10 @@ export const getMonthlyProfit = async (req, res) => {
       currentMonth,
       lastMonth,
       growthPercentage: parseFloat(growthPercentage.toFixed(2)),
-      averageTicket: currentMonth.salesCount > 0 ? currentMonth.revenue / currentMonth.salesCount : 0,
+      averageTicket:
+        currentMonth.salesCount > 0
+          ? currentMonth.revenue / currentMonth.salesCount
+          : 0,
       // Debug info
       _debug: {
         nowUTC: now.toISOString(),
@@ -112,7 +138,7 @@ export const getMonthlyProfit = async (req, res) => {
         endOfLastMonth: endOfLastMonth.toISOString(),
         currentMonthSalesCount: currentMonthSales.length,
         lastMonthSalesCount: lastMonthSales.length,
-      }
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -125,19 +151,38 @@ export const getMonthlyProfit = async (req, res) => {
 export const getProfitByProduct = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    
+
     const filter = { paymentStatus: "confirmado" };
     if (startDate || endDate) {
       filter.saleDate = {};
       if (startDate) {
         // Convertir fecha a inicio del día en Colombia (00:00 Colombia = 05:00 UTC)
         const date = new Date(startDate);
-        filter.saleDate.$gte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 5, 0, 0));
+        filter.saleDate.$gte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            5,
+            0,
+            0
+          )
+        );
       }
       if (endDate) {
         // Convertir fecha a fin del día en Colombia (23:59:59 Colombia = 04:59:59 UTC del día siguiente)
         const date = new Date(endDate);
-        filter.saleDate.$lte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 4, 59, 59, 999));
+        filter.saleDate.$lte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate() + 1,
+            4,
+            59,
+            59,
+            999
+          )
+        );
       }
     }
 
@@ -179,7 +224,12 @@ export const getProfitByProduct = async (req, res) => {
           profitMargin: {
             $cond: [
               { $gt: ["$totalRevenue", 0] },
-              { $multiply: [{ $divide: ["$totalProfit", "$totalRevenue"] }, 100] },
+              {
+                $multiply: [
+                  { $divide: ["$totalProfit", "$totalRevenue"] },
+                  100,
+                ],
+              },
               0,
             ],
           },
@@ -200,19 +250,38 @@ export const getProfitByProduct = async (req, res) => {
 export const getProfitByDistributor = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    
+
     const filter = { paymentStatus: "confirmado" };
     if (startDate || endDate) {
       filter.saleDate = {};
       if (startDate) {
         // Convertir fecha a inicio del día en Colombia (00:00 Colombia = 05:00 UTC)
         const date = new Date(startDate);
-        filter.saleDate.$gte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 5, 0, 0));
+        filter.saleDate.$gte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            5,
+            0,
+            0
+          )
+        );
       }
       if (endDate) {
         // Convertir fecha a fin del día en Colombia (23:59:59 Colombia = 04:59:59 UTC del día siguiente)
         const date = new Date(endDate);
-        filter.saleDate.$lte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 4, 59, 59, 999));
+        filter.saleDate.$lte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate() + 1,
+            4,
+            59,
+            59,
+            999
+          )
+        );
       }
     }
 
@@ -268,33 +337,125 @@ export const getProfitByDistributor = async (req, res) => {
 // @access  Private/Admin
 export const getAverages = async (req, res) => {
   try {
-    const { period = "month" } = req.query; // day, week, month
-    
-    const now = new Date();
-    let startDate, days;
+    const {
+      period = "month",
+      startDate: startDateStr,
+      endDate: endDateStr,
+    } = req.query; // day, week, month
 
-    switch (period) {
-      case "day":
-        startDate = new Date(now);
-        startDate.setHours(0, 0, 0, 0);
-        days = 1;
-        break;
-      case "week":
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
-        days = 7;
-        break;
-      case "month":
-      default:
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        days = now.getDate();
-        break;
+    const now = new Date();
+    let startDate, endDate, days;
+
+    const buildColombiaRange = (startStr, endStr) => {
+      if (!startStr && !endStr) return null;
+
+      const range = {};
+
+      if (startStr) {
+        const date = new Date(startStr);
+        range.$gte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            5,
+            0,
+            0,
+            0
+          )
+        );
+      }
+      if (endStr) {
+        const date = new Date(endStr);
+        range.$lte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate() + 1,
+            4,
+            59,
+            59,
+            999
+          )
+        );
+      }
+
+      return range;
+    };
+
+    const computeDaysInclusive = (startStr, endStr) => {
+      if (!startStr || !endStr) return null;
+      const s = new Date(startStr);
+      const e = new Date(endStr);
+      const sDay = Date.UTC(
+        s.getUTCFullYear(),
+        s.getUTCMonth(),
+        s.getUTCDate()
+      );
+      const eDay = Date.UTC(
+        e.getUTCFullYear(),
+        e.getUTCMonth(),
+        e.getUTCDate()
+      );
+      const diff = Math.floor((eDay - sDay) / 86400000) + 1;
+      return Math.max(diff, 1);
+    };
+
+    const customDays = computeDaysInclusive(startDateStr, endDateStr);
+
+    if (startDateStr || endDateStr) {
+      const range = buildColombiaRange(startDateStr, endDateStr);
+      startDate = range?.$gte;
+      endDate = range?.$lte;
+      days = customDays ?? 1;
+    } else {
+      switch (period) {
+        case "day":
+          startDate = new Date(now);
+          startDate.setHours(0, 0, 0, 0);
+          days = 1;
+          break;
+        case "week":
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - 7);
+          days = 7;
+          break;
+        case "month":
+        default:
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          days = now.getDate();
+          break;
+      }
     }
 
-    const sales = await Sale.find({
-      saleDate: { $gte: startDate },
+    const saleFilter = {
       paymentStatus: "confirmado",
-    });
+      ...(startDate || endDate
+        ? {
+            saleDate: {
+              ...(startDate ? { $gte: startDate } : {}),
+              ...(endDate ? { $lte: endDate } : {}),
+            },
+          }
+        : { saleDate: { $gte: startDate } }),
+    };
+
+    const specialFilter = {
+      status: "active",
+      ...(startDate || endDate
+        ? {
+            saleDate: {
+              ...(startDate ? { $gte: startDate } : {}),
+              ...(endDate ? { $lte: endDate } : {}),
+            },
+          }
+        : { saleDate: { $gte: startDate } }),
+    };
+
+    const [sales, specialSales] = await Promise.all([
+      Sale.find(saleFilter),
+      SpecialSale.find(specialFilter),
+    ]);
 
     const totals = sales.reduce(
       (acc, sale) => {
@@ -306,6 +467,14 @@ export const getAverages = async (req, res) => {
       },
       { totalRevenue: 0, totalProfit: 0, totalSales: 0, totalUnits: 0 }
     );
+
+    // Incluir ventas especiales en promedios
+    specialSales.forEach((sale) => {
+      totals.totalRevenue += sale.specialPrice * sale.quantity;
+      totals.totalProfit += sale.totalProfit;
+      totals.totalSales += 1;
+      totals.totalUnits += sale.quantity;
+    });
 
     res.json({
       period,
@@ -329,26 +498,78 @@ export const getAverages = async (req, res) => {
 // @access  Private/Admin
 export const getSalesTimeline = async (req, res) => {
   try {
-    const { days = 30 } = req.query;
-    
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - parseInt(days));
-    startDate.setHours(0, 0, 0, 0);
+    const {
+      days = 30,
+      startDate: startDateStr,
+      endDate: endDateStr,
+    } = req.query;
+
+    const buildColombiaRange = (startStr, endStr) => {
+      if (!startStr && !endStr) return null;
+
+      const range = {};
+
+      if (startStr) {
+        const date = new Date(startStr);
+        range.$gte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            5,
+            0,
+            0,
+            0
+          )
+        );
+      }
+      if (endStr) {
+        const date = new Date(endStr);
+        range.$lte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate() + 1,
+            4,
+            59,
+            59,
+            999
+          )
+        );
+      }
+
+      return range;
+    };
+
+    let dateFilter;
+    if (startDateStr || endDateStr) {
+      dateFilter = buildColombiaRange(startDateStr, endDateStr);
+    } else {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - parseInt(days));
+      startDate.setHours(0, 0, 0, 0);
+      dateFilter = { $gte: startDate };
+    }
 
     const sales = await Sale.find({
-      saleDate: { $gte: startDate },
+      saleDate: dateFilter,
       paymentStatus: "confirmado",
     }).sort({ saleDate: 1 });
 
     const specialSales = await SpecialSale.find({
-      saleDate: { $gte: startDate },
+      saleDate: dateFilter,
       status: "active",
     }).sort({ saleDate: 1 });
 
     // Agrupar por día
     const salesByDay = {};
+    const toColombiaDayKey = (date) => {
+      // Convertimos a día Colombia (UTC-5) para evitar corrimientos de fecha
+      const colombia = new Date(date.getTime() - 5 * 60 * 60000);
+      return colombia.toISOString().split("T")[0];
+    };
     sales.forEach((sale) => {
-      const day = sale.saleDate.toISOString().split("T")[0];
+      const day = toColombiaDayKey(sale.saleDate);
       if (!salesByDay[day]) {
         salesByDay[day] = {
           date: day,
@@ -368,7 +589,7 @@ export const getSalesTimeline = async (req, res) => {
 
     // Agregar ventas especiales
     specialSales.forEach((sale) => {
-      const day = sale.saleDate.toISOString().split("T")[0];
+      const day = toColombiaDayKey(sale.saleDate);
       if (!salesByDay[day]) {
         salesByDay[day] = {
           date: day,
@@ -399,39 +620,77 @@ export const getSalesTimeline = async (req, res) => {
 export const getFinancialSummary = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    
+
     const filter = { paymentStatus: "confirmado" };
     if (startDate || endDate) {
       filter.saleDate = {};
       if (startDate) {
         // Convertir fecha a inicio del día en Colombia (00:00 Colombia = 05:00 UTC)
         const date = new Date(startDate);
-        filter.saleDate.$gte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 5, 0, 0));
+        filter.saleDate.$gte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            5,
+            0,
+            0
+          )
+        );
       }
       if (endDate) {
         // Convertir fecha a fin del día en Colombia (23:59:59 Colombia = 04:59:59 UTC del día siguiente)
         const date = new Date(endDate);
-        filter.saleDate.$lte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 4, 59, 59, 999));
+        filter.saleDate.$lte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate() + 1,
+            4,
+            59,
+            59,
+            999
+          )
+        );
       }
     }
 
     const sales = await Sale.find(filter);
-    
+
     const specialFilter = { status: "active" };
     if (startDate || endDate) {
       specialFilter.saleDate = {};
       if (startDate) {
         const date = new Date(startDate);
-        specialFilter.saleDate.$gte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 5, 0, 0));
+        specialFilter.saleDate.$gte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            5,
+            0,
+            0
+          )
+        );
       }
       if (endDate) {
         const date = new Date(endDate);
-        specialFilter.saleDate.$lte = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 4, 59, 59, 999));
+        specialFilter.saleDate.$lte = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate() + 1,
+            4,
+            59,
+            59,
+            999
+          )
+        );
       }
     }
-    
+
     const specialSales = await SpecialSale.find(specialFilter);
-    
+
     const defectiveProducts = await DefectiveProduct.find({
       status: "confirmado",
       ...(startDate && { reportDate: { $gte: new Date(startDate) } }),
@@ -477,10 +736,15 @@ export const getFinancialSummary = async (req, res) => {
 
     res.json({
       ...totals,
-      profitMargin: totals.totalRevenue > 0 ? (totals.totalProfit / totals.totalRevenue) * 100 : 0,
-      averageTicket: totals.totalSales > 0 ? totals.totalRevenue / totals.totalSales : 0,
+      profitMargin:
+        totals.totalRevenue > 0
+          ? (totals.totalProfit / totals.totalRevenue) * 100
+          : 0,
+      averageTicket:
+        totals.totalSales > 0 ? totals.totalRevenue / totals.totalSales : 0,
       defectiveUnits: defectiveLoss,
-      defectiveRate: totals.totalUnits > 0 ? (defectiveLoss / totals.totalUnits) * 100 : 0,
+      defectiveRate:
+        totals.totalUnits > 0 ? (defectiveLoss / totals.totalUnits) * 100 : 0,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -619,13 +883,28 @@ export const getCombinedSummary = async (req, res) => {
       if (startDate) {
         const date = new Date(startDate);
         salesFilter.saleDate.$gte = new Date(
-          Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 5, 0, 0)
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            5,
+            0,
+            0
+          )
         );
       }
       if (endDate) {
         const date = new Date(endDate);
         salesFilter.saleDate.$lte = new Date(
-          Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 4, 59, 59, 999)
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate() + 1,
+            4,
+            59,
+            59,
+            999
+          )
         );
       }
     }

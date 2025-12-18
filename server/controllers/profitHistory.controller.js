@@ -1,11 +1,10 @@
 import mongoose from "mongoose";
 import ProfitHistory from "../models/ProfitHistory.js";
-import User from "../models/User.js";
 import Sale from "../models/Sale.js";
-import SpecialSale from "../models/SpecialSale.js";
+import User from "../models/User.js";
 import {
-  recordProfitHistory,
   recalculateUserBalance,
+  recordProfitHistory,
 } from "../services/profitHistory.service.js";
 
 // @desc    Obtener historial de ganancias de un usuario
@@ -24,13 +23,13 @@ export const getUserProfitHistory = async (req, res) => {
 
     // Construir filtro
     const filter = { user: userId };
-    
+
     if (startDate || endDate) {
       filter.date = {};
       if (startDate) filter.date.$gte = new Date(startDate);
       if (endDate) filter.date.$lte = new Date(endDate);
     }
-    
+
     if (type) filter.type = type;
 
     const pageNum = parseInt(page);
@@ -125,7 +124,7 @@ export const getUserBalance = async (req, res) => {
       bonus: 0,
     };
 
-    totals.forEach(item => {
+    totals.forEach((item) => {
       if (breakdown.hasOwnProperty(item._id)) {
         breakdown[item._id] = item.total;
       }
@@ -297,7 +296,9 @@ export const backfillProfitHistoryFromSales = async (req, res) => {
   try {
     const { startDate, endDate, distributorId, saleId } = req.body || {};
 
-    const adminUser = await User.findOne({ role: "admin" }).select("_id").lean();
+    const adminUser = await User.findOne({ role: "admin" })
+      .select("_id")
+      .lean();
     if (!adminUser?._id) {
       return res.status(500).json({ message: "No se encontró usuario admin" });
     }
@@ -425,14 +426,28 @@ export const backfillProfitHistoryFromSales = async (req, res) => {
 export const getComparativeAnalysis = async (req, res) => {
   try {
     const now = new Date();
-    
+
     // Este mes
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-    
+    const endOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59
+    );
+
     // Mes anterior
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    const endOfLastMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      0,
+      23,
+      59,
+      59
+    );
 
     const [thisMonth, lastMonth] = await Promise.all([
       ProfitHistory.aggregate([
@@ -459,13 +474,26 @@ export const getComparativeAnalysis = async (req, res) => {
       ]),
     ]);
 
-    const currentMonth = thisMonth[0] || { totalAmount: 0, count: 0, avgAmount: 0 };
-    const previousMonth = lastMonth[0] || { totalAmount: 0, count: 0, avgAmount: 0 };
+    const currentMonth = thisMonth[0] || {
+      totalAmount: 0,
+      count: 0,
+      avgAmount: 0,
+    };
+    const previousMonth = lastMonth[0] || {
+      totalAmount: 0,
+      count: 0,
+      avgAmount: 0,
+    };
 
     const difference = currentMonth.totalAmount - previousMonth.totalAmount;
-    const percentageChange = previousMonth.totalAmount > 0
-      ? ((currentMonth.totalAmount - previousMonth.totalAmount) / previousMonth.totalAmount) * 100
-      : currentMonth.totalAmount > 0 ? 100 : 0;
+    const percentageChange =
+      previousMonth.totalAmount > 0
+        ? ((currentMonth.totalAmount - previousMonth.totalAmount) /
+            previousMonth.totalAmount) *
+          100
+        : currentMonth.totalAmount > 0
+        ? 100
+        : 0;
 
     res.json({
       currentMonth: {

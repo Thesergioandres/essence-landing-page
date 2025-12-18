@@ -7,7 +7,7 @@ import {
   FileText,
   TrendingUp,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { advancedAnalyticsService } from "../api/services";
 import {
   CategoryDistributionChart,
@@ -33,6 +33,81 @@ export default function AdvancedDashboard() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "products" | "distributors" | "stock"
   >("overview");
+
+  const [funnelLoading, setFunnelLoading] = useState(true);
+  const [salesFunnel, setSalesFunnel] = useState<null | {
+    pending: { count: number; totalValue: number };
+    confirmed: { count: number; totalValue: number };
+    conversionRate: number;
+  }>(null);
+
+  const [rotationDays, setRotationDays] = useState(30);
+  const [rotationLoading, setRotationLoading] = useState(false);
+  const [productRotation, setProductRotation] = useState<
+    Array<{
+      _id: string;
+      name: string;
+      totalSold: number;
+      frequency: number;
+      currentStock: number;
+      rotationRate: number;
+    }>
+  >([]);
+
+  const dateRangeError = useMemo(() => {
+    if (!dateRange.startDate || !dateRange.endDate) return null;
+    return dateRange.startDate > dateRange.endDate
+      ? "La fecha inicio no puede ser mayor que la fecha fin."
+      : null;
+  }, [dateRange.endDate, dateRange.startDate]);
+
+  const formatCurrency = (value: number) => {
+    const num = Number(value) || 0;
+    return `$${num.toFixed(0)}`;
+  };
+
+  useEffect(() => {
+    const fetchFunnel = async () => {
+      try {
+        setFunnelLoading(true);
+        const response = await advancedAnalyticsService.getSalesFunnel({
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate,
+        });
+        setSalesFunnel(response.funnel);
+      } catch (error) {
+        console.error("Error al cargar funnel:", error);
+        setSalesFunnel(null);
+      } finally {
+        setFunnelLoading(false);
+      }
+    };
+
+    if (!dateRangeError) {
+      fetchFunnel();
+    }
+  }, [dateRange.endDate, dateRange.startDate, dateRangeError]);
+
+  useEffect(() => {
+    const fetchRotation = async () => {
+      try {
+        setRotationLoading(true);
+        const response = await advancedAnalyticsService.getProductRotation({
+          days: rotationDays,
+        });
+        setProductRotation((response.productRotation || []) as any);
+      } catch (error) {
+        console.error("Error al cargar rotación de productos:", error);
+        setProductRotation([]);
+      } finally {
+        setRotationLoading(false);
+      }
+    };
+
+    if (activeTab === "products") {
+      fetchRotation();
+    }
+  }, [activeTab, rotationDays]);
 
   const handleExportKPIs = async () => {
     try {
@@ -188,6 +263,12 @@ export default function AdvancedDashboard() {
             Este mes
           </button>
         </div>
+
+        {dateRangeError && (
+          <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+            {dateRangeError}
+          </div>
+        )}
       </motion.div>
 
       {/* Tabs */}
@@ -225,6 +306,63 @@ export default function AdvancedDashboard() {
             {/* Comparative Analysis */}
             <ComparativeAnalysisView />
 
+            {/* Sales Funnel */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="rounded-lg border border-gray-800 bg-gray-900 p-6"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-white">
+                  Embudo de pagos
+                </h3>
+                <span className="text-sm text-gray-400">
+                  {dateRange.startDate && dateRange.endDate
+                    ? `${dateRange.startDate} → ${dateRange.endDate}`
+                    : "Global"}
+                </span>
+              </div>
+
+              {funnelLoading ? (
+                <div className="flex h-32 items-center justify-center">
+                  <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-purple-600"></div>
+                </div>
+              ) : !salesFunnel ? (
+                <div className="text-gray-400">
+                  No hay datos del embudo disponibles.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="rounded-lg border border-gray-800 bg-gray-950/20 p-4">
+                    <p className="text-sm text-gray-400">Pendientes</p>
+                    <p className="text-2xl font-bold text-yellow-300">
+                      {salesFunnel.pending.count}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {formatCurrency(salesFunnel.pending.totalValue)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-gray-800 bg-gray-950/20 p-4">
+                    <p className="text-sm text-gray-400">Confirmadas</p>
+                    <p className="text-2xl font-bold text-green-300">
+                      {salesFunnel.confirmed.count}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {formatCurrency(salesFunnel.confirmed.totalValue)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-gray-800 bg-gray-950/20 p-4">
+                    <p className="text-sm text-gray-400">Conversión</p>
+                    <p className="text-2xl font-bold text-purple-300">
+                      {salesFunnel.conversionRate.toFixed(2)}%
+                    </p>
+                    <p className="text-sm text-gray-400">Confirmadas / Total</p>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+
             {/* Sales Timeline */}
             <SalesTimelineChart
               period={period}
@@ -248,6 +386,93 @@ export default function AdvancedDashboard() {
               startDate={dateRange.startDate}
               endDate={dateRange.endDate}
             />
+
+            {/* Product Rotation */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="rounded-lg border border-gray-800 bg-gray-900 p-6"
+            >
+              <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <h3 className="text-xl font-bold text-white">
+                  Rotación de productos
+                </h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setRotationDays(7)}
+                    className={`rounded-lg border border-gray-700 px-3 py-1 text-sm text-gray-200 transition-colors hover:bg-gray-800 ${
+                      rotationDays === 7 ? "bg-gray-800" : ""
+                    }`}
+                  >
+                    7 días
+                  </button>
+                  <button
+                    onClick={() => setRotationDays(30)}
+                    className={`rounded-lg border border-gray-700 px-3 py-1 text-sm text-gray-200 transition-colors hover:bg-gray-800 ${
+                      rotationDays === 30 ? "bg-gray-800" : ""
+                    }`}
+                  >
+                    30 días
+                  </button>
+                  <button
+                    onClick={() => setRotationDays(90)}
+                    className={`rounded-lg border border-gray-700 px-3 py-1 text-sm text-gray-200 transition-colors hover:bg-gray-800 ${
+                      rotationDays === 90 ? "bg-gray-800" : ""
+                    }`}
+                  >
+                    90 días
+                  </button>
+                </div>
+              </div>
+
+              {rotationLoading ? (
+                <div className="flex h-40 items-center justify-center">
+                  <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-purple-600"></div>
+                </div>
+              ) : productRotation.length === 0 ? (
+                <div className="text-gray-400">
+                  No hay datos de rotación disponibles.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-900/50 text-gray-300">
+                      <tr>
+                        <th className="px-4 py-3 text-left">Producto</th>
+                        <th className="px-4 py-3 text-right">Unidades</th>
+                        <th className="px-4 py-3 text-right">Frecuencia</th>
+                        <th className="px-4 py-3 text-right">Stock</th>
+                        <th className="px-4 py-3 text-right">Rotación</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800 text-gray-200">
+                      {productRotation.slice(0, 20).map(p => (
+                        <tr key={p._id} className="hover:bg-gray-900/30">
+                          <td className="px-4 py-3">
+                            <span className="font-medium text-gray-100">
+                              {p.name}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {Number(p.totalSold) || 0}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {Number(p.frequency) || 0}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {Number(p.currentStock) || 0}
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold text-purple-300">
+                            {((Number(p.rotationRate) || 0) * 100).toFixed(1)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </motion.div>
           </>
         )}
 
