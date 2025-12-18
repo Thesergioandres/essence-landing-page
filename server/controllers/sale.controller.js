@@ -651,7 +651,21 @@ export const confirmPayment = async (req, res) => {
     }
 
     if (sale.paymentStatus === "confirmado") {
-      return res.status(400).json({ message: "El pago ya está confirmado" });
+      // PUT idempotente: si ya está confirmado, responder 200
+      const populatedSale = await Sale.findById(sale._id)
+        .populate("product", "name image")
+        .populate("distributor", "name email")
+        .populate("paymentConfirmedBy", "name email");
+
+      await invalidateCache("cache:analytics:*");
+      await invalidateCache("cache:gamification:*");
+      await invalidateCache("cache:sales:*");
+      await invalidateCache("cache:distributors:*");
+
+      return res.json({
+        message: "El pago ya estaba confirmado",
+        sale: populatedSale,
+      });
     }
 
     sale.paymentStatus = "confirmado";
@@ -659,6 +673,12 @@ export const confirmPayment = async (req, res) => {
     sale.paymentConfirmedBy = req.user._id;
 
     await sale.save();
+
+    // Invalidar caché (si está activo)
+    await invalidateCache("cache:analytics:*");
+    await invalidateCache("cache:gamification:*");
+    await invalidateCache("cache:sales:*");
+    await invalidateCache("cache:distributors:*");
 
     const populatedSale = await Sale.findById(sale._id)
       .populate("product", "name image")
