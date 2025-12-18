@@ -348,6 +348,26 @@ export default function DashboardLayout() {
             </NavLink>
 
             <NavLink
+              to="/admin/business-assistant"
+              className={({ isActive }): string => navLinkClasses(isActive)}
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.663 17h4.673M12 3a7 7 0 00-4 12.742V17a2 2 0 002 2h4a2 2 0 002-2v-1.258A7 7 0 0012 3z"
+                />
+              </svg>
+              Business Assistant
+            </NavLink>
+
+            <NavLink
               to="/admin/audit-logs"
               className={({ isActive }): string => navLinkClasses(isActive)}
             >

@@ -84,6 +84,72 @@ export interface Sale {
   updatedAt?: string;
 }
 
+// ==================== BUSINESS ASSISTANT TYPES ====================
+export type BusinessAssistantActionType =
+  | "buy_more_inventory"
+  | "pause_purchases"
+  | "decrease_price"
+  | "increase_price"
+  | "run_promotion"
+  | "review_margin"
+  | "keep";
+
+export interface BusinessAssistantRecommendationAction {
+  action: BusinessAssistantActionType;
+  title: string;
+  confidence?: number;
+  suggestedQty?: number;
+  suggestedChangePct?: number;
+  details?: {
+    targetDays?: number;
+    avgDailyUnits?: number;
+    daysCover?: number;
+  };
+}
+
+export interface BusinessAssistantRecommendationItem {
+  productId: string;
+  productName: string;
+  categoryId: string | null;
+  stock: {
+    warehouseStock: number;
+    totalStock: number;
+    lowStockAlert: number;
+  };
+  metrics: {
+    recentDays: number;
+    horizonDays: number | null;
+    recentUnits: number;
+    prevUnits: number;
+    unitsGrowthPct: number;
+    recentRevenue: number;
+    recentProfit: number;
+    recentMarginPct: number;
+    avgDailyUnits: number;
+    daysCover: number | null;
+    recentAvgPrice: number;
+    categoryAvgPrice: number;
+    priceVsCategoryPct: number;
+  };
+  recommendation: {
+    primary: BusinessAssistantRecommendationAction | null;
+    actions: BusinessAssistantRecommendationAction[];
+    justification: string[];
+    notes?: string;
+  };
+}
+
+export interface BusinessAssistantRecommendationsResponse {
+  generatedAt: string;
+  window: {
+    horizonDays: number | null;
+    recentDays: number;
+    startDate: string | null;
+    endDate: string | null;
+  };
+  recommendations: BusinessAssistantRecommendationItem[];
+}
+
 export interface Expense {
   _id: string;
   type: string;

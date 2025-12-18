@@ -5,6 +5,7 @@ import type {
   AuditLogsResponse,
   AuditStats,
   Averages,
+  BusinessAssistantRecommendationsResponse,
   Category,
   ComparativeAnalysis,
   DailySummary,
@@ -90,6 +91,22 @@ export const authService = {
 
   async getAllUsers(): Promise<{ success: boolean; data: User[] }> {
     const response = await api.get("/users");
+    return response.data;
+  },
+};
+
+// ==================== BUSINESS ASSISTANT SERVICE ====================
+export const businessAssistantService = {
+  async getRecommendations(params?: {
+    horizonDays?: number;
+    recentDays?: number;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<BusinessAssistantRecommendationsResponse> {
+    const response = await api.get<BusinessAssistantRecommendationsResponse>(
+      "/business-assistant/recommendations",
+      { params }
+    );
     return response.data;
   },
 };

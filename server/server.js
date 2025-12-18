@@ -10,6 +10,7 @@ import advancedAnalyticsRoutes from "./routes/advancedAnalytics.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import businessAssistantRoutes from "./routes/businessAssistant.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import defectiveProductRoutes from "./routes/defectiveProduct.routes.js";
 import distributorRoutes from "./routes/distributor.routes.js";
@@ -126,6 +127,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/business-assistant", businessAssistantRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);

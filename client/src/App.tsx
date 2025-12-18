@@ -42,6 +42,7 @@ const AdvancedDashboard = lazy(() => import("./pages/AdvancedDashboard"));
 const SpecialSales = lazy(() => import("./pages/SpecialSales"));
 const ProfitHistory = lazy(() => import("./pages/ProfitHistory"));
 const Expenses = lazy(() => import("./pages/Expenses"));
+const BusinessAssistant = lazy(() => import("./pages/BusinessAssistant"));
 
 // Distributor pages
 const DistributorDashboardLayout = lazy(
@@ -107,6 +108,7 @@ export default function App() {
           <Route path="expenses" element={<Expenses />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="advanced-analytics" element={<AdvancedDashboard />} />
+          <Route path="business-assistant" element={<BusinessAssistant />} />
           <Route path="audit-logs" element={<AuditLogs />} />
           <Route path="gamification-config" element={<GamificationConfig />} />
           <Route path="rankings" element={<Rankings />} />
