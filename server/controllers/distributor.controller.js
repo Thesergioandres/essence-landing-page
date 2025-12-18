@@ -1,8 +1,10 @@
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
+import { invalidateCache } from "../middleware/cache.middleware.js";
 import DistributorStock from "../models/DistributorStock.js";
+import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
 import User from "../models/User.js";
-import Product from "../models/Product.js";
 
 // @desc    Crear distribuidor
 // @route   POST /api/distributors
@@ -41,6 +43,8 @@ export const createDistributor = async (req, res) => {
       role: distributor.role,
       active: distributor.active,
     });
+
+    await invalidateCache("cache:distributors:*");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -52,7 +56,7 @@ export const createDistributor = async (req, res) => {
 export const getDistributors = async (req, res) => {
   try {
     const { active, page = 1, limit = 20 } = req.query;
-    
+
     const filter = { role: "distribuidor" };
     if (active !== undefined) {
       filter.active = active === "true";
@@ -64,42 +68,66 @@ export const getDistributors = async (req, res) => {
 
     const [distributors, total] = await Promise.all([
       User.find(filter)
-        .select("-password")
-        .populate("assignedProducts", "name image")
+        // No necesitamos populate aquí; la UI usa solo stats + datos básicos.
+        .select("name email phone address role active assignedProducts")
         .skip(skip)
         .limit(limitNum)
         .lean(),
-      User.countDocuments(filter)
+      User.countDocuments(filter),
     ]);
 
-    // Agregar estadísticas de cada distribuidor
-    const distributorsWithStats = await Promise.all(
-      distributors.map(async (distributor) => {
-        // Stock total del distribuidor
-        const stock = await DistributorStock.find({
-          distributor: distributor._id,
-        }).lean();
-        const totalStock = stock.reduce((sum, item) => sum + item.quantity, 0);
+    const distributorIds = distributors.map((d) => d._id);
 
-        // Ventas totales
-        const sales = await Sale.find({ distributor: distributor._id }).lean();
-        const totalSales = sales.length;
-        const totalProfit = sales.reduce(
-          (sum, sale) => sum + sale.distributorProfit,
-          0
-        );
-
-        return {
-          ...distributor,
-          stats: {
-            totalStock,
-            totalSales,
-            totalProfit,
-            assignedProductsCount: distributor.assignedProducts?.length || 0,
-          },
-        };
-      })
+    const objectIds = distributorIds.map(
+      (id) => new mongoose.Types.ObjectId(id)
     );
+
+    const [stockAgg, salesAgg] = await Promise.all([
+      DistributorStock.aggregate([
+        { $match: { distributor: { $in: objectIds } } },
+        { $group: { _id: "$distributor", totalStock: { $sum: "$quantity" } } },
+      ]),
+      Sale.aggregate([
+        { $match: { distributor: { $in: objectIds } } },
+        {
+          $group: {
+            _id: "$distributor",
+            totalSales: { $sum: 1 },
+            totalProfit: { $sum: "$distributorProfit" },
+          },
+        },
+      ]),
+    ]);
+
+    const stockByDistributor = new Map(
+      stockAgg.map((s) => [String(s._id), Number(s.totalStock) || 0])
+    );
+    const salesByDistributor = new Map(
+      salesAgg.map((s) => [
+        String(s._id),
+        {
+          totalSales: Number(s.totalSales) || 0,
+          totalProfit: Number(s.totalProfit) || 0,
+        },
+      ])
+    );
+
+    const distributorsWithStats = distributors.map((distributor) => {
+      const salesStats = salesByDistributor.get(String(distributor._id)) || {
+        totalSales: 0,
+        totalProfit: 0,
+      };
+
+      return {
+        ...distributor,
+        stats: {
+          totalStock: stockByDistributor.get(String(distributor._id)) || 0,
+          totalSales: salesStats.totalSales,
+          totalProfit: salesStats.totalProfit,
+          assignedProductsCount: distributor.assignedProducts?.length || 0,
+        },
+      };
+    });
 
     res.json({
       data: distributorsWithStats,
@@ -108,8 +136,8 @@ export const getDistributors = async (req, res) => {
         limit: limitNum,
         total,
         pages: Math.ceil(total / limitNum),
-        hasMore: pageNum < Math.ceil(total / limitNum)
-      }
+        hasMore: pageNum < Math.ceil(total / limitNum),
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -123,7 +151,10 @@ export const getDistributorById = async (req, res) => {
   try {
     const distributor = await User.findById(req.params.id)
       .select("-password")
-      .populate("assignedProducts", "name image purchasePrice distributorPrice");
+      .populate(
+        "assignedProducts",
+        "name image purchasePrice distributorPrice"
+      );
 
     if (!distributor || distributor.role !== "distribuidor") {
       return res.status(404).json({ message: "Distribuidor no encontrado" });
@@ -205,6 +236,8 @@ export const updateDistributor = async (req, res) => {
       role: distributor.role,
       active: distributor.active,
     });
+
+    await invalidateCache("cache:distributors:*");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -233,18 +266,18 @@ export const deleteDistributor = async (req, res) => {
     for (const stock of distributorStocks) {
       if (stock.quantity > 0) {
         const product = await Product.findById(stock.product);
-        
+
         if (product) {
           // Devolver al stock de bodega
           product.warehouseStock += stock.quantity;
           product.totalStock += stock.quantity;
           await product.save();
-          
+
           returnedProducts++;
           totalQuantityReturned += stock.quantity;
         }
       }
-      
+
       // Eliminar el registro de stock del distribuidor
       await stock.deleteOne();
     }
@@ -259,6 +292,8 @@ export const deleteDistributor = async (req, res) => {
         totalQuantity: totalQuantityReturned,
       },
     });
+
+    await invalidateCache("cache:distributors:*");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -279,9 +314,13 @@ export const toggleDistributorActive = async (req, res) => {
     await distributor.save();
 
     res.json({
-      message: `Distribuidor ${distributor.active ? "activado" : "desactivado"} correctamente`,
+      message: `Distribuidor ${
+        distributor.active ? "activado" : "desactivado"
+      } correctamente`,
       active: distributor.active,
     });
+
+    await invalidateCache("cache:distributors:*");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

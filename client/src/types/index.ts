@@ -86,7 +86,8 @@ export interface Sale {
 
 export interface Expense {
   _id: string;
-  category: string;
+  type: string;
+  category?: string;
   amount: number;
   description?: string;
   expenseDate: string;

@@ -7,10 +7,11 @@ import {
   getDistributorSales,
   getSalesByDistributor,
   getSalesByProduct,
-  registerSale,
   registerAdminSale,
+  registerSale,
 } from "../controllers/sale.controller.js";
 import { admin, protect } from "../middleware/auth.middleware.js";
+import { cacheMiddleware } from "../middleware/cache.middleware.js";
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.post("/", protect, registerSale);
 router.get("/distributor/:distributorId?", protect, getDistributorSales);
 
 // Rutas de administrador
-router.get("/", protect, admin, getAllSales);
+router.get("/", protect, admin, cacheMiddleware(60, "sales"), getAllSales);
 router.get("/report/by-product", protect, admin, getSalesByProduct);
 router.get("/report/by-distributor", protect, admin, getSalesByDistributor);
 router.put("/:id/confirm-payment", protect, admin, confirmPayment);

@@ -1,3 +1,4 @@
+import { invalidateCache } from "../middleware/cache.middleware.js";
 import Expense from "../models/Expense.js";
 
 // @desc    Registrar un gasto (inversión)
@@ -5,10 +6,18 @@ import Expense from "../models/Expense.js";
 // @access  Private/Admin
 export const createExpense = async (req, res) => {
   try {
-    const { category, amount, description, expenseDate } = req.body;
+    const { type, category, amount, description, expenseDate } = req.body;
 
-    if (!category || typeof category !== "string") {
-      return res.status(400).json({ message: "La categoría es obligatoria" });
+    const resolvedType =
+      (typeof type === "string" && type.trim()) ||
+      (typeof category === "string" && category.trim()) ||
+      (typeof description === "string" && description.trim()) ||
+      "";
+
+    if (!resolvedType) {
+      return res
+        .status(400)
+        .json({ message: "El tipo de gasto es obligatorio" });
     }
 
     const parsedAmount = Number(amount);
@@ -17,7 +26,7 @@ export const createExpense = async (req, res) => {
     }
 
     const expense = await Expense.create({
-      category: category.trim(),
+      type: resolvedType.trim(),
       amount: parsedAmount,
       description: typeof description === "string" ? description.trim() : "",
       expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
@@ -29,6 +38,9 @@ export const createExpense = async (req, res) => {
       .lean();
 
     res.status(201).json({ expense: populated });
+
+    await invalidateCache("cache:expenses:*");
+    await invalidateCache("cache:expense:*");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -39,12 +51,18 @@ export const createExpense = async (req, res) => {
 // @access  Private/Admin
 export const getExpenses = async (req, res) => {
   try {
-    const { startDate, endDate, category } = req.query;
+    const { startDate, endDate, type, category } = req.query;
 
     const filter = {};
 
-    if (typeof category === "string" && category.trim()) {
-      filter.category = category.trim();
+    const resolvedType =
+      (typeof type === "string" && type.trim()) ||
+      (typeof category === "string" && category.trim()) ||
+      "";
+
+    if (resolvedType) {
+      // Compatibilidad: en datos antiguos puede estar como `category`
+      filter.$or = [{ type: resolvedType }, { category: resolvedType }];
     }
 
     if (startDate || endDate) {
@@ -88,15 +106,27 @@ export const getExpenseById = async (req, res) => {
 // @access  Private/Admin
 export const updateExpense = async (req, res) => {
   try {
-    const { category, amount, description, expenseDate } = req.body;
+    const { type, category, amount, description, expenseDate } = req.body;
 
     const update = {};
 
-    if (category !== undefined) {
-      if (!category || typeof category !== "string") {
-        return res.status(400).json({ message: "La categoría es obligatoria" });
+    if (type !== undefined) {
+      if (!type || typeof type !== "string") {
+        return res
+          .status(400)
+          .json({ message: "El tipo de gasto es obligatorio" });
       }
-      update.category = category.trim();
+      update.type = type.trim();
+    }
+
+    // Legacy: si aún llega `category`, lo interpretamos como `type`
+    if (category !== undefined && type === undefined) {
+      if (!category || typeof category !== "string") {
+        return res
+          .status(400)
+          .json({ message: "El tipo de gasto es obligatorio" });
+      }
+      update.type = category.trim();
     }
 
     if (amount !== undefined) {
@@ -127,6 +157,9 @@ export const updateExpense = async (req, res) => {
     }
 
     res.json({ expense });
+
+    await invalidateCache("cache:expenses:*");
+    await invalidateCache("cache:expense:*");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -145,6 +178,9 @@ export const deleteExpense = async (req, res) => {
 
     await expense.deleteOne();
     res.json({ message: "Gasto eliminado" });
+
+    await invalidateCache("cache:expenses:*");
+    await invalidateCache("cache:expense:*");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { saleService } from '../api/services';
-import type { Sale } from '../types';
+import { useEffect, useState } from "react";
+import { saleService } from "../api/services";
+import type { Sale } from "../types";
 
 export default function DistributorSales() {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -11,35 +11,38 @@ export default function DistributorSales() {
   });
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    startDate: '',
-    endDate: '',
+    startDate: "",
+    endDate: "",
   });
 
   useEffect(() => {
-    loadSales();
-  }, [filters]);
+    const loadSales = async () => {
+      try {
+        setLoading(true);
+        const filterParams = {
+          ...(filters.startDate && { startDate: filters.startDate }),
+          ...(filters.endDate && { endDate: filters.endDate }),
+        };
 
-  const loadSales = async () => {
-    try {
-      setLoading(true);
-      const filterParams = {
-        ...(filters.startDate && { startDate: filters.startDate }),
-        ...(filters.endDate && { endDate: filters.endDate }),
-      };
-      
-      const response = await saleService.getDistributorSales(undefined, filterParams);
-      setSales(response.sales);
-      setStats({
-        totalSales: response.stats.totalSales,
-        totalRevenue: response.stats.totalRevenue,
-        totalProfit: response.stats.totalDistributorProfit,
-      });
-    } catch (error) {
-      console.error('Error al cargar ventas:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        const response = await saleService.getDistributorSales(
+          undefined,
+          filterParams
+        );
+        setSales(response.sales);
+        setStats({
+          totalSales: response.stats.totalSales,
+          totalRevenue: response.stats.totalRevenue,
+          totalProfit: response.stats.totalDistributorProfit,
+        });
+      } catch (error) {
+        console.error("Error al cargar ventas:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadSales();
+  }, [filters]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -47,24 +50,24 @@ export default function DistributorSales() {
   };
 
   const clearFilters = () => {
-    setFilters({ startDate: '', endDate: '' });
+    setFilters({ startDate: "", endDate: "" });
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
       minimumFractionDigits: 0,
     }).format(value);
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es-CO', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(date).toLocaleDateString("es-CO", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -81,24 +84,24 @@ export default function DistributorSales() {
       {/* Header */}
       <div>
         <h1 className="text-4xl font-bold text-white">Mis Ventas</h1>
-        <p className="mt-2 text-gray-400">
-          Historial completo de tus ventas
-        </p>
+        <p className="mt-2 text-gray-400">Historial completo de tus ventas</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-3">
-        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-blue-900/50 to-gray-800/50 p-6">
+        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-blue-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Total Ventas</p>
-          <p className="mt-2 text-3xl font-bold text-white">{stats.totalSales}</p>
+          <p className="mt-2 text-3xl font-bold text-white">
+            {stats.totalSales}
+          </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-green-900/50 to-gray-800/50 p-6">
+        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-green-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Ingresos Totales</p>
           <p className="mt-2 text-2xl font-bold text-white">
             {formatCurrency(stats.totalRevenue)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-purple-900/50 to-gray-800/50 p-6">
+        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-purple-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Mis Ganancias</p>
           <p className="mt-2 text-2xl font-bold text-white">
             {formatCurrency(stats.totalProfit)}
@@ -110,8 +113,8 @@ export default function DistributorSales() {
       <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
         <h2 className="mb-4 text-lg font-semibold text-white">Filtros</h2>
         <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+          <div className="min-w-[200px] flex-1">
+            <label className="mb-2 block text-sm font-medium text-gray-300">
               Fecha inicio
             </label>
             <input
@@ -122,8 +125,8 @@ export default function DistributorSales() {
               className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+          <div className="min-w-[200px] flex-1">
+            <label className="mb-2 block text-sm font-medium text-gray-300">
               Fecha fin
             </label>
             <input
@@ -150,7 +153,7 @@ export default function DistributorSales() {
         <h2 className="mb-4 text-lg font-semibold text-white">
           Historial de Ventas ({sales.length})
         </h2>
-        
+
         {sales.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-600 p-12 text-center">
             <svg
@@ -180,54 +183,71 @@ export default function DistributorSales() {
             <table className="min-w-full divide-y divide-gray-700">
               <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     ID
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Fecha
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Producto
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Cantidad
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Precio Unit.
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Total
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Rango
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Ganancia
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Notas
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {sales.map((sale) => {
-                  const product = typeof sale.product === 'object' ? sale.product : null;
+                {sales.map(sale => {
+                  const product =
+                    typeof sale.product === "object" ? sale.product : null;
                   const total = sale.salePrice * sale.quantity;
-                  
+
                   // Determinar rango según comisión
-                  let rankBadge = { emoji: '📊', text: 'Normal', color: 'bg-blue-900/30 text-blue-400' };
+                  let rankBadge = {
+                    emoji: "📊",
+                    text: "Normal",
+                    color: "bg-blue-900/30 text-blue-400",
+                  };
                   if (sale.distributorProfitPercentage === 25) {
-                    rankBadge = { emoji: '🥇', text: '1º', color: 'bg-yellow-900/30 text-yellow-400' };
+                    rankBadge = {
+                      emoji: "🥇",
+                      text: "1º",
+                      color: "bg-yellow-900/30 text-yellow-400",
+                    };
                   } else if (sale.distributorProfitPercentage === 23) {
-                    rankBadge = { emoji: '🥈', text: '2º', color: 'bg-gray-700/30 text-gray-300' };
+                    rankBadge = {
+                      emoji: "🥈",
+                      text: "2º",
+                      color: "bg-gray-700/30 text-gray-300",
+                    };
                   } else if (sale.distributorProfitPercentage === 21) {
-                    rankBadge = { emoji: '🥉', text: '3º', color: 'bg-orange-900/30 text-orange-400' };
+                    rankBadge = {
+                      emoji: "🥉",
+                      text: "3º",
+                      color: "bg-orange-900/30 text-orange-400",
+                    };
                   }
-                  
+
                   return (
                     <tr key={sale._id} className="hover:bg-gray-700/30">
                       <td className="px-4 py-3 text-sm">
-                        <span className="font-mono text-blue-400 text-xs">
+                        <span className="font-mono text-xs text-blue-400">
                           {sale.saleId || sale._id.slice(-8)}
                         </span>
                       </td>
@@ -244,7 +264,7 @@ export default function DistributorSales() {
                             />
                           )}
                           <span className="font-medium text-white">
-                            {product?.name || 'N/A'}
+                            {product?.name || "N/A"}
                           </span>
                         </div>
                       </td>
@@ -258,7 +278,9 @@ export default function DistributorSales() {
                         {formatCurrency(total)}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${rankBadge.color}`}>
+                        <span
+                          className={`rounded-full px-2 py-1 text-xs font-semibold ${rankBadge.color}`}
+                        >
                           {rankBadge.emoji} {rankBadge.text}
                         </span>
                       </td>
@@ -266,7 +288,7 @@ export default function DistributorSales() {
                         {formatCurrency(sale.distributorProfit)}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-400">
-                        {sale.notes || '-'}
+                        {sale.notes || "-"}
                       </td>
                     </tr>
                   );

@@ -34,6 +34,8 @@ export const deleteSale = async (req, res) => {
     // Invalidar caché (si está activo)
     await invalidateCache("cache:analytics:*");
     await invalidateCache("cache:gamification:*");
+    await invalidateCache("cache:sales:*");
+    await invalidateCache("cache:distributors:*");
 
     // Eliminar la venta
     await sale.deleteOne();
@@ -357,6 +359,8 @@ export const registerSale = async (req, res) => {
     // Invalidar caché de analytics y gamificación
     await invalidateCache("cache:analytics:*");
     await invalidateCache("cache:gamification:*");
+    await invalidateCache("cache:sales:*");
+    await invalidateCache("cache:distributors:*");
 
     // Registrar en historial de ganancias (no bloquear si falla)
     try {

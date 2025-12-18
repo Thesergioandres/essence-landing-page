@@ -8,11 +8,12 @@ import {
   updateDistributor,
 } from "../controllers/distributor.controller.js";
 import { admin, protect } from "../middleware/auth.middleware.js";
+import { cacheMiddleware } from "../middleware/cache.middleware.js";
 
 const router = express.Router();
 
 // Rutas que distribuidores también pueden usar
-router.get("/", protect, getDistributors); // Distribuidores pueden ver la lista (para transferencias)
+router.get("/", protect, cacheMiddleware(60, "distributors"), getDistributors); // Distribuidores pueden ver la lista (para transferencias)
 
 // Rutas solo para admin
 router.post("/", protect, admin, createDistributor);

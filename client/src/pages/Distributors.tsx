@@ -3,31 +3,62 @@ import { useNavigate } from "react-router-dom";
 import { distributorService } from "../api/services";
 import LoadingSpinner from "../components/LoadingSpinner";
 import type { User } from "../types";
+import {
+  buildCacheKey,
+  readSessionCache,
+  writeSessionCache,
+} from "../utils/requestCache";
+
+const DISTRIBUTORS_CACHE_TTL_MS = 60 * 1000;
 
 export default function Distributors() {
   const navigate = useNavigate();
   const [distributors, setDistributors] = useState<User[]>([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0, hasMore: false });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0,
+    hasMore: false,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
 
   const loadDistributors = useCallback(async () => {
     try {
-      setLoading(true);
       const params: any = {
         page: pagination.page,
         limit: pagination.limit,
       };
       if (filter !== "all") params.active = filter === "active";
-      
+
+      const cacheKey = buildCacheKey("distributors:list", params);
+      const cached = readSessionCache<{
+        data: User[];
+        pagination?: typeof pagination;
+      }>(cacheKey, DISTRIBUTORS_CACHE_TTL_MS);
+
+      if (cached?.data?.length) {
+        setDistributors(cached.data);
+        if (cached.pagination) setPagination(cached.pagination);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+
       const response = await distributorService.getAll(params);
-      
+
       if (Array.isArray(response)) {
         setDistributors(response);
-      } else if ('data' in response) {
+        writeSessionCache(cacheKey, { data: response });
+      } else if ("data" in response) {
         setDistributors(response.data);
         setPagination(response.pagination);
+        writeSessionCache(cacheKey, {
+          data: response.data,
+          pagination: response.pagination,
+        });
       }
     } catch (err) {
       setError("Error al cargar distribuidores");
@@ -82,7 +113,7 @@ export default function Distributors() {
         </div>
         <button
           onClick={() => navigate("/admin/distributors/add")}
-          className="inline-flex items-center gap-2 rounded-lg bg-linear-to-r from-purple-600 to-pink-600 px-5 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700"
+          className="bg-linear-to-r inline-flex items-center gap-2 rounded-lg from-purple-600 to-pink-600 px-5 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700"
         >
           <span className="text-2xl leading-none">＋</span>
           Nuevo distribuidor
@@ -231,22 +262,27 @@ export default function Distributors() {
 
       {/* Controles de Paginación */}
       {!loading && pagination.pages > 1 && (
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-4">
+        <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-4 sm:flex-row">
           <div className="text-sm text-gray-400">
-            Página {pagination.page} de {pagination.pages} • Total: {pagination.total} distribuidores
+            Página {pagination.page} de {pagination.pages} • Total:{" "}
+            {pagination.total} distribuidores
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+              onClick={() =>
+                setPagination(prev => ({ ...prev, page: prev.page - 1 }))
+              }
               disabled={pagination.page === 1}
-              className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
             >
               ← Anterior
             </button>
             <button
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+              onClick={() =>
+                setPagination(prev => ({ ...prev, page: prev.page + 1 }))
+              }
               disabled={!pagination.hasMore}
-              className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
             >
               Siguiente →
             </button>

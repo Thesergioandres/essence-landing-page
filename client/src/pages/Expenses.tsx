@@ -2,16 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { expenseService } from "../api/services";
 import { Button } from "../components/Button";
 import type { Expense } from "../types";
+import {
+  buildCacheKey,
+  readSessionCache,
+  writeSessionCache,
+} from "../utils/requestCache";
 
-const CATEGORY_OPTIONS = [
-  "Envíos",
-  "Marketing",
-  "Publicidad",
-  "Empaques",
-  "Herramientas",
-  "Servicios",
-  "Otros",
-] as const;
+const EXPENSES_CACHE_TTL_MS = 2 * 60 * 1000;
+const EXPENSES_CACHE_KEY = buildCacheKey("expenses:list");
 
 export default function Expenses() {
   const [loading, setLoading] = useState(true);
@@ -21,30 +19,42 @@ export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
   const [form, setForm] = useState({
-    category: "Envíos",
+    type: "",
     amount: "",
     expenseDate: new Date().toISOString().slice(0, 10),
-    description: "",
   });
 
   const total = useMemo(() => {
     return expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   }, [expenses]);
 
-  const load = async () => {
+  const load = async (opts?: { silent?: boolean }) => {
     try {
-      setLoading(true);
+      if (!opts?.silent) setLoading(true);
       const res = await expenseService.getAll();
       setExpenses(res.expenses);
+      writeSessionCache(EXPENSES_CACHE_KEY, res);
     } catch (error) {
       console.error("Error cargando gastos:", error);
     } finally {
-      setLoading(false);
+      if (!opts?.silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
+    const cached = readSessionCache<{ expenses: Expense[] }>(
+      EXPENSES_CACHE_KEY,
+      EXPENSES_CACHE_TTL_MS
+    );
+
+    if (cached?.expenses?.length) {
+      setExpenses(cached.expenses);
+      setLoading(false);
+      void load({ silent: true });
+      return;
+    }
+
+    void load();
   }, []);
 
   const formatCurrency = (amount: number) => {
@@ -69,33 +79,38 @@ export default function Expenses() {
       setSaving(true);
       if (editingId) {
         const updated = await expenseService.update(editingId, {
-          category: form.category,
+          type: form.type,
           amount: parsedAmount,
           expenseDate: form.expenseDate,
-          description: form.description,
         });
 
-        setExpenses(prev =>
-          prev.map(e => (e._id === editingId ? updated.expense : e))
-        );
+        setExpenses(prev => {
+          const next = prev.map(e =>
+            e._id === editingId ? updated.expense : e
+          );
+          writeSessionCache(EXPENSES_CACHE_KEY, { expenses: next });
+          return next;
+        });
         setEditingId(null);
         setForm(prev => ({
           ...prev,
-          category: "Envíos",
+          type: "",
           amount: "",
           expenseDate: new Date().toISOString().slice(0, 10),
-          description: "",
         }));
       } else {
         const created = await expenseService.create({
-          category: form.category,
+          type: form.type,
           amount: parsedAmount,
           expenseDate: form.expenseDate,
-          description: form.description,
         });
 
-        setExpenses(prev => [created.expense, ...prev]);
-        setForm(prev => ({ ...prev, amount: "", description: "" }));
+        setExpenses(prev => {
+          const next = [created.expense, ...prev];
+          writeSessionCache(EXPENSES_CACHE_KEY, { expenses: next });
+          return next;
+        });
+        setForm(prev => ({ ...prev, amount: "", type: "" }));
       }
     } catch (error) {
       console.error("Error registrando gasto:", error);
@@ -108,10 +123,9 @@ export default function Expenses() {
   const startEdit = (expense: Expense) => {
     setEditingId(expense._id);
     setForm({
-      category: expense.category,
+      type: expense.type || expense.category || expense.description || "",
       amount: String(expense.amount ?? ""),
       expenseDate: new Date(expense.expenseDate).toISOString().slice(0, 10),
-      description: expense.description || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -119,10 +133,9 @@ export default function Expenses() {
   const cancelEdit = () => {
     setEditingId(null);
     setForm({
-      category: "Envíos",
+      type: "",
       amount: "",
       expenseDate: new Date().toISOString().slice(0, 10),
-      description: "",
     });
   };
 
@@ -132,7 +145,11 @@ export default function Expenses() {
     try {
       setDeletingId(id);
       await expenseService.delete(id);
-      setExpenses(prev => prev.filter(e => e._id !== id));
+      setExpenses(prev => {
+        const next = prev.filter(e => e._id !== id);
+        writeSessionCache(EXPENSES_CACHE_KEY, { expenses: next });
+        return next;
+      });
       if (editingId === id) {
         cancelEdit();
       }
@@ -162,21 +179,18 @@ export default function Expenses() {
         >
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              Categoría
+              Tipo de gasto
             </label>
-            <select
+            <input
               className="w-full rounded-lg border border-gray-300 px-3 py-2"
-              value={form.category}
+              type="text"
+              placeholder="Ej: Envíos, Marketing, Publicidad..."
+              value={form.type}
               onChange={e =>
-                setForm(prev => ({ ...prev, category: e.target.value }))
+                setForm(prev => ({ ...prev, type: e.target.value }))
               }
-            >
-              {CATEGORY_OPTIONS.map(opt => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
+              required
+            />
           </div>
 
           <div>
@@ -209,21 +223,6 @@ export default function Expenses() {
                 setForm(prev => ({ ...prev, expenseDate: e.target.value }))
               }
               required
-            />
-          </div>
-
-          <div className="md:col-span-4">
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Descripción
-            </label>
-            <input
-              className="w-full rounded-lg border border-gray-300 px-3 py-2"
-              type="text"
-              placeholder="Ej: Campaña Instagram diciembre"
-              value={form.description}
-              onChange={e =>
-                setForm(prev => ({ ...prev, description: e.target.value }))
-              }
             />
           </div>
 
@@ -270,10 +269,7 @@ export default function Expenses() {
                     Fecha
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">
-                    Categoría
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">
-                    Descripción
+                    Tipo de gasto
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-600">
                     Monto
@@ -290,10 +286,7 @@ export default function Expenses() {
                       {new Date(exp.expenseDate).toLocaleDateString("es-CO")}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                      {exp.category}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {exp.description || "—"}
+                      {exp.type || exp.category || exp.description || "—"}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-900">
                       {formatCurrency(exp.amount)}
@@ -330,7 +323,7 @@ export default function Expenses() {
       <div className="flex justify-end">
         <button
           className="text-sm text-purple-300 hover:text-purple-200"
-          onClick={load}
+          onClick={() => load()}
           type="button"
         >
           Recargar

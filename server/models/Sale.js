@@ -99,6 +99,11 @@ const saleSchema = new mongoose.Schema(
   }
 );
 
+// Índices para acelerar listados y filtros comunes
+saleSchema.index({ saleDate: -1 });
+saleSchema.index({ distributor: 1, saleDate: -1 });
+saleSchema.index({ paymentStatus: 1, saleDate: -1 });
+
 // Generar saleId único antes de guardar (DEBE SER SINCRÓNICO Y ANTES DE VALIDACIONES)
 saleSchema.pre("validate", function (next) {
   // Generar saleId si no existe - SE EJECUTA ANTES DE VALIDACIONES
@@ -106,15 +111,17 @@ saleSchema.pre("validate", function (next) {
     try {
       const now = new Date();
       const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const seconds = String(now.getSeconds()).padStart(2, "0");
       const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-      
+
       this.saleId = `SALE-${year}${month}${day}-${hours}${minutes}${seconds}-${random}`;
-      console.log(`✅ saleId generado automáticamente en pre-validate: ${this.saleId}`);
+      console.log(
+        `✅ saleId generado automáticamente en pre-validate: ${this.saleId}`
+      );
     } catch (error) {
       console.error("❌ Error generando saleId:", error?.message);
       // Pasa el error, pero no lo devuelvas directamente si quieres continuar
@@ -139,20 +146,26 @@ saleSchema.pre("save", function (next) {
     // El distribuidor recibe una comisión sobre el precio de venta según su ranking
     // 🥇 1º: 25%, 🥈 2º: 23%, 🥉 3º: 21%, Resto: 20%
     const profitPercentage = this.distributorProfitPercentage || 20;
-    
+
     // PRECIO PARA DISTRIBUIDOR = Lo que el distribuidor PAGA al admin
     // Ejemplo: Venta $22,000 con 20% comisión
     // Precio para dist = $22,000 × 80% = $17,600 (lo que paga al admin)
-    const priceForDistributor = this.salePrice * ((100 - profitPercentage) / 100);
+    const priceForDistributor =
+      this.salePrice * ((100 - profitPercentage) / 100);
     this.distributorPrice = priceForDistributor;
-    
+
     // GANANCIA DEL DISTRIBUIDOR = Precio Venta - Precio que paga al admin
     // Ejemplo: $22,000 - $17,600 = $4,400 (su comisión del 20%)
-    this.distributorProfit = (this.salePrice - priceForDistributor) * this.quantity;
+    this.distributorProfit =
+      (this.salePrice - priceForDistributor) * this.quantity;
 
     // GANANCIA DEL ADMIN = Precio Venta - Precio Compra - Ganancia Distribuidor
     // Ejemplo: $22,000 - $10,500 - $4,400 = $7,100
-    this.adminProfit = (this.salePrice - this.purchasePrice - (this.salePrice - priceForDistributor)) * this.quantity;
+    this.adminProfit =
+      (this.salePrice -
+        this.purchasePrice -
+        (this.salePrice - priceForDistributor)) *
+      this.quantity;
 
     // Ganancia total
     this.totalProfit = this.distributorProfit + this.adminProfit;

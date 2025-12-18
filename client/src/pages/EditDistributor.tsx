@@ -25,29 +25,29 @@ const EditDistributor = () => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    loadDistributor();
-  }, [id]);
+    const loadDistributor = async () => {
+      try {
+        setLoadingData(true);
+        if (!id) return;
+        const response = await distributorService.getById(id);
+        const distributor = response.distributor;
+        setFormData({
+          name: distributor.name,
+          email: distributor.email,
+          phone: distributor.phone || '',
+          address: distributor.address || '',
+        });
+        setError('');
+       
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Error al cargar distribuidor');
+      } finally {
+        setLoadingData(false);
+      }
+    };
 
-  const loadDistributor = async () => {
-    try {
-      setLoadingData(true);
-      if (!id) return;
-      const response = await distributorService.getById(id);
-      const distributor = response.distributor;
-      setFormData({
-        name: distributor.name,
-        email: distributor.email,
-        phone: distributor.phone || '',
-        address: distributor.address || '',
-      });
-      setError('');
-     
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar distribuidor');
-    } finally {
-      setLoadingData(false);
-    }
-  };
+    void loadDistributor();
+  }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

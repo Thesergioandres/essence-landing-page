@@ -3,6 +3,13 @@ import { authService, saleService } from "../api/services";
 import LoadingSpinner from "../components/LoadingSpinner";
 import SaleDetailModal from "../components/SaleDetailModal";
 import type { Sale } from "../types";
+import {
+  buildCacheKey,
+  readSessionCache,
+  writeSessionCache,
+} from "../utils/requestCache";
+
+const SALES_CACHE_TTL_MS = 60 * 1000;
 
 export default function Sales() {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -42,7 +49,6 @@ export default function Sales() {
 
   const loadSales = async () => {
     try {
-      setLoading(true);
       const params: any = {
         page: pagination.page,
         limit: pagination.limit,
@@ -52,16 +58,33 @@ export default function Sales() {
       if (dateFilters.startDate) params.startDate = dateFilters.startDate;
       if (dateFilters.endDate) params.endDate = dateFilters.endDate;
 
+      const cacheKey = buildCacheKey("sales:list", params);
+      const cached = readSessionCache<{
+        sales: Sale[];
+        pagination?: typeof pagination;
+        stats?: typeof statsData;
+      }>(cacheKey, SALES_CACHE_TTL_MS);
+
+      if (cached?.sales?.length) {
+        setSales(cached.sales);
+        if (cached.pagination) setPagination(cached.pagination);
+        if (cached.stats) setStatsData(cached.stats);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+
       const response = await saleService.getAllSales(params);
-      setSales(response.sales || response);
+      const normalized = {
+        sales: (response?.sales || response) as Sale[],
+        pagination: response?.pagination,
+        stats: response?.stats,
+      };
 
-      if (response.pagination) {
-        setPagination(response.pagination);
-      }
-
-      if (response.stats) {
-        setStatsData(response.stats);
-      }
+      setSales(normalized.sales || []);
+      if (normalized.pagination) setPagination(normalized.pagination);
+      if (normalized.stats) setStatsData(normalized.stats);
+      writeSessionCache(cacheKey, normalized);
     } catch (error) {
       console.error("Error al cargar ventas:", error);
     } finally {

@@ -2,9 +2,17 @@ import mongoose from "mongoose";
 
 const expenseSchema = new mongoose.Schema(
   {
+    // Campo actual (UI): tipo de gasto. Mantenemos compatibilidad con datos antiguos
+    // que pudieron guardarse como `category`.
+    type: {
+      type: String,
+      required: [true, "El tipo de gasto es obligatorio"],
+      trim: true,
+    },
+
+    // Legacy (compatibilidad)
     category: {
       type: String,
-      required: [true, "La categoría es obligatoria"],
       trim: true,
     },
     amount: {
@@ -31,5 +39,8 @@ const expenseSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+expenseSchema.index({ expenseDate: -1 });
+expenseSchema.index({ type: 1, expenseDate: -1 });
 
 export default mongoose.model("Expense", expenseSchema);

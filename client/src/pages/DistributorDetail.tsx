@@ -26,54 +26,54 @@ const DistributorDetail = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    loadDistributor();
+    const loadDistributor = async () => {
+      try {
+        setLoading(true);
+        if (!id) return;
+        const response = await distributorService.getById(id);
+        setDistributor(response.distributor);
+        setError('');
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Error al cargar distribuidor');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadDistributor();
   }, [id]);
 
   useEffect(() => {
-    if (activeTab === 'stock') loadStock();
-    if (activeTab === 'sales') loadSales();
+    const loadStock = async () => {
+      try {
+        if (!id) return;
+        const response = await stockService.getDistributorStock(id);
+        setStock(response);
+      } catch (err: any) {
+        console.error('Error al cargar inventario:', err);
+      }
+    };
+
+    const loadSales = async () => {
+      try {
+        if (!id) return;
+        const response = await saleService.getDistributorSales(id);
+        setSales(response.sales);
+        
+        // Calcular estadísticas
+        const totalSales = response.sales.length;
+        const totalRevenue = response.sales.reduce((sum: number, sale: Sale) => sum + (sale.salePrice * sale.quantity), 0);
+        const totalProfit = response.sales.reduce((sum: number, sale: Sale) => sum + sale.distributorProfit, 0);
+        
+        setStats({ totalSales, totalRevenue, totalProfit });
+      } catch (err: any) {
+        console.error('Error al cargar ventas:', err);
+      }
+    };
+
+    if (activeTab === 'stock') void loadStock();
+    if (activeTab === 'sales') void loadSales();
   }, [activeTab, id]);
-
-  const loadDistributor = async () => {
-    try {
-      setLoading(true);
-      if (!id) return;
-      const response = await distributorService.getById(id);
-      setDistributor(response.distributor);
-      setError('');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar distribuidor');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadStock = async () => {
-    try {
-      if (!id) return;
-      const response = await stockService.getDistributorStock(id);
-      setStock(response);
-    } catch (err: any) {
-      console.error('Error al cargar inventario:', err);
-    }
-  };
-
-  const loadSales = async () => {
-    try {
-      if (!id) return;
-      const response = await saleService.getDistributorSales(id);
-      setSales(response.sales);
-      
-      // Calcular estadísticas
-      const totalSales = response.sales.length;
-      const totalRevenue = response.sales.reduce((sum: number, sale: Sale) => sum + (sale.salePrice * sale.quantity), 0);
-      const totalProfit = response.sales.reduce((sum: number, sale: Sale) => sum + sale.distributorProfit, 0);
-      
-      setStats({ totalSales, totalRevenue, totalProfit });
-    } catch (err: any) {
-      console.error('Error al cargar ventas:', err);
-    }
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CO', {

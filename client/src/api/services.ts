@@ -1332,7 +1332,7 @@ export const expenseService = {
   async getAll(params?: {
     startDate?: string;
     endDate?: string;
-    category?: string;
+    type?: string;
   }): Promise<{ expenses: Expense[] }> {
     const response = await api.get("/expenses", { params });
     // Formato esperado: { expenses }
@@ -1342,7 +1342,7 @@ export const expenseService = {
   },
 
   async create(payload: {
-    category: string;
+    type: string;
     amount: number;
     description?: string;
     expenseDate?: string;
@@ -1359,7 +1359,7 @@ export const expenseService = {
   async update(
     id: string,
     payload: Partial<{
-      category: string;
+      type: string;
       amount: number;
       description: string;
       expenseDate: string;
