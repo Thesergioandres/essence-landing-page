@@ -36,6 +36,7 @@ export const deleteSale = async (req, res) => {
     await invalidateCache("cache:gamification:*");
     await invalidateCache("cache:sales:*");
     await invalidateCache("cache:distributors:*");
+    await invalidateCache("cache:businessAssistant:*");
 
     // Eliminar la venta
     await sale.deleteOne();
@@ -361,6 +362,7 @@ export const registerSale = async (req, res) => {
     await invalidateCache("cache:gamification:*");
     await invalidateCache("cache:sales:*");
     await invalidateCache("cache:distributors:*");
+    await invalidateCache("cache:businessAssistant:*");
 
     // Registrar en historial de ganancias (no bloquear si falla)
     try {
@@ -661,6 +663,7 @@ export const confirmPayment = async (req, res) => {
       await invalidateCache("cache:gamification:*");
       await invalidateCache("cache:sales:*");
       await invalidateCache("cache:distributors:*");
+      await invalidateCache("cache:businessAssistant:*");
 
       return res.json({
         message: "El pago ya estaba confirmado",
@@ -679,6 +682,7 @@ export const confirmPayment = async (req, res) => {
     await invalidateCache("cache:gamification:*");
     await invalidateCache("cache:sales:*");
     await invalidateCache("cache:distributors:*");
+    await invalidateCache("cache:businessAssistant:*");
 
     const populatedSale = await Sale.findById(sale._id)
       .populate("product", "name image")

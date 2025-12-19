@@ -139,6 +139,7 @@ export const createProduct = async (req, res) => {
 
     // Invalidar caché de productos
     await invalidateCache("cache:products:*");
+    await invalidateCache("cache:businessAssistant:*");
 
     res.status(201).json(populatedProduct);
   } catch (error) {
@@ -242,6 +243,7 @@ export const updateProduct = async (req, res) => {
     // Invalidar caché de productos
     await invalidateCache("cache:products:*");
     await invalidateCache("cache:product:*");
+    await invalidateCache("cache:businessAssistant:*");
 
     res.json(updatedProduct);
   } catch (error) {
@@ -270,6 +272,7 @@ export const deleteProduct = async (req, res) => {
     // Invalidar caché de productos
     await invalidateCache("cache:products:*");
     await invalidateCache("cache:product:*");
+    await invalidateCache("cache:businessAssistant:*");
 
     res.json({ message: "Producto eliminado" });
   } catch (error) {
@@ -320,11 +323,9 @@ export const getDistributorCatalog = async (req, res) => {
     // Verificar que el usuario sea distribuidor
     if (req.user.role !== "distribuidor") {
       console.log("❌ Acceso denegado: rol", req.user.role);
-      return res
-        .status(403)
-        .json({
-          message: "Solo los distribuidores pueden acceder a su catálogo",
-        });
+      return res.status(403).json({
+        message: "Solo los distribuidores pueden acceder a su catálogo",
+      });
     }
 
     // Buscar productos que tiene en stock el distribuidor

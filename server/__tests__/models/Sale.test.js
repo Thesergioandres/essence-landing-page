@@ -1,8 +1,8 @@
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import Sale from '../../models/Sale.js';
-import Product from '../../models/Product.js';
-import User from '../../models/User.js';
+import { MongoMemoryServer } from "mongodb-memory-server";
+import mongoose from "mongoose";
+import Product from "../../models/Product.js";
+import Sale from "../../models/Sale.js";
+import User from "../../models/User.js";
 
 let mongoServer;
 
@@ -20,36 +20,36 @@ afterAll(async () => {
 afterEach(async () => {
   const collections = mongoose.connection.collections;
   for (const key in collections) {
-    await collections[key].deleteMany();
+    await collections[key].deleteMany({});
   }
 });
 
-describe('Sale Model - Generación de saleId', () => {
+describe("Sale Model - Generación de saleId", () => {
   let product;
   let distributor;
 
   beforeEach(async () => {
     // Crear producto de prueba
     product = await Product.create({
-      name: 'Producto Test',
-      description: 'Descripción test',
+      name: "Producto Test",
+      description: "Descripción test",
       purchasePrice: 100,
       distributorPrice: 150,
-      salePrice: 200,
+      clientPrice: 200,
       totalStock: 1000,
       category: new mongoose.Types.ObjectId(),
     });
 
     // Crear distribuidor de prueba
     distributor = await User.create({
-      name: 'Distribuidor Test',
-      email: 'distributor@test.com',
-      password: 'password123',
-      role: 'distribuidor',
+      name: "Distribuidor Test",
+      email: "distributor@test.com",
+      password: "password123",
+      role: "distribuidor",
     });
   });
 
-  test('Debe generar saleId automáticamente con formato VTA-YYYY-NNNN', async () => {
+  test("Debe generar saleId automáticamente con formato SALE-YYYYMMDD-HHMMSS-XXXXXX", async () => {
     const sale = await Sale.create({
       distributor: distributor._id,
       product: product._id,
@@ -62,13 +62,13 @@ describe('Sale Model - Generación de saleId', () => {
     });
 
     expect(sale.saleId).toBeDefined();
-    expect(sale.saleId).toMatch(/^VTA-\d{4}-\d{4}$/);
-    
-    const year = new Date().getFullYear();
-    expect(sale.saleId).toContain(`VTA-${year}`);
+    expect(sale.saleId).toMatch(/^SALE-\d{8}-\d{6}-[A-Z0-9]{6}$/);
+
+    const year = String(new Date().getFullYear());
+    expect(sale.saleId.slice(5, 9)).toBe(year);
   });
 
-  test('Debe incrementar el contador de saleId secuencialmente', async () => {
+  test("Debe generar saleId únicos en ventas consecutivas", async () => {
     const sale1 = await Sale.create({
       distributor: distributor._id,
       product: product._id,
@@ -91,21 +91,20 @@ describe('Sale Model - Generación de saleId', () => {
       distributorProfitPercentage: 20,
     });
 
-    const num1 = parseInt(sale1.saleId.split('-')[2]);
-    const num2 = parseInt(sale2.saleId.split('-')[2]);
-    
-    expect(num2).toBe(num1 + 1);
+    expect(sale1.saleId).toMatch(/^SALE-\d{8}-\d{6}-[A-Z0-9]{6}$/);
+    expect(sale2.saleId).toMatch(/^SALE-\d{8}-\d{6}-[A-Z0-9]{6}$/);
+    expect(sale1.saleId).not.toBe(sale2.saleId);
   });
 });
 
-describe('Sale Model - Cálculo de ganancias', () => {
+describe("Sale Model - Cálculo de ganancias", () => {
   let product;
   let distributor;
 
   beforeEach(async () => {
     product = await Product.create({
-      name: 'Producto Test',
-      description: 'Descripción test',
+      name: "Producto Test",
+      description: "Descripción test",
       purchasePrice: 100,
       distributorPrice: 150,
       salePrice: 200,
@@ -114,14 +113,14 @@ describe('Sale Model - Cálculo de ganancias', () => {
     });
 
     distributor = await User.create({
-      name: 'Distribuidor Test',
-      email: 'distributor@test.com',
-      password: 'password123',
-      role: 'distribuidor',
+      name: "Distribuidor Test",
+      email: "distributor@test.com",
+      password: "password123",
+      role: "distribuidor",
     });
   });
 
-  test('Debe calcular correctamente ganancia de distribuidor normal (20%)', async () => {
+  test("Debe calcular correctamente ganancia de distribuidor normal (20%)", async () => {
     const sale = await Sale.create({
       distributor: distributor._id,
       product: product._id,
@@ -137,7 +136,7 @@ describe('Sale Model - Cálculo de ganancias', () => {
     expect(sale.distributorProfit).toBe(400);
   });
 
-  test('Debe calcular correctamente ganancia de distribuidor 1er lugar (25%)', async () => {
+  test("Debe calcular correctamente ganancia de distribuidor 1er lugar (25%)", async () => {
     const sale = await Sale.create({
       distributor: distributor._id,
       product: product._id,
@@ -153,7 +152,7 @@ describe('Sale Model - Cálculo de ganancias', () => {
     expect(sale.distributorProfit).toBe(500);
   });
 
-  test('Debe calcular correctamente ganancia de distribuidor 2do lugar (23%)', async () => {
+  test("Debe calcular correctamente ganancia de distribuidor 2do lugar (23%)", async () => {
     const sale = await Sale.create({
       distributor: distributor._id,
       product: product._id,
@@ -169,7 +168,7 @@ describe('Sale Model - Cálculo de ganancias', () => {
     expect(sale.distributorProfit).toBe(460);
   });
 
-  test('Debe calcular correctamente ganancia de distribuidor 3er lugar (21%)', async () => {
+  test("Debe calcular correctamente ganancia de distribuidor 3er lugar (21%)", async () => {
     const sale = await Sale.create({
       distributor: distributor._id,
       product: product._id,
@@ -185,7 +184,7 @@ describe('Sale Model - Cálculo de ganancias', () => {
     expect(sale.distributorProfit).toBe(420);
   });
 
-  test('Debe calcular correctamente ganancia admin con distribuidor normal (20%)', async () => {
+  test("Debe calcular correctamente ganancia admin con distribuidor normal (20%)", async () => {
     const sale = await Sale.create({
       distributor: distributor._id,
       product: product._id,
@@ -202,7 +201,7 @@ describe('Sale Model - Cálculo de ganancias', () => {
     expect(sale.adminProfit).toBe(600);
   });
 
-  test('Debe calcular correctamente ganancia admin con distribuidor 1er lugar (25%)', async () => {
+  test("Debe calcular correctamente ganancia admin con distribuidor 1er lugar (25%)", async () => {
     const sale = await Sale.create({
       distributor: distributor._id,
       product: product._id,
@@ -219,7 +218,7 @@ describe('Sale Model - Cálculo de ganancias', () => {
     expect(sale.adminProfit).toBe(500);
   });
 
-  test('Debe calcular correctamente ganancia total (distribuidor + admin)', async () => {
+  test("Debe calcular correctamente ganancia total (distribuidor + admin)", async () => {
     const sale = await Sale.create({
       distributor: distributor._id,
       product: product._id,
@@ -235,7 +234,7 @@ describe('Sale Model - Cálculo de ganancias', () => {
     expect(sale.totalProfit).toBe(1000);
   });
 
-  test('Debe calcular correctamente venta directa de admin (sin distribuidor)', async () => {
+  test("Debe calcular correctamente venta directa de admin (sin distribuidor)", async () => {
     const sale = await Sale.create({
       distributor: null,
       product: product._id,
@@ -254,14 +253,14 @@ describe('Sale Model - Cálculo de ganancias', () => {
   });
 });
 
-describe('Sale Model - Validaciones', () => {
+describe("Sale Model - Validaciones", () => {
   let product;
   let distributor;
 
   beforeEach(async () => {
     product = await Product.create({
-      name: 'Producto Test',
-      description: 'Descripción test',
+      name: "Producto Test",
+      description: "Descripción test",
       purchasePrice: 100,
       distributorPrice: 150,
       salePrice: 200,
@@ -270,20 +269,20 @@ describe('Sale Model - Validaciones', () => {
     });
 
     distributor = await User.create({
-      name: 'Distribuidor Test',
-      email: 'distributor@test.com',
-      password: 'password123',
-      role: 'distribuidor',
+      name: "Distribuidor Test",
+      email: "distributor@test.com",
+      password: "password123",
+      role: "distribuidor",
     });
   });
 
-  test('Debe requerir campos obligatorios', async () => {
+  test("Debe requerir campos obligatorios", async () => {
     const sale = new Sale({});
-    
+
     await expect(sale.save()).rejects.toThrow();
   });
 
-  test('Debe aceptar distributorProfitPercentage válidos (0, 20, 21, 23, 25)', async () => {
+  test("Debe aceptar distributorProfitPercentage válidos (0, 20, 21, 23, 25)", async () => {
     const validPercentages = [0, 20, 21, 23, 25];
 
     for (const percentage of validPercentages) {
@@ -314,6 +313,6 @@ describe('Sale Model - Validaciones', () => {
       distributorProfitPercentage: 20,
     });
 
-    expect(sale.paymentStatus).toBe('pendiente');
+    expect(sale.paymentStatus).toBe("pendiente");
   });
 });

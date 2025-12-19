@@ -1,13 +1,16 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "@jest/globals";
+import { afterAll, beforeAll, describe, expect, it } from "@jest/globals";
+import bcrypt from "bcryptjs";
+import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import request from "supertest";
-import app from "../server.js";
-import User from "../models/User.js";
-import Product from "../models/Product.js";
-import DistributorStock from "../models/DistributorStock.js";
 import Category from "../models/Category.js";
+import DistributorStock from "../models/DistributorStock.js";
+import Product from "../models/Product.js";
+import User from "../models/User.js";
 
 describe("Distributor Catalog Endpoint Tests", () => {
+  let app;
+  let mongoServer;
   let distributorToken;
   let distributorId;
   let adminToken;
@@ -17,6 +20,15 @@ describe("Distributor Catalog Endpoint Tests", () => {
   let product3Id;
 
   beforeAll(async () => {
+    process.env.NODE_ENV = "test";
+    process.env.JWT_SECRET = process.env.JWT_SECRET || "test-jwt-secret";
+
+    mongoServer = await MongoMemoryServer.create();
+    process.env.MONGODB_URI = mongoServer.getUri();
+
+    const mod = await import("../server.js");
+    app = mod.default;
+
     // Limpiar base de datos
     await User.deleteMany({});
     await Product.deleteMany({});
@@ -26,15 +38,16 @@ describe("Distributor Catalog Endpoint Tests", () => {
     // Crear categoría de prueba
     const category = await Category.create({
       name: "Categoría Test",
-      slug: "categoria-test"
+      slug: "categoria-test",
     });
     categoryId = category._id;
 
     // Crear admin
+    const adminHashed = await bcrypt.hash("password123", 10);
     const admin = await User.create({
       name: "Admin Test",
       email: "admin.catalog@test.com",
-      password: "password123",
+      password: adminHashed,
       role: "admin",
     });
 
@@ -45,13 +58,14 @@ describe("Distributor Catalog Endpoint Tests", () => {
     adminToken = adminLogin.body.token;
 
     // Crear distribuidor
+    const distributorHashed = await bcrypt.hash("password123", 10);
     const distributor = await User.create({
       name: "Distribuidor Test Catalog",
       email: "dist.catalog@test.com",
-      password: "password123",
+      password: distributorHashed,
       role: "distribuidor",
       active: true,
-      assignedProducts: []
+      assignedProducts: [],
     });
     distributorId = distributor._id;
 
@@ -71,7 +85,7 @@ describe("Distributor Catalog Endpoint Tests", () => {
       category: categoryId,
       totalStock: 100,
       warehouseStock: 50,
-      featured: false
+      featured: false,
     });
     product1Id = product1._id;
 
@@ -84,7 +98,7 @@ describe("Distributor Catalog Endpoint Tests", () => {
       category: categoryId,
       totalStock: 100,
       warehouseStock: 50,
-      featured: false
+      featured: false,
     });
     product2Id = product2._id;
 
@@ -97,7 +111,7 @@ describe("Distributor Catalog Endpoint Tests", () => {
       category: categoryId,
       totalStock: 100,
       warehouseStock: 50,
-      featured: false
+      featured: false,
     });
     product3Id = product3._id;
 
@@ -105,25 +119,25 @@ describe("Distributor Catalog Endpoint Tests", () => {
     await DistributorStock.create({
       distributor: distributorId,
       product: product1Id,
-      quantity: 10
+      quantity: 10,
     });
 
     await DistributorStock.create({
       distributor: distributorId,
       product: product2Id,
-      quantity: 5
+      quantity: 5,
     });
 
     // Producto 3 sin stock (quantity = 0)
     await DistributorStock.create({
       distributor: distributorId,
       product: product3Id,
-      quantity: 0
+      quantity: 0,
     });
 
     // Actualizar assignedProducts del distribuidor
     await User.findByIdAndUpdate(distributorId, {
-      $set: { assignedProducts: [product1Id, product2Id, product3Id] }
+      $set: { assignedProducts: [product1Id, product2Id, product3Id] },
     });
   });
 
@@ -132,7 +146,8 @@ describe("Distributor Catalog Endpoint Tests", () => {
     await Product.deleteMany({});
     await DistributorStock.deleteMany({});
     await Category.deleteMany({});
-    await mongoose.connection.close();
+    await mongoose.disconnect();
+    await mongoServer.stop();
   });
 
   describe("GET /api/products/my-catalog", () => {
@@ -144,13 +159,15 @@ describe("Distributor Catalog Endpoint Tests", () => {
 
       expect(response.body).toBeInstanceOf(Array);
       expect(response.body.length).toBe(2); // Solo producto 1 y 2
-      
+
       // Verificar que los productos tienen la propiedad distributorStock
       expect(response.body[0]).toHaveProperty("distributorStock");
       expect(response.body[1]).toHaveProperty("distributorStock");
-      
+
       // Verificar que tiene las cantidades correctas
-      const stocks = response.body.map(p => p.distributorStock).sort((a, b) => a - b);
+      const stocks = response.body
+        .map((p) => p.distributorStock)
+        .sort((a, b) => a - b);
       expect(stocks).toEqual([5, 10]);
     });
 
@@ -174,12 +191,13 @@ describe("Distributor Catalog Endpoint Tests", () => {
 
     it("debería devolver array vacío si el distribuidor no tiene stock", async () => {
       // Crear nuevo distribuidor sin stock
+      const newDistHashed = await bcrypt.hash("password123", 10);
       const newDist = await User.create({
         name: "Distribuidor Sin Stock",
         email: "dist.nostock@test.com",
-        password: "password123",
+        password: newDistHashed,
         role: "distribuidor",
-        active: true
+        active: true,
       });
 
       const loginRes = await request(app)
@@ -217,7 +235,7 @@ describe("Distributor Catalog Endpoint Tests", () => {
         .expect(200);
 
       expect(response.body.length).toBeGreaterThan(0);
-      
+
       const product = response.body[0];
       expect(product).toHaveProperty("_id");
       expect(product).toHaveProperty("name");
@@ -242,14 +260,14 @@ describe("Distributor Catalog Endpoint Tests", () => {
         category: categoryId,
         totalStock: 100,
         warehouseStock: 50,
-        featured: false
+        featured: false,
       });
 
       // Asignar stock
       await DistributorStock.create({
         distributor: distributorId,
         product: tempProduct._id,
-        quantity: 5
+        quantity: 5,
       });
 
       // Eliminar el producto
@@ -263,7 +281,9 @@ describe("Distributor Catalog Endpoint Tests", () => {
 
       expect(response.body).toBeInstanceOf(Array);
       // El producto eliminado no debe aparecer
-      expect(response.body.every(p => p._id !== tempProduct._id.toString())).toBe(true);
+      expect(
+        response.body.every((p) => p._id !== tempProduct._id.toString())
+      ).toBe(true);
 
       // Limpiar stock huérfano
       await DistributorStock.deleteOne({ product: tempProduct._id });

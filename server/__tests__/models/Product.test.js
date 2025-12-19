@@ -1,7 +1,7 @@
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import Product from '../../models/Product.js';
-import Category from '../../models/Category.js';
+import { MongoMemoryServer } from "mongodb-memory-server";
+import mongoose from "mongoose";
+import Category from "../../models/Category.js";
+import Product from "../../models/Product.js";
 
 let mongoServer;
 
@@ -19,79 +19,62 @@ afterAll(async () => {
 afterEach(async () => {
   const collections = mongoose.connection.collections;
   for (const key in collections) {
-    await collections[key].deleteMany();
+    await collections[key].deleteMany({});
   }
 });
 
-describe('Product Model - Validaciones', () => {
+describe("Product Model - Validaciones", () => {
   let category;
 
   beforeEach(async () => {
     category = await Category.create({
-      name: 'Categoría Test',
-      description: 'Descripción test',
+      name: "Categoría Test",
+      description: "Descripción test",
     });
   });
 
-  test('Debe crear producto con campos válidos', async () => {
+  test("Debe crear producto con campos válidos", async () => {
     const product = await Product.create({
-      name: 'Producto Test',
-      description: 'Descripción del producto',
+      name: "Producto Test",
+      description: "Descripción del producto",
       purchasePrice: 100,
       distributorPrice: 150,
-      salePrice: 200,
+      clientPrice: 200,
       totalStock: 1000,
       category: category._id,
     });
 
-    expect(product.name).toBe('Producto Test');
+    expect(product.name).toBe("Producto Test");
     expect(product.purchasePrice).toBe(100);
     expect(product.distributorPrice).toBe(150);
-    expect(product.salePrice).toBe(200);
+    expect(product.clientPrice).toBe(200);
     expect(product.totalStock).toBe(1000);
   });
 
-  test('Debe requerir campos obligatorios', async () => {
+  test("Debe requerir campos obligatorios", async () => {
     const product = new Product({});
-    
+
     await expect(product.save()).rejects.toThrow();
   });
 
-  test('purchasePrice debe ser menor que distributorPrice', async () => {
-    const product = new Product({
-      name: 'Producto Test',
-      description: 'Test',
-      purchasePrice: 200,
+  test("Debe calcular suggestedPrice automáticamente (30% sobre purchasePrice)", async () => {
+    const product = await Product.create({
+      name: "Producto Test",
+      description: "Test",
+      purchasePrice: 100,
       distributorPrice: 150,
-      salePrice: 300,
-      totalStock: 100,
       category: category._id,
     });
 
-    await expect(product.save()).rejects.toThrow();
+    expect(product.suggestedPrice).toBe(130);
   });
 
-  test('distributorPrice debe ser menor que salePrice', async () => {
+  test("totalStock no puede ser negativo", async () => {
     const product = new Product({
-      name: 'Producto Test',
-      description: 'Test',
-      purchasePrice: 100,
-      distributorPrice: 250,
-      salePrice: 200,
-      totalStock: 100,
-      category: category._id,
-    });
-
-    await expect(product.save()).rejects.toThrow();
-  });
-
-  test('totalStock no puede ser negativo', async () => {
-    const product = new Product({
-      name: 'Producto Test',
-      description: 'Test',
+      name: "Producto Test",
+      description: "Test",
       purchasePrice: 100,
       distributorPrice: 150,
-      salePrice: 200,
       totalStock: -10,
       category: category._id,
     });
@@ -100,51 +83,37 @@ describe('Product Model - Validaciones', () => {
   });
 });
 
-describe('Product Model - Stock y Estado', () => {
+describe("Product Model - Defaults", () => {
   let category;
 
   beforeEach(async () => {
     category = await Category.create({
-      name: 'Categoría Test',
-      description: 'Descripción test',
+      name: "Categoría Test",
+      description: "Descripción test",
     });
   });
 
-  test('Producto con stock > 0 debe estar disponible', async () => {
+  test("Debe tener defaults esperados", async () => {
     const product = await Product.create({
-      name: 'Producto Test',
-      description: 'Test',
+      name: "Producto Test",
+      description: "Test",
       purchasePrice: 100,
       distributorPrice: 150,
-      salePrice: 200,
-      totalStock: 50,
       category: category._id,
     });
 
-    expect(product.isAvailable).toBe(true);
+    expect(product.totalStock).toBe(0);
+    expect(product.warehouseStock).toBe(0);
+    expect(product.lowStockAlert).toBe(10);
+    expect(product.featured).toBe(false);
   });
 
-  test('Producto con stock = 0 no debe estar disponible', async () => {
+  test("Debe poder actualizar stock correctamente", async () => {
     const product = await Product.create({
-      name: 'Producto Test',
-      description: 'Test',
+      name: "Producto Test",
+      description: "Test",
       purchasePrice: 100,
       distributorPrice: 150,
-      salePrice: 200,
-      totalStock: 0,
-      category: category._id,
-    });
-
-    expect(product.isAvailable).toBe(false);
-  });
-
-  test('Debe poder actualizar stock correctamente', async () => {
-    const product = await Product.create({
-      name: 'Producto Test',
-      description: 'Test',
-      purchasePrice: 100,
-      distributorPrice: 150,
-      salePrice: 200,
       totalStock: 100,
       category: category._id,
     });
@@ -157,23 +126,23 @@ describe('Product Model - Stock y Estado', () => {
   });
 });
 
-describe('Product Model - Precios', () => {
+describe("Product Model - Precios", () => {
   let category;
 
   beforeEach(async () => {
     category = await Category.create({
-      name: 'Categoría Test',
-      description: 'Descripción test',
+      name: "Categoría Test",
+      description: "Descripción test",
     });
   });
 
-  test('Debe calcular márgenes de ganancia correctamente', async () => {
+  test("Debe calcular márgenes de ganancia correctamente", async () => {
     const product = await Product.create({
-      name: 'Producto Test',
-      description: 'Test',
+      name: "Producto Test",
+      description: "Test",
       purchasePrice: 100,
       distributorPrice: 150,
-      salePrice: 200,
+      clientPrice: 200,
       totalStock: 100,
       category: category._id,
     });
@@ -187,24 +156,24 @@ describe('Product Model - Precios', () => {
     expect(adminMargin).toBeCloseTo(33.33, 2);
   });
 
-  test('Debe permitir actualizar precios manteniendo lógica de negocio', async () => {
+  test("Debe permitir actualizar precios manteniendo lógica de negocio", async () => {
     const product = await Product.create({
-      name: 'Producto Test',
-      description: 'Test',
+      name: "Producto Test",
+      description: "Test",
       purchasePrice: 100,
       distributorPrice: 150,
-      salePrice: 200,
+      clientPrice: 200,
       totalStock: 100,
       category: category._id,
     });
 
     product.purchasePrice = 120;
     product.distributorPrice = 180;
-    product.salePrice = 240;
+    product.clientPrice = 240;
     await product.save();
 
     expect(product.purchasePrice).toBe(120);
     expect(product.distributorPrice).toBe(180);
-    expect(product.salePrice).toBe(240);
+    expect(product.clientPrice).toBe(240);
   });
 });

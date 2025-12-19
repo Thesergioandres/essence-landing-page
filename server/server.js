@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import express from "express";
 import connectDB from "./config/database.js";
 import { initRedis } from "./config/redis.js";
+import { startBusinessAssistantWorker } from "./jobs/businessAssistant.worker.js";
 
 // Importar rutas
 import advancedAnalyticsRoutes from "./routes/advancedAnalytics.routes.js";
@@ -42,8 +43,13 @@ const allowedOrigins = [
 ];
 
 // Conectar a MongoDB y Redis
-connectDB();
+await connectDB();
 initRedis();
+
+// Worker opcional para jobs (recomendaciones en background)
+if (process.env.BA_ENABLE_WORKER === "true") {
+  startBusinessAssistantWorker();
+}
 
 // Compression middleware (debe ir antes de las rutas)
 app.use(
@@ -160,7 +166,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
-});
+export default app;
+
+// Iniciar servidor (evitar escuchar en entorno de tests)
+// En Vercel (@vercel/node) el handler es serverless y NO debe hacer listen().
+if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
+  });
+}

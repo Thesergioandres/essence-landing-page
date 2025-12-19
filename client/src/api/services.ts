@@ -5,6 +5,8 @@ import type {
   AuditLogsResponse,
   AuditStats,
   Averages,
+  BusinessAssistantConfig,
+  BusinessAssistantJobStatus,
   BusinessAssistantRecommendationsResponse,
   Category,
   ComparativeAnalysis,
@@ -102,10 +104,50 @@ export const businessAssistantService = {
     recentDays?: number;
     startDate?: string;
     endDate?: string;
+    force?: 1 | 0;
   }): Promise<BusinessAssistantRecommendationsResponse> {
     const response = await api.get<BusinessAssistantRecommendationsResponse>(
       "/business-assistant/recommendations",
       { params }
+    );
+    return response.data;
+  },
+
+  async getConfig(): Promise<BusinessAssistantConfig> {
+    const response = await api.get<BusinessAssistantConfig>(
+      "/business-assistant/config"
+    );
+    return response.data;
+  },
+
+  async updateConfig(
+    patch: Partial<BusinessAssistantConfig>
+  ): Promise<BusinessAssistantConfig> {
+    const response = await api.put<BusinessAssistantConfig>(
+      "/business-assistant/config",
+      patch
+    );
+    return response.data;
+  },
+
+  async createRecommendationsJob(params?: {
+    horizonDays?: number;
+    recentDays?: number;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{ jobId: string }> {
+    const response = await api.post<{ jobId: string }>(
+      "/business-assistant/recommendations/jobs",
+      params || {}
+    );
+    return response.data;
+  },
+
+  async getRecommendationsJob(
+    jobId: string
+  ): Promise<BusinessAssistantJobStatus> {
+    const response = await api.get<BusinessAssistantJobStatus>(
+      `/business-assistant/recommendations/jobs/${jobId}`
     );
     return response.data;
   },

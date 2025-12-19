@@ -92,15 +92,44 @@ export type BusinessAssistantActionType =
   | "increase_price"
   | "run_promotion"
   | "review_margin"
+  | "clearance"
   | "keep";
+
+export type BusinessAssistantSuggestionCategory =
+  | "inventario"
+  | "precio"
+  | "margen"
+  | "demanda"
+  | "operacion";
+
+export type BusinessAssistantSeverity =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "info";
 
 export interface BusinessAssistantRecommendationAction {
   action: BusinessAssistantActionType;
   title: string;
   confidence?: number;
+  category?: BusinessAssistantSuggestionCategory;
+  severity?: BusinessAssistantSeverity;
   suggestedQty?: number;
   suggestedChangePct?: number;
+  impact?: {
+    revenueCop?: number;
+    profitCop?: number;
+    inventoryValueCop?: number;
+  };
   details?: {
+    price?: {
+      currentPriceCop?: number;
+      suggestedPriceCop?: number;
+      floorPriceCop?: number;
+      targetMarginPct?: number;
+      effectiveChangePct?: number;
+    };
     targetDays?: number;
     avgDailyUnits?: number;
     daysCover?: number;
@@ -111,6 +140,7 @@ export interface BusinessAssistantRecommendationItem {
   productId: string;
   productName: string;
   categoryId: string | null;
+  categoryName?: string | null;
   stock: {
     warehouseStock: number;
     totalStock: number;
@@ -125,16 +155,21 @@ export interface BusinessAssistantRecommendationItem {
     recentRevenue: number;
     recentProfit: number;
     recentMarginPct: number;
+    avgUnitProfitCop?: number;
     avgDailyUnits: number;
     daysCover: number | null;
     recentAvgPrice: number;
     categoryAvgPrice: number;
     priceVsCategoryPct: number;
+    inventoryValueCop?: number;
   };
   recommendation: {
     primary: BusinessAssistantRecommendationAction | null;
     actions: BusinessAssistantRecommendationAction[];
     justification: string[];
+    score?: {
+      impactScore?: number;
+    };
     notes?: string;
   };
 }
@@ -148,6 +183,56 @@ export interface BusinessAssistantRecommendationsResponse {
     endDate: string | null;
   };
   recommendations: BusinessAssistantRecommendationItem[];
+}
+
+export interface BusinessAssistantConfig {
+  _id: string;
+  horizonDaysDefault: number;
+  recentDaysDefault: number;
+
+  cacheEnabled: boolean;
+  cacheTtlSeconds: number;
+
+  daysCoverLowThreshold: number;
+  buyTargetDays: number;
+
+  lowRotationUnitsThreshold: number;
+  highStockMultiplier: number;
+  highStockMinUnits: number;
+
+  trendDropThresholdPct: number;
+  trendGrowthThresholdPct: number;
+  minUnitsForGrowthStrategy: number;
+
+  marginLowThresholdPct: number;
+
+  targetMarginPct: number;
+  minMarginAfterDiscountPct: number;
+
+  priceHighVsCategoryThresholdPct: number;
+  priceLowVsCategoryThresholdPct: number;
+
+  decreasePricePct: number;
+  promotionDiscountPct: number;
+  increasePricePct: number;
+
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BusinessAssistantJobStatus {
+  jobId: string;
+  status:
+    | "completed"
+    | "failed"
+    | "waiting"
+    | "active"
+    | "delayed"
+    | "paused"
+    | "waiting-children";
+  progress: unknown;
+  result: BusinessAssistantRecommendationsResponse | null;
+  failedReason: string | null;
 }
 
 export interface Expense {

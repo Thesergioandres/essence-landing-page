@@ -1,13 +1,13 @@
-import mongoose from 'mongoose';
-import { jest } from '@jest/globals';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import Sale from '../../models/Sale.js';
-import Product from '../../models/Product.js';
-import User from '../../models/User.js';
-import Category from '../../models/Category.js';
-import GamificationConfig from '../../models/GamificationConfig.js';
-import DistributorStock from '../../models/DistributorStock.js';
-import { deleteSale } from '../../controllers/sale.controller.js';
+import { jest } from "@jest/globals";
+import { MongoMemoryServer } from "mongodb-memory-server";
+import mongoose from "mongoose";
+import { deleteSale } from "../../controllers/sale.controller.js";
+import Category from "../../models/Category.js";
+import DistributorStock from "../../models/DistributorStock.js";
+import GamificationConfig from "../../models/GamificationConfig.js";
+import Product from "../../models/Product.js";
+import Sale from "../../models/Sale.js";
+import User from "../../models/User.js";
 
 let mongoServer;
 
@@ -25,7 +25,7 @@ afterAll(async () => {
 afterEach(async () => {
   const collections = mongoose.connection.collections;
   for (const key in collections) {
-    await collections[key].deleteMany();
+    await collections[key].deleteMany({});
   }
 });
 
@@ -39,7 +39,7 @@ const getCommissionBonus = async (distributorId) => {
     let startDate = config.currentPeriodStart || now;
     let endDate = new Date(startDate);
 
-    if (config.evaluationPeriod === 'monthly') {
+    if (config.evaluationPeriod === "monthly") {
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     }
@@ -48,20 +48,21 @@ const getCommissionBonus = async (distributorId) => {
       {
         $match: {
           saleDate: { $gte: startDate, $lte: endDate },
-          paymentStatus: 'confirmado',
+          paymentStatus: "confirmado",
         },
       },
       {
         $group: {
-          _id: '$distributor',
-          totalRevenue: { $sum: { $multiply: ['$salePrice', '$quantity'] } },
+          _id: "$distributor",
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
         },
       },
       { $sort: { totalRevenue: -1 } },
     ]);
 
     const position =
-      rankings.findIndex((r) => r._id.toString() === distributorId.toString()) + 1;
+      rankings.findIndex((r) => r._id.toString() === distributorId.toString()) +
+      1;
 
     if (position === 1) return config.top1CommissionBonus || 0;
     if (position === 2) return config.top2CommissionBonus || 0;
@@ -73,18 +74,18 @@ const getCommissionBonus = async (distributorId) => {
   }
 };
 
-describe('Sale Controller - registerSale Logic', () => {
+describe("Sale Controller - registerSale Logic", () => {
   let product, distributor, category;
 
   beforeEach(async () => {
     category = await Category.create({
-      name: 'Categoría Test',
-      description: 'Test',
+      name: "Categoría Test",
+      description: "Test",
     });
 
     product = await Product.create({
-      name: 'Producto Test',
-      description: 'Test',
+      name: "Producto Test",
+      description: "Test",
       purchasePrice: 100,
       distributorPrice: 150,
       salePrice: 200,
@@ -93,14 +94,14 @@ describe('Sale Controller - registerSale Logic', () => {
     });
 
     distributor = await User.create({
-      name: 'Distribuidor Test',
-      email: 'distributor@test.com',
-      password: 'password123',
-      role: 'distribuidor',
+      name: "Distribuidor Test",
+      email: "distributor@test.com",
+      password: "password123",
+      role: "distribuidor",
     });
   });
 
-  test('Debe crear venta y calcular distributorProfitPercentage correctamente', async () => {
+  test("Debe crear venta y calcular distributorProfitPercentage correctamente", async () => {
     // Simular creación de venta
     const commissionBonus = 0;
     const distributorProfitPercentage = 20 + commissionBonus;
@@ -120,13 +121,13 @@ describe('Sale Controller - registerSale Logic', () => {
     expect(sale.commissionBonus).toBe(0);
   });
 
-  test('Debe calcular bonus para distribuidor en 1er lugar', async () => {
+  test("Debe calcular bonus para distribuidor en 1er lugar", async () => {
     // Configurar gamificación
     await GamificationConfig.create({
       top1CommissionBonus: 5,
       top2CommissionBonus: 3,
       top3CommissionBonus: 1,
-      evaluationPeriod: 'monthly',
+      evaluationPeriod: "monthly",
       currentPeriodStart: new Date(),
     });
 
@@ -140,19 +141,19 @@ describe('Sale Controller - registerSale Logic', () => {
       salePrice: 200,
       commissionBonus: 0,
       distributorProfitPercentage: 20,
-      paymentStatus: 'confirmado',
+      paymentStatus: "confirmado",
     });
 
     const bonus = await getCommissionBonus(distributor._id);
     expect(bonus).toBe(5);
   });
 
-  test('Debe retornar bonus 0 para distribuidor sin ventas', async () => {
+  test("Debe retornar bonus 0 para distribuidor sin ventas", async () => {
     await GamificationConfig.create({
       top1CommissionBonus: 5,
       top2CommissionBonus: 3,
       top3CommissionBonus: 1,
-      evaluationPeriod: 'monthly',
+      evaluationPeriod: "monthly",
       currentPeriodStart: new Date(),
     });
 
@@ -160,7 +161,7 @@ describe('Sale Controller - registerSale Logic', () => {
     expect(bonus).toBe(0);
   });
 
-  test('Venta de admin debe tener distributorProfitPercentage = 0', async () => {
+  test("Venta de admin debe tener distributorProfitPercentage = 0", async () => {
     const sale = await Sale.create({
       distributor: null,
       product: product._id,
@@ -170,7 +171,7 @@ describe('Sale Controller - registerSale Logic', () => {
       salePrice: 200,
       commissionBonus: 0,
       distributorProfitPercentage: 0,
-      paymentStatus: 'confirmado',
+      paymentStatus: "confirmado",
     });
 
     expect(sale.distributorProfitPercentage).toBe(0);
@@ -179,16 +180,16 @@ describe('Sale Controller - registerSale Logic', () => {
   });
 });
 
-describe('Sale Controller - deleteSale restores inventory', () => {
-  test('Debe restaurar stock del producto y del distribuidor al eliminar una venta', async () => {
+describe("Sale Controller - deleteSale restores inventory", () => {
+  test("Debe restaurar stock del producto y del distribuidor al eliminar una venta", async () => {
     const category = await Category.create({
-      name: 'Categoría Test',
-      description: 'Test',
+      name: "Categoría Test",
+      description: "Test",
     });
 
     const product = await Product.create({
-      name: 'Producto Test',
-      description: 'Test',
+      name: "Producto Test",
+      description: "Test",
       purchasePrice: 100,
       distributorPrice: 150,
       salePrice: 200,
@@ -197,10 +198,10 @@ describe('Sale Controller - deleteSale restores inventory', () => {
     });
 
     const distributor = await User.create({
-      name: 'Distribuidor Test',
-      email: 'distributor2@test.com',
-      password: 'password123',
-      role: 'distribuidor',
+      name: "Distribuidor Test",
+      email: "distributor2@test.com",
+      password: "password123",
+      role: "distribuidor",
     });
 
     await DistributorStock.create({
@@ -211,7 +212,7 @@ describe('Sale Controller - deleteSale restores inventory', () => {
     });
 
     const sale = await Sale.create({
-      saleId: 'VTA-2025-0001',
+      saleId: "VTA-2025-0001",
       distributor: distributor._id,
       product: product._id,
       quantity: 1,
@@ -220,7 +221,7 @@ describe('Sale Controller - deleteSale restores inventory', () => {
       salePrice: 200,
       commissionBonus: 0,
       distributorProfitPercentage: 20,
-      paymentStatus: 'pendiente',
+      paymentStatus: "pendiente",
     });
 
     const req = { params: { id: sale._id.toString() } };
@@ -241,22 +242,24 @@ describe('Sale Controller - deleteSale restores inventory', () => {
     expect(updatedProduct.totalStock).toBe(10);
     expect(updatedDistributorStock.quantity).toBe(2);
     expect(deletedSale).toBeNull();
-    expect(res.json).toHaveBeenCalledWith({ message: 'Venta eliminada y stock restaurado' });
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Venta eliminada y stock restaurado",
+    });
   });
 });
 
-describe('Sale Controller - Ranking System', () => {
+describe("Sale Controller - Ranking System", () => {
   let product, dist1, dist2, dist3, dist4, category;
 
   beforeEach(async () => {
     category = await Category.create({
-      name: 'Categoría Test',
-      description: 'Test',
+      name: "Categoría Test",
+      description: "Test",
     });
 
     product = await Product.create({
-      name: 'Producto Test',
-      description: 'Test',
+      name: "Producto Test",
+      description: "Test",
       purchasePrice: 100,
       distributorPrice: 150,
       salePrice: 200,
@@ -265,43 +268,43 @@ describe('Sale Controller - Ranking System', () => {
     });
 
     dist1 = await User.create({
-      name: 'Distribuidor 1',
-      email: 'dist1@test.com',
-      password: 'password123',
-      role: 'distribuidor',
+      name: "Distribuidor 1",
+      email: "dist1@test.com",
+      password: "password123",
+      role: "distribuidor",
     });
 
     dist2 = await User.create({
-      name: 'Distribuidor 2',
-      email: 'dist2@test.com',
-      password: 'password123',
-      role: 'distribuidor',
+      name: "Distribuidor 2",
+      email: "dist2@test.com",
+      password: "password123",
+      role: "distribuidor",
     });
 
     dist3 = await User.create({
-      name: 'Distribuidor 3',
-      email: 'dist3@test.com',
-      password: 'password123',
-      role: 'distribuidor',
+      name: "Distribuidor 3",
+      email: "dist3@test.com",
+      password: "password123",
+      role: "distribuidor",
     });
 
     dist4 = await User.create({
-      name: 'Distribuidor 4',
-      email: 'dist4@test.com',
-      password: 'password123',
-      role: 'distribuidor',
+      name: "Distribuidor 4",
+      email: "dist4@test.com",
+      password: "password123",
+      role: "distribuidor",
     });
 
     await GamificationConfig.create({
       top1CommissionBonus: 5,
       top2CommissionBonus: 3,
       top3CommissionBonus: 1,
-      evaluationPeriod: 'monthly',
+      evaluationPeriod: "monthly",
       currentPeriodStart: new Date(),
     });
   });
 
-  test('Debe calcular rankings correctamente según ventas totales', async () => {
+  test("Debe calcular rankings correctamente según ventas totales", async () => {
     // Crear ventas confirmadas
     await Sale.create({
       distributor: dist1._id,
@@ -312,7 +315,7 @@ describe('Sale Controller - Ranking System', () => {
       salePrice: 200,
       commissionBonus: 0,
       distributorProfitPercentage: 20,
-      paymentStatus: 'confirmado',
+      paymentStatus: "confirmado",
     });
 
     await Sale.create({
@@ -324,7 +327,7 @@ describe('Sale Controller - Ranking System', () => {
       salePrice: 200,
       commissionBonus: 0,
       distributorProfitPercentage: 20,
-      paymentStatus: 'confirmado',
+      paymentStatus: "confirmado",
     });
 
     await Sale.create({
@@ -336,7 +339,7 @@ describe('Sale Controller - Ranking System', () => {
       salePrice: 200,
       commissionBonus: 0,
       distributorProfitPercentage: 20,
-      paymentStatus: 'confirmado',
+      paymentStatus: "confirmado",
     });
 
     await Sale.create({
@@ -348,7 +351,7 @@ describe('Sale Controller - Ranking System', () => {
       salePrice: 200,
       commissionBonus: 0,
       distributorProfitPercentage: 20,
-      paymentStatus: 'confirmado',
+      paymentStatus: "confirmado",
     });
 
     const bonus1 = await getCommissionBonus(dist1._id);
@@ -362,7 +365,7 @@ describe('Sale Controller - Ranking System', () => {
     expect(bonus4).toBe(0); // Sin bonus
   });
 
-  test('Solo ventas confirmadas deben contar para ranking', async () => {
+  test("Solo ventas confirmadas deben contar para ranking", async () => {
     // Venta pendiente
     await Sale.create({
       distributor: dist1._id,
@@ -373,7 +376,7 @@ describe('Sale Controller - Ranking System', () => {
       salePrice: 200,
       commissionBonus: 0,
       distributorProfitPercentage: 20,
-      paymentStatus: 'pendiente',
+      paymentStatus: "pendiente",
     });
 
     // Venta confirmada menor
@@ -386,7 +389,7 @@ describe('Sale Controller - Ranking System', () => {
       salePrice: 200,
       commissionBonus: 0,
       distributorProfitPercentage: 20,
-      paymentStatus: 'confirmado',
+      paymentStatus: "confirmado",
     });
 
     const bonus1 = await getCommissionBonus(dist1._id);
@@ -397,18 +400,18 @@ describe('Sale Controller - Ranking System', () => {
   });
 });
 
-describe('Sale Controller - Payment Status', () => {
+describe("Sale Controller - Payment Status", () => {
   let product, distributor, category, admin;
 
   beforeEach(async () => {
     category = await Category.create({
-      name: 'Categoría Test',
-      description: 'Test',
+      name: "Categoría Test",
+      description: "Test",
     });
 
     product = await Product.create({
-      name: 'Producto Test',
-      description: 'Test',
+      name: "Producto Test",
+      description: "Test",
       purchasePrice: 100,
       distributorPrice: 150,
       salePrice: 200,
@@ -417,17 +420,17 @@ describe('Sale Controller - Payment Status', () => {
     });
 
     distributor = await User.create({
-      name: 'Distribuidor Test',
-      email: 'distributor@test.com',
-      password: 'password123',
-      role: 'distribuidor',
+      name: "Distribuidor Test",
+      email: "distributor@test.com",
+      password: "password123",
+      role: "distribuidor",
     });
 
     admin = await User.create({
-      name: 'Admin Test',
-      email: 'admin@test.com',
-      password: 'password123',
-      role: 'admin',
+      name: "Admin Test",
+      email: "admin@test.com",
+      password: "password123",
+      role: "admin",
     });
   });
 
@@ -443,7 +446,7 @@ describe('Sale Controller - Payment Status', () => {
       distributorProfitPercentage: 20,
     });
 
-    expect(sale.paymentStatus).toBe('pendiente');
+    expect(sale.paymentStatus).toBe("pendiente");
   });
 
   test('Venta de admin debe tener status "confirmado" automáticamente', async () => {
@@ -456,17 +459,17 @@ describe('Sale Controller - Payment Status', () => {
       salePrice: 200,
       commissionBonus: 0,
       distributorProfitPercentage: 0,
-      paymentStatus: 'confirmado',
+      paymentStatus: "confirmado",
       paymentConfirmedAt: new Date(),
       paymentConfirmedBy: admin._id,
     });
 
-    expect(sale.paymentStatus).toBe('confirmado');
+    expect(sale.paymentStatus).toBe("confirmado");
     expect(sale.paymentConfirmedAt).toBeDefined();
     expect(sale.paymentConfirmedBy).toBeDefined();
   });
 
-  test('Debe poder cambiar status de pendiente a confirmado', async () => {
+  test("Debe poder cambiar status de pendiente a confirmado", async () => {
     const sale = await Sale.create({
       distributor: distributor._id,
       product: product._id,
@@ -478,13 +481,13 @@ describe('Sale Controller - Payment Status', () => {
       distributorProfitPercentage: 20,
     });
 
-    sale.paymentStatus = 'confirmado';
+    sale.paymentStatus = "confirmado";
     sale.paymentConfirmedAt = new Date();
     sale.paymentConfirmedBy = admin._id;
     await sale.save();
 
     const updated = await Sale.findById(sale._id);
-    expect(updated.paymentStatus).toBe('confirmado');
+    expect(updated.paymentStatus).toBe("confirmado");
     expect(updated.paymentConfirmedAt).toBeDefined();
   });
 });
