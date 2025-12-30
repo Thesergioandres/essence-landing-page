@@ -154,15 +154,28 @@ app.use("/api/expenses", expenseRoutes);
 app.use((err, req, res, next) => {
   const reqId = req.reqId || "no-id";
   console.error(`\n[${reqId}] ❌ ERROR NO CAPTURADO`);
-  console.error(`[${reqId}] Mensaje:`, err?.message);
-  console.error(`[${reqId}] Stack:`, err?.stack);
-  console.error(`[${reqId}] Type:`, err?.name);
+  if (err instanceof Error) {
+    console.error(`[${reqId}] Mensaje:`, err.message);
+    console.error(`[${reqId}] Stack:`, err.stack);
+    console.error(`[${reqId}] Type:`, err.name);
+  } else {
+    console.error(`[${reqId}] Error bruto:`, err);
+    try {
+      console.error(`[${reqId}] Error JSON:`, JSON.stringify(err));
+    } catch (e) {
+      // No serializable
+    }
+  }
 
   res.status(err.status || 500).json({
-    message: err?.message || "Error interno del servidor",
+    message:
+      err?.message ||
+      (typeof err === "string" ? err : "Error interno del servidor"),
     requestId: reqId,
-    error: process.env.NODE_ENV === "development" ? err?.message : undefined,
+    error:
+      process.env.NODE_ENV === "development" ? err?.message || err : undefined,
     stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
+    raw: process.env.NODE_ENV === "development" ? err : undefined,
   });
 });
 

@@ -7,37 +7,41 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-700 bg-gray-900/95 backdrop-blur-lg">
       <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
-        <div className="flex h-14 sm:h-16 items-center justify-between">
+        <div className="flex h-14 items-center justify-between sm:h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
-            <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-xl sm:text-2xl font-bold text-transparent">
+          <Link
+            to="/"
+            className="flex items-center"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <h1 className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-xl font-bold text-transparent sm:text-2xl">
               ESSENCE
             </h1>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden items-center gap-3 lg:gap-4 md:flex">
+          <div className="hidden items-center gap-3 md:flex lg:gap-4">
             <Link
               to="/"
-              className="text-sm lg:text-base text-gray-300 transition hover:text-purple-400"
+              className="text-sm text-gray-300 transition hover:text-purple-400 lg:text-base"
             >
               Inicio
             </Link>
             <Link
               to="/productos"
-              className="text-sm lg:text-base text-gray-300 transition hover:text-purple-400"
+              className="text-sm text-gray-300 transition hover:text-purple-400 lg:text-base"
             >
               Productos
             </Link>
             <Link
               to="/admin/register-sale"
-              className="rounded-lg border border-purple-500 px-3 lg:px-4 py-2 text-xs lg:text-sm font-medium text-purple-400 transition hover:bg-purple-500/10"
+              className="rounded-lg border border-purple-500 px-3 py-2 text-xs font-medium text-purple-400 transition hover:bg-purple-500/10 lg:px-4 lg:text-sm"
             >
-              Registrar Venta (Admin)
+              Registrar Venta
             </Link>
             <Link
               to="/login/distributor"
-              className="rounded-lg border border-blue-500 bg-linear-to-r from-blue-600 to-cyan-600 px-3 lg:px-4 py-2 text-xs lg:text-sm font-medium text-white transition hover:from-blue-700 hover:to-cyan-700"
+              className="bg-linear-to-r rounded-lg border border-blue-500 from-blue-600 to-cyan-600 px-3 py-2 text-xs font-medium text-white transition hover:from-blue-700 hover:to-cyan-700 lg:px-4 lg:text-sm"
             >
               Distribuidor
             </Link>
@@ -46,16 +50,36 @@ export default function Navbar() {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-gray-300 hover:text-purple-400 md:hidden p-2 -mr-2"
+            className="-mr-2 p-2 text-gray-300 hover:text-purple-400 md:hidden"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? (
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             ) : (
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             )}
           </button>
@@ -63,7 +87,7 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`overflow-hidden transition-all duration-300 ease-in-out md:hidden ${
             mobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
           }`}
         >
@@ -71,28 +95,28 @@ export default function Navbar() {
             <Link
               to="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center px-3 py-3 text-base text-gray-300 transition hover:bg-purple-600/10 hover:text-purple-400 rounded-lg active:scale-[0.98] min-h-12"
+              className="flex min-h-12 items-center rounded-lg px-3 py-3 text-base text-gray-300 transition hover:bg-purple-600/10 hover:text-purple-400 active:scale-[0.98]"
             >
               Inicio
             </Link>
             <Link
               to="/productos"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center px-3 py-3 text-base text-gray-300 transition hover:bg-purple-600/10 hover:text-purple-400 rounded-lg active:scale-[0.98] min-h-12"
+              className="flex min-h-12 items-center rounded-lg px-3 py-3 text-base text-gray-300 transition hover:bg-purple-600/10 hover:text-purple-400 active:scale-[0.98]"
             >
               Productos
             </Link>
             <Link
               to="/admin/register-sale"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center mx-3 px-4 py-3 text-center text-base font-medium text-purple-400 border border-purple-500 rounded-lg transition hover:bg-purple-500/10 active:scale-[0.98] min-h-12"
+              className="mx-3 flex min-h-12 items-center justify-center rounded-lg border border-purple-500 px-4 py-3 text-center text-base font-medium text-purple-400 transition hover:bg-purple-500/10 active:scale-[0.98]"
             >
-              Registrar Venta (Admin)
+              Registrar Venta
             </Link>
             <Link
               to="/login/distributor"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center mx-3 px-4 py-3 text-center text-base font-medium text-white bg-linear-to-r from-blue-600 to-cyan-600 rounded-lg transition hover:from-blue-700 hover:to-cyan-700 active:scale-[0.98] min-h-12"
+              className="bg-linear-to-r mx-3 flex min-h-12 items-center justify-center rounded-lg from-blue-600 to-cyan-600 px-4 py-3 text-center text-base font-medium text-white transition hover:from-blue-700 hover:to-cyan-700 active:scale-[0.98]"
             >
               Distribuidor
             </Link>

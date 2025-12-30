@@ -1,4 +1,4 @@
-import { deleteImage } from "../config/cloudinary.js";
+import { deleteImage, isCloudinaryConfigured } from "../config/cloudinary.js";
 import { invalidateCache } from "../middleware/cache.middleware.js";
 import Product from "../models/Product.js";
 import {
@@ -110,8 +110,7 @@ export const createProduct = async (req, res) => {
 
     // Manejar imagen de Cloudinary si se subió
     if (req.file) {
-      // Verificar que Cloudinary esté configurado
-      if (!process.env.CLOUDINARY_CLOUD_NAME) {
+      if (!isCloudinaryConfigured) {
         console.warn("⚠️  Cloudinary no configurado, imagen no será subida");
       } else {
         productData.image = {
@@ -225,10 +224,16 @@ export const updateProduct = async (req, res) => {
 
     // Manejar nueva imagen de Cloudinary si se subió
     if (req.file) {
-      updateData.image = {
-        url: req.file.path,
-        publicId: req.file.filename,
-      };
+      if (!isCloudinaryConfigured) {
+        console.warn(
+          "⚠️  Cloudinary no configurado, imagen no será subida (updateProduct)"
+        );
+      } else {
+        updateData.image = {
+          url: req.file.path,
+          publicId: req.file.filename,
+        };
+      }
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
