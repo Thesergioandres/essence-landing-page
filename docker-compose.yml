@@ -52,9 +52,9 @@ services:
       - PORT=5000
       - MONGODB_URI=mongodb+srv://sergio:sergio123@cluster0.ztdix.mongodb.net/essence?retryWrites=true&w=majority&appName=essence
       - JWT_SECRET=tu_clave_secreta_super_segura
-      - CLOUDINARY_CLOUD_NAME=dbcwjghb
-      - CLOUDINARY_API_KEY=292249115558871
-      - CLOUDINARY_API_SECRET=N1agMUQN_D5OI_BJ8PUzKNBCLfU
+      - CLOUDINARY_CLOUD_NAME=dbcwjghqb
+      - CLOUDINARY_API_KEY=292249115585871
+      - CLOUDINARY_API_SECRET=N1agNuON_D5OI_bJ8PUzKNBClfU
       - FRONTEND_URL=http://93.189.89.195
     volumes:
       - ./server:/usr/src/app
