@@ -27,6 +27,14 @@ const businessSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    logoUrl: {
+      type: String,
+      trim: true,
+    },
+    logoPublicId: {
+      type: String,
+      trim: true,
+    },
     contactEmail: {
       type: String,
       trim: true,

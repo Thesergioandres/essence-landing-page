@@ -280,10 +280,9 @@ export const productService = {
   ): Promise<Product> {
     const formData = new FormData();
 
-    // Agregar todos los campos del producto
     Object.entries(productData).forEach(([key, value]) => {
-      if (key === "imageFile") return; // El imageFile se maneja aparte
-      if (key === "image") return; // No enviar el objeto image antiguo
+      if (key === "imageFile") return;
+      if (key === "image") return;
       if (value !== undefined && value !== null) {
         formData.append(
           key,
@@ -292,7 +291,6 @@ export const productService = {
       }
     });
 
-    // Agregar la imagen si existe
     if (productData.imageFile) {
       formData.append("image", productData.imageFile);
     }
@@ -391,8 +389,10 @@ export const uploadService = {
 };
 
 export const categoryService = {
-  async getAll(): Promise<Category[]> {
-    const response = await api.get<Category[]>("/categories");
+  async getAll(
+    params?: Record<string, string | boolean | number>
+  ): Promise<Category[]> {
+    const response = await api.get<Category[]>("/categories", { params });
     return response.data;
   },
 

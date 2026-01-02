@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { categoryService, productService } from "../api/services";
+// Footer y Navbar ocultos para vista pública del catálogo
 import Footer from "../components/Footer";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Navbar from "../components/Navbar";
@@ -23,25 +24,34 @@ export default function Catalog() {
   const [sortBy, setSortBy] = useState(searchParams.get("sort") || "name");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [inStockOnly, setInStockOnly] = useState(false);
+  const publicBusinessId = useMemo(
+    () =>
+      searchParams.get("businessId") ||
+      import.meta.env.VITE_PUBLIC_BUSINESS_ID ||
+      null,
+    [searchParams]
+  );
+  const hideChrome = import.meta.env.PROD
+    ? true
+    : searchParams.has("bare") ||
+      (searchParams.has("category") && !searchParams.has("full"));
   const [featuredOnly, setFeaturedOnly] = useState(false);
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({
     min: 0,
     max: 0,
   });
   const [maxPrice, setMaxPrice] = useState(0);
-  const hideChrome = useMemo(
-    () =>
-      searchParams.has("bare") ||
-      (searchParams.has("category") && !searchParams.has("full")),
-    [searchParams]
-  );
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const [productsData, categoriesData] = await Promise.all([
-          productService.getAll(),
-          categoryService.getAll(),
+          productService.getAll(
+            publicBusinessId ? { businessId: publicBusinessId } : {}
+          ),
+          categoryService.getAll(
+            publicBusinessId ? { businessId: publicBusinessId } : {}
+          ),
         ]);
         const productsList = Array.isArray(productsData)
           ? productsData
@@ -62,9 +72,8 @@ export default function Catalog() {
         setLoading(false);
       }
     };
-
     loadData();
-  }, []);
+  }, [publicBusinessId]);
 
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
