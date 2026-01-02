@@ -45,26 +45,40 @@ export default function Catalog() {
 
   useEffect(() => {
     // Para visitas públicas, propaga el businessId al header mediante localStorage
-    if (publicBusinessId && !localStorage.getItem("token")) {
+    const hasToken = Boolean(localStorage.getItem("token"));
+    if (publicBusinessId && !hasToken) {
       localStorage.setItem("businessId", publicBusinessId);
     }
 
     const loadData = async () => {
       try {
-        const [productsData, categoriesData] = await Promise.all([
-          productService.getAll(
-            publicBusinessId ? { businessId: publicBusinessId } : {}
-          ),
-          categoryService.getAll(
-            publicBusinessId ? { businessId: publicBusinessId } : {}
-          ),
-        ]);
-        const productsList = Array.isArray(productsData)
-          ? productsData
-          : productsData.data || [];
+        // En modo público (sin token) las categorías están protegidas en la API;
+        // derivamos categorías desde los productos para evitar 401.
+        const productsResponse = await productService.getAll(
+          publicBusinessId ? { businessId: publicBusinessId } : {}
+        );
+        const productsList = Array.isArray(productsResponse)
+          ? productsResponse
+          : productsResponse.data || [];
 
         setProducts(productsList);
-        setCategories(categoriesData);
+
+        if (hasToken) {
+          const categoriesData = await categoryService.getAll(
+            publicBusinessId ? { businessId: publicBusinessId } : {}
+          );
+          setCategories(categoriesData);
+        } else {
+          const derivedCategories: Category[] = Array.from(
+            new Map(
+              productsList
+                .map(p => p.category)
+                .filter(Boolean)
+                .map(cat => [cat._id, cat])
+            ).values()
+          );
+          setCategories(derivedCategories);
+        }
 
         const maxClientPrice = Math.max(
           0,
