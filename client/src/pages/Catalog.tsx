@@ -44,6 +44,11 @@ export default function Catalog() {
   const [maxPrice, setMaxPrice] = useState(0);
 
   useEffect(() => {
+    // Para visitas públicas, propaga el businessId al header mediante localStorage
+    if (publicBusinessId && !localStorage.getItem("token")) {
+      localStorage.setItem("businessId", publicBusinessId);
+    }
+
     const loadData = async () => {
       try {
         const [productsData, categoriesData] = await Promise.all([
