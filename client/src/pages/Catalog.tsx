@@ -26,18 +26,15 @@ export default function Catalog() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const publicBusinessId = useMemo(
-    () => {
-      const fromQuery = searchParams.get("businessId");
-      if (fromQuery) return fromQuery;
-      if (typeof window !== "undefined") {
-        const fromStorage = localStorage.getItem("businessId");
-        if (fromStorage) return fromStorage;
-      }
-      return import.meta.env.VITE_PUBLIC_BUSINESS_ID || null;
-    },
-    [searchParams]
-  );
+  const publicBusinessId = useMemo(() => {
+    const fromQuery = searchParams.get("businessId");
+    if (fromQuery) return fromQuery;
+    if (typeof window !== "undefined") {
+      const fromStorage = localStorage.getItem("businessId");
+      if (fromStorage) return fromStorage;
+    }
+    return import.meta.env.VITE_PUBLIC_BUSINESS_ID || null;
+  }, [searchParams]);
   const hideChrome = import.meta.env.PROD
     ? true
     : searchParams.has("bare") ||
@@ -102,7 +99,9 @@ export default function Catalog() {
         setPriceRange({ min: 0, max: maxClientPrice || 0 });
       } catch (error) {
         console.error("Error loading data:", error);
-        setLoadError("No se pudieron cargar productos. Verifica businessId y acceso público.");
+        setLoadError(
+          "No se pudieron cargar productos. Verifica businessId y acceso público."
+        );
       } finally {
         setLoading(false);
       }
