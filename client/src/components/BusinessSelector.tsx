@@ -2,16 +2,16 @@ import { useMemo } from "react";
 import { useBusiness } from "../context/BusinessContext";
 
 export default function BusinessSelector() {
-  const { memberships, businessId, selectBusiness, loading, error } =
+  const { memberships, businessId, selectBusiness, loading, error, hydrating } =
     useBusiness();
 
   const hasBusinesses = memberships.length > 0;
 
   const label = useMemo(() => {
-    if (loading) return "Cargando negocios...";
+    if (loading || hydrating) return "Cargando negocios...";
     if (error) return error;
     return "Negocio";
-  }, [loading, error]);
+  }, [loading, hydrating, error]);
 
   return (
     <div className="mt-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-300">
@@ -31,6 +31,8 @@ export default function BusinessSelector() {
             </option>
           ))}
         </select>
+      ) : loading || hydrating ? (
+        <p className="text-[11px] text-amber-200/80">Cargando negocios...</p>
       ) : (
         <p className="text-[11px] text-amber-200/80">
           No tienes negocios asignados.

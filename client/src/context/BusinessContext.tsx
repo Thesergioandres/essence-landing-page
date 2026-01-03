@@ -16,6 +16,7 @@ interface BusinessContextValue {
   business: Business | null;
   features: BusinessFeatures;
   memberships: Membership[];
+  hydrating: boolean;
   loading: boolean;
   error: string | null;
   selectBusiness: (id: string | null) => void;
@@ -129,6 +130,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     business: selectedMembership?.business || null,
     features,
     memberships,
+    hydrating: initializing,
     loading,
     error,
     selectBusiness: syncBusinessId,

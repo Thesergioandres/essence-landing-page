@@ -11,7 +11,16 @@ export default function BusinessGate({
   children,
   requiredFeature,
 }: BusinessGateProps) {
-  const { business, businessId, loading, error, features } = useBusiness();
+  const { business, businessId, loading, error, features, hydrating } =
+    useBusiness();
+
+  if (hydrating) {
+    return (
+      <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-200">
+        Preparando tu negocio...
+      </div>
+    );
+  }
 
   if (loading) {
     return (
