@@ -21,6 +21,8 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no deploy@93.189.89.195 '
             cd /home/deploy/app &&
+            git reset --hard HEAD &&
+            git clean -fd &&
             git pull origin main &&
             cd client && npm install && npm run build &&
             cd .. &&
