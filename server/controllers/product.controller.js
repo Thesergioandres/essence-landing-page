@@ -138,12 +138,17 @@ export const createProduct = async (req, res) => {
     if (req.file) {
       if (!isCloudinaryConfigured) {
         console.warn("⚠️  Cloudinary no configurado, imagen no será subida");
-      } else {
-        productData.image = {
-          url: req.file.path,
-          publicId: req.file.filename,
-        };
+        return res.status(503).json({
+          message:
+            "No se pudo subir la imagen porque Cloudinary no está configurado.",
+          hint: "Define ENABLE_CLOUDINARY=true y CLOUDINARY_* en el backend.",
+        });
       }
+
+      productData.image = {
+        url: req.file.path,
+        publicId: req.file.filename,
+      };
     }
 
     // Calcular precio sugerido si no se proporciona
@@ -219,6 +224,15 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
+    // Rechazar subida si Cloudinary no está configurado
+    if (req.file && !isCloudinaryConfigured) {
+      return res.status(503).json({
+        message:
+          "No se pudo subir la imagen porque Cloudinary no está configurado.",
+        hint: "Define ENABLE_CLOUDINARY=true y CLOUDINARY_* en el backend.",
+      });
+    }
+
     // Si hay nueva imagen, eliminar la anterior de Cloudinary
     if (req.file && product.image?.publicId) {
       await deleteImage(product.image.publicId);
@@ -272,16 +286,10 @@ export const updateProduct = async (req, res) => {
 
     // Manejar nueva imagen de Cloudinary si se subió
     if (req.file) {
-      if (!isCloudinaryConfigured) {
-        console.warn(
-          "⚠️  Cloudinary no configurado, imagen no será subida (updateProduct)"
-        );
-      } else {
-        updateData.image = {
-          url: req.file.path,
-          publicId: req.file.filename,
-        };
-      }
+      updateData.image = {
+        url: req.file.path,
+        publicId: req.file.filename,
+      };
     }
 
     const updatedProduct = await Product.findOneAndUpdate(

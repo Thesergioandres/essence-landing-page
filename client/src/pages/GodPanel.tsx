@@ -101,7 +101,6 @@ export default function GodPanel() {
       try {
         const data = await userAccessService.list();
         setUsers(data.filter(u => u.role === "super_admin"));
-        await loadIssues(issueStatus);
       } catch (err) {
         console.error("god panel list error", err);
         setError("No se pudieron cargar los usuarios");
@@ -314,168 +313,6 @@ export default function GodPanel() {
           ))}
         </section>
 
-        {/* Issues internos */}
-        <div className="rounded-2xl border border-white/10 bg-gray-900/70 p-6 shadow-2xl shadow-purple-900/20">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-purple-200/80">
-                Reportes internos
-              </p>
-              <h2 className="text-xl font-bold">Buzón de fallos</h2>
-              <p className="text-sm text-gray-400">
-                Logs, contexto y capturas enviados desde la app.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={issueStatus}
-                onChange={e => setIssueStatus(e.target.value as any)}
-                className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none"
-              >
-                <option value="all">Todos</option>
-                <option value="open">Abiertos</option>
-                <option value="reviewing">En revisión</option>
-                <option value="closed">Cerrados</option>
-              </select>
-              <button
-                onClick={() => loadIssues(issueStatus)}
-                className="rounded-lg border border-purple-500/40 bg-purple-500/20 px-3 py-2 text-sm font-semibold text-purple-50 transition hover:border-purple-300/60 hover:bg-purple-500/30"
-              >
-                Refrescar
-              </button>
-            </div>
-          </div>
-
-          {issuesError && (
-            <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
-              {issuesError}
-            </div>
-          )}
-
-          {issuesLoading ? (
-            <div className="flex h-48 items-center justify-center text-sm text-gray-300">
-              Cargando reportes...
-            </div>
-          ) : issues.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-white/15 p-6 text-center text-sm text-gray-400">
-              No hay reportes con este filtro.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {issues.map(report => (
-                <div
-                  key={report._id}
-                  className="rounded-xl border border-white/10 bg-white/5 p-4 shadow-sm shadow-black/20"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-200">
-                          {report.user?.role || "-"}
-                        </span>
-                        <span>{report.user?.name || "Usuario"}</span>
-                        <span className="text-gray-500">•</span>
-                        <span>
-                          {report.createdAt
-                            ? new Date(report.createdAt).toLocaleString(
-                                "es-ES",
-                                {
-                                  dateStyle: "medium",
-                                  timeStyle: "short",
-                                }
-                              )
-                            : "-"}
-                        </span>
-                      </div>
-                      <p className="text-sm font-semibold text-white">
-                        {report.message}
-                      </p>
-                      {report.clientContext?.url && (
-                        <p className="text-xs text-gray-400">
-                          URL: {report.clientContext.url}
-                        </p>
-                      )}
-                      {report.clientContext?.appVersion && (
-                        <p className="text-xs text-gray-500">
-                          Versión: {report.clientContext.appVersion}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
-                          report.status === "open"
-                            ? "bg-red-500/20 text-red-200"
-                            : report.status === "reviewing"
-                              ? "bg-amber-500/20 text-amber-100"
-                              : "bg-green-500/20 text-green-100"
-                        }`}
-                      >
-                        {report.status}
-                      </span>
-                      <button
-                        disabled={issueAction === report._id}
-                        onClick={() => updateIssueStatus(report._id, "open")}
-                        className="rounded-lg border border-white/20 bg-white/5 px-3 py-1 text-xs font-semibold text-white transition hover:border-white/40 hover:bg-white/10 disabled:opacity-50"
-                      >
-                        Reabrir
-                      </button>
-                      <button
-                        disabled={issueAction === report._id}
-                        onClick={() =>
-                          updateIssueStatus(report._id, "reviewing")
-                        }
-                        className="rounded-lg border border-amber-400/40 bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-50 transition hover:border-amber-300/60 hover:bg-amber-500/30 disabled:opacity-50"
-                      >
-                        Revisando
-                      </button>
-                      <button
-                        disabled={issueAction === report._id}
-                        onClick={() => updateIssueStatus(report._id, "closed")}
-                        className="rounded-lg border border-green-400/40 bg-green-500/20 px-3 py-1 text-xs font-semibold text-green-50 transition hover:border-green-300/60 hover:bg-green-500/30 disabled:opacity-50"
-                      >
-                        Cerrar
-                      </button>
-                    </div>
-                  </div>
-
-                  {report.logs?.length > 0 && (
-                    <details className="mt-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-gray-200">
-                      <summary className="cursor-pointer text-gray-300">
-                        Ver logs ({report.logs.length})
-                      </summary>
-                      <pre className="mt-2 whitespace-pre-wrap text-[11px] text-gray-300">
-                        {report.logs.join("\n")}
-                      </pre>
-                    </details>
-                  )}
-                  {report.stackTrace && (
-                    <details className="mt-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-gray-200">
-                      <summary className="cursor-pointer text-gray-300">
-                        Stacktrace
-                      </summary>
-                      <pre className="mt-2 whitespace-pre-wrap text-[11px] text-gray-300">
-                        {report.stackTrace}
-                      </pre>
-                    </details>
-                  )}
-                  {report.screenshotUrl && (
-                    <a
-                      href={report.screenshotUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 inline-flex items-center gap-2 text-xs text-purple-200 hover:text-purple-100"
-                    >
-                      Ver captura ↗
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         <div className="rounded-2xl border border-white/10 bg-gray-900/70 shadow-2xl shadow-purple-900/20">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-white/5 px-4 py-3">
             <div>
@@ -643,6 +480,167 @@ export default function GodPanel() {
               );
             })}
           </div>
+        </div>
+        {/* Issues internos */}
+        <div className="rounded-2xl border border-white/10 bg-gray-900/70 p-6 shadow-2xl shadow-purple-900/20">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-purple-200/80">
+                Reportes internos
+              </p>
+              <h2 className="text-xl font-bold">Buzón de fallos</h2>
+              <p className="text-sm text-gray-400">
+                Logs, contexto y capturas enviados desde la app.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={issueStatus}
+                onChange={e => setIssueStatus(e.target.value as any)}
+                className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none"
+              >
+                <option value="all">Todos</option>
+                <option value="open">Abiertos</option>
+                <option value="reviewing">En revisión</option>
+                <option value="closed">Cerrados</option>
+              </select>
+              <button
+                onClick={() => loadIssues(issueStatus)}
+                className="rounded-lg border border-purple-500/40 bg-purple-500/20 px-3 py-2 text-sm font-semibold text-purple-50 transition hover:border-purple-300/60 hover:bg-purple-500/30"
+              >
+                Refrescar
+              </button>
+            </div>
+          </div>
+
+          {issuesError && (
+            <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+              {issuesError}
+            </div>
+          )}
+
+          {issuesLoading ? (
+            <div className="flex h-48 items-center justify-center text-sm text-gray-300">
+              Cargando reportes...
+            </div>
+          ) : issues.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-white/15 p-6 text-center text-sm text-gray-400">
+              No hay reportes con este filtro.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {issues.map(report => (
+                <div
+                  key={report._id}
+                  className="rounded-xl border border-white/10 bg-white/5 p-4 shadow-sm shadow-black/20"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-200">
+                          {report.user?.role || "-"}
+                        </span>
+                        <span>{report.user?.name || "Usuario"}</span>
+                        <span className="text-gray-500">•</span>
+                        <span>
+                          {report.createdAt
+                            ? new Date(report.createdAt).toLocaleString(
+                                "es-ES",
+                                {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                }
+                              )
+                            : "-"}
+                        </span>
+                      </div>
+                      <p className="text-sm font-semibold text-white">
+                        {report.message}
+                      </p>
+                      {report.clientContext?.url && (
+                        <p className="text-xs text-gray-400">
+                          URL: {report.clientContext.url}
+                        </p>
+                      )}
+                      {report.clientContext?.appVersion && (
+                        <p className="text-xs text-gray-500">
+                          Versión: {report.clientContext.appVersion}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                          report.status === "open"
+                            ? "bg-red-500/20 text-red-200"
+                            : report.status === "reviewing"
+                              ? "bg-amber-500/20 text-amber-100"
+                              : "bg-green-500/20 text-green-100"
+                        }`}
+                      >
+                        {report.status}
+                      </span>
+                      <button
+                        disabled={issueAction === report._id}
+                        onClick={() => updateIssueStatus(report._id, "open")}
+                        className="rounded-lg border border-white/20 bg-white/5 px-3 py-1 text-xs font-semibold text-white transition hover:border-white/40 hover:bg-white/10 disabled:opacity-50"
+                      >
+                        Reabrir
+                      </button>
+                      <button
+                        disabled={issueAction === report._id}
+                        onClick={() =>
+                          updateIssueStatus(report._id, "reviewing")
+                        }
+                        className="rounded-lg border border-amber-400/40 bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-50 transition hover:border-amber-300/60 hover:bg-amber-500/30 disabled:opacity-50"
+                      >
+                        Revisando
+                      </button>
+                      <button
+                        disabled={issueAction === report._id}
+                        onClick={() => updateIssueStatus(report._id, "closed")}
+                        className="rounded-lg border border-green-400/40 bg-green-500/20 px-3 py-1 text-xs font-semibold text-green-50 transition hover:border-green-300/60 hover:bg-green-500/30 disabled:opacity-50"
+                      >
+                        Cerrar
+                      </button>
+                    </div>
+                  </div>
+
+                  {report.logs?.length > 0 && (
+                    <details className="mt-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-gray-200">
+                      <summary className="cursor-pointer text-gray-300">
+                        Ver logs ({report.logs.length})
+                      </summary>
+                      <pre className="mt-2 whitespace-pre-wrap text-[11px] text-gray-300">
+                        {report.logs.join("\n")}
+                      </pre>
+                    </details>
+                  )}
+                  {report.stackTrace && (
+                    <details className="mt-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-gray-200">
+                      <summary className="cursor-pointer text-gray-300">
+                        Stacktrace
+                      </summary>
+                      <pre className="mt-2 whitespace-pre-wrap text-[11px] text-gray-300">
+                        {report.stackTrace}
+                      </pre>
+                    </details>
+                  )}
+                  {report.screenshotUrl && (
+                    <a
+                      href={report.screenshotUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center gap-2 text-xs text-purple-200 hover:text-purple-100"
+                    >
+                      Ver captura ↗
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         {confirmUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
