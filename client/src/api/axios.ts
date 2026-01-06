@@ -150,24 +150,30 @@ api.interceptors.response.use(
           localStorage.removeItem("token");
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("user");
+          localStorage.removeItem("businessId");
           window.location.href = "/login";
 
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;
         }
+      } else {
+        // No hay refresh token, limpiar y redirigir a login si había token
+        const token = localStorage.getItem("token");
+        if (token) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("user");
+          localStorage.removeItem("businessId");
+          window.location.href = "/login";
+        }
       }
-    }
-
-    if (error.response?.status === 401) {
-      const token = localStorage.getItem("token");
-      // Solo redirige a login si había sesión; evita mandar a login a usuarios públicos del catálogo
-      if (token) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
-      }
+    } else if (
+      error.response?.status === 401 &&
+      originalRequest.url?.includes("/auth/")
+    ) {
+      // Error 401 en rutas de auth (login/register/refresh) - no redirigir, solo rechazar
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);
