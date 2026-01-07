@@ -14,7 +14,6 @@ interface FormState {
   suggestedPrice: string;
   distributorPrice: string;
   clientPrice: string;
-  distributorCommission: string;
   totalStock: string;
   warehouseStock: string;
   lowStockAlert: string;
@@ -75,7 +74,6 @@ export default function EditProduct() {
         suggestedPrice: response.suggestedPrice?.toString() ?? "0",
         distributorPrice: response.distributorPrice?.toString() ?? "0",
         clientPrice: response.clientPrice?.toString() ?? "0",
-        distributorCommission: response.distributorCommission?.toString() ?? "0",
         totalStock: response.totalStock?.toString() ?? "0",
         warehouseStock: response.warehouseStock?.toString() ?? "0",
         lowStockAlert: response.lowStockAlert?.toString() ?? "10",
@@ -172,7 +170,6 @@ export default function EditProduct() {
       const suggestedPrice = Number(formData.suggestedPrice);
       const distributorPrice = Number(formData.distributorPrice);
       const clientPrice = Number(formData.clientPrice);
-      const distributorCommission = Number(formData.distributorCommission);
       const totalStock = Number(formData.totalStock || 0);
       const warehouseStock = Number(formData.warehouseStock || 0);
       const lowStockAlert = Number(formData.lowStockAlert || 10);
@@ -202,7 +199,6 @@ export default function EditProduct() {
         suggestedPrice,
         distributorPrice,
         clientPrice,
-        distributorCommission,
         totalStock,
         warehouseStock,
         lowStockAlert,
@@ -350,22 +346,6 @@ export default function EditProduct() {
                     className="w-full rounded-lg border border-purple-500 bg-purple-900/20 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                   <p className="mt-1 text-xs text-purple-600">Precio sugerido de venta</p>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-yellow-400">
-                    Comisión Distribuidor
-                  </label>
-                  <input
-                    type="number"
-                    name="distributorCommission"
-                    value={formData.distributorCommission}
-                    onChange={handleChange}
-                    min="0"
-                    step="1"
-                    className="w-full rounded-lg border border-yellow-500 bg-yellow-900/20 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                  />
-                  <p className="mt-1 text-xs text-yellow-600">Ganancia por unidad vendida</p>
                 </div>
 
                 <div className="rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-3">
