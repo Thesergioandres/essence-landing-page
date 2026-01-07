@@ -365,6 +365,8 @@ export const businessService = {
     contactWhatsapp?: string;
     contactLocation?: string;
     features?: BusinessFeatures;
+    logoUrl?: string;
+    logoPublicId?: string;
   }): Promise<{ business: Business }> {
     const response = await api.post<{ business: Business }>(
       "/business",
