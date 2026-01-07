@@ -57,6 +57,7 @@ api.interceptors.request.use(
     const allowsWithoutBusiness =
       url.startsWith("/auth") ||
       url.startsWith("/business/me/memberships") ||
+      url.startsWith("/upload") ||
       (config.method === "post" && url === "/business");
 
     if (token) {

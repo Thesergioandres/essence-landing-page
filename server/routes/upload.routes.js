@@ -2,24 +2,12 @@ import express from "express";
 import upload from "../config/multer.js";
 import { deleteImage, uploadImage } from "../controllers/upload.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
-import { requirePermission } from "../middleware/business.middleware.js";
 
 const router = express.Router();
 
-// Subir imagen: requiere login y permiso de config/create
-router.post(
-  "/",
-  protect,
-  requirePermission({ module: "config", action: "create" }),
-  upload.single("image"),
-  uploadImage
-);
-// Eliminar imagen: mantener restricción de admin
-router.delete(
-  "/:publicId",
-  protect,
-  requirePermission({ module: "config", action: "delete" }),
-  deleteImage
-);
+// Subir imagen: solo requiere login (sin requirePermission para permitir upload durante registro)
+router.post("/", protect, upload.single("image"), uploadImage);
+// Eliminar imagen: solo requiere login (las imágenes Base64 se eliminan automáticamente con los productos)
+router.delete("/:publicId", protect, deleteImage);
 
 export default router;

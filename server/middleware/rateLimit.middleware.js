@@ -1,6 +1,13 @@
 import rateLimit from "express-rate-limit";
 import { logApiWarn } from "../utils/logger.js";
 
+// Helper para generar keys con soporte IPv6
+const ipKeyGenerator = (req) => {
+  const ip = req.ip || req.connection.remoteAddress || "unknown";
+  // Normalizar IPv6
+  return ip.replace(/^::ffff:/, "");
+};
+
 /**
  * Rate Limiter para endpoints de autenticación
  * Más restrictivo para prevenir ataques de fuerza bruta
@@ -33,9 +40,9 @@ export const authLimiter = rateLimit({
     res.status(429).json(options.message);
   },
   keyGenerator: (req) => {
-    // Usar IP + email si está disponible para ser más específico
+    // Usar helper de IPv6 + email si está disponible
     const email = req.body?.email || "";
-    return `${req.ip}-${email}`;
+    return email ? `${ipKeyGenerator(req)}-${email}` : ipKeyGenerator(req);
   },
 });
 

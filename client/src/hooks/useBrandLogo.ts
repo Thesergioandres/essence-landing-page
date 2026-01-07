@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useBusiness } from "../context/BusinessContext";
 
-// Small helper to centralize brand logo resolution: business logo -> stored custom logo -> default.
+// Helper para resolver el logo: logo del negocio seleccionado -> logo custom almacenado -> logo por defecto del ERP
 export function useBrandLogo() {
   const { business } = useBusiness();
   const [customLogo, setCustomLogo] = useState<string | null>(null);
@@ -24,16 +24,8 @@ export function useBrandLogo() {
     };
   }, []);
 
-  const logoField = (business as { logo?: unknown } | null)?.logo;
-  const logoFromBusiness =
-    typeof logoField === "string"
-      ? logoField.trim()
-      : typeof logoField === "object" && logoField
-        ? (logoField as { url?: string }).url?.trim() || null
-        : null;
-
-  const businessLogo = business?.logoUrl?.trim() || logoFromBusiness || null;
-
+  // Prioridad: logo del negocio actual -> logo custom almacenado -> logo por defecto del sistema
+  const businessLogo = business?.logoUrl?.trim() || null;
   const storedLogo = customLogo?.trim() || null;
 
   return businessLogo || storedLogo || "/erp-logo.png";

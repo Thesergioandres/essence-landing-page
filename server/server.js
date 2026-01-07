@@ -232,4 +232,13 @@ if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
   });
+
+  // Capturar errores no manejados
+  process.on("unhandledRejection", (reason, promise) => {
+    console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+  });
+
+  process.on("uncaughtException", (error) => {
+    console.error("❌ Uncaught Exception:", error);
+  });
 }

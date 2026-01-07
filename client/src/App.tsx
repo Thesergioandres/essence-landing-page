@@ -97,7 +97,7 @@ export default function App() {
           path="/onboarding"
           element={
             <ProtectedRoute
-              allowedRoles={["admin", "distribuidor", "super_admin"]}
+              allowedRoles={["admin", "distribuidor", "super_admin", "god"]}
             >
               <Onboarding />
             </ProtectedRoute>

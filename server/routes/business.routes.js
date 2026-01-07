@@ -17,6 +17,10 @@ import {
   businessContext,
   requireRole,
 } from "../middleware/business.middleware.js";
+import {
+  protectDangerousOperation,
+  requireConfirmation,
+} from "../middleware/dangerousOperation.middleware.js";
 
 const router = express.Router();
 
@@ -50,6 +54,8 @@ router.get(
 router.delete(
   "/:businessId",
   requireRole(["super_admin"], { scope: "system" }),
+  protectDangerousOperation("delete_business"),
+  requireConfirmation,
   deleteBusiness
 );
 

@@ -46,7 +46,6 @@ export default function Dashboard() {
     null
   );
   const [loading, setLoading] = useState(true);
-  const [fixingAdminSales, setFixingAdminSales] = useState(false);
 
   const loadStats = useCallback(async () => {
     if (!businessId) return;
@@ -146,59 +145,6 @@ export default function Dashboard() {
     void loadStats();
   }, [businessId, businessHydrating, loadStats]);
 
-  const handleFixAdminSales = async () => {
-    if (!businessId) {
-      alert("Selecciona un negocio antes de ejecutar el fix de ventas admin.");
-      return;
-    }
-
-    if (
-      !confirm(
-        "¿Actualizar ventas admin?\n\n• Confirmar ventas pendientes\n• Recalcular ganancias correctamente\n• Mover solo ventas del MES ANTERIOR al mes actual\n\nNOTA: No afecta el histórico de ventas antiguas."
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setFixingAdminSales(true);
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/sales/fix-admin-sales`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-            "x-business-id": businessId,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      let message = `✅ ${data.message}\n\n`;
-      message += `📊 Resumen:\n`;
-      message += `• Total ventas admin: ${data.totalAdminSales}\n`;
-      message += `• Confirmadas: ${data.confirmed}\n`;
-      message += `• Pendientes: ${data.pending}\n`;
-      message += `• Actualizadas: ${data.updated}\n`;
-      if (data.datesUpdated > 0) {
-        message += `• Fechas actualizadas: ${data.datesUpdated}\n`;
-      }
-      message += `\n${data.note}`;
-
-      alert(message);
-
-      // Recargar stats
-      await loadStats();
-    } catch (error) {
-      console.error("Error actualizando ventas:", error);
-      alert("❌ Error al actualizar ventas admin");
-    } finally {
-      setFixingAdminSales(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -214,23 +160,13 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl">
-            Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-gray-400 sm:mt-2 sm:text-base">
-            Vista general de tu catálogo de productos
-          </p>
-        </div>
-        <button
-          onClick={handleFixAdminSales}
-          disabled={fixingAdminSales}
-          className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-          title="Actualizar ventas admin y recalcular ganancias"
-        >
-          {fixingAdminSales ? "Actualizando..." : "🔧 Fix Ventas Admin"}
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl">
+          Dashboard
+        </h1>
+        <p className="mt-1 text-sm text-gray-400 sm:mt-2 sm:text-base">
+          Vista general de tu catálogo de productos
+        </p>
       </div>
 
       {/* Resumen Financiero Mensual */}

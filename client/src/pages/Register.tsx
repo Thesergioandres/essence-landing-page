@@ -1,7 +1,7 @@
 import type { ChangeEvent, FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { authService, uploadService } from "../api/services";
+import { authService } from "../api/services";
 import { useBrandLogo } from "../hooks/useBrandLogo";
 
 export default function Register() {
@@ -17,22 +17,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const brandLogo = useBrandLogo();
-
-  // Asegura que el branding del login/landing no se contamine con logos subidos durante registro
-  useEffect(() => {
-    localStorage.removeItem("brandLogoUrl");
-    localStorage.removeItem("brandLogoPublicId");
-    window.dispatchEvent(new Event("brand-logo-updated"));
-  }, []);
-
-  const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    setLogoFile(file ?? null);
-    setLogoPreview(file ? URL.createObjectURL(file) : null);
-  };
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -91,16 +76,6 @@ export default function Register() {
       };
 
       await authService.register(payload);
-
-      // Una vez con token, subir logo protegido (solo para guardar luego en backend); no alteres brand del login
-      if (logoFile) {
-        try {
-          await uploadService.uploadImage(logoFile);
-        } catch (uploadErr) {
-          console.error("Logo upload failed", uploadErr);
-          setError("Cuenta creada, pero el logo no se pudo subir.");
-        }
-      }
 
       setSuccess("Registro exitoso, continuemos configurando tu negocio...");
       navigate("/onboarding", { replace: true });
@@ -278,55 +253,6 @@ export default function Register() {
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-base text-white placeholder-gray-500 transition focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="••••••••"
                 />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-gray-200">
-                  Logo de la empresa (opcional)
-                </label>
-                <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
-                  <div className="flex items-center gap-3">
-                    {logoPreview ? (
-                      <img
-                        src={logoPreview}
-                        alt="Logo seleccionado"
-                        className="h-14 w-auto rounded-md border border-white/10 bg-gray-900 object-contain p-2"
-                      />
-                    ) : (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-md border border-dashed border-white/20 bg-gray-900/50 text-xs text-gray-400">
-                        PNG/JPG
-                      </div>
-                    )}
-                    <p className="text-sm text-gray-300">
-                      Sube un logo que usaremos en la navegación y el panel.
-                      Recomendado 512x512 png con fondo transparente.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3">
-                    <label className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-purple-400 hover:text-purple-100">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleLogoChange}
-                      />
-                      Subir logo
-                    </label>
-                    {logoPreview && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLogoFile(null);
-                          setLogoPreview(null);
-                        }}
-                        className="inline-flex items-center justify-center rounded-lg border border-white/15 px-4 py-2 text-sm text-gray-200 transition hover:border-red-400 hover:text-red-200"
-                      >
-                        Quitar
-                      </button>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
 

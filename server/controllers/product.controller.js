@@ -136,19 +136,24 @@ export const createProduct = async (req, res) => {
 
     // Manejar imagen de Cloudinary si se subió
     if (req.file) {
-      if (!isCloudinaryConfigured) {
-        console.warn("⚠️  Cloudinary no configurado, imagen no será subida");
-        return res.status(503).json({
-          message:
-            "No se pudo subir la imagen porque Cloudinary no está configurado.",
-          hint: "Define ENABLE_CLOUDINARY=true y CLOUDINARY_* en el backend.",
-        });
+      if (isCloudinaryConfigured) {
+        productData.image = {
+          url: req.file.path,
+          publicId: req.file.filename,
+        };
+      } else {
+        // Usar Base64 si Cloudinary no está configurado
+        console.log(
+          "💾 Guardando imagen como Base64 (Cloudinary deshabilitado)"
+        );
+        const base64Image = `data:${
+          req.file.mimetype
+        };base64,${req.file.buffer.toString("base64")}`;
+        productData.image = {
+          url: base64Image,
+          publicId: `local_${Date.now()}`,
+        };
       }
-
-      productData.image = {
-        url: req.file.path,
-        publicId: req.file.filename,
-      };
     }
 
     // Calcular precio sugerido si no se proporciona
@@ -224,18 +229,35 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
-    // Rechazar subida si Cloudinary no está configurado
-    if (req.file && !isCloudinaryConfigured) {
-      return res.status(503).json({
-        message:
-          "No se pudo subir la imagen porque Cloudinary no está configurado.",
-        hint: "Define ENABLE_CLOUDINARY=true y CLOUDINARY_* en el backend.",
-      });
-    }
+    // Manejar imagen subida
+    if (req.file) {
+      // Si hay imagen anterior de Cloudinary, eliminarla
+      if (
+        product.image?.publicId &&
+        isCloudinaryConfigured &&
+        !product.image.publicId.startsWith("local_")
+      ) {
+        await deleteImage(product.image.publicId);
+      }
 
-    // Si hay nueva imagen, eliminar la anterior de Cloudinary
-    if (req.file && product.image?.publicId) {
-      await deleteImage(product.image.publicId);
+      if (isCloudinaryConfigured) {
+        updateData.image = {
+          url: req.file.path,
+          publicId: req.file.filename,
+        };
+      } else {
+        // Usar Base64 si Cloudinary no está configurado
+        console.log(
+          "💾 Actualizando imagen como Base64 (Cloudinary deshabilitado)"
+        );
+        const base64Image = `data:${
+          req.file.mimetype
+        };base64,${req.file.buffer.toString("base64")}`;
+        updateData.image = {
+          url: base64Image,
+          publicId: `local_${Date.now()}`,
+        };
+      }
     }
 
     // Actualizar datos del producto
