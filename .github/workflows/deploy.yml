@@ -21,9 +21,15 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no deploy@93.189.89.195 << 'ENDSSH'
             cd /home/deploy/app &&
+            # Respaldar archivos de entorno antes del clean
+            cp .env /tmp/.env.backup 2>/dev/null || true &&
+            cp client/.env.production /tmp/.env.production.backup 2>/dev/null || true &&
             git reset --hard HEAD &&
             git clean -fd &&
             git pull origin main &&
+            # Restaurar archivos de entorno
+            cp /tmp/.env.backup .env 2>/dev/null || true &&
+            cp /tmp/.env.production.backup client/.env.production 2>/dev/null || true &&
             cd client && npm install && npm run build &&
             cd .. &&
             docker-compose down --remove-orphans &&
