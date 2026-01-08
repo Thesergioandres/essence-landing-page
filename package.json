@@ -7,7 +7,9 @@
     "server": "cd server && npm run dev",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "install-all": "npm install && cd client && npm install && cd ../server && npm install",
-    "build": "cd client && npm run build"
+    "build": "npm run validate:backend && cd client && npm run build",
+    "validate:backend": "node --check server/server.js && node --check server/controllers/analytics.controller.js",
+    "test": "npm run validate:backend && cd client && npm run build"
   },
   "keywords": [
     "react",

@@ -1628,22 +1628,7 @@ export const getEstimatedProfit = async (req, res) => {
       message = "Tu ganancia si se vende todo el inventario de bodega y distribuidores.";
     } else if (hasBranches && !hasDistributors) {
       scenario = "C";
-      message = "Tu ganancia si se vende todo el inventario de bodega y sedes
-
-    // Determinar el escenario
-    let scenario = "D"; // Default: tiene sedes y distribuidores
-    let message = "Cálculo basado en bodega, sedes y distribuidores.";
-
-    if (!hasBranches && !hasDistributors) {
-      scenario = "A";
-      message =
-        "Cálculo basado únicamente en la bodega principal (sin sedes ni distribuidores).";
-    } else if (!hasBranches && hasDistributors) {
-      scenario = "B";
-      message = "Cálculo basado en bodega y distribuidores (sin sedes).";
-    } else if (hasBranches && !hasDistributors) {
-      scenario = "C";
-      message = "Cálculo basado en bodega y sedes (sin distribuidores).";
+      message = "Tu ganancia si se vende todo el inventario de bodega y sedes.";
     }
 
     res.json({
