@@ -301,17 +301,30 @@ export default function Analytics() {
       </div>
 
       {/* Sección Métricas de Créditos/Fiados */}
-      {dashboard?.creditMetrics && (
-        <div className="rounded-xl border border-amber-800/50 bg-gradient-to-br from-amber-900/20 to-gray-900/70 p-4">
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold text-amber-300">
-              📋 Cartera de Fiados
-            </h2>
-            <p className="text-sm text-gray-400">
-              Resumen de créditos y deudas pendientes
-            </p>
+      {dashboard?.creditMetrics && dashboard.creditMetrics.totalCredits > 0 && (
+        <div className="bg-linear-to-br rounded-xl border border-amber-800/50 from-amber-900/20 to-gray-900/70 p-4">
+          <div className="mb-4 flex items-start justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-amber-300">
+                📋 Cartera de Fiados
+              </h2>
+              <p className="text-sm text-gray-400">
+                Resumen de créditos y deudas pendientes
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs uppercase text-amber-400/70">
+                Total Originado
+              </p>
+              <p className="text-lg font-bold text-amber-300">
+                {currency(
+                  (dashboard.creditMetrics.totalDebt || 0) +
+                    (dashboard.creditMetrics.totalPaid || 0)
+                )}
+              </p>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
             <StatCard
               title="Total Créditos"
               subtitle="Registrados"
@@ -357,10 +370,49 @@ export default function Analytics() {
             />
           </div>
 
+          {/* Indicador de Salud de Cartera */}
+          <div className="mt-4 rounded-lg border border-amber-700/30 bg-gray-950/40 p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-amber-400/70">
+                  Salud de Cartera
+                </p>
+                <p className="mt-1 text-sm text-gray-300">
+                  {Number(dashboard.creditMetrics.recoveryRate) >= 70
+                    ? "✅ Excelente - Alta recuperación"
+                    : Number(dashboard.creditMetrics.recoveryRate) >= 50
+                      ? "⚠️ Aceptable - Mejorar cobranza"
+                      : "❌ Crítico - Atención urgente"}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-amber-400/70">Mora</p>
+                <p className="text-lg font-bold text-red-400">
+                  {dashboard.creditMetrics.overdueCount > 0
+                    ? `${(
+                        (dashboard.creditMetrics.overdueAmount /
+                          ((dashboard.creditMetrics.totalDebt || 1) +
+                            (dashboard.creditMetrics.overdueAmount || 0))) *
+                        100
+                      ).toFixed(1)}%`
+                    : "0%"}
+                </p>
+              </div>
+            </div>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-800">
+              <div
+                className="bg-linear-to-r h-full from-green-500 via-yellow-500 to-red-500"
+                style={{
+                  width: `${Math.min(100, Number(dashboard.creditMetrics.recoveryRate))}%`,
+                }}
+              />
+            </div>
+          </div>
+
           {dashboard.creditMetrics.topDebtors.length > 0 && (
             <div className="mt-4">
               <h3 className="mb-2 text-sm font-medium text-amber-300/80">
-                Top Deudores
+                🎯 Top 5 Deudores
               </h3>
               <div className="overflow-hidden rounded-lg border border-amber-800/30">
                 <table className="min-w-full divide-y divide-amber-800/30 bg-gray-950/60">
@@ -454,9 +506,9 @@ export default function Analytics() {
               return (
                 <div
                   key={`${label}-${idx}`}
-                  className="group relative overflow-hidden rounded-xl border border-gray-800 bg-gradient-to-r from-gray-950/80 via-gray-900/80 to-gray-950/40 p-4 shadow-sm"
+                  className="bg-linear-to-r group relative overflow-hidden rounded-xl border border-gray-800 from-gray-950/80 via-gray-900/80 to-gray-950/40 p-4 shadow-sm"
                 >
-                  <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-500/60 via-blue-500/60 to-emerald-500/60 opacity-70" />
+                  <div className="bg-linear-to-r absolute inset-x-0 top-0 h-1 from-purple-500/60 via-blue-500/60 to-emerald-500/60 opacity-70" />
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-sm font-semibold text-white">
                       {label || "Sin fecha"}
@@ -537,6 +589,50 @@ export default function Analytics() {
           <StatCard title="Ganancia" value={currency(financialTotals.profit)} />
           <StatCard title="Ventas" value={`${financialTotals.salesCount}`} />
         </div>
+
+        {/* Métricas de Cartera (Créditos) */}
+        {dashboard?.creditMetrics &&
+          dashboard.creditMetrics.totalCredits > 0 && (
+            <div className="mt-4 rounded-lg border border-amber-700/30 bg-amber-900/10 p-4">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-amber-300">
+                💰 Cartera y Créditos
+              </h3>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <StatCard
+                  title="Deuda Pendiente"
+                  subtitle="Por cobrar"
+                  value={currency(dashboard.creditMetrics.totalDebt)}
+                  tone="negative"
+                />
+                <StatCard
+                  title="Total Recuperado"
+                  subtitle="Pagos recibidos"
+                  value={currency(dashboard.creditMetrics.totalPaid)}
+                  tone="positive"
+                />
+                <StatCard
+                  title="En Mora"
+                  subtitle={`${dashboard.creditMetrics.overdueCount} vencidos`}
+                  value={currency(dashboard.creditMetrics.overdueAmount)}
+                  tone={
+                    dashboard.creditMetrics.overdueCount > 0
+                      ? "negative"
+                      : "neutral"
+                  }
+                />
+                <StatCard
+                  title="Tasa de Recuperación"
+                  subtitle="% de cartera cobrada"
+                  value={`${dashboard.creditMetrics.recoveryRate}%`}
+                  tone={
+                    Number(dashboard.creditMetrics.recoveryRate) >= 50
+                      ? "positive"
+                      : "negative"
+                  }
+                />
+              </div>
+            </div>
+          )}
       </div>
     </div>
   );
@@ -555,8 +651,8 @@ function MetricBar({
 }) {
   const barColor =
     color === "green"
-      ? "bg-gradient-to-r from-emerald-400 to-green-500"
-      : "bg-gradient-to-r from-indigo-400 to-blue-500";
+      ? "bg-linear-to-r from-emerald-400 to-green-500"
+      : "bg-linear-to-r from-indigo-400 to-blue-500";
 
   const safePercent = Math.max(4, Math.min(100, percent));
 

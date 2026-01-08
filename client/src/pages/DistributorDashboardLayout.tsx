@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { authService } from "../api/services.ts";
 import BusinessGate from "../components/BusinessGate";
 import BusinessSelector from "../components/BusinessSelector";
+import FeatureNavLink from "../components/FeatureNavLink";
 import ReportIssueButton from "../components/ReportIssueButton";
 
 const navLinkClasses = (isActive: boolean): string =>
@@ -232,9 +233,12 @@ export default function DistributorDashboardLayout() {
               Estadísticas
             </NavLink>
 
-            <NavLink
+            <FeatureNavLink
               to="/distributor/defective-reports"
-              className={({ isActive }): string => navLinkClasses(isActive)}
+              feature="defectiveProducts"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
             >
               <svg
                 className="h-5 w-5"
@@ -250,7 +254,7 @@ export default function DistributorDashboardLayout() {
                 />
               </svg>
               Productos Defectuosos
-            </NavLink>
+            </FeatureNavLink>
           </nav>
 
           {/* User Info & Logout - Always visible */}

@@ -30,6 +30,12 @@ const inventoryEntrySchema = new mongoose.Schema(
       required: true,
     },
     quantity: { type: Number, required: true, min: 1 },
+    // Costo unitario de esta entrada específica
+    unitCost: { type: Number, default: 0 },
+    // Costo total de esta entrada (quantity * unitCost)
+    totalCost: { type: Number, default: 0 },
+    // Costo promedio del producto después de esta entrada
+    averageCostAfter: { type: Number, default: 0 },
     notes: { type: String, trim: true },
     requestId: { type: String, index: true },
     destination: {
@@ -37,6 +43,9 @@ const inventoryEntrySchema = new mongoose.Schema(
       enum: ["branch", "warehouse"],
       default: "warehouse",
     },
+    deleted: { type: Boolean, default: false },
+    deletedAt: { type: Date },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     metadata: { type: mongoose.Schema.Types.Mixed },
   },
   { timestamps: true }

@@ -331,6 +331,30 @@ export default function Onboarding() {
                       label: "Promociones",
                       desc: "Ofertas, descuentos y campañas por temporada.",
                     },
+                    branches: {
+                      label: "Sedes",
+                      desc: "Gestión de sucursales y puntos de venta.",
+                    },
+                    distributors: {
+                      label: "Distribuidores",
+                      desc: "Red de distribución y comisiones.",
+                    },
+                    rankings: {
+                      label: "Rankings",
+                      desc: "Clasificaciones y tablas de posiciones.",
+                    },
+                    credits: {
+                      label: "Créditos",
+                      desc: "Ventas a crédito y gestión de pagos.",
+                    },
+                    customers: {
+                      label: "Clientes",
+                      desc: "Gestión de clientes y contactos.",
+                    },
+                    defectiveProducts: {
+                      label: "Productos Defectuosos",
+                      desc: "Control de productos con defectos.",
+                    },
                   };
                   return (
                     <button

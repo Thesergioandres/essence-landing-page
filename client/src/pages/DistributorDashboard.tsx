@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  creditService,
   gamificationService,
   saleService,
   stockService,
 } from "../api/services";
-import type { DistributorStock, Sale } from "../types";
+import type { Credit, DistributorStock, Sale } from "../types";
 
 interface DashboardStats {
   totalSales: number;
@@ -13,6 +14,10 @@ interface DashboardStats {
   totalProfit: number;
   productsCount: number;
   lowStockCount: number;
+  pendingCreditsAmount: number;
+  pendingCreditsCount: number;
+  overdueCreditsAmount: number;
+  overdueCreditsCount: number;
 }
 
 interface RankingInfo {
@@ -31,8 +36,13 @@ export default function DistributorDashboard() {
     totalProfit: 0,
     productsCount: 0,
     lowStockCount: 0,
+    pendingCreditsAmount: 0,
+    pendingCreditsCount: 0,
+    overdueCreditsAmount: 0,
+    overdueCreditsCount: 0,
   });
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
+  const [pendingCredits, setPendingCredits] = useState<Credit[]>([]);
   const [myStock, setMyStock] = useState<DistributorStock[]>([]);
   const [rankingInfo, setRankingInfo] = useState<RankingInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,13 +64,26 @@ export default function DistributorDashboard() {
       }
 
       const userId = localStorage.getItem("userId");
-      const [salesData, stockData, commissionData] = await Promise.all([
-        saleService.getDistributorSales(undefined, { limit: 50 }),
-        stockService.getDistributorStock("me"),
-        userId
-          ? gamificationService.getAdjustedCommission(userId).catch(() => null)
-          : Promise.resolve(null),
-      ]);
+      const [salesData, stockData, commissionData, creditsData] =
+        await Promise.all([
+          saleService.getDistributorSales(undefined, { limit: 50 }),
+          stockService.getDistributorStock("me"),
+          userId
+            ? gamificationService
+                .getAdjustedCommission(userId)
+                .catch(() => null)
+            : Promise.resolve(null),
+          creditService
+            .getAll({ status: "pending", limit: 100 })
+            .catch(() => ({ credits: [] })),
+        ]);
+
+      // Filtrar créditos pendientes y vencidos
+      const myPendingCredits = creditsData.credits || [];
+      const now = new Date();
+      const overdueCredits = myPendingCredits.filter(
+        (c: Credit) => c.dueDate && new Date(c.dueDate) < now
+      );
 
       // Calcular estadísticas
       const totalSales = salesData.sales.length;
@@ -76,15 +99,32 @@ export default function DistributorDashboard() {
         item => item.quantity <= item.lowStockAlert
       ).length;
 
+      // Calcular créditos pendientes
+      const pendingCreditsAmount = myPendingCredits.reduce(
+        (sum: number, c: Credit) =>
+          sum + ((c.originalAmount || 0) - (c.paidAmount || 0)),
+        0
+      );
+      const overdueCreditsAmount = overdueCredits.reduce(
+        (sum: number, c: Credit) =>
+          sum + ((c.originalAmount || 0) - (c.paidAmount || 0)),
+        0
+      );
+
       setStats({
         totalSales,
         totalRevenue,
         totalProfit,
         productsCount: stockData.length,
         lowStockCount,
+        pendingCreditsAmount,
+        pendingCreditsCount: myPendingCredits.length,
+        overdueCreditsAmount,
+        overdueCreditsCount: overdueCredits.length,
       });
 
       setRecentSales(salesData.sales.slice(0, 5));
+      setPendingCredits(myPendingCredits.slice(0, 5));
       setMyStock(stockData.slice(0, 6));
 
       if (commissionData) {
@@ -338,6 +378,106 @@ export default function DistributorDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Credits Pending Section */}
+      {(stats.pendingCreditsCount > 0 || stats.overdueCreditsCount > 0) && (
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Pending Credits Card */}
+          <div className="bg-linear-to-br rounded-xl border border-orange-500/50 from-orange-900/30 to-gray-800/50 p-6 backdrop-blur-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-orange-300">Pendiente por Cobrar</p>
+                <p className="mt-2 text-3xl font-bold text-white">
+                  {formatCurrency(stats.pendingCreditsAmount)}
+                </p>
+                <p className="mt-1 text-xs text-gray-400">
+                  {stats.pendingCreditsCount} créditos activos
+                </p>
+              </div>
+              <div className="rounded-full bg-orange-600/20 p-3">
+                <svg
+                  className="h-8 w-8 text-orange-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+            {pendingCredits.length > 0 && (
+              <div className="mt-4 space-y-2 border-t border-gray-700 pt-4">
+                {pendingCredits.slice(0, 3).map(credit => (
+                  <div
+                    key={credit._id}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span className="max-w-[150px] truncate text-gray-300">
+                      {typeof credit.customer === "object" &&
+                      credit.customer?.name
+                        ? credit.customer.name
+                        : "Cliente"}
+                    </span>
+                    <span className="font-medium text-orange-400">
+                      {formatCurrency(
+                        (credit.originalAmount || 0) - (credit.paidAmount || 0)
+                      )}
+                    </span>
+                  </div>
+                ))}
+                {stats.pendingCreditsCount > 3 && (
+                  <p className="pt-1 text-xs text-gray-500">
+                    +{stats.pendingCreditsCount - 3} más...
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Overdue Credits Warning */}
+          {stats.overdueCreditsCount > 0 && (
+            <div className="bg-linear-to-br rounded-xl border border-red-500/50 from-red-900/30 to-gray-800/50 p-6 backdrop-blur-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-300">Créditos Vencidos</p>
+                  <p className="mt-2 text-3xl font-bold text-red-400">
+                    {formatCurrency(stats.overdueCreditsAmount)}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    {stats.overdueCreditsCount} créditos vencidos
+                  </p>
+                </div>
+                <div className="rounded-full bg-red-600/20 p-3">
+                  <svg
+                    className="h-8 w-8 text-red-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+                <p className="text-xs text-red-300">
+                  ⚠️ Tienes créditos vencidos. Contacta a tus clientes para
+                  gestionar el cobro.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid gap-6 md:grid-cols-2">

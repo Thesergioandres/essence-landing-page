@@ -30,6 +30,13 @@ const defaultFeatures: BusinessFeatures = {
   assistant: false,
   reports: true,
   transfers: true,
+  promotions: true,
+  branches: true,
+  distributors: true,
+  rankings: true,
+  credits: true,
+  customers: true,
+  defectiveProducts: true,
 };
 
 export default function BusinessSettings() {
@@ -403,6 +410,12 @@ export default function BusinessSettings() {
                           "transfers",
                           "incidents",
                           "promotions",
+                          "branches",
+                          "distributors",
+                          "rankings",
+                          "credits",
+                          "customers",
+                          "defectiveProducts",
                         ] as (keyof BusinessFeatures)[]
                       ).map(key => {
                         const labelMap: Record<keyof BusinessFeatures, string> =
@@ -417,6 +430,12 @@ export default function BusinessSettings() {
                             reports: "Reportes",
                             transfers: "Transferencias",
                             promotions: "Promociones",
+                            branches: "Sedes",
+                            distributors: "Distribuidores",
+                            rankings: "Rankings",
+                            credits: "Créditos",
+                            customers: "Clientes",
+                            defectiveProducts: "Productos Defectuosos",
                           };
                         return (
                           <button

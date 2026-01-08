@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { businessAssistantService } from "../api/services";
+import { businessAssistantService, creditService } from "../api/services";
+import { useFeatures } from "../components/FeatureSection";
 import type {
   BusinessAssistantConfig,
   BusinessAssistantJobStatus,
   BusinessAssistantRecommendationAction,
   BusinessAssistantRecommendationItem,
   BusinessAssistantRecommendationsResponse,
+  CreditMetrics,
 } from "../types";
 
 const formatCurrencyCOP = (value: number) => {
@@ -101,10 +103,25 @@ const formatCompactCOP = (value: number) => {
 };
 
 export default function BusinessAssistant() {
+  // Feature flags
+  const features = useFeatures([
+    "credits",
+    "distributors",
+    "inventory",
+    "promotions",
+    "expenses",
+    "gamification",
+  ]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] =
     useState<BusinessAssistantRecommendationsResponse | null>(null);
+
+  // Métricas adicionales para contexto
+  const [creditMetrics, setCreditMetrics] = useState<CreditMetrics | null>(
+    null
+  );
 
   const [config, setConfig] = useState<BusinessAssistantConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(false);
@@ -307,6 +324,33 @@ export default function BusinessAssistant() {
     fetchRecommendations();
   }, [fetchRecommendations]);
 
+  // Cargar métricas adicionales de créditos para contexto
+  useEffect(() => {
+    const loadAdditionalInsights = async () => {
+      try {
+        const promises: Promise<any>[] = [];
+
+        if (features.credits) {
+          promises.push(
+            creditService.getMetrics().catch(() => ({ metrics: null }))
+          );
+        } else {
+          promises.push(Promise.resolve({ metrics: null }));
+        }
+
+        const [creditData] = await Promise.all(promises);
+
+        if (creditData?.metrics) {
+          setCreditMetrics(creditData.metrics);
+        }
+      } catch (error) {
+        console.error("Error loading additional insights:", error);
+      }
+    };
+
+    loadAdditionalInsights();
+  }, [features.credits]);
+
   useEffect(() => {
     fetchConfig();
   }, [fetchConfig]);
@@ -481,7 +525,82 @@ export default function BusinessAssistant() {
           Recomendaciones automáticas por producto basadas en datos reales
           (rotación, tendencia, margen y stock).
         </p>
+        {/* Indicadores de módulos activos */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {features.inventory && (
+            <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-medium text-blue-300">
+              📦 Inventario
+            </span>
+          )}
+          {features.credits && (
+            <span className="rounded-full bg-orange-500/20 px-3 py-1 text-xs font-medium text-orange-300">
+              💳 Créditos
+            </span>
+          )}
+          {features.distributors && (
+            <span className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-medium text-purple-300">
+              👥 Distribuidores
+            </span>
+          )}
+          {features.promotions && (
+            <span className="rounded-full bg-pink-500/20 px-3 py-1 text-xs font-medium text-pink-300">
+              🎉 Promociones
+            </span>
+          )}
+          {features.gamification && (
+            <span className="rounded-full bg-yellow-500/20 px-3 py-1 text-xs font-medium text-yellow-300">
+              🏆 Gamificación
+            </span>
+          )}
+        </div>
       </div>
+
+      {/* Resumen de insights del negocio */}
+      {features.credits && creditMetrics && (
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {features.credits && creditMetrics && (
+            <>
+              <div className="rounded-xl border border-orange-700/40 bg-orange-900/20 p-4">
+                <p className="text-xs text-orange-300/80">💳 Por cobrar</p>
+                <p className="mt-1 text-xl font-bold text-orange-300">
+                  {formatCurrencyCOP(
+                    creditMetrics.total.totalRemainingAmount || 0
+                  )}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {creditMetrics.total.totalCredits || 0} créditos activos
+                </p>
+              </div>
+              {(creditMetrics.overdue.count || 0) > 0 && (
+                <div className="rounded-xl border border-red-700/40 bg-red-900/20 p-4">
+                  <p className="text-xs text-red-300/80">⚠️ Vencidos</p>
+                  <p className="mt-1 text-xl font-bold text-red-400">
+                    {creditMetrics.overdue.count}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {formatCurrencyCOP(creditMetrics.overdue.amount || 0)} en
+                    riesgo
+                  </p>
+                </div>
+              )}
+              <div className="rounded-xl border border-green-700/40 bg-green-900/20 p-4">
+                <p className="text-xs text-green-300/80">
+                  📈 Tasa recuperación
+                </p>
+                <p
+                  className={`mt-1 text-xl font-bold ${Number(creditMetrics.recoveryRate || 0) >= 70 ? "text-green-400" : Number(creditMetrics.recoveryRate || 0) >= 50 ? "text-yellow-400" : "text-red-400"}`}
+                >
+                  {creditMetrics.recoveryRate || 0}%
+                </p>
+                <p className="text-xs text-gray-400">
+                  Cobrado:{" "}
+                  {formatCurrencyCOP(creditMetrics.total.totalPaidAmount || 0)}
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">

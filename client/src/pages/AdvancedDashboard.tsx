@@ -2,14 +2,20 @@ import { endOfMonth, format, startOfMonth, subDays } from "date-fns";
 import { motion } from "framer-motion";
 import {
   BarChart3,
+  CreditCard,
   Download,
   FileText,
   RefreshCcw,
   Search,
   TrendingUp,
+  Wallet,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { advancedAnalyticsService } from "../api/services";
+import {
+  advancedAnalyticsService,
+  creditService,
+  expenseService,
+} from "../api/services";
 import {
   CategoryDistributionChart,
   ComparativeAnalysisView,
@@ -19,6 +25,8 @@ import {
   SalesTimelineChart,
   TopProductsChart,
 } from "../components/charts";
+import { useFeature } from "../components/FeatureSection";
+import type { CreditMetrics, Expense } from "../types";
 import { formatCurrency } from "../utils";
 import {
   exportKPIsToPDF,
@@ -27,6 +35,10 @@ import {
 } from "../utils/exportUtils";
 
 export default function AdvancedDashboard() {
+  // Feature flags
+  const distributorsEnabled = useFeature("distributors");
+  const creditsEnabled = useFeature("credits");
+
   const [overviewRange, setOverviewRange] = useState({
     startDate: format(subDays(new Date(), 7), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
@@ -51,7 +63,7 @@ export default function AdvancedDashboard() {
   const [rankingLimit, setRankingLimit] = useState(10);
   const [rankingSearch, setRankingSearch] = useState("");
   const [activeTab, setActiveTab] = useState<
-    "overview" | "products" | "distributors" | "stock"
+    "overview" | "products" | "distributors" | "stock" | "credits" | "expenses"
   >("overview");
 
   const [salesFunnel, setSalesFunnel] = useState<{
@@ -60,6 +72,20 @@ export default function AdvancedDashboard() {
     conversionRate: number;
   } | null>(null);
   const [funnelLoading, setFunnelLoading] = useState(false);
+
+  // Créditos y Gastos
+  const [creditMetrics, setCreditMetrics] = useState<CreditMetrics | null>(
+    null
+  );
+  const [creditLoading, setCreditLoading] = useState(false);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenseLoading, setExpenseLoading] = useState(false);
+  const [expenseMetrics, setExpenseMetrics] = useState({
+    total: 0,
+    thisMonth: 0,
+    lastMonth: 0,
+    byCategory: [] as { type: string; amount: number }[],
+  });
 
   const [rotationDays, setRotationDays] = useState(30);
   const [rotationLoading, setRotationLoading] = useState(false);
@@ -183,6 +209,109 @@ export default function AdvancedDashboard() {
     }
   }, [activeTab, rotationDays, reloadKey]);
 
+  // Cargar métricas de créditos
+  useEffect(() => {
+    const fetchCredits = async () => {
+      try {
+        setCreditLoading(true);
+        const response = await creditService.getMetrics();
+        setCreditMetrics(response.metrics);
+      } catch (error) {
+        console.error("Error al cargar métricas de créditos:", error);
+        setCreditMetrics(null);
+      } finally {
+        setCreditLoading(false);
+      }
+    };
+
+    if (
+      creditsEnabled &&
+      (activeTab === "credits" || activeTab === "overview")
+    ) {
+      fetchCredits();
+    }
+  }, [activeTab, reloadKey, creditsEnabled]);
+
+  // Cargar gastos
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        setExpenseLoading(true);
+        const response = await expenseService.getAll();
+        const expenseList = response.expenses || [];
+        setExpenses(expenseList);
+
+        // Calcular métricas
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+        const lastMonthYear =
+          currentMonth === 0 ? currentYear - 1 : currentYear;
+
+        const thisMonthTotal = expenseList
+          .filter((e: Expense) => {
+            const d = new Date(e.expenseDate);
+            return (
+              d.getMonth() === currentMonth && d.getFullYear() === currentYear
+            );
+          })
+          .reduce(
+            (sum: number, e: Expense) => sum + (Number(e.amount) || 0),
+            0
+          );
+
+        const lastMonthTotal = expenseList
+          .filter((e: Expense) => {
+            const d = new Date(e.expenseDate);
+            return (
+              d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear
+            );
+          })
+          .reduce(
+            (sum: number, e: Expense) => sum + (Number(e.amount) || 0),
+            0
+          );
+
+        const total = expenseList.reduce(
+          (sum: number, e: Expense) => sum + (Number(e.amount) || 0),
+          0
+        );
+
+        // Agrupar por categoría
+        const byType = expenseList.reduce<Record<string, number>>(
+          (acc, e: Expense) => {
+            const type = e.type || e.category || e.description || "Otros";
+            acc[type] = (acc[type] || 0) + (Number(e.amount) || 0);
+            return acc;
+          },
+          {}
+        );
+
+        const byCategory = Object.entries(byType)
+          .map(([type, amount]) => ({ type, amount }))
+          .sort((a, b) => b.amount - a.amount)
+          .slice(0, 5);
+
+        setExpenseMetrics({
+          total,
+          thisMonth: thisMonthTotal,
+          lastMonth: lastMonthTotal,
+          byCategory,
+        });
+      } catch (error) {
+        console.error("Error al cargar gastos:", error);
+        setExpenses([]);
+      } finally {
+        setExpenseLoading(false);
+      }
+    };
+
+    if (activeTab === "expenses" || activeTab === "overview") {
+      fetchExpenses();
+    }
+  }, [activeTab, reloadKey]);
+
   const handleExportKPIs = async () => {
     try {
       const response = await advancedAnalyticsService.getFinancialKPIs({
@@ -212,10 +341,17 @@ export default function AdvancedDashboard() {
     }
   };
 
+  // Filtrar tabs basándose en features habilitados
   const tabs = [
     { id: "overview", label: "Vista General", icon: BarChart3 },
     { id: "products", label: "Productos", icon: TrendingUp },
-    { id: "distributors", label: "Distribuidores", icon: TrendingUp },
+    ...(distributorsEnabled
+      ? [{ id: "distributors", label: "Distribuidores", icon: TrendingUp }]
+      : []),
+    ...(creditsEnabled
+      ? [{ id: "credits", label: "Créditos", icon: CreditCard }]
+      : []),
+    { id: "expenses", label: "Gastos", icon: Wallet },
     { id: "stock", label: "Inventario", icon: FileText },
   ];
 
@@ -733,7 +869,7 @@ export default function AdvancedDashboard() {
           </>
         )}
 
-        {activeTab === "distributors" && (
+        {activeTab === "distributors" && distributorsEnabled && (
           <>
             <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -855,6 +991,296 @@ export default function AdvancedDashboard() {
                 reloadKey={reloadKey}
               />
             )}
+          </>
+        )}
+
+        {/* Tab: Créditos */}
+        {activeTab === "credits" && creditsEnabled && (
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-linear-to-br rounded-xl border border-amber-700/30 from-amber-900/20 to-gray-900/70 p-6"
+            >
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold text-amber-300">
+                    💳 Cartera de Créditos
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    Análisis completo de tu cartera de fiados
+                  </p>
+                </div>
+              </div>
+
+              {creditLoading ? (
+                <div className="flex h-40 items-center justify-center">
+                  <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-amber-500" />
+                </div>
+              ) : !creditMetrics ? (
+                <div className="py-10 text-center text-gray-400">
+                  No hay datos de créditos disponibles.
+                </div>
+              ) : (
+                <>
+                  {/* KPIs de Créditos */}
+                  <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
+                      <p className="text-xs uppercase text-gray-400">
+                        Total Créditos
+                      </p>
+                      <p className="mt-1 text-2xl font-bold text-white">
+                        {creditMetrics.total.totalCredits}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
+                      <p className="text-xs uppercase text-gray-400">
+                        Deuda Pendiente
+                      </p>
+                      <p className="mt-1 text-2xl font-bold text-red-400">
+                        {formatCurrency(
+                          creditMetrics.total.totalRemainingAmount
+                        )}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
+                      <p className="text-xs uppercase text-gray-400">
+                        Total Recuperado
+                      </p>
+                      <p className="mt-1 text-2xl font-bold text-green-400">
+                        {formatCurrency(creditMetrics.total.totalPaidAmount)}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
+                      <p className="text-xs uppercase text-gray-400">
+                        Tasa Recuperación
+                      </p>
+                      <p
+                        className={`mt-1 text-2xl font-bold ${Number(creditMetrics.recoveryRate) >= 50 ? "text-green-400" : "text-amber-400"}`}
+                      >
+                        {creditMetrics.recoveryRate}%
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Métricas de Mora */}
+                  <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div className="rounded-lg border border-red-700/30 bg-red-900/10 p-4">
+                      <p className="text-sm font-medium text-red-300">
+                        ⚠️ Créditos Vencidos
+                      </p>
+                      <p className="mt-2 text-3xl font-bold text-red-400">
+                        {creditMetrics.overdue.count}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-400">
+                        Monto: {formatCurrency(creditMetrics.overdue.amount)}
+                      </p>
+                    </div>
+                    <div className="col-span-2 rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+                      <p className="text-sm font-medium text-gray-300">
+                        Indicador de Salud
+                      </p>
+                      <div className="mt-3 flex items-center gap-4">
+                        <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-700">
+                          <div
+                            className="bg-linear-to-r h-full from-green-500 via-yellow-500 to-red-500"
+                            style={{
+                              width: `${Math.min(100, Number(creditMetrics.recoveryRate))}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-gray-200">
+                          {Number(creditMetrics.recoveryRate) >= 70
+                            ? "✅ Excelente"
+                            : Number(creditMetrics.recoveryRate) >= 50
+                              ? "⚠️ Aceptable"
+                              : "❌ Crítico"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Top Deudores */}
+                  {creditMetrics.topDebtors &&
+                    creditMetrics.topDebtors.length > 0 && (
+                      <div className="rounded-lg border border-amber-800/30 bg-gray-900/40 p-4">
+                        <h4 className="mb-3 text-lg font-semibold text-amber-300">
+                          🎯 Top Deudores
+                        </h4>
+                        <div className="overflow-hidden rounded-lg border border-amber-800/20">
+                          <table className="w-full divide-y divide-amber-800/20">
+                            <thead className="bg-amber-900/20">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-amber-300/70">
+                                  Cliente
+                                </th>
+                                <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-amber-300/70">
+                                  Deuda Total
+                                </th>
+                                <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-amber-300/70">
+                                  Créditos
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-amber-800/10">
+                              {creditMetrics.topDebtors.map((debtor, idx) => (
+                                <tr
+                                  key={debtor.customerId || idx}
+                                  className="hover:bg-amber-900/10"
+                                >
+                                  <td className="px-4 py-3 text-sm text-gray-100">
+                                    {debtor.customerName}
+                                  </td>
+                                  <td className="px-4 py-3 text-right text-sm font-semibold text-red-400">
+                                    {formatCurrency(debtor.totalDebt)}
+                                  </td>
+                                  <td className="px-4 py-3 text-right text-sm text-gray-300">
+                                    {debtor.creditsCount}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                </>
+              )}
+            </motion.div>
+          </>
+        )}
+
+        {/* Tab: Gastos */}
+        {activeTab === "expenses" && (
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-linear-to-br rounded-xl border border-rose-700/30 from-rose-900/20 to-gray-900/70 p-6"
+            >
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold text-rose-300">
+                    💸 Análisis de Gastos
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    Control y distribución de gastos operativos
+                  </p>
+                </div>
+              </div>
+
+              {expenseLoading ? (
+                <div className="flex h-40 items-center justify-center">
+                  <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-rose-500" />
+                </div>
+              ) : expenses.length === 0 ? (
+                <div className="py-10 text-center text-gray-400">
+                  No hay gastos registrados.
+                </div>
+              ) : (
+                <>
+                  {/* KPIs de Gastos */}
+                  <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
+                      <p className="text-xs uppercase text-gray-400">
+                        Este Mes
+                      </p>
+                      <p className="mt-1 text-2xl font-bold text-rose-400">
+                        {formatCurrency(expenseMetrics.thisMonth)}
+                      </p>
+                      {expenseMetrics.lastMonth > 0 && (
+                        <p
+                          className={`mt-1 text-xs ${expenseMetrics.thisMonth <= expenseMetrics.lastMonth ? "text-green-400" : "text-red-400"}`}
+                        >
+                          {expenseMetrics.thisMonth <= expenseMetrics.lastMonth
+                            ? "↓"
+                            : "↑"}
+                          {Math.abs(
+                            ((expenseMetrics.thisMonth -
+                              expenseMetrics.lastMonth) /
+                              expenseMetrics.lastMonth) *
+                              100
+                          ).toFixed(1)}
+                          % vs anterior
+                        </p>
+                      )}
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
+                      <p className="text-xs uppercase text-gray-400">
+                        Mes Anterior
+                      </p>
+                      <p className="mt-1 text-2xl font-bold text-amber-400">
+                        {formatCurrency(expenseMetrics.lastMonth)}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
+                      <p className="text-xs uppercase text-gray-400">
+                        Total Histórico
+                      </p>
+                      <p className="mt-1 text-2xl font-bold text-purple-400">
+                        {formatCurrency(expenseMetrics.total)}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
+                      <p className="text-xs uppercase text-gray-400">
+                        Promedio/Gasto
+                      </p>
+                      <p className="mt-1 text-2xl font-bold text-cyan-400">
+                        {formatCurrency(
+                          expenses.length > 0
+                            ? expenseMetrics.total / expenses.length
+                            : 0
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Distribución por Categoría */}
+                  {expenseMetrics.byCategory.length > 0 && (
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+                      <h4 className="mb-4 text-lg font-semibold text-rose-300">
+                        📊 Distribución por Categoría
+                      </h4>
+                      <div className="space-y-3">
+                        {expenseMetrics.byCategory.map((cat, idx) => {
+                          const percentage =
+                            (cat.amount / expenseMetrics.total) * 100;
+                          return (
+                            <div key={cat.type}>
+                              <div className="mb-1 flex items-center justify-between text-sm">
+                                <span className="text-gray-200">
+                                  {cat.type}
+                                </span>
+                                <span className="font-medium text-rose-300">
+                                  {formatCurrency(cat.amount)} (
+                                  {percentage.toFixed(1)}%)
+                                </span>
+                              </div>
+                              <div className="h-2 w-full overflow-hidden rounded-full bg-gray-700">
+                                <div
+                                  className={`h-full transition-all ${
+                                    idx === 0
+                                      ? "bg-rose-500"
+                                      : idx === 1
+                                        ? "bg-amber-500"
+                                        : idx === 2
+                                          ? "bg-purple-500"
+                                          : idx === 3
+                                            ? "bg-cyan-500"
+                                            : "bg-gray-500"
+                                  }`}
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </motion.div>
           </>
         )}
 

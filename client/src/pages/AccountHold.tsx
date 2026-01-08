@@ -11,6 +11,7 @@ export default function AccountHold() {
     reasonFromState || reasonFromQuery || reasonFromStorage || "pending";
   const isExpired = reason === "expired";
   const isOwnerInactive = reason === "owner_inactive";
+  const isOwnerExpired = reason === "owner_expired";
 
   const handleBackToLogin = () => {
     // Limpia sesión y bandera de hold para evitar redirección automática de nuevo
@@ -26,16 +27,20 @@ export default function AccountHold() {
         <h1 className="mb-3 text-2xl font-bold text-white">
           {isExpired
             ? "Suscripción expirada"
-            : isOwnerInactive
-              ? "Acceso deshabilitado"
-              : "Cuenta en revisión"}
+            : isOwnerExpired
+              ? "Suscripción del negocio expirada"
+              : isOwnerInactive
+                ? "Acceso deshabilitado"
+                : "Cuenta en revisión"}
         </h1>
         <p className="text-gray-300">
           {isExpired
             ? "Tu suscripción ha terminado. Contacta al usuario con rol GOD para renovarla."
-            : isOwnerInactive
-              ? "El administrador de tu empresa no tiene acceso activo. Contacta a tu admin para reactivar la cuenta."
-              : "Tu cuenta está pendiente de activación manual. Contacta al usuario con rol GOD para activarla y recibir instrucciones de pago."}
+            : isOwnerExpired
+              ? "La suscripción del administrador de tu negocio ha expirado. Contacta a tu administrador para que renueve la suscripción."
+              : isOwnerInactive
+                ? "El administrador de tu empresa no tiene acceso activo. Contacta a tu admin para reactivar la cuenta."
+                : "Tu cuenta está pendiente de activación manual. Contacta al usuario con rol GOD para activarla y recibir instrucciones de pago."}
         </p>
         <div className="mt-6">
           <Link

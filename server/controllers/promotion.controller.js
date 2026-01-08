@@ -273,6 +273,7 @@ export const listPromotions = async (req, res) => {
     if (status) filter.status = status;
 
     const promotions = await Promotion.find(filter)
+      .populate("branches", "name")
       .sort({ createdAt: -1 })
       .lean();
 

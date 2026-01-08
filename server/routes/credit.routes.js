@@ -2,6 +2,7 @@ import express from "express";
 import {
   cancelCredit,
   createCredit,
+  deleteCredit,
   getCreditById,
   getCreditMetrics,
   getCredits,
@@ -176,8 +177,26 @@ router
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Credit'
+ *   delete:
+ *     summary: Eliminar un crédito
+ *     tags: [Credits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/BusinessId'
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Crédito eliminado
  */
-router.route("/:id").get(creditValidation.getById, admin, getCreditById);
+router
+  .route("/:id")
+  .get(creditValidation.getById, admin, getCreditById)
+  .delete(creditValidation.getById, admin, deleteCredit);
 
 /**
  * @swagger

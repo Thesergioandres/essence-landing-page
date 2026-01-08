@@ -51,7 +51,13 @@ const distributorStatsSchema = new mongoose.Schema(
       {
         type: {
           type: String,
-          enum: ["sales_target", "product_bonus", "top_performer", "streak", "custom"],
+          enum: [
+            "sales_target",
+            "product_bonus",
+            "top_performer",
+            "streak",
+            "custom",
+          ],
         },
         name: String,
         description: String,
@@ -88,9 +94,42 @@ const distributorStatsSchema = new mongoose.Schema(
       default: 0,
     },
 
+    // Estadísticas de créditos
+    totalCreditsGenerated: {
+      type: Number,
+      default: 0,
+    },
+    totalCreditsAmount: {
+      type: Number,
+      default: 0,
+    },
+    creditsCollected: {
+      type: Number,
+      default: 0,
+    },
+    creditsPending: {
+      type: Number,
+      default: 0,
+    },
+    creditsOverdue: {
+      type: Number,
+      default: 0,
+    },
+
+    // Estadísticas de promociones
+    promotionsUsed: {
+      type: Number,
+      default: 0,
+    },
+    promotionsValue: {
+      type: Number,
+      default: 0,
+    },
+
     // Última actualización
     lastSaleDate: Date,
     lastBonusDate: Date,
+    lastCreditDate: Date,
   },
   {
     timestamps: true,
@@ -102,6 +141,9 @@ distributorStatsSchema.index({ totalPoints: -1 });
 distributorStatsSchema.index({ totalRevenue: -1 });
 distributorStatsSchema.index({ distributor: 1 }, { unique: true });
 
-const DistributorStats = mongoose.model("DistributorStats", distributorStatsSchema);
+const DistributorStats = mongoose.model(
+  "DistributorStats",
+  distributorStatsSchema
+);
 
 export default DistributorStats;

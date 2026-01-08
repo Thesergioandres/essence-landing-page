@@ -1,9 +1,13 @@
 import express from "express";
 import {
+  approveWarranty,
   confirmDefectiveProduct,
+  deleteDefectiveReport,
   getAllDefectiveReports,
+  getDefectiveStats,
   getDistributorDefectiveReports,
   rejectDefectiveProduct,
+  rejectWarranty,
   reportDefectiveProduct,
   reportDefectiveProductAdmin,
   reportDefectiveProductBranch,
@@ -18,6 +22,13 @@ import {
 const router = express.Router();
 
 router.use(protect, businessContext, requireFeature("inventory"));
+
+// Estadísticas (debe ir antes de /:id)
+router.get(
+  "/stats",
+  requirePermission({ module: "inventory", action: "read" }),
+  getDefectiveStats
+);
 
 // Rutas para distribuidores
 router.post(
@@ -56,6 +67,25 @@ router.put(
   "/:id/reject",
   requirePermission({ module: "inventory", action: "update" }),
   rejectDefectiveProduct
+);
+
+// Rutas de garantía
+router.put(
+  "/:id/approve-warranty",
+  requirePermission({ module: "inventory", action: "update" }),
+  approveWarranty
+);
+router.put(
+  "/:id/reject-warranty",
+  requirePermission({ module: "inventory", action: "update" }),
+  rejectWarranty
+);
+
+// Eliminar reporte
+router.delete(
+  "/:id",
+  requirePermission({ module: "inventory", action: "delete" }),
+  deleteDefectiveReport
 );
 
 export default router;

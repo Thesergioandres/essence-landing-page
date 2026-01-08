@@ -27,19 +27,27 @@ export default function Products() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [stockFilter, setStockFilter] = useState<string>("");
 
   useEffect(() => {
     void loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, categoryFilter]);
+  }, [pagination.page, categoryFilter, sortBy, sortOrder, stockFilter]);
 
   const loadData = async () => {
     try {
       const filters: Record<string, string | boolean | number> = {
         page: pagination.page,
         limit: pagination.limit,
+        sortBy,
+        sortOrder,
       };
       if (categoryFilter) filters.category = categoryFilter;
+      if (search) filters.search = search;
+      if (stockFilter === "inStock") filters.inStock = true;
+      if (stockFilter === "outOfStock") filters.inStock = false;
 
       const productsKey = buildCacheKey("products:list", filters);
       const categoriesKey = buildCacheKey("categories:list");
@@ -142,18 +150,27 @@ export default function Products() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         <input
           type="search"
           value={search}
           onChange={event => setSearch(event.target.value)}
+          onKeyDown={event => {
+            if (event.key === "Enter") {
+              setPagination(prev => ({ ...prev, page: 1 }));
+              loadData();
+            }
+          }}
           placeholder="Buscar por nombre..."
           className="rounded-lg border border-gray-700 bg-gray-900/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
         />
 
         <select
           value={categoryFilter}
-          onChange={event => setCategoryFilter(event.target.value)}
+          onChange={event => {
+            setCategoryFilter(event.target.value);
+            setPagination(prev => ({ ...prev, page: 1 }));
+          }}
           className="rounded-lg border border-gray-700 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
         >
           <option value="">Todas las categorías</option>
@@ -164,12 +181,54 @@ export default function Products() {
           ))}
         </select>
 
+        <select
+          value={`${sortBy}-${sortOrder}`}
+          onChange={event => {
+            const [field, order] = event.target.value.split("-");
+            setSortBy(field);
+            setSortOrder(order as "asc" | "desc");
+            setPagination(prev => ({ ...prev, page: 1 }));
+          }}
+          className="rounded-lg border border-gray-700 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
+        >
+          <option value="createdAt-desc">Más recientes</option>
+          <option value="createdAt-asc">Más antiguos</option>
+          <option value="clientPrice-desc">Mayor precio</option>
+          <option value="clientPrice-asc">Menor precio</option>
+          <option value="totalStock-desc">Mayor stock</option>
+          <option value="totalStock-asc">Menor stock</option>
+          <option value="name-asc">Nombre A-Z</option>
+          <option value="name-desc">Nombre Z-A</option>
+        </select>
+
+        <select
+          value={stockFilter}
+          onChange={event => {
+            setStockFilter(event.target.value);
+            setPagination(prev => ({ ...prev, page: 1 }));
+          }}
+          className="rounded-lg border border-gray-700 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
+        >
+          <option value="">Todo el stock</option>
+          <option value="inStock">Con stock</option>
+          <option value="outOfStock">Sin stock</option>
+        </select>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-400">
+          {pagination.total} productos encontrados
+        </p>
         <button
           onClick={() => {
             setSearch("");
             setCategoryFilter("");
+            setSortBy("createdAt");
+            setSortOrder("desc");
+            setStockFilter("");
+            setPagination(prev => ({ ...prev, page: 1 }));
           }}
-          className="min-h-[44px] rounded-lg border border-gray-700 bg-gray-900/50 px-3 py-2.5 text-sm font-semibold text-gray-300 transition hover:border-purple-500 hover:text-white active:scale-95 sm:px-4 sm:py-3 sm:text-base"
+          className="min-h-[36px] rounded-lg border border-gray-700 bg-gray-900/50 px-3 py-1.5 text-sm font-semibold text-gray-300 transition hover:border-purple-500 hover:text-white active:scale-95"
         >
           Limpiar filtros
         </button>

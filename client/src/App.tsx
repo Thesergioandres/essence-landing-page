@@ -23,6 +23,7 @@ const LoginDistributor = lazy(() => import("./pages/LoginDistributor"));
 const LoginGod = lazy(() => import("./pages/LoginGod"));
 const Register = lazy(() => import("./pages/Register"));
 const BusinessSettings = lazy(() => import("./pages/BusinessSettings"));
+const CreateBusiness = lazy(() => import("./pages/CreateBusiness"));
 const UserSettings = lazy(() => import("./pages/UserSettings"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const GodPanel = lazy(() => import("./pages/GodPanel"));
@@ -40,7 +41,6 @@ const DistributorDetail = lazy(() => import("./pages/DistributorDetail"));
 const EditDistributor = lazy(() => import("./pages/EditDistributor"));
 const StockManagement = lazy(() => import("./pages/StockManagement"));
 const Sales = lazy(() => import("./pages/Sales"));
-const Analytics = lazy(() => import("./pages/Analytics"));
 const AuditLogs = lazy(() => import("./pages/AuditLogs"));
 const GamificationConfig = lazy(() => import("./pages/GamificationConfig"));
 const Rankings = lazy(() => import("./pages/Rankings"));
@@ -54,10 +54,13 @@ const ProfitHistory = lazy(() => import("./pages/ProfitHistory"));
 const Expenses = lazy(() => import("./pages/Expenses"));
 const BusinessAssistant = lazy(() => import("./pages/BusinessAssistant"));
 const Credits = lazy(() => import("./pages/Credits"));
+const CreditDetail = lazy(() => import("./pages/CreditDetail"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Providers = lazy(() => import("./pages/Providers"));
 const Promotions = lazy(() => import("./pages/Promotions"));
 const Customers = lazy(() => import("./pages/Customers"));
+const InventoryEntries = lazy(() => import("./pages/InventoryEntries"));
+const TeamManagement = lazy(() => import("./pages/TeamManagement"));
 
 // Distributor pages
 const DistributorDashboardLayout = lazy(
@@ -186,6 +189,14 @@ export default function App() {
             }
           />
           <Route
+            path="inventory-entries"
+            element={
+              <BusinessGate requiredFeature="inventory">
+                <InventoryEntries />
+              </BusinessGate>
+            }
+          />
+          <Route
             path="sales"
             element={
               <BusinessGate requiredFeature="sales">
@@ -221,17 +232,13 @@ export default function App() {
             path="analytics"
             element={
               <BusinessGate requiredFeature="reports">
-                <Analytics />
+                <AdvancedDashboard />
               </BusinessGate>
             }
           />
           <Route
             path="advanced-analytics"
-            element={
-              <BusinessGate requiredFeature="reports">
-                <AdvancedDashboard />
-              </BusinessGate>
-            }
+            element={<Navigate to="/admin/analytics" replace />}
           />
           <Route
             path="business-assistant"
@@ -242,7 +249,9 @@ export default function App() {
             }
           />
           <Route path="business-settings" element={<BusinessSettings />} />
+          <Route path="create-business" element={<CreateBusiness />} />
           <Route path="user-settings" element={<UserSettings />} />
+          <Route path="team" element={<TeamManagement />} />
           <Route
             path="audit-logs"
             element={
@@ -294,6 +303,14 @@ export default function App() {
             element={
               <BusinessGate>
                 <Credits />
+              </BusinessGate>
+            }
+          />
+          <Route
+            path="credits/:id"
+            element={
+              <BusinessGate>
+                <CreditDetail />
               </BusinessGate>
             }
           />

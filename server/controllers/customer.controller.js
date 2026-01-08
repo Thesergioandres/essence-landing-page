@@ -15,7 +15,7 @@ const recordAudit = async (req, entity, action, oldValues) => {
       userName: req.user?.name,
       userRole: req.user?.role,
       action,
-      module: "clients",
+      module: "customers",
       description: `${action} ${entity.name}`,
       entityType: "Customer",
       entityId: entity._id,
@@ -70,6 +70,9 @@ const assertUniqueContact = async ({ businessId, email, phone, excludeId }) => {
 export const createCustomer = async (req, res) => {
   try {
     const businessId = resolveBusinessId(req);
+    console.log("[DEBUG] createCustomer - businessId:", businessId);
+    console.log("[DEBUG] createCustomer - body:", req.body);
+
     if (!businessId) {
       return res.status(400).json({ message: "Falta x-business-id" });
     }
@@ -98,17 +101,25 @@ export const createCustomer = async (req, res) => {
       phone: payload.phone,
     });
 
-    const customer = await Customer.create({
+    // Construir el objeto del cliente, excluyendo email/phone si son undefined/null/vacíos
+    const customerData = {
       ...payload,
       business: businessId,
       createdBy: req.user?._id,
       updatedBy: req.user?._id,
-    });
+    };
+
+    // Eliminar email y phone si no tienen valor válido
+    if (!customerData.email) delete customerData.email;
+    if (!customerData.phone) delete customerData.phone;
+
+    const customer = await Customer.create(customerData);
 
     await recordAudit(req, customer, "customer_created");
 
     res.status(201).json({ customer });
   } catch (error) {
+    console.error("[ERROR] createCustomer:", error);
     const status = error?.statusCode || 500;
     res.status(status).json({ message: error.message });
   }
@@ -221,7 +232,12 @@ export const updateCustomer = async (req, res) => {
 
     for (const field of updatable) {
       if (field in incoming) {
-        customer[field] = incoming[field];
+        // Si email o phone son undefined/null/vacíos, eliminarlos del documento
+        if ((field === "email" || field === "phone") && !incoming[field]) {
+          customer[field] = undefined;
+        } else {
+          customer[field] = incoming[field];
+        }
       }
     }
 

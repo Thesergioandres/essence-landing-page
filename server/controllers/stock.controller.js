@@ -730,3 +730,79 @@ export const getTransferHistory = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Obtener bodegas/sedes permitidas para el distribuidor con su stock
+// @route   GET /api/stock/my-allowed-branches
+// @access  Private/Distributor
+export const getMyAllowedBranches = async (req, res) => {
+  try {
+    const businessId = resolveBusinessId(req);
+    const userId = req.user?.id;
+
+    if (!businessId) {
+      return res.status(400).json({ message: "Falta x-business-id" });
+    }
+
+    // Obtener membership del usuario para ver sus bodegas permitidas
+    const membership = await Membership.findOne({
+      user: userId,
+      business: businessId,
+      status: "active",
+    }).populate("allowedBranches", "name address isWarehouse active");
+
+    if (!membership) {
+      return res
+        .status(403)
+        .json({ message: "No tienes membresía activa en este negocio" });
+    }
+
+    const allowedBranches = membership.allowedBranches || [];
+
+    if (allowedBranches.length === 0) {
+      return res.json({
+        branches: [],
+        message: "No tienes bodegas asignadas",
+      });
+    }
+
+    // Obtener el stock de cada bodega permitida
+    const branchIds = allowedBranches.map((b) => b._id);
+
+    const branchStocks = await BranchStock.find({
+      business: businessId,
+      branch: { $in: branchIds },
+      quantity: { $gt: 0 },
+    })
+      .populate("product", "name image clientPrice distributorPrice")
+      .populate("branch", "name address isWarehouse")
+      .lean();
+
+    // Agrupar stock por bodega
+    const branchesWithStock = allowedBranches
+      .filter((branch) => branch.active !== false)
+      .map((branch) => {
+        const stockItems = branchStocks.filter(
+          (s) => s.branch?._id?.toString() === branch._id.toString()
+        );
+        return {
+          _id: branch._id,
+          name: branch.name,
+          address: branch.address,
+          isWarehouse: branch.isWarehouse,
+          stock: stockItems.map((s) => ({
+            product: s.product,
+            quantity: s.quantity,
+          })),
+          totalProducts: stockItems.length,
+          totalUnits: stockItems.reduce((acc, s) => acc + s.quantity, 0),
+        };
+      });
+
+    res.json({
+      branches: branchesWithStock,
+    });
+  } catch (error) {
+    console.error("Error al obtener bodegas permitidas:", error);
+    res.status(500).json({ message: error.message });
+  }
+};

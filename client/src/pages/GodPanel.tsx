@@ -9,60 +9,6 @@ interface DurationForm {
   years: number;
 }
 
-interface GodCreditStatusMetrics {
-  count: number;
-  totalAmount: number;
-  totalPaid: number;
-}
-
-interface GodMetrics {
-  users: {
-    total: number;
-    byStatus: Record<string, number>;
-    expiringSubscriptions: number;
-  };
-  businesses: {
-    total: number;
-    byStatus: Record<string, number>;
-    activeMemberships: number;
-  };
-  products: { total: number };
-  sales: {
-    total: number;
-    totalRevenue: number;
-    totalProfit: number;
-    avgSaleValue: number;
-  };
-  credits: {
-    pending: GodCreditStatusMetrics;
-    paid: GodCreditStatusMetrics;
-    overdue: GodCreditStatusMetrics;
-    totalOutstanding: number;
-  };
-  recentUsers: Array<{
-    _id: string;
-    name: string;
-    email: string;
-    role: string;
-    status: string;
-    createdAt: string;
-    subscriptionExpiresAt?: string;
-  }>;
-  recentBusinesses: Array<{
-    _id: string;
-    name: string;
-    status: string;
-    createdAt: string;
-  }>;
-  topBusinessesBySales: Array<{
-    businessId: string;
-    businessName: string;
-    salesCount: number;
-    totalRevenue: number;
-    totalProfit: number;
-  }>;
-}
-
 type ActionKey =
   | "activate"
   | "extend"
@@ -113,24 +59,7 @@ export default function GodPanel() {
   const [issueAction, setIssueAction] = useState<string | null>(null);
   const [confirmUser, setConfirmUser] = useState<User | null>(null);
 
-  // Métricas globales del sistema
-  const [metrics, setMetrics] = useState<GodMetrics | null>(null);
-  const [metricsLoading, setMetricsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"metrics" | "users" | "issues">(
-    "metrics"
-  );
-
-  const loadMetrics = async () => {
-    setMetricsLoading(true);
-    try {
-      const res = await userAccessService.getGlobalMetrics();
-      setMetrics(res.metrics);
-    } catch (err) {
-      console.error("god panel metrics error", err);
-    } finally {
-      setMetricsLoading(false);
-    }
-  };
+  const [activeTab, setActiveTab] = useState<"users" | "issues">("users");
 
   const loadIssues = async (
     status: "all" | "open" | "reviewing" | "closed" = "open"
@@ -183,7 +112,6 @@ export default function GodPanel() {
     };
 
     load();
-    void loadMetrics();
   }, [currentUser?.role, navigate]);
 
   useEffect(() => {
@@ -300,10 +228,10 @@ export default function GodPanel() {
               Modo GOD
             </p>
             <h1 className="text-2xl font-bold sm:text-3xl">
-              Panel de Control Global
+              Panel de Administración
             </h1>
             <p className="mt-1 text-sm text-gray-300">
-              Métricas del sistema, gestión de usuarios y reportes.
+              Gestión de usuarios y reportes de fallos del sistema.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -323,7 +251,6 @@ export default function GodPanel() {
                 try {
                   const data = await userAccessService.list();
                   setUsers(data.filter(u => u.role === "super_admin"));
-                  await loadMetrics();
                   setFeedback("Datos actualizados");
                 } catch (err) {
                   console.error("god panel refresh error", err);
@@ -351,9 +278,8 @@ export default function GodPanel() {
         {/* Tabs de navegación */}
         <div className="flex gap-2 rounded-lg border border-white/10 bg-white/5 p-1">
           {[
-            { key: "metrics", label: "📊 Métricas Globales" },
             { key: "users", label: "👥 Usuarios" },
-            { key: "issues", label: "🐛 Reportes" },
+            { key: "issues", label: "🐛 Reportes de Fallos" },
           ].map(tab => (
             <button
               key={tab.key}
@@ -368,293 +294,6 @@ export default function GodPanel() {
             </button>
           ))}
         </div>
-
-        {/* Tab: Métricas Globales */}
-        {activeTab === "metrics" && (
-          <div className="space-y-6">
-            {metricsLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-pulse text-gray-400">
-                  Cargando métricas...
-                </div>
-              </div>
-            ) : metrics ? (
-              <>
-                {/* Tarjetas principales */}
-                <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-xl border border-white/10 bg-gradient-to-br from-blue-500/20 to-blue-700/10 px-4 py-4 shadow-lg">
-                    <p className="text-xs uppercase tracking-widest text-blue-200/80">
-                      Total Usuarios
-                    </p>
-                    <p className="mt-1 text-3xl font-bold">
-                      {metrics.users.total}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {metrics.users.expiringSubscriptions} por expirar
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-gradient-to-br from-purple-500/20 to-purple-700/10 px-4 py-4 shadow-lg">
-                    <p className="text-xs uppercase tracking-widest text-purple-200/80">
-                      Total Negocios
-                    </p>
-                    <p className="mt-1 text-3xl font-bold">
-                      {metrics.businesses.total}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {metrics.businesses.activeMemberships} memberships
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-gradient-to-br from-green-500/20 to-green-700/10 px-4 py-4 shadow-lg">
-                    <p className="text-xs uppercase tracking-widest text-green-200/80">
-                      Total Ventas
-                    </p>
-                    <p className="mt-1 text-3xl font-bold">
-                      {metrics.sales.total.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      $
-                      {metrics.sales.totalRevenue.toLocaleString(undefined, {
-                        maximumFractionDigits: 0,
-                      })}{" "}
-                      ingresos
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-gradient-to-br from-amber-500/20 to-amber-700/10 px-4 py-4 shadow-lg">
-                    <p className="text-xs uppercase tracking-widest text-amber-200/80">
-                      Productos
-                    </p>
-                    <p className="mt-1 text-3xl font-bold">
-                      {metrics.products.total}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      En el catálogo global
-                    </p>
-                  </div>
-                </section>
-
-                {/* Métricas de ventas y créditos */}
-                <section className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-emerald-300">
-                      📈 Resumen de Ventas
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs text-gray-400">
-                          Ingresos Totales
-                        </p>
-                        <p className="text-xl font-bold text-emerald-400">
-                          $
-                          {metrics.sales.totalRevenue.toLocaleString(
-                            undefined,
-                            { maximumFractionDigits: 0 }
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">
-                          Ganancias Totales
-                        </p>
-                        <p className="text-xl font-bold text-emerald-400">
-                          $
-                          {metrics.sales.totalProfit.toLocaleString(undefined, {
-                            maximumFractionDigits: 0,
-                          })}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Venta Promedio</p>
-                        <p className="text-xl font-bold">
-                          $
-                          {metrics.sales.avgSaleValue.toLocaleString(
-                            undefined,
-                            { maximumFractionDigits: 0 }
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">
-                          Total Transacciones
-                        </p>
-                        <p className="text-xl font-bold">
-                          {metrics.sales.total.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-amber-300">
-                      💳 Créditos (Fiado)
-                    </h3>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <p className="text-xs text-gray-400">Pendientes</p>
-                        <p className="text-lg font-bold text-amber-400">
-                          {metrics.credits.pending.count}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          $
-                          {metrics.credits.pending.totalAmount.toLocaleString(
-                            undefined,
-                            { maximumFractionDigits: 0 }
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Pagados</p>
-                        <p className="text-lg font-bold text-green-400">
-                          {metrics.credits.paid.count}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          $
-                          {metrics.credits.paid.totalAmount.toLocaleString(
-                            undefined,
-                            { maximumFractionDigits: 0 }
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Vencidos</p>
-                        <p className="text-lg font-bold text-red-400">
-                          {metrics.credits.overdue.count}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          $
-                          {metrics.credits.overdue.totalAmount.toLocaleString(
-                            undefined,
-                            { maximumFractionDigits: 0 }
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-4 border-t border-white/10 pt-3">
-                      <p className="text-xs text-gray-400">
-                        Deuda Total Pendiente
-                      </p>
-                      <p className="text-2xl font-bold text-red-400">
-                        $
-                        {metrics.credits.totalOutstanding.toLocaleString(
-                          undefined,
-                          { maximumFractionDigits: 0 }
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Top negocios por ventas */}
-                {metrics.topBusinessesBySales.length > 0 && (
-                  <section className="rounded-xl border border-white/10 bg-white/5 p-5">
-                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-purple-300">
-                      🏆 Top Negocios por Ventas
-                    </h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-white/10 text-left text-xs uppercase text-gray-400">
-                            <th className="pb-2">#</th>
-                            <th className="pb-2">Negocio</th>
-                            <th className="pb-2 text-right">Ventas</th>
-                            <th className="pb-2 text-right">Ingresos</th>
-                            <th className="pb-2 text-right">Ganancias</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {metrics.topBusinessesBySales.map((biz, idx) => (
-                            <tr
-                              key={biz.businessId}
-                              className="border-b border-white/5"
-                            >
-                              <td className="py-2 text-gray-400">{idx + 1}</td>
-                              <td className="py-2 font-medium">
-                                {biz.businessName}
-                              </td>
-                              <td className="py-2 text-right">
-                                {biz.salesCount.toLocaleString()}
-                              </td>
-                              <td className="py-2 text-right text-green-400">
-                                $
-                                {biz.totalRevenue.toLocaleString(undefined, {
-                                  maximumFractionDigits: 0,
-                                })}
-                              </td>
-                              <td className="py-2 text-right text-emerald-400">
-                                $
-                                {biz.totalProfit.toLocaleString(undefined, {
-                                  maximumFractionDigits: 0,
-                                })}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </section>
-                )}
-
-                {/* Usuarios y negocios recientes */}
-                <section className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-blue-300">
-                      👤 Usuarios Recientes
-                    </h3>
-                    <div className="max-h-60 space-y-2 overflow-y-auto">
-                      {metrics.recentUsers.map(user => (
-                        <div
-                          key={user._id}
-                          className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm"
-                        >
-                          <div>
-                            <p className="font-medium">{user.name}</p>
-                            <p className="text-xs text-gray-400">
-                              {user.email}
-                            </p>
-                          </div>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs ${statusBadgeStyles[user.status] || "bg-gray-500/20 text-gray-300"}`}
-                          >
-                            {user.status}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-purple-300">
-                      🏢 Negocios Recientes
-                    </h3>
-                    <div className="max-h-60 space-y-2 overflow-y-auto">
-                      {metrics.recentBusinesses.map(biz => (
-                        <div
-                          key={biz._id}
-                          className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm"
-                        >
-                          <div>
-                            <p className="font-medium">{biz.name}</p>
-                            <p className="text-xs text-gray-400">
-                              {new Date(biz.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs ${biz.status === "active" ? "bg-green-500/20 text-green-300" : "bg-gray-500/20 text-gray-300"}`}
-                          >
-                            {biz.status}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-              </>
-            ) : (
-              <div className="py-8 text-center text-gray-400">
-                No se pudieron cargar las métricas
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Tab: Usuarios (contenido existente) */}
         {activeTab === "users" && (

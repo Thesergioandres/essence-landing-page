@@ -9,6 +9,7 @@ import {
 } from "../api/services";
 import { Button } from "../components/Button";
 import PointsRedemption from "../components/PointsRedemption";
+import ProductSelector from "../components/ProductSelector";
 import { useBusiness } from "../context/BusinessContext";
 import type { Branch, Customer, Product } from "../types";
 
@@ -29,6 +30,10 @@ interface FormState {
   notes: string;
   saleDate: string;
   branchId: string;
+  paymentType: "cash" | "credit";
+  customerId: string;
+  creditDueDate: string;
+  initialPayment: number;
 }
 
 export default function AdminRegisterSale() {
@@ -53,6 +58,10 @@ export default function AdminRegisterSale() {
     notes: "",
     saleDate: new Date().toISOString().slice(0, 10),
     branchId: "",
+    paymentType: "cash",
+    customerId: "",
+    creditDueDate: "",
+    initialPayment: 0,
   });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
@@ -102,11 +111,13 @@ export default function AdminRegisterSale() {
     if (!customerId) {
       setSelectedCustomer(null);
       setPointsToRedeem(0);
+      setFormData(prev => ({ ...prev, customerId: "" }));
       return;
     }
     const customer = customers.find(c => c._id === customerId);
     setSelectedCustomer(customer || null);
     setPointsToRedeem(0);
+    setFormData(prev => ({ ...prev, customerId }));
   };
 
   const handlePointsRedemption = (data: {
@@ -191,6 +202,16 @@ export default function AdminRegisterSale() {
     setSaleItems(prev => prev.filter(item => item.id !== id));
   };
 
+  const handleUpdateItem = (
+    id: string,
+    field: "salePrice" | "quantity",
+    value: number
+  ) => {
+    setSaleItems(prev =>
+      prev.map(item => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -201,9 +222,16 @@ export default function AdminRegisterSale() {
       return;
     }
 
-    if (saleItems.length === 0) {
-      setError("Agrega al menos un producto al pedido");
-      return;
+    // Validar campos de crédito
+    if (formData.paymentType === "credit") {
+      if (!formData.customerId) {
+        setError("Debes seleccionar un cliente para ventas a crédito");
+        return;
+      }
+      if (!formData.creditDueDate) {
+        setError("Debes indicar la fecha de vencimiento del crédito");
+        return;
+      }
     }
 
     try {
@@ -225,6 +253,19 @@ export default function AdminRegisterSale() {
             branchId: formData.branchId || undefined,
             notes: formData.notes,
             saleDate: formData.saleDate,
+            paymentType: formData.paymentType,
+            customerId:
+              formData.paymentType === "credit"
+                ? formData.customerId
+                : undefined,
+            creditDueDate:
+              formData.paymentType === "credit"
+                ? formData.creditDueDate
+                : undefined,
+            initialPayment:
+              formData.paymentType === "credit" && formData.initialPayment > 0
+                ? formData.initialPayment
+                : undefined,
           });
         } else {
           await saleService.register({
@@ -248,6 +289,10 @@ export default function AdminRegisterSale() {
         productId: "",
         quantity: 1,
         salePrice: 0,
+        paymentType: "cash",
+        customerId: "",
+        creditDueDate: "",
+        initialPayment: 0,
         notes: "",
         saleDate: new Date().toISOString().slice(0, 10),
         branchId: formData.branchId,
@@ -340,22 +385,14 @@ export default function AdminRegisterSale() {
                   >
                     Producto *
                   </label>
-                  <select
-                    id="productId"
-                    name="productId"
+                  <ProductSelector
                     value={formData.productId}
-                    onChange={e => handleProductChange(e.target.value)}
-                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Selecciona un producto</option>
-                    {products.map(product => (
-                      <option key={product._id} value={product._id}>
-                        {product.name} | Compra:{" "}
-                        {formatCurrency(product.purchasePrice)} | Cliente:{" "}
-                        {formatCurrency(product.clientPrice || 0)}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(productId, _product) => {
+                      handleProductChange(productId);
+                    }}
+                    placeholder="Buscar producto..."
+                    showStock={true}
+                  />
                 </div>
                 {selectedProduct && (
                   <div className="rounded-lg border border-blue-500/30 bg-blue-900/10 p-4">
@@ -458,13 +495,35 @@ export default function AdminRegisterSale() {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
                         <p className="text-gray-400">Cantidad:</p>
-                        <p className="text-white">{item.quantity} uds</p>
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={e =>
+                            handleUpdateItem(
+                              item.id,
+                              "quantity",
+                              Number(e.target.value) || 1
+                            )
+                          }
+                          className="w-full rounded border border-gray-600 bg-gray-800 px-2 py-1 text-white focus:border-purple-500 focus:outline-none"
+                        />
                       </div>
                       <div>
                         <p className="text-gray-400">Precio unit:</p>
-                        <p className="text-white">
-                          {formatCurrency(item.salePrice)}
-                        </p>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.salePrice}
+                          onChange={e =>
+                            handleUpdateItem(
+                              item.id,
+                              "salePrice",
+                              Number(e.target.value) || 0
+                            )
+                          }
+                          className="w-full rounded border border-gray-600 bg-gray-800 px-2 py-1 text-white focus:border-purple-500 focus:outline-none"
+                        />
                       </div>
                       <div>
                         <p className="text-gray-400">Subtotal:</p>
@@ -585,6 +644,25 @@ export default function AdminRegisterSale() {
               </div>
               <div>
                 <label
+                  htmlFor="paymentType"
+                  className="mb-2 block text-sm font-medium text-gray-300"
+                >
+                  Tipo de Pago *
+                </label>
+                <select
+                  id="paymentType"
+                  name="paymentType"
+                  value={formData.paymentType}
+                  onChange={handleChange}
+                  required
+                  className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="cash">Contado (Efectivo/Transferencia)</option>
+                  <option value="credit">A Crédito (Fiado)</option>
+                </select>
+              </div>
+              <div>
+                <label
                   htmlFor="notes"
                   className="mb-2 block text-sm font-medium text-gray-300"
                 >
@@ -600,29 +678,130 @@ export default function AdminRegisterSale() {
                   placeholder="Cliente, método de pago, etc."
                 />
               </div>
-              <div>
-                <label
-                  htmlFor="customerId"
-                  className="mb-2 block text-sm font-medium text-gray-300"
-                >
-                  Cliente (opcional - para acumular/canjear puntos)
-                </label>
-                <select
-                  id="customerId"
-                  value={selectedCustomer?._id || ""}
-                  onChange={e => handleCustomerChange(e.target.value)}
-                  className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Sin cliente asociado</option>
-                  {customers.map(customer => (
-                    <option key={customer._id} value={customer._id}>
-                      {customer.name}{" "}
-                      {customer.phone ? `(${customer.phone})` : ""} -{" "}
-                      {customer.points || 0} pts
-                    </option>
-                  ))}
-                </select>
+            </div>
+
+            {/* Campos de crédito (solo si es a crédito) */}
+            {formData.paymentType === "credit" && (
+              <div className="mt-4 rounded-lg border border-orange-500/30 bg-orange-900/10 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-orange-400">
+                  ⚠️ Información de Crédito
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="creditCustomerId"
+                      className="mb-2 block text-sm font-medium text-gray-300"
+                    >
+                      Cliente * (Requerido para crédito)
+                    </label>
+                    <select
+                      id="creditCustomerId"
+                      value={formData.customerId}
+                      onChange={e => {
+                        handleCustomerChange(e.target.value);
+                      }}
+                      required={formData.paymentType === "credit"}
+                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="">Selecciona un cliente</option>
+                      {customers.map(customer => (
+                        <option key={customer._id} value={customer._id}>
+                          {customer.name}
+                          {customer.phone && ` - ${customer.phone}`}
+                          {customer.totalDebt && customer.totalDebt > 0
+                            ? ` (Deuda: ${formatCurrency(customer.totalDebt)})`
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="creditDueDate"
+                      className="mb-2 block text-sm font-medium text-gray-300"
+                    >
+                      Fecha de vencimiento *
+                    </label>
+                    <input
+                      type="date"
+                      id="creditDueDate"
+                      name="creditDueDate"
+                      value={formData.creditDueDate}
+                      onChange={handleChange}
+                      required={formData.paymentType === "credit"}
+                      min={new Date().toISOString().split("T")[0]}
+                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label
+                      htmlFor="initialPayment"
+                      className="mb-2 block text-sm font-medium text-gray-300"
+                    >
+                      Abono inicial (opcional)
+                    </label>
+                    <input
+                      type="number"
+                      id="initialPayment"
+                      name="initialPayment"
+                      value={formData.initialPayment}
+                      onChange={handleChange}
+                      min="0"
+                      step="100"
+                      placeholder="0"
+                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                    <p className="mt-1 text-xs text-gray-400">
+                      Si el cliente realizó un pago parcial al momento de la
+                      venta (máx: {formatCurrency(totals.totalSale)})
+                    </p>
+                    {formData.paymentType === "credit" && (
+                      <div className="mt-2 rounded-lg border border-orange-500/30 bg-orange-900/20 px-3 py-2">
+                        <p className="text-sm font-semibold text-orange-300">
+                          💳 Monto del crédito a crear:{" "}
+                          {formatCurrency(
+                            totals.totalSale - (formData.initialPayment || 0)
+                          )}
+                        </p>
+                        <p className="text-xs text-orange-400/80">
+                          Total: {formatCurrency(totals.totalSale)} - Abono:{" "}
+                          {formatCurrency(formData.initialPayment || 0)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
+            )}
+
+            <div className="grid gap-4 md:grid-cols-1">
+              {formData.paymentType === "cash" && (
+                <div>
+                  <label
+                    htmlFor="customerId"
+                    className="mb-2 block text-sm font-medium text-gray-300"
+                  >
+                    Cliente (opcional - para acumular/canjear puntos)
+                  </label>
+                  <select
+                    id="customerId"
+                    value={selectedCustomer?._id || ""}
+                    onChange={e => handleCustomerChange(e.target.value)}
+                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Sin cliente asociado</option>
+                    {customers.map(customer => (
+                      <option key={customer._id} value={customer._id}>
+                        {customer.name}{" "}
+                        {customer.phone ? `(${customer.phone})` : ""} -{" "}
+                        {customer.points || 0} pts
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Sección de puntos si hay cliente seleccionado */}

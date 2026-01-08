@@ -37,6 +37,12 @@ const defaultFeatures: BusinessFeatures = {
   assistant: false,
   reports: true,
   transfers: true,
+  distributors: true,
+  rankings: true,
+  branches: true,
+  credits: true,
+  customers: true,
+  defectiveProducts: true,
 };
 
 export function BusinessProvider({ children }: { children: ReactNode }) {

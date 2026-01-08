@@ -5,6 +5,7 @@ import {
   getBranchStock,
   getBranchStockAlerts,
   getDistributorStock,
+  getMyAllowedBranches,
   getStockAlerts,
   getTransferHistory,
   transferStockBetweenDistributors,
@@ -83,6 +84,12 @@ router.get(
 ); // Historial de transferencias
 
 // Rutas para distribuidor
+router.get(
+  "/my-allowed-branches",
+  protect,
+  businessContext,
+  getMyAllowedBranches
+);
 router.get(
   "/distributor/:distributorId",
   protect,

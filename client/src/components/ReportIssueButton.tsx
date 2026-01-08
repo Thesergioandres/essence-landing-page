@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { authService } from "../api/services";
 import { useErrorReporter } from "../hooks/useErrorReporter";
 
 export default function ReportIssueButton() {
@@ -32,18 +31,14 @@ export default function ReportIssueButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className={`fixed z-50 rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-900/40 transition hover:from-purple-700 hover:to-fuchsia-700 focus:outline-none focus:ring-2 focus:ring-purple-400 ${
-          authService.getCurrentUser()?.role === "god"
-            ? "bottom-20 right-4"
-            : "bottom-4 right-4"
-        }`}
+        className="fixed bottom-4 right-4 z-[45] rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-900/40 transition hover:from-purple-700 hover:to-fuchsia-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
         aria-label="Reportar un problema"
       >
         Reportar problema
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0f1018] p-6 text-white shadow-2xl">
             <div className="flex items-center justify-between">
               <div>

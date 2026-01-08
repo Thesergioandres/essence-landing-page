@@ -18,46 +18,49 @@ import {
 
 const router = express.Router();
 
-router.use(protect, businessContext, requireFeature("clients"));
+router.use(protect, businessContext, requireFeature("customers"));
 
 router
   .route("/")
   .post(
-    requirePermission({ module: "clients", action: "create" }),
+    requirePermission({ module: "customers", action: "create" }),
     createCustomer
   )
-  .get(requirePermission({ module: "clients", action: "read" }), listCustomers);
+  .get(
+    requirePermission({ module: "customers", action: "read" }),
+    listCustomers
+  );
 
 router.get(
   "/stats",
-  requirePermission({ module: "clients", action: "read" }),
+  requirePermission({ module: "customers", action: "read" }),
   customerStats
 );
 
 router.get(
   "/rfm",
-  requirePermission({ module: "clients", action: "read" }),
+  requirePermission({ module: "customers", action: "read" }),
   customerRFM
 );
 
 router
   .route("/:id")
   .get(
-    requirePermission({ module: "clients", action: "read" }),
+    requirePermission({ module: "customers", action: "read" }),
     getCustomerById
   )
   .put(
-    requirePermission({ module: "clients", action: "update" }),
+    requirePermission({ module: "customers", action: "update" }),
     updateCustomer
   )
   .delete(
-    requirePermission({ module: "clients", action: "delete" }),
+    requirePermission({ module: "customers", action: "delete" }),
     deleteCustomer
   );
 
 router.post(
   "/:id/points",
-  requirePermission({ module: "clients", action: "update" }),
+  requirePermission({ module: "customers", action: "update" }),
   adjustPoints
 );
 

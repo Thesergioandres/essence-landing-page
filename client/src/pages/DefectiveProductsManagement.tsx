@@ -142,6 +142,25 @@ export default function DefectiveProductsManagement() {
     }
   };
 
+  const handleCancelReport = async (report: DefectiveProduct) => {
+    const confirmCancel = window.confirm(
+      `¿Estás seguro de cancelar este reporte?\n\nEl stock de "${typeof report.product === "object" ? report.product.name : "producto"}" (${report.quantity} unidades) será restaurado al inventario.`
+    );
+
+    if (!confirmCancel) return;
+
+    try {
+      setProcessingId(report._id);
+      await defectiveProductService.delete(report._id);
+      await loadReports();
+    } catch (error: any) {
+      console.error("Error al cancelar reporte:", error);
+      alert(error.response?.data?.message || "Error al cancelar el reporte");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const handleReportFromInventory = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -480,14 +499,42 @@ export default function DefectiveProductsManagement() {
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400">
-                          {report.status === "confirmado"
-                            ? "Confirmado"
-                            : "Rechazado"}{" "}
-                          el{" "}
-                          {report.confirmedAt &&
-                            new Date(report.confirmedAt).toLocaleDateString()}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-gray-400">
+                            {report.status === "confirmado"
+                              ? "Confirmado"
+                              : "Rechazado"}{" "}
+                            el{" "}
+                            {report.confirmedAt &&
+                              new Date(report.confirmedAt).toLocaleDateString()}
+                          </span>
+                          <button
+                            onClick={() => handleCancelReport(report)}
+                            disabled={processingId === report._id}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-orange-400 hover:text-orange-300 disabled:opacity-50"
+                          >
+                            {processingId === report._id ? (
+                              "Cancelando..."
+                            ) : (
+                              <>
+                                <svg
+                                  className="h-3.5 w-3.5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                                  />
+                                </svg>
+                                Cancelar y restaurar stock
+                              </>
+                            )}
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>

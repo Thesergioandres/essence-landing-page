@@ -18,7 +18,18 @@ const resolveBusinessId = (req) =>
 // @access  Public
 export const getProducts = async (req, res) => {
   try {
-    const { category, featured, page = 1, limit = 20 } = req.query;
+    const {
+      category,
+      featured,
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      minPrice,
+      maxPrice,
+      inStock,
+      search,
+    } = req.query;
     const businessId = resolveBusinessId(req);
 
     if (!businessId) {
@@ -30,14 +41,46 @@ export const getProducts = async (req, res) => {
     if (category) filter.category = category;
     if (featured) filter.featured = featured === "true";
 
+    // Filtro de stock
+    if (inStock === "true") {
+      filter.totalStock = { $gt: 0 };
+    } else if (inStock === "false") {
+      filter.totalStock = { $lte: 0 };
+    }
+
+    // Filtro de precio
+    if (minPrice || maxPrice) {
+      filter.clientPrice = {};
+      if (minPrice) filter.clientPrice.$gte = Number(minPrice);
+      if (maxPrice) filter.clientPrice.$lte = Number(maxPrice);
+    }
+
+    // Búsqueda por nombre
+    if (search) {
+      filter.name = { $regex: search, $options: "i" };
+    }
+
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
+    // Configurar ordenamiento
+    const validSortFields = [
+      "createdAt",
+      "name",
+      "clientPrice",
+      "purchasePrice",
+      "totalStock",
+      "warehouseStock",
+    ];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
+    const sortDirection = sortOrder === "asc" ? 1 : -1;
+    const sortConfig = { [sortField]: sortDirection };
+
     const [products, total] = await Promise.all([
       Product.find(filter)
         .populate("category", "name slug")
-        .sort({ createdAt: -1 })
+        .sort(sortConfig)
         .skip(skip)
         .limit(limitNum)
         .lean(),
@@ -493,6 +536,78 @@ export const getDistributorCatalog = async (req, res) => {
     res.json(products);
   } catch (error) {
     console.error("❌ Error en getDistributorCatalog:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Inicializar costo promedio en productos existentes
+// @route   POST /api/products/initialize-average-cost
+// @access  Private/Admin
+export const initializeAverageCost = async (req, res) => {
+  try {
+    const businessId = resolveBusinessId(req);
+    if (!businessId) {
+      return res.status(400).json({ message: "Falta x-business-id" });
+    }
+
+    // Buscar productos sin averageCost inicializado o con valor 0
+    const products = await Product.find({
+      business: businessId,
+      $or: [
+        { averageCost: { $exists: false } },
+        { averageCost: null },
+        { averageCost: 0 },
+      ],
+    });
+
+    let updatedCount = 0;
+    const updates = [];
+
+    for (const product of products) {
+      // Inicializar averageCost con purchasePrice
+      const averageCost = product.purchasePrice || 0;
+      const totalStock = product.totalStock || 0;
+      const totalInventoryValue = totalStock * averageCost;
+
+      product.averageCost = averageCost;
+      product.totalInventoryValue = totalInventoryValue;
+      product.lastCostUpdate = new Date();
+      product.costingMethod = product.costingMethod || "average";
+
+      await product.save();
+      updatedCount++;
+
+      updates.push({
+        _id: product._id,
+        name: product.name,
+        purchasePrice: product.purchasePrice,
+        averageCost: averageCost,
+        totalStock: totalStock,
+        totalInventoryValue: totalInventoryValue,
+      });
+    }
+
+    // Registrar en auditoría
+    await AuditService.log({
+      user: req.user,
+      action: "initialize_average_cost",
+      module: "products",
+      description: `Inicializados costos promedio de ${updatedCount} productos`,
+      business: businessId,
+      req,
+      metadata: {
+        updatedCount,
+        totalProducts: products.length,
+      },
+    });
+
+    res.json({
+      message: `Se inicializaron los costos promedio de ${updatedCount} productos`,
+      updatedCount,
+      updates,
+    });
+  } catch (error) {
+    console.error("❌ Error inicializando costos promedio:", error);
     res.status(500).json({ message: error.message });
   }
 };

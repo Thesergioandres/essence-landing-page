@@ -7,6 +7,7 @@ import {
   getDistributorPrice,
   getProduct,
   getProducts,
+  initializeAverageCost,
   updateProduct,
 } from "../controllers/product.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
@@ -49,6 +50,16 @@ router.get(
   requireFeature("products"),
   requirePermission({ module: "products", action: "read" }),
   getDistributorCatalog
+);
+
+// Inicializar costos promedio (debe ir ANTES de las rutas con parámetros)
+router.post(
+  "/initialize-average-cost",
+  protect,
+  businessContext,
+  requireFeature("products"),
+  requirePermission({ module: "products", action: "update" }),
+  initializeAverageCost
 );
 
 /**

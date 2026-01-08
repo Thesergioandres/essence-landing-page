@@ -356,6 +356,13 @@ export const userAccessService = {
   },
 };
 
+export const userService = {
+  async findByEmail(email: string): Promise<User> {
+    const response = await api.get<{ user: User }>(`/users/find/${email}`);
+    return response.data.user;
+  },
+};
+
 export const businessService = {
   async create(payload: {
     name: string;
@@ -428,6 +435,56 @@ export const businessService = {
       `/business/${businessId}/members`
     );
     return response.data.members || [];
+  },
+
+  async updateMemberBranches(
+    businessId: string,
+    membershipId: string,
+    allowedBranches: string[]
+  ): Promise<{ membership: Membership }> {
+    const response = await api.patch<{ membership: Membership }>(
+      `/business/${businessId}/members/${membershipId}`,
+      { allowedBranches }
+    );
+    return response.data;
+  },
+
+  async addMember(
+    businessId: string,
+    payload: {
+      userId: string;
+      role: "admin" | "distribuidor" | "viewer";
+      permissions?: Record<string, unknown>;
+      allowedBranches?: string[];
+    }
+  ): Promise<{ membership: Membership }> {
+    const response = await api.post<{ membership: Membership }>(
+      `/business/${businessId}/members`,
+      payload
+    );
+    return response.data;
+  },
+
+  async updateMemberPermissions(
+    businessId: string,
+    membershipId: string,
+    permissions: Record<string, unknown>
+  ): Promise<{ membership: Membership }> {
+    const response = await api.patch<{ membership: Membership }>(
+      `/business/${businessId}/members/${membershipId}`,
+      { permissions }
+    );
+    return response.data;
+  },
+
+  async removeMember(
+    businessId: string,
+    membershipId: string
+  ): Promise<{ message: string }> {
+    const response = await api.delete<{ message: string }>(
+      `/business/${businessId}/members/${membershipId}`
+    );
+    return response.data;
   },
 };
 
@@ -609,6 +666,22 @@ export const productService = {
         ? response.data
         : response.data.data || [],
     };
+  },
+
+  async initializeAverageCost(): Promise<{
+    message: string;
+    updatedCount: number;
+    updates: Array<{
+      _id: string;
+      name: string;
+      purchasePrice: number;
+      averageCost: number;
+      totalStock: number;
+      totalInventoryValue: number;
+    }>;
+  }> {
+    const response = await api.post("/products/initialize-average-cost");
+    return response.data;
   },
 };
 
@@ -918,6 +991,31 @@ export const stockService = {
     const response = await api.get("/stock/transfers", { params });
     return response.data;
   },
+
+  async getMyAllowedBranches(): Promise<{
+    branches: Array<{
+      _id: string;
+      name: string;
+      address?: string;
+      isWarehouse?: boolean;
+      stock: Array<{
+        product: {
+          _id: string;
+          name: string;
+          image?: string;
+          clientPrice?: number;
+          distributorPrice?: number;
+        };
+        quantity: number;
+      }>;
+      totalProducts: number;
+      totalUnits: number;
+    }>;
+    message?: string;
+  }> {
+    const response = await api.get("/stock/my-allowed-branches");
+    return response.data;
+  },
 };
 
 // ==================== BRANCH SERVICE ====================
@@ -1006,6 +1104,10 @@ export const saleService = {
     branchId?: string;
     notes?: string;
     saleDate?: string;
+    paymentType?: string;
+    customerId?: string;
+    creditDueDate?: string;
+    initialPayment?: number;
   }): Promise<{
     message: string;
     sale: Sale;
@@ -1204,6 +1306,26 @@ export const defectiveProductService = {
     const response = await api.put(`/defective-products/${reportId}/reject`, {
       adminNotes,
     });
+    return response.data;
+  },
+
+  async delete(reportId: string): Promise<{
+    message: string;
+    restoredQuantity: number;
+    restoredTo: string;
+  }> {
+    const response = await api.delete(`/defective-products/${reportId}`);
+    return response.data;
+  },
+
+  async getStats(): Promise<{
+    totalReports: number;
+    totalQuantity: number;
+    totalLoss: number;
+    byStatus: { status: string; count: number; quantity: number }[];
+    warrantyStats: { status: string; count: number }[];
+  }> {
+    const response = await api.get("/defective-products/stats");
     return response.data;
   },
 };
@@ -2015,6 +2137,11 @@ export const creditService = {
     return response.data;
   },
 
+  async delete(creditId: string): Promise<{ message: string }> {
+    const response = await api.delete(`/credits/${creditId}`);
+    return response.data;
+  },
+
   async getMetrics(params?: {
     branchId?: string;
     startDate?: string;
@@ -2092,6 +2219,434 @@ export const notificationService = {
     const response = await api.delete("/notifications/cleanup", {
       params: { daysOld },
     });
+    return response.data;
+  },
+};
+
+// ==================== PROMOTION SERVICE ====================
+interface Promotion {
+  _id: string;
+  name: string;
+  description?: string;
+  type: "bogo" | "discount" | "combo" | "volume" | "event";
+  discountType?: "percentage" | "fixed";
+  discountValue?: number;
+  minQuantity?: number;
+  maxUses?: number;
+  currentUses?: number;
+  startDate?: string;
+  endDate?: string;
+  isActive: boolean;
+  applicableProducts?: { _id: string; name: string }[];
+  branches?: { _id: string; name: string }[];
+  createdAt: string;
+}
+
+export const promotionService = {
+  async getAll(params?: {
+    status?: string;
+    type?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    promotions: Promotion[];
+    pagination?: { page: number; limit: number; total: number; pages: number };
+  }> {
+    const response = await api.get("/promotions", { params });
+    return response.data;
+  },
+
+  async getById(id: string): Promise<{ promotion: Promotion }> {
+    const response = await api.get(`/promotions/${id}`);
+    return response.data;
+  },
+
+  async create(payload: Partial<Promotion>): Promise<{ promotion: Promotion }> {
+    const response = await api.post("/promotions", payload);
+    return response.data;
+  },
+
+  async update(
+    id: string,
+    payload: Partial<Promotion>
+  ): Promise<{ promotion: Promotion }> {
+    const response = await api.put(`/promotions/${id}`, payload);
+    return response.data;
+  },
+
+  async delete(id: string): Promise<{ message: string }> {
+    const response = await api.delete(`/promotions/${id}`);
+    return response.data;
+  },
+
+  async toggleStatus(id: string): Promise<{ promotion: Promotion }> {
+    const response = await api.patch(`/promotions/${id}/toggle`);
+    return response.data;
+  },
+};
+
+// ==================== PROVIDER SERVICE ====================
+interface Provider {
+  _id: string;
+  name: string;
+  contactName?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+  isActive: boolean;
+  createdAt: string;
+  totalOrders?: number;
+  totalSpent?: number;
+}
+
+export const providerService = {
+  async getAll(params?: {
+    search?: string;
+    isActive?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    providers: Provider[];
+    pagination?: { page: number; limit: number; total: number; pages: number };
+  }> {
+    const response = await api.get("/providers", { params });
+    return response.data;
+  },
+
+  async getById(id: string): Promise<{ provider: Provider }> {
+    const response = await api.get(`/providers/${id}`);
+    return response.data;
+  },
+
+  async create(payload: Partial<Provider>): Promise<{ provider: Provider }> {
+    const response = await api.post("/providers", payload);
+    return response.data;
+  },
+
+  async update(
+    id: string,
+    payload: Partial<Provider>
+  ): Promise<{ provider: Provider }> {
+    const response = await api.put(`/providers/${id}`, payload);
+    return response.data;
+  },
+
+  async delete(id: string): Promise<{ message: string }> {
+    const response = await api.delete(`/providers/${id}`);
+    return response.data;
+  },
+
+  async toggleStatus(id: string): Promise<{ provider: Provider }> {
+    const response = await api.patch(`/providers/${id}/toggle`);
+    return response.data;
+  },
+};
+
+// ==================== CUSTOMER SERVICE ====================
+interface CustomerData {
+  _id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+  segment?: string;
+  segments?: string[];
+  points: number;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+  totalSpend: number;
+  totalDebt: number;
+  ordersCount: number;
+  lastPurchaseAt?: string;
+  createdAt: string;
+}
+
+export const customerService = {
+  async getAll(params?: {
+    search?: string;
+    segment?: string;
+    hasDebt?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    customers: CustomerData[];
+    pagination?: { page: number; limit: number; total: number; pages: number };
+  }> {
+    const response = await api.get("/customers", { params });
+    return response.data;
+  },
+
+  async getById(id: string): Promise<{ customer: CustomerData }> {
+    const response = await api.get(`/customers/${id}`);
+    return response.data;
+  },
+
+  async create(
+    payload: Partial<CustomerData>
+  ): Promise<{ customer: CustomerData }> {
+    const response = await api.post("/customers", payload);
+    return response.data;
+  },
+
+  async update(
+    id: string,
+    payload: Partial<CustomerData>
+  ): Promise<{ customer: CustomerData }> {
+    const response = await api.put(`/customers/${id}`, payload);
+    return response.data;
+  },
+
+  async delete(id: string): Promise<{ message: string }> {
+    const response = await api.delete(`/customers/${id}`);
+    return response.data;
+  },
+
+  async getPurchaseHistory(
+    id: string,
+    params?: { page?: number; limit?: number }
+  ): Promise<{
+    purchases: Array<{
+      _id: string;
+      saleId: string;
+      amount: number;
+      date: string;
+      products: string[];
+    }>;
+    pagination?: { page: number; limit: number; total: number; pages: number };
+  }> {
+    const response = await api.get(`/customers/${id}/purchases`, { params });
+    return response.data;
+  },
+
+  async getWithDebt(): Promise<{ customers: CustomerData[] }> {
+    const response = await api.get("/customers", { params: { hasDebt: true } });
+    return response.data;
+  },
+};
+
+// ==================== SEGMENT SERVICE ====================
+interface Segment {
+  _id: string;
+  name: string;
+  key: string;
+  description?: string;
+  rules?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export const segmentService = {
+  async getAll(): Promise<{ segments: Segment[] }> {
+    const response = await api.get("/segments");
+    return response.data;
+  },
+
+  async getById(id: string): Promise<{ segment: Segment }> {
+    const response = await api.get(`/segments/${id}`);
+    return response.data;
+  },
+
+  async create(payload: {
+    name: string;
+    key: string;
+    description?: string;
+    rules?: Record<string, unknown>;
+  }): Promise<{ segment: Segment }> {
+    const response = await api.post("/segments", payload);
+    return response.data;
+  },
+
+  async update(
+    id: string,
+    payload: Partial<Segment>
+  ): Promise<{ segment: Segment }> {
+    const response = await api.put(`/segments/${id}`, payload);
+    return response.data;
+  },
+
+  async delete(id: string): Promise<{ message: string }> {
+    const response = await api.delete(`/segments/${id}`);
+    return response.data;
+  },
+};
+
+// ==================== CUSTOMER POINTS SERVICE ====================
+export const customerPointsService = {
+  async getBalance(customerId: string): Promise<{
+    points: number;
+    history: Array<{
+      type: string;
+      amount: number;
+      balance: number;
+      description: string;
+      createdAt: string;
+    }>;
+  }> {
+    const response = await api.get(`/customer-points/${customerId}`);
+    return response.data;
+  },
+
+  async adjustPoints(
+    customerId: string,
+    payload: { amount: number; reason: string; type: "bonus" | "adjustment" }
+  ): Promise<{ customer: CustomerData }> {
+    const response = await api.post(
+      `/customer-points/${customerId}/adjust`,
+      payload
+    );
+    return response.data;
+  },
+
+  async redeemPoints(
+    customerId: string,
+    payload: { points: number; description?: string }
+  ): Promise<{ customer: CustomerData; redeemed: number }> {
+    const response = await api.post(
+      `/customer-points/${customerId}/redeem`,
+      payload
+    );
+    return response.data;
+  },
+
+  async getRedemptionHistory(customerId: string): Promise<{
+    redemptions: Array<{
+      _id: string;
+      points: number;
+      description: string;
+      date: string;
+    }>;
+  }> {
+    const response = await api.get(
+      `/customer-points/${customerId}/redemptions`
+    );
+    return response.data;
+  },
+};
+
+// ==================== PUSH SUBSCRIPTION SERVICE ====================
+export const pushSubscriptionService = {
+  async getVapidPublicKey(): Promise<{ publicKey: string }> {
+    const response = await api.get("/push-subscriptions/vapid-public-key");
+    return response.data;
+  },
+
+  async subscribe(
+    subscription: PushSubscriptionJSON
+  ): Promise<{ message: string }> {
+    const response = await api.post("/push-subscriptions/subscribe", {
+      subscription,
+    });
+    return response.data;
+  },
+
+  async unsubscribe(endpoint: string): Promise<{ message: string }> {
+    const response = await api.post("/push-subscriptions/unsubscribe", {
+      endpoint,
+    });
+    return response.data;
+  },
+
+  async getStatus(): Promise<{
+    subscribed: boolean;
+    subscriptionsCount: number;
+  }> {
+    const response = await api.get("/push-subscriptions/status");
+    return response.data;
+  },
+
+  async testNotification(): Promise<{ message: string }> {
+    const response = await api.post("/push-subscriptions/test");
+    return response.data;
+  },
+};
+
+// ==================== INVENTORY SERVICE ====================
+interface InventoryEntry {
+  _id: string;
+  product: { _id: string; name: string };
+  branch?: { _id: string; name: string };
+  provider?: { _id: string; name: string };
+  user: { _id: string; name: string };
+  quantity: number;
+  notes?: string;
+  destination: "branch" | "warehouse";
+  requestId: string;
+  createdAt: string;
+}
+
+export const inventoryService = {
+  async getEntries(params?: {
+    productId?: string;
+    branchId?: string;
+    providerId?: string;
+    destination?: "branch" | "warehouse";
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    entries: InventoryEntry[];
+    pagination?: { page: number; limit: number; total: number; pages: number };
+  }> {
+    const response = await api.get("/inventory/entries", { params });
+    return response.data;
+  },
+
+  async createEntry(payload: {
+    product: string;
+    quantity: number;
+    branch?: string;
+    provider?: string;
+    notes?: string;
+  }): Promise<{
+    entry: InventoryEntry;
+    product: { totalStock: number; warehouseStock: number };
+  }> {
+    const response = await api.post("/inventory/entry", payload);
+    return response.data;
+  },
+
+  async getProductHistory(
+    productId: string,
+    params?: { page?: number; limit?: number }
+  ): Promise<{
+    entries: InventoryEntry[];
+    pagination?: { page: number; limit: number; total: number; pages: number };
+  }> {
+    const response = await api.get(`/inventory/product/${productId}/history`, {
+      params,
+    });
+    return response.data;
+  },
+
+  async getSummary(params?: { startDate?: string; endDate?: string }): Promise<{
+    totalEntries: number;
+    totalUnits: number;
+    byDestination: { warehouse: number; branch: number };
+    byProvider: Array<{ provider: string; count: number; units: number }>;
+  }> {
+    const response = await api.get("/inventory/summary", { params });
+    return response.data;
+  },
+
+  async updateEntry(
+    id: string,
+    payload: {
+      notes?: string;
+      provider?: string | null;
+    }
+  ): Promise<{ entry: InventoryEntry }> {
+    const response = await api.put(`/inventory/entry/${id}`, payload);
+    return response.data;
+  },
+
+  async deleteEntry(id: string): Promise<{
+    message: string;
+    revertedQuantity: number;
+    destination: string;
+  }> {
+    const response = await api.delete(`/inventory/entry/${id}`);
     return response.data;
   },
 };

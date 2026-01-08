@@ -43,6 +43,19 @@ export const listUsers = async (_req, res) => {
   res.json({ success: true, data: users });
 };
 
+export const findUserByEmail = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const user = await User.findOne({ email }).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    res.json({ user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const activateUser = async (req, res) => {
   const { id } = req.params;
   const { days = 30, months = 0, years = 0 } = req.body || {};
@@ -186,13 +199,11 @@ export const deleteUser = async (req, res) => {
       requestId,
       stack: error.stack,
     });
-    res
-      .status(500)
-      .json({
-        message: "Error eliminando usuario",
-        error: error.message,
-        requestId,
-      });
+    res.status(500).json({
+      message: "Error eliminando usuario",
+      error: error.message,
+      requestId,
+    });
   }
 };
 

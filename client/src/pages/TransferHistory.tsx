@@ -115,33 +115,34 @@ export default function TransferHistory() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 py-8">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="bg-linear-to-br min-h-screen from-gray-900 via-purple-900/10 to-gray-900 py-4 sm:py-8">
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="mb-2 text-4xl font-bold text-white">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="mb-2 text-2xl font-bold text-white sm:text-4xl">
             📋 Historial de Transferencias
           </h1>
-          <p className="text-gray-400">
-            Registro completo de todas las transferencias entre distribuidores
+          <p className="text-sm text-gray-400 sm:text-base">
+            Registro de movimientos de stock: bodega → distribuidor,
+            distribuidor → distribuidor
           </p>
         </div>
 
         {/* Estadísticas */}
-        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-900/20 to-pink-900/20 p-6">
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:mb-8 sm:gap-6">
+          <div className="bg-linear-to-br rounded-xl border border-purple-500/30 from-purple-900/20 to-pink-900/20 p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="mb-1 text-sm text-gray-400">
+                <p className="mb-1 text-xs text-gray-400 sm:text-sm">
                   Total Transferencias
                 </p>
-                <p className="text-3xl font-bold text-white">
+                <p className="text-2xl font-bold text-white sm:text-3xl">
                   {stats.totalTransfers}
                 </p>
               </div>
-              <div className="rounded-full bg-purple-600/20 p-4">
+              <div className="hidden rounded-full bg-purple-600/20 p-3 sm:block sm:p-4">
                 <svg
-                  className="h-8 w-8 text-purple-400"
+                  className="h-6 w-6 text-purple-400 sm:h-8 sm:w-8"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -157,19 +158,19 @@ export default function TransferHistory() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-900/20 to-cyan-900/20 p-6">
+          <div className="bg-linear-to-br rounded-xl border border-blue-500/30 from-blue-900/20 to-cyan-900/20 p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="mb-1 text-sm text-gray-400">
+                <p className="mb-1 text-xs text-gray-400 sm:text-sm">
                   Unidades Transferidas
                 </p>
-                <p className="text-3xl font-bold text-white">
+                <p className="text-2xl font-bold text-white sm:text-3xl">
                   {stats.totalQuantity}
                 </p>
               </div>
-              <div className="rounded-full bg-blue-600/20 p-4">
+              <div className="hidden rounded-full bg-blue-600/20 p-3 sm:block sm:p-4">
                 <svg
-                  className="h-8 w-8 text-blue-400"
+                  className="h-6 w-6 text-blue-400 sm:h-8 sm:w-8"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -187,16 +188,16 @@ export default function TransferHistory() {
         </div>
 
         {/* Filtros */}
-        <div className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mb-6 rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:mb-8 sm:p-6">
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
+              <label className="mb-1 block text-xs font-medium text-gray-300 sm:mb-2 sm:text-sm">
                 Origen
               </label>
               <select
                 value={fromDistributor}
                 onChange={e => setFromDistributor(e.target.value)}
-                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none sm:px-4"
               >
                 <option value="">Todos</option>
                 {distributors.map(d => (
@@ -208,13 +209,13 @@ export default function TransferHistory() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
+              <label className="mb-1 block text-xs font-medium text-gray-300 sm:mb-2 sm:text-sm">
                 Destino
               </label>
               <select
                 value={toDistributor}
                 onChange={e => setToDistributor(e.target.value)}
-                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none sm:px-4"
               >
                 <option value="">Todos</option>
                 {distributors.map(d => (
@@ -226,13 +227,13 @@ export default function TransferHistory() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
+              <label className="mb-1 block text-xs font-medium text-gray-300 sm:mb-2 sm:text-sm">
                 Producto
               </label>
               <select
                 value={product}
                 onChange={e => setProduct(e.target.value)}
-                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none sm:px-4"
               >
                 <option value="">Todos</option>
                 {products.map(p => (
@@ -244,37 +245,37 @@ export default function TransferHistory() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
+              <label className="mb-1 block text-xs font-medium text-gray-300 sm:mb-2 sm:text-sm">
                 Fecha Inicio
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none sm:px-4"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
+              <label className="mb-1 block text-xs font-medium text-gray-300 sm:mb-2 sm:text-sm">
                 Fecha Fin
               </label>
               <input
                 type="date"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none sm:px-4"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
+              <label className="mb-1 block text-xs font-medium text-gray-300 sm:mb-2 sm:text-sm">
                 Estado
               </label>
               <select
                 value={status}
                 onChange={e => setStatus(e.target.value)}
-                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none sm:px-4"
               >
                 <option value="">Todos</option>
                 <option value="completed">Completada</option>
@@ -286,7 +287,7 @@ export default function TransferHistory() {
 
           <button
             onClick={clearFilters}
-            className="w-full rounded-lg bg-gray-700 px-6 py-2 text-white transition hover:bg-gray-600 md:w-auto"
+            className="w-full rounded-lg bg-gray-700 px-4 py-2 text-sm text-white transition hover:bg-gray-600 sm:w-auto sm:px-6"
           >
             Limpiar Filtros
           </button>

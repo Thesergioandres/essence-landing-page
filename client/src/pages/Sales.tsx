@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { authService, branchService, saleService } from "../api/services";
+import { useFeature } from "../components/FeatureSection";
 import LoadingSpinner from "../components/LoadingSpinner";
 import SaleDetailModal from "../components/SaleDetailModal";
 import type { Branch, Sale } from "../types";
@@ -12,6 +13,12 @@ import {
 const SALES_CACHE_TTL_MS = 60 * 1000;
 
 export default function Sales() {
+  // Hooks para features
+  const distributorsEnabled = useFeature("distributors");
+  const branchesEnabled = useFeature("branches");
+  const gamificationEnabled = useFeature("gamification");
+  const creditsEnabled = useFeature("credits");
+
   const [sales, setSales] = useState<Sale[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -26,6 +33,8 @@ export default function Sales() {
     confirmedSales?: number;
     pendingSales?: number;
     totalProfit?: number;
+    pendingCollection?: number; // ventas con crédito activo
+    pendingCollectionAmount?: number;
   }>({});
   const [loading, setLoading] = useState(true);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -166,6 +175,31 @@ export default function Sales() {
 
   // Ya no necesitamos filtrado/ordenamiento local, el servidor lo hace
 
+  // Helper para determinar si una venta tiene crédito activo (deuda pendiente)
+  const hasActiveCredit = (sale: Sale) => {
+    if (!sale.credit) return false;
+    if (
+      typeof sale.credit === "object" &&
+      sale.credit.remainingAmount !== undefined
+    ) {
+      return sale.credit.remainingAmount > 0;
+    }
+    return true; // Si tiene crédito pero no sabemos el estado, asumimos activo
+  };
+
+  // Calcular ventas con crédito activo
+  const salesWithActiveCredit = sales.filter(s => hasActiveCredit(s));
+  const pendingCollectionAmount = salesWithActiveCredit.reduce((sum, s) => {
+    if (
+      typeof s.credit === "object" &&
+      s.credit !== null &&
+      s.credit.remainingAmount !== undefined
+    ) {
+      return sum + s.credit.remainingAmount;
+    }
+    return sum + s.salePrice * s.quantity;
+  }, 0);
+
   const stats = {
     total: statsData.totalSales || sales.length,
     pendiente:
@@ -173,7 +207,10 @@ export default function Sales() {
       sales.filter(s => s.paymentStatus === "pendiente").length,
     confirmado:
       statsData.confirmedSales ||
-      sales.filter(s => s.paymentStatus === "confirmado").length,
+      sales.filter(s => s.paymentStatus === "confirmado" && !hasActiveCredit(s))
+        .length,
+    pendingCollection: salesWithActiveCredit.length,
+    pendingCollectionAmount: pendingCollectionAmount,
     totalRevenue:
       statsData.totalRevenue ||
       sales.reduce((sum, s) => sum + s.salePrice * s.quantity, 0),
@@ -200,28 +237,43 @@ export default function Sales() {
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <p className="text-sm text-gray-400">Total Ventas</p>
-          <p className="text-2xl font-bold text-white">{stats.total}</p>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6">
+          <p className="text-xs text-gray-400 sm:text-sm">Total Ventas</p>
+          <p className="text-xl font-bold text-white sm:text-2xl">
+            {stats.total}
+          </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <p className="text-sm text-gray-400">Pendientes</p>
-          <p className="text-2xl font-bold text-white">{stats.pendiente}</p>
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6">
+          <p className="text-xs text-gray-400 sm:text-sm">Pendientes</p>
+          <p className="text-xl font-bold text-yellow-400 sm:text-2xl">
+            {stats.pendiente}
+          </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <p className="text-sm text-gray-400">Confirmadas</p>
-          <p className="text-2xl font-bold text-white">{stats.confirmado}</p>
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6">
+          <p className="text-xs text-gray-400 sm:text-sm">Confirmadas</p>
+          <p className="text-xl font-bold text-green-400 sm:text-2xl">
+            {stats.confirmado}
+          </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <p className="text-sm text-gray-400">Ingresos Totales</p>
-          <p className="text-2xl font-bold text-white">
+        <div className="rounded-xl border border-orange-700/50 bg-orange-900/20 p-4 sm:p-6">
+          <p className="text-xs text-orange-300 sm:text-sm">💳 Por Cobrar</p>
+          <p className="text-xl font-bold text-orange-400 sm:text-2xl">
+            {stats.pendingCollection}
+          </p>
+          <p className="mt-1 text-xs text-orange-300/70">
+            ${stats.pendingCollectionAmount.toLocaleString()}
+          </p>
+        </div>
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6">
+          <p className="text-xs text-gray-400 sm:text-sm">Ingresos Totales</p>
+          <p className="text-xl font-bold text-white sm:text-2xl">
             ${stats.totalRevenue.toLocaleString()}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <p className="text-sm text-gray-400">Ganancia Admin</p>
-          <p className="text-2xl font-bold text-white">
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6">
+          <p className="text-xs text-gray-400 sm:text-sm">Ganancia Admin</p>
+          <p className="text-xl font-bold text-green-400 sm:text-2xl">
             ${stats.totalProfit.toLocaleString()}
           </p>
         </div>
@@ -243,30 +295,32 @@ export default function Sales() {
         <>
           <div className="space-y-4 rounded-xl border border-gray-700 bg-gray-800/50 p-4">
             {/* Filtro por sede */}
-            <div>
-              <p className="mb-2 text-sm font-medium text-gray-300">
-                Sede / Bodega:
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <div className="min-w-[220px] flex-1">
-                  <select
-                    value={branchId}
-                    onChange={e => {
-                      setBranchId(e.target.value);
-                      setPagination(prev => ({ ...prev, page: 1 }));
-                    }}
-                    className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
-                  >
-                    <option value="">Todas las sedes (stock general)</option>
-                    {branches.map(branch => (
-                      <option key={branch._id} value={branch._id}>
-                        {branch.name}
-                      </option>
-                    ))}
-                  </select>
+            {branchesEnabled && (
+              <div>
+                <p className="mb-2 text-sm font-medium text-gray-300">
+                  Sede / Bodega:
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  <div className="min-w-[220px] flex-1">
+                    <select
+                      value={branchId}
+                      onChange={e => {
+                        setBranchId(e.target.value);
+                        setPagination(prev => ({ ...prev, page: 1 }));
+                      }}
+                      className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+                    >
+                      <option value="">Todas las sedes (stock general)</option>
+                      {branches.map(branch => (
+                        <option key={branch._id} value={branch._id}>
+                          {branch.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
             {/* Filtros de fecha */}
             <div>
               <p className="mb-2 text-sm font-medium text-gray-300">
@@ -381,7 +435,9 @@ export default function Sales() {
               >
                 <option value="date-desc">Fecha (Más reciente primero)</option>
                 <option value="date-asc">Fecha (Más antigua primero)</option>
-                <option value="distributor">Distribuidor (A-Z)</option>
+                {distributorsEnabled && (
+                  <option value="distributor">Distribuidor (A-Z)</option>
+                )}
               </select>
             </div>
           </div>
@@ -395,21 +451,37 @@ export default function Sales() {
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Fecha
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
-                      Sede
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
-                      Distribuidor
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
-                      Rango
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
-                      Comisión
-                    </th>
+                    {branchesEnabled && (
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
+                        Sede
+                      </th>
+                    )}
+                    {distributorsEnabled && (
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
+                        Distribuidor
+                      </th>
+                    )}
+                    {distributorsEnabled && gamificationEnabled && (
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
+                        Rango
+                      </th>
+                    )}
+                    {distributorsEnabled && (
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
+                        Comisión
+                      </th>
+                    )}
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Producto
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
+                      Cliente
+                    </th>
+                    {creditsEnabled && (
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
+                        Crédito
+                      </th>
+                    )}
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Cantidad
                     </th>
@@ -493,29 +565,37 @@ export default function Sales() {
                             day: "numeric",
                           })}
                         </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-300">
-                          {branchName || "General"}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4">
-                          <div className="text-sm font-medium text-gray-200">
-                            {distributor?.name || "Admin"}
-                          </div>
-                          <div className="text-sm text-gray-400">
-                            {distributor?.email || ""}
-                          </div>
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4">
-                          <span
-                            className={`rounded-full px-2 py-1 text-xs font-semibold ${rankBadge.color}`}
-                          >
-                            {rankBadge.emoji} {rankBadge.text}
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-200">
-                          {distributor
-                            ? `${sale.distributorProfitPercentage ?? 20}%`
-                            : "—"}
-                        </td>
+                        {branchesEnabled && (
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-300">
+                            {branchName || "General"}
+                          </td>
+                        )}
+                        {distributorsEnabled && (
+                          <td className="whitespace-nowrap px-6 py-4">
+                            <div className="text-sm font-medium text-gray-200">
+                              {distributor?.name || "Admin"}
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              {distributor?.email || ""}
+                            </div>
+                          </td>
+                        )}
+                        {distributorsEnabled && gamificationEnabled && (
+                          <td className="whitespace-nowrap px-6 py-4">
+                            <span
+                              className={`rounded-full px-2 py-1 text-xs font-semibold ${rankBadge.color}`}
+                            >
+                              {rankBadge.emoji} {rankBadge.text}
+                            </span>
+                          </td>
+                        )}
+                        {distributorsEnabled && (
+                          <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-200">
+                            {distributor
+                              ? `${sale.distributorProfitPercentage ?? 20}%`
+                              : "—"}
+                          </td>
+                        )}
                         <td className="whitespace-nowrap px-6 py-4">
                           <div className="flex items-center">
                             {product?.image?.url && (
@@ -531,6 +611,34 @@ export default function Sales() {
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-200">
+                          {sale.customerName || "-"}
+                        </td>
+                        {creditsEnabled && (
+                          <td className="whitespace-nowrap px-6 py-4">
+                            {sale.credit ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-xs font-medium text-orange-400">
+                                  💳 Crédito
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  {typeof sale.credit === "object" &&
+                                  sale.credit.remainingAmount !== undefined
+                                    ? new Intl.NumberFormat("es-CO", {
+                                        style: "currency",
+                                        currency: "COP",
+                                        minimumFractionDigits: 0,
+                                      }).format(sale.credit.remainingAmount)
+                                    : "Pendiente"}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-500">
+                                Contado
+                              </span>
+                            )}
+                          </td>
+                        )}
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-200">
                           {sale.quantity}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-200">
@@ -543,6 +651,10 @@ export default function Sales() {
                           {sale.paymentStatus === "pendiente" ? (
                             <span className="inline-flex rounded-full bg-yellow-500/20 px-3 py-1 text-xs font-semibold leading-5 text-yellow-300">
                               Pendiente
+                            </span>
+                          ) : hasActiveCredit(sale) ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 px-3 py-1 text-xs font-semibold leading-5 text-orange-300">
+                              💳 Por Cobrar
                             </span>
                           ) : (
                             <span className="inline-flex rounded-full bg-green-500/20 px-3 py-1 text-xs font-semibold leading-5 text-green-300">

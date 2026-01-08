@@ -37,6 +37,30 @@ const defectiveProductSchema = new mongoose.Schema(
         publicId: String,
       },
     ],
+    // Campo de garantía: si tiene garantía, se repone stock; si no, es pérdida
+    hasWarranty: {
+      type: Boolean,
+      default: false,
+    },
+    // Estado de la garantía
+    warrantyStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected", "not_applicable"],
+      default: "not_applicable",
+    },
+    // Costo de pérdida (si no hay garantía)
+    lossAmount: {
+      type: Number,
+      default: 0,
+    },
+    // Stock repuesto (si hay garantía aprobada)
+    stockRestored: {
+      type: Boolean,
+      default: false,
+    },
+    stockRestoredAt: {
+      type: Date,
+    },
     status: {
       type: String,
       enum: ["pendiente", "confirmado", "rechazado"],
@@ -57,10 +81,21 @@ const defectiveProductSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    // Origen del stock para restauración en caso de borrado
+    stockOrigin: {
+      type: String,
+      enum: ["warehouse", "branch", "distributor"],
+      default: "warehouse",
+    },
   },
   {
     timestamps: true,
   }
 );
+
+// Índices para búsquedas frecuentes
+defectiveProductSchema.index({ business: 1, status: 1 });
+defectiveProductSchema.index({ distributor: 1, status: 1 });
+defectiveProductSchema.index({ product: 1, reportDate: -1 });
 
 export default mongoose.model("DefectiveProduct", defectiveProductSchema);

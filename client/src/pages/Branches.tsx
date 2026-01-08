@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { branchService } from "../api/services";
+import { branchService, productService, stockService } from "../api/services";
 import { Button } from "../components/Button";
-import type { Branch } from "../types";
+import type { Branch, BranchStock, Product } from "../types";
 
 interface FormState {
   name: string;
@@ -30,6 +30,12 @@ export default function Branches() {
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
+  const [showInventoryModal, setShowInventoryModal] = useState(false);
+  const [selectedBranchInventory, setSelectedBranchInventory] =
+    useState<Branch | null>(null);
+  const [branchStock, setBranchStock] = useState<BranchStock[]>([]);
+  const [loadingStock, setLoadingStock] = useState(false);
+  const [searchStock, setSearchStock] = useState("");
 
   const activeCount = useMemo(
     () => branches.filter(b => b.active !== false).length,
@@ -129,6 +135,78 @@ export default function Branches() {
       setDeletingId(null);
     }
   };
+
+  const handleViewInventory = async (branch: Branch) => {
+    setSelectedBranchInventory(branch);
+    setShowInventoryModal(true);
+    setLoadingStock(true);
+    setBranchStock([]);
+    setSearchStock("");
+
+    try {
+      console.log(
+        `[DEBUG] Cargando inventario para sede: ${branch.name} (${branch._id})`
+      );
+      console.log(`[DEBUG] isWarehouse: ${branch.isWarehouse}`);
+
+      if (branch.isWarehouse) {
+        // Para bodega, cargar desde warehouseStock de los productos
+        const productsData = await productService.getAll();
+        const productsList = productsData.data || productsData;
+        const warehouseStock: BranchStock[] = productsList
+          .filter((p: Product) => (p.warehouseStock || 0) > 0)
+          .map((p: Product) => ({
+            _id: `warehouse-${p._id}`,
+            product: p,
+            quantity: p.warehouseStock || 0,
+            branch: branch._id,
+            lowStockAlert: p.lowStockAlert || 10,
+          }));
+        console.log(`[DEBUG] Warehouse stock items: ${warehouseStock.length}`);
+        setBranchStock(warehouseStock);
+      } else {
+        // Para sedes normales, cargar desde BranchStock
+        const stock = await stockService.getBranchStock(branch._id);
+        console.log(`[DEBUG] Stock recibido:`, stock);
+        console.log(`[DEBUG] Cantidad de items: ${stock?.length || 0}`);
+        setBranchStock(stock || []);
+      }
+    } catch (err) {
+      console.error("Error al cargar inventario:", err);
+      setError("No se pudo cargar el inventario de la sede");
+    } finally {
+      setLoadingStock(false);
+    }
+  };
+
+  const filteredStock = branchStock.filter(item => {
+    const product = typeof item.product === "object" ? item.product : null;
+    const productName = product?.name?.toLowerCase() || "";
+    return productName.includes(searchStock.toLowerCase());
+  });
+
+  const totalProducts = branchStock.length;
+  const totalUnits = branchStock.reduce(
+    (sum, item) => sum + (item.quantity || 0),
+    0
+  );
+
+  // Valor invertido: lo que costó comprar el inventario
+  const totalInvested = branchStock.reduce((sum, item) => {
+    const product = typeof item.product === "object" ? item.product : null;
+    const purchasePrice = product?.purchasePrice || 0;
+    return sum + purchasePrice * (item.quantity || 0);
+  }, 0);
+
+  // Valor de venta estimado: lo que se recibiría vendiendo todo
+  const totalSalesValue = branchStock.reduce((sum, item) => {
+    const product = typeof item.product === "object" ? item.product : null;
+    const clientPrice = product?.clientPrice || 0;
+    return sum + clientPrice * (item.quantity || 0);
+  }, 0);
+
+  // Ganancia estimada: diferencia entre venta e inversión
+  const totalEstimatedProfit = totalSalesValue - totalInvested;
 
   return (
     <div className="space-y-6">
@@ -328,6 +406,25 @@ export default function Branches() {
 
                     <div className="flex flex-wrap gap-2">
                       <button
+                        onClick={() => handleViewInventory(branch)}
+                        className="rounded-lg border border-blue-600/60 bg-blue-600/10 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:border-blue-500 hover:bg-blue-600/20 hover:text-white"
+                      >
+                        <svg
+                          className="mr-1.5 inline h-3.5 w-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                          />
+                        </svg>
+                        Ver Inventario
+                      </button>
+                      <button
                         onClick={() => handleToggleActive(branch)}
                         disabled={updatingId === branch._id}
                         className="rounded-lg border border-gray-600 px-3 py-2 text-xs font-semibold text-gray-200 transition hover:border-purple-500 hover:text-white disabled:opacity-60"
@@ -349,6 +446,258 @@ export default function Branches() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Inventario */}
+      {showInventoryModal && selectedBranchInventory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4">
+          <div className="flex max-h-[95vh] w-full max-w-5xl flex-col rounded-xl border border-gray-700 bg-gray-800 shadow-2xl">
+            {/* Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-700 p-4 sm:p-6">
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-lg font-bold text-white sm:text-2xl">
+                  Inventario - {selectedBranchInventory.name}
+                </h2>
+                <p className="mt-1 truncate text-xs text-gray-400 sm:text-sm">
+                  {selectedBranchInventory.address || "Sin dirección"}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowInventoryModal(false)}
+                className="ml-4 shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-gray-700 hover:text-white"
+              >
+                <svg
+                  className="h-5 w-5 sm:h-6 sm:w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Stats */}
+            {!loadingStock && (
+              <div className="grid shrink-0 grid-cols-2 gap-2 border-b border-gray-700 p-4 sm:grid-cols-4 sm:gap-4 sm:p-6">
+                <div className="rounded-lg border border-gray-600 bg-gray-900/50 p-2 sm:p-4">
+                  <p className="text-[10px] text-gray-400 sm:text-sm">
+                    Total Productos
+                  </p>
+                  <p className="mt-0.5 text-lg font-bold text-white sm:mt-1 sm:text-2xl">
+                    {totalProducts}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-gray-600 bg-gray-900/50 p-2 sm:p-4">
+                  <p className="text-[10px] text-gray-400 sm:text-sm">
+                    Total Unidades
+                  </p>
+                  <p className="mt-0.5 text-lg font-bold text-white sm:mt-1 sm:text-2xl">
+                    {totalUnits}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-orange-600 bg-orange-900/30 p-2 sm:p-4">
+                  <p className="text-[10px] text-orange-400 sm:text-sm">
+                    Valor Invertido
+                  </p>
+                  <p className="mt-0.5 text-lg font-bold text-orange-300 sm:mt-1 sm:text-2xl">
+                    ${totalInvested.toLocaleString()}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-blue-600 bg-blue-900/30 p-2 sm:p-4">
+                  <p className="text-[10px] text-blue-400 sm:text-sm">
+                    Valor de Venta
+                  </p>
+                  <p className="mt-0.5 text-lg font-bold text-blue-300 sm:mt-1 sm:text-2xl">
+                    ${totalSalesValue.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Ganancia Estimada - Fila adicional */}
+            {!loadingStock && (
+              <div className="shrink-0 border-b border-gray-700 px-4 pb-4 sm:px-6 sm:pb-6">
+                <div className="rounded-lg border-2 border-green-600 bg-green-900/40 p-3 sm:p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-green-400 sm:text-sm">
+                        💰 Ganancia Estimada Total
+                      </p>
+                      <p className="mt-0.5 text-xs text-green-500 sm:text-sm">
+                        Si vendes todo el inventario
+                      </p>
+                    </div>
+                    <p className="text-2xl font-bold text-green-300 sm:text-3xl">
+                      ${totalEstimatedProfit.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Search */}
+            <div className="shrink-0 border-b border-gray-700 p-4 sm:p-6">
+              <div className="relative">
+                <svg
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 sm:h-5 sm:w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  value={searchStock}
+                  onChange={e => setSearchStock(e.target.value)}
+                  placeholder="Buscar producto..."
+                  className="w-full rounded-lg border border-gray-600 bg-gray-900/50 py-2 pl-9 pr-4 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none sm:py-2.5 sm:pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Content - Scrollable */}
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+              {loadingStock ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-purple-500"></div>
+                </div>
+              ) : filteredStock.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-700 bg-gray-900/40 py-8 text-center sm:py-12">
+                  <svg
+                    className="mx-auto h-10 w-10 text-gray-600 sm:h-12 sm:w-12"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                    />
+                  </svg>
+                  <p className="mt-4 text-sm text-gray-400 sm:text-base">
+                    {searchStock
+                      ? "No se encontraron productos"
+                      : "Esta sede no tiene inventario registrado"}
+                  </p>
+                  <p className="mt-2 px-4 text-xs text-gray-500 sm:text-sm">
+                    {branchStock.length === 0 && !searchStock
+                      ? "Para agregar inventario a esta sede, ve a Inventario → Transferencias o registra una entrada de stock."
+                      : ""}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border border-gray-700">
+                  <table className="w-full min-w-[700px]">
+                    <thead className="bg-gray-900/80">
+                      <tr>
+                        <th className="px-3 py-2.5 text-left text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
+                          Producto
+                        </th>
+                        <th className="px-3 py-2.5 text-center text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
+                          Cantidad
+                        </th>
+                        <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
+                          P. Compra
+                        </th>
+                        <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
+                          P. Venta
+                        </th>
+                        <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-green-400 sm:px-4 sm:py-3 sm:text-xs">
+                          Ganancia Est.
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                      {filteredStock.map(item => {
+                        const product =
+                          typeof item.product === "object"
+                            ? item.product
+                            : null;
+                        const purchasePrice = product?.purchasePrice || 0;
+                        const clientPrice = product?.clientPrice || 0;
+                        const quantity = item.quantity || 0;
+                        const profitPerUnit = clientPrice - purchasePrice;
+                        const totalProfit = profitPerUnit * quantity;
+
+                        return (
+                          <tr key={item._id} className="hover:bg-gray-800/50">
+                            <td className="px-3 py-2.5 sm:px-4 sm:py-3">
+                              <div className="flex items-center gap-2 sm:gap-3">
+                                {product?.image?.url && (
+                                  <img
+                                    src={product.image.url}
+                                    alt={product.name}
+                                    className="h-8 w-8 shrink-0 rounded object-cover sm:h-10 sm:w-10"
+                                  />
+                                )}
+                                <div className="min-w-0">
+                                  <p className="truncate text-xs font-medium text-white sm:text-sm">
+                                    {product?.name || "Producto sin nombre"}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 text-center sm:px-4 sm:py-3">
+                              <span
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium sm:px-2.5 sm:text-sm ${
+                                  quantity === 0
+                                    ? "bg-red-500/20 text-red-300"
+                                    : quantity < 10
+                                      ? "bg-yellow-500/20 text-yellow-300"
+                                      : "bg-green-500/20 text-green-300"
+                                }`}
+                              >
+                                {quantity}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5 text-right text-xs text-gray-400 sm:px-4 sm:py-3 sm:text-sm">
+                              ${purchasePrice.toLocaleString()}
+                            </td>
+                            <td className="px-3 py-2.5 text-right text-xs text-white sm:px-4 sm:py-3 sm:text-sm">
+                              ${clientPrice.toLocaleString()}
+                            </td>
+                            <td className="px-3 py-2.5 text-right text-xs font-semibold text-green-400 sm:px-4 sm:py-3 sm:text-sm">
+                              ${totalProfit.toLocaleString()}
+                              {profitPerUnit > 0 && (
+                                <span className="ml-1 text-[10px] text-green-500 sm:text-xs">
+                                  (+${profitPerUnit.toLocaleString()}/u)
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="shrink-0 border-t border-gray-700 p-4 sm:p-6">
+              <button
+                onClick={() => setShowInventoryModal(false)}
+                className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-200 transition hover:border-gray-500 hover:text-white sm:px-6 sm:py-2.5"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -51,8 +51,21 @@ const customerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-customerSchema.index({ business: 1, email: 1 }, { unique: true, sparse: true });
-customerSchema.index({ business: 1, phone: 1 }, { unique: true, sparse: true });
+// Índices únicos parciales - solo aplican cuando email/phone existen
+customerSchema.index(
+  { business: 1, email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { email: { $type: "string" } },
+  }
+);
+customerSchema.index(
+  { business: 1, phone: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { phone: { $type: "string" } },
+  }
+);
 customerSchema.index({ business: 1, segment: 1 });
 
 export default mongoose.model("Customer", customerSchema);

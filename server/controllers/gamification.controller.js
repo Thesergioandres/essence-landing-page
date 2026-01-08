@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Credit from "../models/Credit.js";
 import DistributorStats from "../models/DistributorStats.js";
 import GamificationConfig from "../models/GamificationConfig.js";
 import Membership from "../models/Membership.js";
@@ -702,10 +703,66 @@ export const getDistributorStats = async (req, res) => {
     const position =
       allStats.findIndex((s) => s.distributor.toString() === distributorId) + 1;
 
+    // Calcular estadísticas de créditos en tiempo real
+    const creditStats = await Credit.aggregate([
+      {
+        $match: {
+          business: new mongoose.Types.ObjectId(businessId),
+          createdBy: new mongoose.Types.ObjectId(distributorId),
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalCredits: { $sum: 1 },
+          totalAmount: { $sum: "$originalAmount" },
+          totalCollected: { $sum: "$paidAmount" },
+          totalPending: {
+            $sum: {
+              $cond: [
+                { $in: ["$status", ["pending", "partial"]] },
+                "$remainingAmount",
+                0,
+              ],
+            },
+          },
+          totalOverdue: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $in: ["$status", ["pending", "partial", "overdue"]] },
+                    { $lt: ["$dueDate", new Date()] },
+                  ],
+                },
+                "$remainingAmount",
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    const creditInfo = creditStats[0] || {
+      totalCredits: 0,
+      totalAmount: 0,
+      totalCollected: 0,
+      totalPending: 0,
+      totalOverdue: 0,
+    };
+
     res.json({
       stats,
       currentRankingPosition: position,
       totalDistributors: allStats.length,
+      creditStats: {
+        totalCreditsGenerated: creditInfo.totalCredits,
+        totalCreditsAmount: creditInfo.totalAmount,
+        creditsCollected: creditInfo.totalCollected,
+        creditsPending: creditInfo.totalPending,
+        creditsOverdue: creditInfo.totalOverdue,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

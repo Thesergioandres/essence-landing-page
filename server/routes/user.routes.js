@@ -8,6 +8,7 @@ import {
   activateUser,
   deleteUser,
   extendSubscription,
+  findUserByEmail,
   listUsers,
   pauseSubscription,
   resumeSubscription,
@@ -25,6 +26,11 @@ const router = express.Router();
 // @desc    Obtener todos los usuarios
 // @access  Private/Admin
 router.get("/", protect, admin, getAllUsers);
+
+// @route   GET /api/users/find/:email
+// @desc    Buscar usuario por email
+// @access  Private
+router.get("/find/:email", protect, findUserByEmail);
 
 // Panel GOD - Métricas globales
 router.get("/god/metrics", protect, god, getGlobalMetrics);

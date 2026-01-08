@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { creditService } from "../api/services";
+import CustomerSelector from "../components/CustomerSelector";
 import type { Credit, CreditMetrics, Customer } from "../types";
 import { logUI } from "../utils/logger";
 
@@ -43,8 +44,7 @@ export default function Credits() {
     "cash" | "transfer" | "card" | "other"
   >("cash");
   const [paymentNotes, setPaymentNotes] = useState("");
-
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomerName, setSelectedCustomerName] = useState("");
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -68,24 +68,6 @@ export default function Credits() {
       setLoading(false);
     }
   }, [statusFilter]);
-
-  const loadCustomers = async () => {
-    try {
-      const response = await fetch("/api/customers", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "x-business-id": localStorage.getItem("businessId") || "",
-        },
-      });
-      const data = await response.json();
-      setCustomers(data.customers || []);
-    } catch (err) {
-      logUI.error("Error al cargar clientes", {
-        module: "credits",
-        error: err,
-      });
-    }
-  };
 
   useEffect(() => {
     loadData();
@@ -147,6 +129,31 @@ export default function Credits() {
     setShowPaymentModal(true);
   };
 
+  const handleDeleteCredit = async (creditId: string) => {
+    if (
+      !confirm(
+        "¿Estás seguro de que deseas eliminar este crédito? Esta acción no se puede deshacer."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await creditService.delete(creditId);
+      logUI.info("debt_deleted", {
+        module: "credits",
+        creditId,
+      });
+      loadData();
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const message =
+        error.response?.data?.message || "Error al eliminar el crédito";
+      alert(message);
+      logUI.error("debt_delete_failed", { module: "credits", error: err });
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-MX", {
       style: "currency",
@@ -177,7 +184,6 @@ export default function Credits() {
         </div>
         <button
           onClick={() => {
-            loadCustomers();
             setShowCreateModal(true);
           }}
           className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-white transition-colors hover:bg-indigo-700"
@@ -327,16 +333,26 @@ export default function Credits() {
                         <div className="flex items-center gap-2">
                           {credit.status !== "paid" &&
                             credit.status !== "cancelled" && (
-                              <button
-                                onClick={() => openPaymentModal(credit)}
-                                className="font-medium text-indigo-600 hover:text-indigo-800"
-                              >
-                                Registrar Pago
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => openPaymentModal(credit)}
+                                  className="font-medium text-indigo-600 hover:text-indigo-800"
+                                >
+                                  Registrar Pago
+                                </button>
+                                <span className="text-gray-300">|</span>
+                                <button
+                                  onClick={() => handleDeleteCredit(credit._id)}
+                                  className="font-medium text-red-600 hover:text-red-800"
+                                >
+                                  Borrar
+                                </button>
+                                <span className="text-gray-300">|</span>
+                              </>
                             )}
                           <Link
-                            to={`/credits/${credit._id}`}
-                            className="text-gray-600 hover:text-gray-800"
+                            to={`/admin/credits/${credit._id}`}
+                            className="font-medium text-gray-600 hover:text-gray-800"
                           >
                             Ver Detalles
                           </Link>
@@ -397,21 +413,28 @@ export default function Credits() {
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                   Cliente
                 </label>
-                <select
+                <CustomerSelector
                   value={newCredit.customerId}
-                  onChange={e =>
-                    setNewCredit({ ...newCredit, customerId: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                  onChange={(customerId, customer) => {
+                    setNewCredit({ ...newCredit, customerId });
+                    setSelectedCustomerName(customer?.name || "");
+                  }}
+                  placeholder="Buscar cliente por nombre o teléfono..."
                   required
-                >
-                  <option value="">Seleccionar cliente</option>
-                  {customers.map(c => (
-                    <option key={c._id} value={c._id}>
-                      {c.name} {c.phone ? `- ${c.phone}` : ""}
-                    </option>
-                  ))}
-                </select>
+                  allowCreate
+                  onCreateSuccess={customer => {
+                    logUI.info("customer_created_from_credit", {
+                      module: "credits",
+                      customerId: customer._id,
+                    });
+                  }}
+                />
+                {selectedCustomerName && (
+                  <p className="mt-1 text-sm text-gray-500">
+                    Cliente seleccionado:{" "}
+                    <strong>{selectedCustomerName}</strong>
+                  </p>
+                )}
               </div>
 
               <div>

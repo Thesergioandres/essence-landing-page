@@ -3,14 +3,23 @@ import { useNavigate } from "react-router-dom";
 import {
   analyticsService,
   categoryService,
+  creditService,
   distributorService,
+  expenseService,
   productService,
   saleService,
   stockService,
 } from "../api/services";
+import FeatureSection from "../components/FeatureSection";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useBusiness } from "../context/BusinessContext";
-import type { Category, MonthlyProfitData, Product, User } from "../types";
+import type {
+  Category,
+  CreditMetrics,
+  MonthlyProfitData,
+  Product,
+  User,
+} from "../types";
 
 export default function Dashboard() {
   interface DashboardStats {
@@ -25,6 +34,9 @@ export default function Dashboard() {
     totalRevenue: number;
     categoryStats: Array<{ category: Category; count: number }>;
     recentProducts: Product[];
+    // Gastos
+    totalExpenses: number;
+    expensesThisMonth: number;
   }
 
   const navigate = useNavigate();
@@ -41,8 +53,13 @@ export default function Dashboard() {
     totalRevenue: 0,
     categoryStats: [],
     recentProducts: [],
+    totalExpenses: 0,
+    expensesThisMonth: 0,
   });
   const [monthlyData, setMonthlyData] = useState<MonthlyProfitData | null>(
+    null
+  );
+  const [creditMetrics, setCreditMetrics] = useState<CreditMetrics | null>(
     null
   );
   const [loading, setLoading] = useState(true);
@@ -58,6 +75,8 @@ export default function Dashboard() {
         alerts,
         salesResponse,
         monthly,
+        creditsResponse,
+        expensesResponse,
       ] = await Promise.all([
         productService.getAll({ page: 1, limit: 50 }),
         categoryService.getAll(),
@@ -65,6 +84,8 @@ export default function Dashboard() {
         stockService.getAlerts(),
         saleService.getAllSales({ statsOnly: true, limit: 1 }),
         analyticsService.getMonthlyProfit(),
+        creditService.getMetrics().catch(() => ({ metrics: null })),
+        expenseService.getAll().catch(() => ({ expenses: [], total: 0 })),
       ]);
 
       const products = productsResponse.data || productsResponse;
@@ -76,6 +97,26 @@ export default function Dashboard() {
         : { stats: { totalSales: 0, totalRevenue: 0 }, sales: salesResponse };
 
       setMonthlyData(monthly);
+      setCreditMetrics(creditsResponse.metrics);
+
+      // Calcular gastos del mes actual
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const expenses = expensesResponse.expenses || [];
+      const expensesThisMonth = expenses
+        .filter((e: any) => {
+          const expDate = new Date(e.expenseDate);
+          return (
+            expDate.getMonth() === currentMonth &&
+            expDate.getFullYear() === currentYear
+          );
+        })
+        .reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+      const totalExpenses = expenses.reduce(
+        (sum: number, e: any) => sum + (Number(e.amount) || 0),
+        0
+      );
 
       // Contar productos por categoría
       const categoryCount = products.reduce<Record<string, number>>(
@@ -131,6 +172,8 @@ export default function Dashboard() {
         totalRevenue: salesData.stats.totalRevenue,
         categoryStats,
         recentProducts: products.slice(0, 5),
+        totalExpenses,
+        expensesThisMonth,
       });
     } catch (error) {
       console.error("Error cargando estadísticas:", error);
@@ -222,6 +265,128 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Resumen de Créditos */}
+      {creditMetrics && creditMetrics.total.totalCredits > 0 && (
+        <div
+          className="bg-linear-to-br cursor-pointer rounded-lg border border-amber-700/50 from-amber-900/30 to-gray-800/50 p-4 backdrop-blur-lg transition hover:border-amber-500 sm:rounded-xl sm:p-6"
+          onClick={() => navigate("/admin/credits")}
+        >
+          <div className="mb-3 flex items-center justify-between sm:mb-4">
+            <h2 className="text-lg font-bold text-amber-300 sm:text-xl">
+              💳 Cartera de Créditos
+            </h2>
+            <span className="text-xs text-amber-400/70">Ver detalle →</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+            <div>
+              <p className="text-xs text-gray-400 sm:text-sm">Total Créditos</p>
+              <p className="mt-1 text-lg font-bold text-white sm:mt-2 sm:text-xl">
+                {creditMetrics.total.totalCredits}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 sm:text-sm">
+                Deuda Pendiente
+              </p>
+              <p className="mt-1 text-lg font-bold text-red-400 sm:mt-2 sm:text-xl">
+                {new Intl.NumberFormat("es-CO", {
+                  style: "currency",
+                  currency: "COP",
+                  minimumFractionDigits: 0,
+                }).format(creditMetrics.total.totalRemainingAmount || 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 sm:text-sm">Recuperado</p>
+              <p className="mt-1 text-lg font-bold text-green-400 sm:mt-2 sm:text-xl">
+                {new Intl.NumberFormat("es-CO", {
+                  style: "currency",
+                  currency: "COP",
+                  minimumFractionDigits: 0,
+                }).format(creditMetrics.total.totalPaidAmount || 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 sm:text-sm">Vencidos</p>
+              <p
+                className={`mt-1 text-lg font-bold sm:mt-2 sm:text-xl ${creditMetrics.overdue.count > 0 ? "text-red-400" : "text-gray-400"}`}
+              >
+                {creditMetrics.overdue.count}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 sm:text-sm">
+                Tasa Recuperación
+              </p>
+              <p
+                className={`mt-1 text-lg font-bold sm:mt-2 sm:text-xl ${Number(creditMetrics.recoveryRate) >= 50 ? "text-green-400" : "text-amber-400"}`}
+              >
+                {creditMetrics.recoveryRate}%
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resumen de Gastos */}
+      {stats.expensesThisMonth > 0 && (
+        <div
+          className="bg-linear-to-br cursor-pointer rounded-lg border border-rose-700/50 from-rose-900/30 to-gray-800/50 p-4 backdrop-blur-lg transition hover:border-rose-500 sm:rounded-xl sm:p-6"
+          onClick={() => navigate("/admin/expenses")}
+        >
+          <div className="mb-3 flex items-center justify-between sm:mb-4">
+            <h2 className="text-lg font-bold text-rose-300 sm:text-xl">
+              📊 Gastos del Mes
+            </h2>
+            <span className="text-xs text-rose-400/70">Ver detalle →</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+            <div>
+              <p className="text-xs text-gray-400 sm:text-sm">
+                Gastos este mes
+              </p>
+              <p className="mt-1 text-lg font-bold text-rose-400 sm:mt-2 sm:text-xl">
+                {new Intl.NumberFormat("es-CO", {
+                  style: "currency",
+                  currency: "COP",
+                  minimumFractionDigits: 0,
+                }).format(stats.expensesThisMonth)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 sm:text-sm">Gastos totales</p>
+              <p className="mt-1 text-lg font-bold text-gray-300 sm:mt-2 sm:text-xl">
+                {new Intl.NumberFormat("es-CO", {
+                  style: "currency",
+                  currency: "COP",
+                  minimumFractionDigits: 0,
+                }).format(stats.totalExpenses)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 sm:text-sm">Ganancia Neta</p>
+              <p
+                className={`mt-1 text-lg font-bold sm:mt-2 sm:text-xl ${(monthlyData?.currentMonth.totalProfit || 0) - stats.expensesThisMonth >= 0 ? "text-green-400" : "text-red-400"}`}
+              >
+                {new Intl.NumberFormat("es-CO", {
+                  style: "currency",
+                  currency: "COP",
+                  minimumFractionDigits: 0,
+                }).format(
+                  (monthlyData?.currentMonth.totalProfit || 0) -
+                    stats.expensesThisMonth
+                )}
+              </p>
+              <p className="mt-1 text-[10px] text-gray-500">
+                Ganancia - Gastos
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
         {/* Total Products */}
@@ -252,34 +417,36 @@ export default function Dashboard() {
         </div>
 
         {/* Total Distributors */}
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-blue-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-400">Distribuidores</p>
-              <p className="mt-2 text-3xl font-bold text-white">
-                {stats.totalDistributors}
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                {stats.activeDistributors} activos
-              </p>
-            </div>
-            <div className="rounded-full bg-blue-600/20 p-3">
-              <svg
-                className="h-8 w-8 text-blue-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
+        <FeatureSection feature="distributors">
+          <div className="bg-linear-to-br rounded-xl border border-gray-700 from-blue-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Distribuidores</p>
+                <p className="mt-2 text-3xl font-bold text-white">
+                  {stats.totalDistributors}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {stats.activeDistributors} activos
+                </p>
+              </div>
+              <div className="rounded-full bg-blue-600/20 p-3">
+                <svg
+                  className="h-8 w-8 text-blue-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
-        </div>
+        </FeatureSection>
 
         {/* Total Sales */}
         <div className="bg-linear-to-br rounded-xl border border-gray-700 from-green-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-green-500">

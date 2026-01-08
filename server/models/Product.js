@@ -66,6 +66,25 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 10,
     },
+    // Costo Promedio Ponderado (Weighted Average Cost)
+    averageCost: {
+      type: Number,
+      default: function () {
+        return this.purchasePrice || 0;
+      },
+    },
+    totalInventoryValue: {
+      type: Number,
+      default: 0,
+    },
+    costingMethod: {
+      type: String,
+      enum: ["fixed", "average"],
+      default: "average",
+    },
+    lastCostUpdate: {
+      type: Date,
+    },
     featured: {
       type: Boolean,
       default: false,

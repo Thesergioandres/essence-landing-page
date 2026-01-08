@@ -2,6 +2,7 @@
 import { invalidateCache } from "../middleware/cache.middleware.js";
 import Branch from "../models/Branch.js";
 import BranchStock from "../models/BranchStock.js";
+import Credit from "../models/Credit.js";
 import Customer from "../models/Customer.js";
 import DistributorStock from "../models/DistributorStock.js";
 import Product from "../models/Product.js";
@@ -163,14 +164,19 @@ export const deleteSale = async (req, res) => {
       );
     }
 
-    // Actualizar stock total del producto
-    if (restoreQuantity) {
+    // Actualizar stock total del producto y totalInventoryValue
+    if (restoreQuantity && product) {
       const inc = { totalStock: restoreQuantity };
 
       // Venta admin sin sede: devolver al almacén general
       if (!sale.branch && !sale.distributor) {
         inc.warehouseStock = restoreQuantity;
       }
+
+      // Restaurar el valor del inventario usando el costo promedio al momento de la venta
+      // Si no existe averageCostAtSale (ventas antiguas), usar purchasePrice
+      const costAtSale = sale.averageCostAtSale || sale.purchasePrice;
+      inc.totalInventoryValue = restoreQuantity * costAtSale;
 
       await Product.findByIdAndUpdate(sale.product, { $inc: inc });
     }
@@ -208,10 +214,26 @@ export const deleteSale = async (req, res) => {
       direction: -1,
     });
 
+    // Eliminar crédito asociado si existe
+    const deletedCredit = await Credit.findOneAndDelete({
+      sale: sale._id,
+      business: sale.business || businessId,
+    });
+
+    if (deletedCredit && deletedCredit.customer) {
+      // Actualizar la deuda del cliente
+      await Customer.findByIdAndUpdate(deletedCredit.customer, {
+        $inc: { totalDebt: -deletedCredit.remainingAmount },
+      });
+    }
+
     // Eliminar la venta
     await sale.deleteOne();
 
-    res.json({ message: "Venta eliminada y stock restaurado" });
+    res.json({
+      message: "Venta eliminada y stock restaurado",
+      creditDeleted: !!deletedCredit,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -344,6 +366,9 @@ export const registerAdminSale = async (req, res) => {
       paymentProofMimeType,
       branchId,
       customerId,
+      paymentType,
+      creditDueDate,
+      initialPayment,
     } = req.body;
 
     const normalizedSaleDate = toColombiaStartOfDay(saleDate);
@@ -369,35 +394,68 @@ export const registerAdminSale = async (req, res) => {
     }
     console.log(`[${reqId}] Ô£à Producto encontrado:`, product.name);
 
-    // Validar stock general
-    if (product.totalStock < quantity) {
-      console.warn(
-        `[${reqId}] ÔØî Stock insuficiente. Disponible: ${product.totalStock}, solicitado: ${quantity}`
-      );
-      return res.status(400).json({
-        message: `Stock insuficiente. Disponible: ${product.totalStock}`,
-      });
-    }
-
-    // Resolver sede (si se envía) y validar stock en la sede si aplica
-    console.log(`[${reqId}] Creando venta...`);
+    // Resolver sede (si se envía) y validar stock según el caso
+    console.log(`[${reqId}] Validando stock...`);
     let branch = null;
     let branchStock = null;
+    let isWarehouseSale = false;
+
     if (branchId) {
+      // Si hay sede, verificar si es bodega o sede normal
       branch = await ensureBranch(businessId, branchId);
-      branchStock = await BranchStock.findOne({
-        business: businessId,
-        branch: branch._id,
-        product: productId,
-      });
-      if (!branchStock || branchStock.quantity < quantity) {
+
+      if (branch.isWarehouse) {
+        // Si es la sede "Bodega", validar stock en warehouseStock
+        isWarehouseSale = true;
+        const warehouseStock = product.warehouseStock || 0;
+        if (warehouseStock < quantity) {
+          console.warn(
+            `[${reqId}] ÔØî Stock insuficiente en bodega. Disponible: ${warehouseStock}, solicitado: ${quantity}`
+          );
+          return res.status(400).json({
+            message: `Stock insuficiente en bodega. Disponible: ${warehouseStock}`,
+          });
+        }
+      } else {
+        // Si es una sede normal, validar stock en BranchStock
+        branchStock = await BranchStock.findOne({
+          business: businessId,
+          branch: branch._id,
+          product: productId,
+        });
+        if (!branchStock || branchStock.quantity < quantity) {
+          console.warn(
+            `[${reqId}] ÔØî Stock insuficiente en sede. Disponible: ${
+              branchStock?.quantity || 0
+            }, solicitado: ${quantity}`
+          );
+          return res.status(400).json({
+            message: `Stock insuficiente en la sede. Disponible: ${
+              branchStock?.quantity || 0
+            }`,
+          });
+        }
+      }
+    } else {
+      // Si no hay sede, validar stock en bodega
+      isWarehouseSale = true;
+      const warehouseStock = product.warehouseStock || 0;
+      if (warehouseStock < quantity) {
+        console.warn(
+          `[${reqId}] ÔØî Stock insuficiente en bodega. Disponible: ${warehouseStock}, solicitado: ${quantity}`
+        );
         return res.status(400).json({
-          message: `Stock insuficiente en la sede. Disponible: ${
-            branchStock?.quantity || 0
-          }`,
+          message: `Stock insuficiente en bodega. Disponible: ${warehouseStock}`,
         });
       }
     }
+
+    console.log(`[${reqId}] Ô£à Stock validado correctamente`);
+    console.log(`[${reqId}] Creando venta...`);
+
+    // Calcular el costo promedio al momento de la venta
+    const averageCostAtSale = product.averageCost || product.purchasePrice;
+
     const saleData = {
       business: businessId,
       branch: branch?._id,
@@ -405,6 +463,7 @@ export const registerAdminSale = async (req, res) => {
       product: productId,
       quantity,
       purchasePrice: product.purchasePrice,
+      averageCostAtSale, // Guardar costo promedio para cálculo de ganancias
       distributorPrice: product.distributorPrice,
       salePrice,
       notes,
@@ -431,22 +490,39 @@ export const registerAdminSale = async (req, res) => {
     const sale = await Sale.create(saleData);
     console.log(`[${reqId}] Ô£à Venta creada:`, sale._id);
 
-    // Descontar del stock total del producto y de la sede si aplica
+    // Descontar stock según el origen (bodega o sede)
     console.log(`[${reqId}] Actualizando stock...`);
     product.totalStock -= quantity;
-    product.warehouseStock = Math.max(
-      (product.warehouseStock || 0) - quantity,
+
+    // Actualizar valor total del inventario (reducir por el costo promedio de las unidades vendidas)
+    const inventoryValueReduction = quantity * averageCostAtSale;
+    product.totalInventoryValue = Math.max(
+      (product.totalInventoryValue || 0) - inventoryValueReduction,
       0
     );
-    await product.save();
-    if (branchStock) {
+
+    if (isWarehouseSale) {
+      // Si es venta de bodega (sin sede o con sede isWarehouse), descontar de warehouseStock
+      product.warehouseStock = Math.max(
+        (product.warehouseStock || 0) - quantity,
+        0
+      );
+      console.log(
+        `[${reqId}] Ô£à Stock actualizado en bodega. Nuevo stock bodega:`,
+        product.warehouseStock
+      );
+    } else if (branchStock) {
+      // Si es venta de sede normal, descontar del stock de la sede
       branchStock.quantity -= quantity;
       await branchStock.save();
+      console.log(
+        `[${reqId}] Ô£à Stock actualizado en sede. Nuevo stock sede:`,
+        branchStock.quantity
+      );
     }
-    console.log(
-      `[${reqId}] Ô£à Stock actualizado. Nuevo stock general:`,
-      product.totalStock
-    );
+
+    await product.save();
+    console.log(`[${reqId}] Ô£à Stock total actualizado:`, product.totalStock);
 
     console.log(`[${reqId}] ­ƒöä Obteniendo venta con populate...`);
     const populatedSale = await Sale.findById(sale._id).populate(
@@ -479,6 +555,49 @@ export const registerAdminSale = async (req, res) => {
       });
     }
 
+    // Crear crédito si es venta a crédito
+    let credit = null;
+    if (paymentType === "credit" && customerDoc) {
+      const totalAmount = Number(salePrice) * Number(quantity);
+      const creditAmount = totalAmount - (Number(initialPayment) || 0);
+
+      if (creditAmount > 0) {
+        credit = await Credit.create({
+          customer: customerDoc._id,
+          business: businessId,
+          sale: sale._id,
+          branch: branch?._id,
+          createdBy: req.user?.id || req.user?.userId,
+          originalAmount: creditAmount,
+          remainingAmount: creditAmount,
+          paidAmount: Number(initialPayment) || 0,
+          dueDate: creditDueDate ? new Date(creditDueDate) : null,
+          description: notes || `Venta a crédito de ${product.name}`,
+          items: [
+            {
+              product: product._id,
+              productName: product.name,
+              quantity: Number(quantity),
+              unitPrice: Number(salePrice),
+              subtotal: totalAmount,
+            },
+          ],
+          status:
+            Number(initialPayment) > 0 && Number(initialPayment) < totalAmount
+              ? "partial"
+              : "pending",
+        });
+
+        // Actualizar deuda del cliente
+        await Customer.findByIdAndUpdate(customerDoc._id, {
+          $inc: { totalDebt: creditAmount },
+          $addToSet: { segments: "con_deuda" },
+        });
+
+        console.log(`[${reqId}] 💳 Crédito creado:`, credit._id);
+      }
+    }
+
     console.log(`[${reqId}] Ô£à registerAdminSale SUCCESS`);
 
     await AuditService.log({
@@ -503,6 +622,9 @@ export const registerAdminSale = async (req, res) => {
       message: "Venta registrada exitosamente (admin)",
       sale: populatedSale,
       remainingStock: product.totalStock,
+      credit: credit
+        ? { _id: credit._id, remainingAmount: credit.remainingAmount }
+        : null,
     });
   } catch (error) {
     console.error(`[${reqId}] ÔØî FATAL ERROR:`, error?.message);
@@ -539,6 +661,9 @@ export const registerSale = async (req, res) => {
       saleDate,
       branchId,
       customerId,
+      paymentType,
+      creditDueDate,
+      initialPayment,
     } = req.body;
     const distributorId = req.user.id;
     const usesBranchStock = Boolean(branchId);
@@ -614,6 +739,9 @@ export const registerSale = async (req, res) => {
     const sequentialNumber = String(saleCount + 1).padStart(4, "0");
     const saleId = `VTA-${year}-${sequentialNumber}`;
 
+    // Calcular el costo promedio al momento de la venta
+    const averageCostAtSale = product.averageCost || product.purchasePrice;
+
     // Crear la venta
     const saleData = {
       business: businessId,
@@ -623,6 +751,7 @@ export const registerSale = async (req, res) => {
       product: productId,
       quantity,
       purchasePrice: product.purchasePrice,
+      averageCostAtSale, // Guardar costo promedio para cálculo de ganancias
       distributorPrice: product.distributorPrice,
       salePrice,
       notes,
@@ -665,6 +794,12 @@ export const registerSale = async (req, res) => {
       await branchStock.save();
 
       product.totalStock -= quantity;
+      // Actualizar valor total del inventario (reducir por el costo promedio de las unidades vendidas)
+      const inventoryValueReduction = quantity * averageCostAtSale;
+      product.totalInventoryValue = Math.max(
+        (product.totalInventoryValue || 0) - inventoryValueReduction,
+        0
+      );
       await product.save();
 
       const populatedSale = await Sale.findById(sale._id)
@@ -699,11 +834,55 @@ export const registerSale = async (req, res) => {
         });
       }
 
+      // Crear crédito si es venta a crédito
+      let credit = null;
+      if (paymentType === "credit" && customerDoc) {
+        const totalAmount = Number(salePrice) * Number(quantity);
+        const creditAmount = totalAmount - (Number(initialPayment) || 0);
+
+        if (creditAmount > 0) {
+          credit = await Credit.create({
+            customer: customerDoc._id,
+            business: businessId,
+            sale: sale._id,
+            branch: branch?._id,
+            createdBy: distributorId,
+            originalAmount: creditAmount,
+            remainingAmount: creditAmount,
+            paidAmount: Number(initialPayment) || 0,
+            dueDate: creditDueDate ? new Date(creditDueDate) : null,
+            description: notes || `Venta a crédito de ${product.name}`,
+            items: [
+              {
+                product: product._id,
+                productName: product.name,
+                quantity: Number(quantity),
+                unitPrice: Number(salePrice),
+                subtotal: totalAmount,
+              },
+            ],
+            status:
+              Number(initialPayment) > 0 && Number(initialPayment) < totalAmount
+                ? "partial"
+                : "pending",
+          });
+
+          // Actualizar deuda del cliente
+          await Customer.findByIdAndUpdate(customerDoc._id, {
+            $inc: { totalDebt: creditAmount },
+            $addToSet: { segments: "con_deuda" },
+          });
+        }
+      }
+
       res.status(201).json({
         message: "Venta registrada exitosamente",
         sale: populatedSale,
         remainingStock: branchStock.quantity,
         commissionBonus: commissionBonus > 0 ? `+${commissionBonus}%` : null,
+        credit: credit
+          ? { _id: credit._id, remainingAmount: credit.remainingAmount }
+          : null,
       });
 
       await AuditService.log({
@@ -759,6 +938,12 @@ export const registerSale = async (req, res) => {
     await distributorStock.save();
 
     product.totalStock -= quantity;
+    // Actualizar valor total del inventario (reducir por el costo promedio de las unidades vendidas)
+    const inventoryValueReduction = quantity * averageCostAtSale;
+    product.totalInventoryValue = Math.max(
+      (product.totalInventoryValue || 0) - inventoryValueReduction,
+      0
+    );
     await product.save();
 
     const populatedSale = await Sale.findById(sale._id)
@@ -793,11 +978,55 @@ export const registerSale = async (req, res) => {
       });
     }
 
+    // Crear crédito si es venta a crédito
+    let credit = null;
+    if (paymentType === "credit" && customerDoc) {
+      const totalAmount = Number(salePrice) * Number(quantity);
+      const creditAmount = totalAmount - (Number(initialPayment) || 0);
+
+      if (creditAmount > 0) {
+        credit = await Credit.create({
+          customer: customerDoc._id,
+          business: businessId,
+          sale: sale._id,
+          branch: branch?._id,
+          createdBy: distributorId,
+          originalAmount: creditAmount,
+          remainingAmount: creditAmount,
+          paidAmount: Number(initialPayment) || 0,
+          dueDate: creditDueDate ? new Date(creditDueDate) : null,
+          description: notes || `Venta a crédito de ${product.name}`,
+          items: [
+            {
+              product: product._id,
+              productName: product.name,
+              quantity: Number(quantity),
+              unitPrice: Number(salePrice),
+              subtotal: totalAmount,
+            },
+          ],
+          status:
+            Number(initialPayment) > 0 && Number(initialPayment) < totalAmount
+              ? "partial"
+              : "pending",
+        });
+
+        // Actualizar deuda del cliente
+        await Customer.findByIdAndUpdate(customerDoc._id, {
+          $inc: { totalDebt: creditAmount },
+          $addToSet: { segments: "con_deuda" },
+        });
+      }
+    }
+
     res.status(201).json({
       message: "Venta registrada exitosamente",
       sale: populatedSale,
       remainingStock: distributorStock.quantity,
       commissionBonus: commissionBonus > 0 ? `+${commissionBonus}%` : null,
+      credit: credit
+        ? { _id: credit._id, remainingAmount: credit.remainingAmount }
+        : null,
     });
 
     await AuditService.log({
@@ -1027,6 +1256,8 @@ export const getAllSales = async (req, res) => {
       distributor: 1,
       product: 1,
       branch: 1,
+      customer: 1,
+      customerName: 1,
       createdAt: 1,
       updatedAt: 1,
     };
@@ -1047,6 +1278,25 @@ export const getAllSales = async (req, res) => {
 
       sales = foundSales;
       total = totalCount;
+
+      // Buscar créditos asociados a las ventas
+      const saleIds = sales.map((s) => s._id);
+      const credits = await Credit.find({ sale: { $in: saleIds } })
+        .select("sale originalAmount paidAmount remainingAmount status dueDate")
+        .lean();
+
+      // Crear un mapa de créditos por saleId
+      const creditMap = {};
+      credits.forEach((credit) => {
+        creditMap[credit.sale.toString()] = credit;
+      });
+
+      // Agregar información de crédito a cada venta
+      sales = sales.map((sale) => ({
+        ...sale,
+        credit: creditMap[sale._id.toString()] || null,
+      }));
+
       console.log(
         `[${req.reqId || "no-id"}] sales:list fetched ${
           sales.length

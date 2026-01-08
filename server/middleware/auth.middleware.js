@@ -1,6 +1,57 @@
 import jwt from "jsonwebtoken";
+import Business from "../models/Business.js";
+import Membership from "../models/Membership.js";
 import User from "../models/User.js";
 import { logAuthError } from "../utils/logger.js";
+
+/**
+ * Verifica si el owner del negocio tiene acceso activo.
+ * Los distribuidores heredan el acceso del owner de su negocio.
+ */
+const checkBusinessOwnerAccess = async (userId) => {
+  try {
+    // Buscar membresía activa del usuario como distribuidor
+    const membership = await Membership.findOne({
+      user: userId,
+      role: "distribuidor",
+      status: "active",
+    }).populate("business");
+
+    if (!membership || !membership.business) {
+      return { hasAccess: true }; // No es distribuidor de ningún negocio, no aplicar restricción
+    }
+
+    // Obtener el owner del negocio
+    const business = await Business.findById(membership.business._id);
+    if (!business || !business.createdBy) {
+      return { hasAccess: true };
+    }
+
+    const owner = await User.findById(business.createdBy);
+    if (!owner) {
+      return { hasAccess: true };
+    }
+
+    // Verificar estado del owner
+    const ownerExpired =
+      owner.subscriptionExpiresAt &&
+      new Date(owner.subscriptionExpiresAt).getTime() < Date.now();
+
+    if (owner.status !== "active" || ownerExpired) {
+      return {
+        hasAccess: false,
+        reason: ownerExpired ? "owner_expired" : "owner_inactive",
+        ownerStatus: owner.status,
+        ownerExpiresAt: owner.subscriptionExpiresAt,
+      };
+    }
+
+    return { hasAccess: true };
+  } catch (error) {
+    console.error("Error checking business owner access:", error);
+    return { hasAccess: true }; // En caso de error, permitir acceso para no bloquear
+  }
+};
 
 // Proteger rutas - verificar JWT
 export const protect = async (req, res, next) => {
@@ -90,6 +141,28 @@ export const protect = async (req, res, next) => {
             code: user.status,
             subscriptionExpiresAt: user.subscriptionExpiresAt,
           });
+        }
+
+        // Para distribuidores, verificar también el estado del owner del negocio
+        if (user.role === "distribuidor") {
+          const ownerCheck = await checkBusinessOwnerAccess(user._id);
+          if (!ownerCheck.hasAccess) {
+            logAuthError({
+              message: "Acceso restringido: el negocio no está activo",
+              module: "auth",
+              requestId: req.reqId,
+              userId: user._id?.toString(),
+              extra: {
+                code: ownerCheck.reason,
+                ownerStatus: ownerCheck.ownerStatus,
+              },
+            });
+            return res.status(403).json({
+              message: "El negocio al que perteneces no está activo",
+              code: ownerCheck.reason,
+              ownerExpiresAt: ownerCheck.ownerExpiresAt,
+            });
+          }
         }
       }
 

@@ -40,6 +40,7 @@ export const createDistributor = async (req, res) => {
       phone,
       address,
       role: "distribuidor",
+      status: "active", // Los distribuidores creados por el negocio están activos inmediatamente
       active: true,
     });
 

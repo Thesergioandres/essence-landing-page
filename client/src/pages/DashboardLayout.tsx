@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { authService } from "../api/services.ts";
 import BusinessGate from "../components/BusinessGate";
 import BusinessSelector from "../components/BusinessSelector";
+import FeatureNavLink from "../components/FeatureNavLink";
 import ReportIssueButton from "../components/ReportIssueButton";
 import { useBusiness } from "../context/BusinessContext";
 import { useBrandLogo } from "../hooks/useBrandLogo";
@@ -167,9 +168,12 @@ export default function DashboardLayout() {
               </svg>
               Ventas
             </NavLink>
-            <NavLink
+            <FeatureNavLink
               to="/admin/special-sales"
-              className={({ isActive }): string => navLinkClasses(isActive)}
+              feature="sales"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
             >
               <svg
                 className="h-5 w-5"
@@ -185,10 +189,13 @@ export default function DashboardLayout() {
                 />
               </svg>
               Ventas Especiales
-            </NavLink>
-            <NavLink
+            </FeatureNavLink>
+            <FeatureNavLink
               to="/admin/expenses"
-              className={({ isActive }): string => navLinkClasses(isActive)}
+              feature="expenses"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
             >
               <svg
                 className="h-5 w-5"
@@ -204,7 +211,7 @@ export default function DashboardLayout() {
                 />
               </svg>
               Gastos
-            </NavLink>
+            </FeatureNavLink>
 
             <SectionTitle label="Productos" />
             <NavLink
@@ -265,6 +272,69 @@ export default function DashboardLayout() {
               Categorías
             </NavLink>
             <NavLink
+              to="/admin/providers"
+              className={({ isActive }): string => navLinkClasses(isActive)}
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
+                />
+              </svg>
+              Proveedores
+            </NavLink>
+            <FeatureNavLink
+              to="/admin/customers"
+              feature="customers"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              Clientes
+            </FeatureNavLink>
+            <FeatureNavLink
+              to="/admin/credits"
+              feature="credits"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                />
+              </svg>
+              Fiados / Créditos
+            </FeatureNavLink>
+            <NavLink
               to="/catalog"
               className={({ isActive }): string => navLinkClasses(isActive)}
             >
@@ -283,9 +353,12 @@ export default function DashboardLayout() {
               </svg>
               Catálogo Completo
             </NavLink>
-            <NavLink
+            <FeatureNavLink
               to="/admin/branches"
-              className={({ isActive }): string => navLinkClasses(isActive)}
+              feature="branches"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
             >
               <svg
                 className="h-5 w-5"
@@ -301,10 +374,35 @@ export default function DashboardLayout() {
                 />
               </svg>
               Sedes
-            </NavLink>
-            <NavLink
+            </FeatureNavLink>
+            <FeatureNavLink
+              to="/admin/inventory-entries"
+              feature="inventory"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
+              </svg>
+              Recepción de Mercancía
+            </FeatureNavLink>
+            <FeatureNavLink
               to="/admin/stock-management"
-              className={({ isActive }): string => navLinkClasses(isActive)}
+              feature="inventory"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
             >
               <svg
                 className="h-5 w-5"
@@ -320,10 +418,13 @@ export default function DashboardLayout() {
                 />
               </svg>
               Gestión de Stock
-            </NavLink>
-            <NavLink
+            </FeatureNavLink>
+            <FeatureNavLink
               to="/admin/transfer-history"
-              className={({ isActive }): string => navLinkClasses(isActive)}
+              feature="transfers"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
             >
               <svg
                 className="h-5 w-5"
@@ -339,10 +440,13 @@ export default function DashboardLayout() {
                 />
               </svg>
               Historial de Transferencias
-            </NavLink>
-            <NavLink
+            </FeatureNavLink>
+            <FeatureNavLink
               to="/admin/defective-products"
-              className={({ isActive }): string => navLinkClasses(isActive)}
+              feature="defectiveProducts"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
             >
               <svg
                 className="h-5 w-5"
@@ -358,12 +462,15 @@ export default function DashboardLayout() {
                 />
               </svg>
               Productos Defectuosos
-            </NavLink>
+            </FeatureNavLink>
 
             <SectionTitle label="Reportes" />
-            <NavLink
+            <FeatureNavLink
               to="/admin/profit-history"
-              className={({ isActive }): string => navLinkClasses(isActive)}
+              feature="reports"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
             >
               <svg
                 className="h-5 w-5"
@@ -379,10 +486,13 @@ export default function DashboardLayout() {
                 />
               </svg>
               Historial de Ganancias
-            </NavLink>
-            <NavLink
+            </FeatureNavLink>
+            <FeatureNavLink
               to="/admin/analytics"
-              className={({ isActive }): string => navLinkClasses(isActive)}
+              feature="reports"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
             >
               <svg
                 className="h-5 w-5"
@@ -398,9 +508,35 @@ export default function DashboardLayout() {
                 />
               </svg>
               Análisis
-            </NavLink>
+            </FeatureNavLink>
+
+            <SectionTitle label="Marketing" />
+            <FeatureNavLink
+              to="/admin/promotions"
+              feature="promotions"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                />
+              </svg>
+              Promociones
+            </FeatureNavLink>
+
+            <SectionTitle label="Configuración" />
             <NavLink
-              to="/admin/advanced-analytics"
+              to="/admin/team"
               className={({ isActive }): string => navLinkClasses(isActive)}
             >
               <svg
@@ -413,13 +549,11 @@ export default function DashboardLayout() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
-              Analíticas Avanzadas
+              Equipo y Permisos
             </NavLink>
-
-            <SectionTitle label="Configuración" />
             <NavLink
               to="/admin/business-settings"
               className={({ isActive }): string => navLinkClasses(isActive)}
@@ -444,6 +578,25 @@ export default function DashboardLayout() {
                 />
               </svg>
               Configurar negocio
+            </NavLink>
+            <NavLink
+              to="/admin/create-business"
+              className={({ isActive }): string => navLinkClasses(isActive)}
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              Crear nuevo negocio
             </NavLink>
           </nav>
 

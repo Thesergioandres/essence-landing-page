@@ -49,6 +49,11 @@ const saleSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    // Costo promedio ponderado al momento de la venta (para cálculo de ganancias)
+    averageCostAtSale: {
+      type: Number,
+      default: null,
+    },
     distributorPrice: {
       type: Number,
       required: true,
@@ -162,11 +167,16 @@ saleSchema.pre("validate", function (next) {
 });
 
 // Calcular ganancias antes de guardar
+// Usamos averageCost (costo promedio ponderado) si está disponible, sino purchasePrice
 saleSchema.pre("save", function (next) {
+  // Determinar el costo a usar: averageCost del producto o purchasePrice de la venta
+  // El averageCost se debe pasar como this.averageCostAtSale si se calculó antes
+  const costBasis = this.averageCostAtSale || this.purchasePrice;
+
   // Si es venta admin (sin distribuidor)
   if (!this.distributor) {
-    // Solo hay ganancia del admin: (precio de venta - precio de compra) * cantidad
-    this.adminProfit = (this.salePrice - this.purchasePrice) * this.quantity;
+    // Solo hay ganancia del admin: (precio de venta - costo) * cantidad
+    this.adminProfit = (this.salePrice - costBasis) * this.quantity;
     this.distributorProfit = 0;
     this.distributorProfitPercentage = 0;
     this.totalProfit = this.adminProfit;
@@ -188,12 +198,10 @@ saleSchema.pre("save", function (next) {
     this.distributorProfit =
       (this.salePrice - priceForDistributor) * this.quantity;
 
-    // GANANCIA DEL ADMIN = Precio Venta - Precio Compra - Ganancia Distribuidor
+    // GANANCIA DEL ADMIN = Precio Venta - Costo - Ganancia Distribuidor
     // Ejemplo: $22,000 - $10,500 - $4,400 = $7,100
     this.adminProfit =
-      (this.salePrice -
-        this.purchasePrice -
-        (this.salePrice - priceForDistributor)) *
+      (this.salePrice - costBasis - (this.salePrice - priceForDistributor)) *
       this.quantity;
 
     // Ganancia total

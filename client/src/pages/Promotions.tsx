@@ -117,10 +117,17 @@ export default function Promotions() {
 
   const fetchBranches = async () => {
     try {
-      const { data } = await api.get<Branch[]>("/branches");
-      setBranches(data || []);
+      const response = await api.get<{ data: Branch[] } | Branch[]>(
+        "/branches"
+      );
+      // El backend puede devolver { data: [...] } o directamente [...]
+      const branchesData = Array.isArray(response.data)
+        ? response.data
+        : (response.data as { data: Branch[] })?.data || [];
+      setBranches(Array.isArray(branchesData) ? branchesData : []);
     } catch (err) {
       console.error("[UI ERROR] branches_fetch_failed", err);
+      setBranches([]); // Asegurar que siempre sea un array
     }
   };
 
@@ -191,6 +198,10 @@ export default function Promotions() {
 
   const handleEdit = (promo: Promotion) => {
     setEditingPromo(promo);
+    // branches puede venir como array de objetos {_id, name} o como array de strings
+    const branchIds = Array.isArray(promo.branches)
+      ? promo.branches.map(b => (typeof b === "string" ? b : b._id))
+      : [];
     setFormData({
       name: promo.name,
       description: promo.description || "",
@@ -201,7 +212,7 @@ export default function Promotions() {
       maxUses: promo.maxUses || 0,
       startDate: promo.startDate ? promo.startDate.split("T")[0] : "",
       endDate: promo.endDate ? promo.endDate.split("T")[0] : "",
-      branches: promo.branches?.map(b => b._id) || [],
+      branches: branchIds,
     });
     setShowModal(true);
   };
@@ -387,11 +398,13 @@ export default function Promotions() {
                     {promo.currentUses || 0} / {promo.maxUses} usos
                   </div>
                 )}
-                {promo.branches && promo.branches.length > 0 && (
+                {Array.isArray(promo.branches) && promo.branches.length > 0 && (
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4" />
                     {promo.branches.length === 1
-                      ? promo.branches[0].name
+                      ? typeof promo.branches[0] === "string"
+                        ? promo.branches[0]
+                        : promo.branches[0].name
                       : `${promo.branches.length} sucursales`}
                   </div>
                 )}

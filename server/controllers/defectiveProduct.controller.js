@@ -8,7 +8,13 @@ import Product from "../models/Product.js";
 // @access  Private/Admin
 export const reportDefectiveProductAdmin = async (req, res) => {
   try {
-    const { productId, quantity, reason, images } = req.body;
+    const {
+      productId,
+      quantity,
+      reason,
+      images,
+      hasWarranty = false,
+    } = req.body;
     const businessId = req.businessId;
 
     // Verificar que el producto exista y tenga stock en bodega
@@ -27,6 +33,11 @@ export const reportDefectiveProductAdmin = async (req, res) => {
       });
     }
 
+    // Calcular pérdida si no tiene garantía
+    const lossAmount = hasWarranty
+      ? 0
+      : (product.purchasePrice || 0) * quantity;
+
     // Crear el reporte sin distribuidor (es del admin/bodega)
     const defectiveReport = await DefectiveProduct.create({
       distributor: null, // Admin no tiene distribuidor asociado
@@ -35,24 +46,34 @@ export const reportDefectiveProductAdmin = async (req, res) => {
       quantity,
       reason,
       images: images || [],
+      hasWarranty,
+      warrantyStatus: hasWarranty ? "pending" : "not_applicable",
+      lossAmount,
+      stockOrigin: "warehouse",
       status: "confirmado", // Los reportes del admin se autoconfirman
       confirmedAt: Date.now(),
       confirmedBy: req.user._id,
-      adminNotes: "Reporte directo de administrador desde bodega",
+      adminNotes: hasWarranty
+        ? "Reporte con garantía - pendiente reposición de stock"
+        : "Reporte sin garantía - pérdida registrada",
     });
 
-    // Descontar del stock de bodega
+    // Descontar del stock de bodega y del stock total
     product.warehouseStock -= quantity;
+    product.totalStock -= quantity;
     await product.save();
 
     const populatedReport = await DefectiveProduct.findById(defectiveReport._id)
-      .populate("product", "name image")
+      .populate("product", "name image purchasePrice")
       .populate("confirmedBy", "name email");
 
     res.status(201).json({
-      message: "Producto defectuoso reportado desde bodega",
+      message: hasWarranty
+        ? "Producto defectuoso reportado. Pendiente reposición por garantía."
+        : `Producto defectuoso reportado. Pérdida registrada: $${lossAmount.toLocaleString()}`,
       report: populatedReport,
       remainingStock: product.warehouseStock,
+      lossAmount,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -105,6 +126,13 @@ export const reportDefectiveProductBranch = async (req, res) => {
 
     branchStock.quantity -= quantity;
     await branchStock.save();
+
+    // Descontar del stock total del producto
+    const product = await Product.findById(productId);
+    if (product) {
+      product.totalStock -= quantity;
+      await product.save();
+    }
 
     const populatedReport = await DefectiveProduct.findById(defectiveReport._id)
       .populate("product", "name image")
@@ -283,6 +311,13 @@ export const confirmDefectiveProduct = async (req, res) => {
 
     await report.save();
 
+    // Descontar del stock total del producto (el stock ya se descontó del distribuidor al crear el reporte)
+    const product = await Product.findById(report.product);
+    if (product) {
+      product.totalStock -= report.quantity;
+      await product.save();
+    }
+
     const populatedReport = await DefectiveProduct.findById(report._id)
       .populate("product", "name image")
       .populate("distributor", "name email")
@@ -353,6 +388,256 @@ export const rejectDefectiveProduct = async (req, res) => {
     res.json({
       message: "Reporte rechazado. Stock devuelto al distribuidor",
       report: populatedReport,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Aprobar garantía y reponer stock
+// @route   PUT /api/defective-products/:id/approve-warranty
+// @access  Private/Admin
+export const approveWarranty = async (req, res) => {
+  try {
+    const { adminNotes } = req.body;
+    const report = await DefectiveProduct.findOne({
+      _id: req.params.id,
+      business: req.businessId,
+    });
+
+    if (!report) {
+      return res.status(404).json({ message: "Reporte no encontrado" });
+    }
+
+    if (!report.hasWarranty) {
+      return res
+        .status(400)
+        .json({ message: "Este reporte no tiene garantía" });
+    }
+
+    if (report.warrantyStatus === "approved") {
+      return res.status(400).json({ message: "La garantía ya fue aprobada" });
+    }
+
+    if (report.stockRestored) {
+      return res.status(400).json({ message: "El stock ya fue repuesto" });
+    }
+
+    // Reponer stock según el origen
+    const product = await Product.findById(report.product);
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    // Siempre reponer a bodega (el proveedor envía reposición)
+    product.warehouseStock = (product.warehouseStock || 0) + report.quantity;
+    product.totalStock = (product.totalStock || 0) + report.quantity;
+    await product.save();
+
+    // Actualizar reporte
+    report.warrantyStatus = "approved";
+    report.stockRestored = true;
+    report.stockRestoredAt = new Date();
+    report.lossAmount = 0; // Sin pérdida porque hay garantía
+    if (adminNotes) report.adminNotes = adminNotes;
+    await report.save();
+
+    const populatedReport = await DefectiveProduct.findById(report._id)
+      .populate("product", "name image")
+      .populate("distributor", "name email")
+      .populate("branch", "name")
+      .populate("confirmedBy", "name email");
+
+    res.json({
+      message: `Garantía aprobada. ${report.quantity} unidades repuestas a bodega.`,
+      report: populatedReport,
+      newStock: {
+        warehouseStock: product.warehouseStock,
+        totalStock: product.totalStock,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Rechazar garantía (registrar como pérdida)
+// @route   PUT /api/defective-products/:id/reject-warranty
+// @access  Private/Admin
+export const rejectWarranty = async (req, res) => {
+  try {
+    const { adminNotes } = req.body;
+    const report = await DefectiveProduct.findOne({
+      _id: req.params.id,
+      business: req.businessId,
+    }).populate("product", "purchasePrice");
+
+    if (!report) {
+      return res.status(404).json({ message: "Reporte no encontrado" });
+    }
+
+    if (!report.hasWarranty) {
+      return res
+        .status(400)
+        .json({ message: "Este reporte no tiene garantía" });
+    }
+
+    if (report.warrantyStatus === "rejected") {
+      return res.status(400).json({ message: "La garantía ya fue rechazada" });
+    }
+
+    // Calcular pérdida
+    const lossAmount = (report.product?.purchasePrice || 0) * report.quantity;
+
+    report.warrantyStatus = "rejected";
+    report.lossAmount = lossAmount;
+    if (adminNotes) report.adminNotes = adminNotes;
+    await report.save();
+
+    const populatedReport = await DefectiveProduct.findById(report._id)
+      .populate("product", "name image purchasePrice")
+      .populate("distributor", "name email")
+      .populate("branch", "name")
+      .populate("confirmedBy", "name email");
+
+    res.json({
+      message: `Garantía rechazada. Pérdida registrada: $${lossAmount.toLocaleString()}`,
+      report: populatedReport,
+      lossAmount,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Eliminar reporte y restaurar stock
+// @route   DELETE /api/defective-products/:id
+// @access  Private/Admin
+export const deleteDefectiveReport = async (req, res) => {
+  try {
+    const report = await DefectiveProduct.findOne({
+      _id: req.params.id,
+      business: req.businessId,
+    });
+
+    if (!report) {
+      return res.status(404).json({ message: "Reporte no encontrado" });
+    }
+
+    const product = await Product.findById(report.product);
+
+    // Restaurar stock según el origen y estado
+    if (report.status === "confirmado" && !report.stockRestored) {
+      // Si está confirmado, el stock ya fue descontado del total
+      // Solo restauramos si no hay garantía aprobada (porque eso ya restauró)
+      if (product) {
+        product.totalStock = (product.totalStock || 0) + report.quantity;
+
+        // Restaurar al origen correcto
+        if (
+          report.stockOrigin === "warehouse" ||
+          (!report.distributor && !report.branch)
+        ) {
+          product.warehouseStock =
+            (product.warehouseStock || 0) + report.quantity;
+        } else if (report.branch) {
+          await BranchStock.findOneAndUpdate(
+            {
+              business: report.business,
+              branch: report.branch,
+              product: report.product,
+            },
+            { $inc: { quantity: report.quantity } },
+            { upsert: true, new: true }
+          );
+        } else if (report.distributor) {
+          await DistributorStock.findOneAndUpdate(
+            {
+              business: report.business,
+              distributor: report.distributor,
+              product: report.product,
+            },
+            { $inc: { quantity: report.quantity } },
+            { upsert: true, new: true }
+          );
+        }
+
+        await product.save();
+      }
+    } else if (report.status === "pendiente" && report.distributor) {
+      // Si está pendiente y es de distribuidor, restaurar a distribuidor
+      await DistributorStock.findOneAndUpdate(
+        {
+          business: report.business,
+          distributor: report.distributor,
+          product: report.product,
+        },
+        { $inc: { quantity: report.quantity } },
+        { upsert: true, new: true }
+      );
+    }
+
+    await report.deleteOne();
+
+    res.json({
+      message: "Reporte eliminado y stock restaurado",
+      restoredQuantity: report.quantity,
+      restoredTo: report.stockOrigin || "original",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Obtener estadísticas de defectuosos
+// @route   GET /api/defective-products/stats
+// @access  Private/Admin
+export const getDefectiveStats = async (req, res) => {
+  try {
+    const businessId = req.businessId;
+
+    const stats = await DefectiveProduct.aggregate([
+      { $match: { business: businessId } },
+      {
+        $group: {
+          _id: null,
+          totalReports: { $sum: 1 },
+          totalQuantity: { $sum: "$quantity" },
+          totalLoss: { $sum: "$lossAmount" },
+          pendingCount: {
+            $sum: { $cond: [{ $eq: ["$status", "pendiente"] }, 1, 0] },
+          },
+          confirmedCount: {
+            $sum: { $cond: [{ $eq: ["$status", "confirmado"] }, 1, 0] },
+          },
+          withWarranty: {
+            $sum: { $cond: ["$hasWarranty", 1, 0] },
+          },
+          warrantyPending: {
+            $sum: { $cond: [{ $eq: ["$warrantyStatus", "pending"] }, 1, 0] },
+          },
+          warrantyApproved: {
+            $sum: { $cond: [{ $eq: ["$warrantyStatus", "approved"] }, 1, 0] },
+          },
+          stockRestored: {
+            $sum: { $cond: ["$stockRestored", "$quantity", 0] },
+          },
+        },
+      },
+    ]);
+
+    res.json({
+      stats: stats[0] || {
+        totalReports: 0,
+        totalQuantity: 0,
+        totalLoss: 0,
+        pendingCount: 0,
+        confirmedCount: 0,
+        withWarranty: 0,
+        warrantyPending: 0,
+        warrantyApproved: 0,
+        stockRestored: 0,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

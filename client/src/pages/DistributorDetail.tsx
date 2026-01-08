@@ -1,9 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { distributorService, saleService, stockService } from "../api/services";
+import {
+  branchService,
+  businessService,
+  distributorService,
+  saleService,
+  stockService,
+} from "../api/services";
 import { Button } from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
-import type { DistributorStock, Sale, User } from "../types";
+import { useBusiness } from "../context/BusinessContext";
+import type {
+  Branch,
+  DistributorStock,
+  Membership,
+  Sale,
+  User,
+} from "../types";
 
 interface DistributorStats {
   totalSales: number;
@@ -14,6 +27,7 @@ interface DistributorStats {
 const DistributorDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { business: selectedBusiness } = useBusiness();
   const [distributor, setDistributor] = useState<User | null>(null);
   const [stock, setStock] = useState<DistributorStock[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -23,10 +37,17 @@ const DistributorDetail = () => {
     totalProfit: 0,
   });
   const [activeTab, setActiveTab] = useState<
-    "info" | "stock" | "sales" | "stats"
+    "info" | "stock" | "sales" | "stats" | "branches"
   >("info");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Estados para gestión de bodegas
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [membership, setMembership] = useState<Membership | null>(null);
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+  const [savingBranches, setSavingBranches] = useState(false);
+  const [branchesSuccess, setBranchesSuccess] = useState("");
 
   useEffect(() => {
     const loadDistributor = async () => {
@@ -80,9 +101,68 @@ const DistributorDetail = () => {
       }
     };
 
+    const loadBranchesData = async () => {
+      try {
+        if (!id || !selectedBusiness?._id) return;
+
+        // Cargar todas las bodegas del negocio
+        const branchesResponse = await branchService.list();
+        setBranches(branchesResponse);
+
+        // Cargar memberships del negocio para encontrar el del distribuidor
+        const members = await businessService.listMembers(selectedBusiness._id);
+        const distributorMembership = members.find(
+          m =>
+            (typeof m.user === "object" && m.user?._id === id) || m.user === id
+        );
+
+        if (distributorMembership) {
+          setMembership(distributorMembership);
+          // Inicializar bodegas seleccionadas
+          const branchIds = (distributorMembership.allowedBranches || []).map(
+            (b: any) => (typeof b === "object" ? b._id : b)
+          );
+          setSelectedBranches(branchIds);
+        }
+      } catch (err: any) {
+        console.error("Error al cargar bodegas:", err);
+      }
+    };
+
     if (activeTab === "stock") void loadStock();
     if (activeTab === "sales") void loadSales();
-  }, [activeTab, id]);
+    if (activeTab === "branches") void loadBranchesData();
+  }, [activeTab, id, selectedBusiness?._id]);
+
+  const toggleBranchSelection = (branchId: string) => {
+    setSelectedBranches(prev =>
+      prev.includes(branchId)
+        ? prev.filter(id => id !== branchId)
+        : [...prev, branchId]
+    );
+    setBranchesSuccess("");
+  };
+
+  const handleSaveBranches = async () => {
+    if (!selectedBusiness?._id || !membership?._id) return;
+
+    try {
+      setSavingBranches(true);
+      setBranchesSuccess("");
+
+      await businessService.updateMemberBranches(
+        selectedBusiness._id,
+        membership._id,
+        selectedBranches
+      );
+
+      setBranchesSuccess("Acceso a bodegas actualizado correctamente");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Error al guardar cambios");
+    } finally {
+      setSavingBranches(false);
+    }
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("es-CO", {
@@ -167,8 +247,8 @@ const DistributorDetail = () => {
 
       {/* Tabs */}
       <div className="mb-6 border-b border-gray-700">
-        <nav className="flex gap-8">
-          {["info", "stock", "sales", "stats"].map(tab => (
+        <nav className="flex flex-wrap gap-4 md:gap-8">
+          {["info", "stock", "sales", "stats", "branches"].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
@@ -182,6 +262,7 @@ const DistributorDetail = () => {
               {tab === "stock" && "Inventario"}
               {tab === "sales" && "Ventas"}
               {tab === "stats" && "Estadísticas"}
+              {tab === "branches" && "Acceso a Bodegas"}
             </button>
           ))}
         </nav>
@@ -452,6 +533,123 @@ const DistributorDetail = () => {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === "branches" && (
+          <div>
+            <h2 className="mb-2 text-xl font-semibold text-white">
+              Acceso a Bodegas y Puntos de Venta
+            </h2>
+            <p className="mb-6 text-sm text-gray-400">
+              Selecciona las bodegas/sedes desde las cuales este distribuidor
+              puede vender productos. Si no seleccionas ninguna, el distribuidor
+              solo podrá vender desde su inventario personal.
+            </p>
+
+            {branchesSuccess && (
+              <div className="mb-4 rounded-lg border border-green-500 bg-green-500/10 p-4 text-sm text-green-400">
+                {branchesSuccess}
+              </div>
+            )}
+
+            {branches.length === 0 ? (
+              <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-8 text-center">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
+                </svg>
+                <p className="mt-4 text-gray-400">
+                  No hay bodegas configuradas
+                </p>
+                <Button
+                  onClick={() => navigate("/admin/branches")}
+                  className="mt-4 bg-purple-600 hover:bg-purple-700"
+                >
+                  Crear Bodega
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {branches.map(branch => (
+                    <button
+                      key={branch._id}
+                      type="button"
+                      onClick={() => toggleBranchSelection(branch._id)}
+                      className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${
+                        selectedBranches.includes(branch._id)
+                          ? "border-green-500 bg-green-500/10 ring-2 ring-green-500/30"
+                          : "border-gray-700 bg-gray-900/40 hover:border-gray-600"
+                      }`}
+                    >
+                      <div
+                        className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-md ${
+                          selectedBranches.includes(branch._id)
+                            ? "bg-green-500 text-white"
+                            : "border-2 border-gray-600"
+                        }`}
+                      >
+                        {selectedBranches.includes(branch._id) && (
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-white">
+                          {branch.name}
+                        </h3>
+                        {branch.address && (
+                          <p className="mt-1 text-sm text-gray-400">
+                            {branch.address}
+                          </p>
+                        )}
+                        {branch.isWarehouse && (
+                          <span className="mt-2 inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
+                            Bodega Principal
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-6 flex items-center justify-between border-t border-gray-700 pt-6">
+                  <p className="text-sm text-gray-400">
+                    {selectedBranches.length === 0
+                      ? "Sin acceso a bodegas (solo inventario personal)"
+                      : `${selectedBranches.length} bodega(s) seleccionada(s)`}
+                  </p>
+                  <Button
+                    onClick={handleSaveBranches}
+                    disabled={savingBranches || !membership}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {savingBranches ? "Guardando..." : "Guardar Cambios"}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

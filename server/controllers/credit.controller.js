@@ -1,9 +1,15 @@
 import mongoose from "mongoose";
+import { invalidateCache } from "../middleware/cache.middleware.js";
+import BranchStock from "../models/BranchStock.js";
 import Credit from "../models/Credit.js";
 import CreditPayment from "../models/CreditPayment.js";
 import Customer from "../models/Customer.js";
+import DistributorStock from "../models/DistributorStock.js";
 import Notification from "../models/Notification.js";
+import Product from "../models/Product.js";
+import ProfitHistory from "../models/ProfitHistory.js";
 import Sale from "../models/Sale.js";
+import { recalculateUserBalance } from "../services/profitHistory.service.js";
 import { logApiError, logApiInfo, logApiWarn } from "../utils/logger.js";
 
 /**
@@ -486,6 +492,117 @@ export const getPaymentHistory = async (req, res) => {
 };
 
 /**
+ * Función auxiliar para restaurar stock y métricas cuando se cancela/elimina un crédito
+ */
+const restoreStockAndMetricsFromSale = async (
+  sale,
+  businessId,
+  requestId,
+  options = {}
+) => {
+  if (!sale) return { restored: false };
+
+  const product = await Product.findById(sale.product);
+  if (!product) return { restored: false };
+
+  const quantity = sale.quantity;
+  const costAtSale = sale.averageCostAtSale || sale.purchasePrice;
+
+  // Restaurar stock según el origen de la venta
+  if (sale.branch) {
+    // Verificar si es bodega
+    const Branch = (await import("../models/Branch.js")).default;
+    const branch = await Branch.findById(sale.branch);
+
+    if (branch?.isWarehouse) {
+      product.warehouseStock = (product.warehouseStock || 0) + quantity;
+    } else {
+      await BranchStock.findOneAndUpdate(
+        { business: businessId, branch: sale.branch, product: product._id },
+        { $inc: { quantity: quantity } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+  } else if (sale.distributor) {
+    await DistributorStock.findOneAndUpdate(
+      { distributor: sale.distributor, product: product._id },
+      { $inc: { quantity: quantity } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  } else {
+    // Venta sin sede ni distribuidor: devolver a warehouseStock
+    product.warehouseStock = (product.warehouseStock || 0) + quantity;
+  }
+
+  // Actualizar totalStock y totalInventoryValue
+  product.totalStock += quantity;
+  product.totalInventoryValue =
+    (product.totalInventoryValue || 0) + quantity * costAtSale;
+  await product.save();
+
+  // Eliminar entradas de ProfitHistory y recalcular balances
+  await ProfitHistory.deleteMany({
+    sale: sale._id,
+    business: businessId,
+  });
+
+  // Recalcular balances de usuarios relacionados
+  const User = (await import("../models/User.js")).default;
+  const adminUser = await User.findOne({
+    role: { $in: ["admin", "super_admin"] },
+    business: businessId,
+  });
+  const profitUsers = [
+    sale.distributor?.toString(),
+    adminUser?._id?.toString(),
+  ].filter(Boolean);
+
+  for (const userId of profitUsers) {
+    try {
+      await recalculateUserBalance(userId, businessId);
+    } catch (balanceError) {
+      logApiWarn({
+        message: "Error recalculando balance",
+        module: "credit",
+        requestId,
+        extra: { userId, error: balanceError.message },
+      });
+    }
+  }
+
+  // Ajustar métricas de cliente
+  if (sale.customer) {
+    const saleAmount = Number(sale.salePrice || 0) * Number(quantity || 0);
+    await Customer.findByIdAndUpdate(sale.customer, {
+      $inc: {
+        totalSpend: -saleAmount,
+        ordersCount: -1,
+      },
+    });
+  }
+
+  // Invalidar caché
+  await invalidateCache("cache:analytics:*");
+  await invalidateCache("cache:gamification:*");
+  await invalidateCache("cache:sales:*");
+  await invalidateCache("cache:distributors:*");
+  await invalidateCache("cache:businessAssistant:*");
+
+  logApiInfo({
+    message: "stock_and_metrics_restored",
+    module: "credit",
+    requestId,
+    extra: {
+      productId: product._id,
+      quantity,
+      saleId: sale._id,
+    },
+  });
+
+  return { restored: true, quantity, productId: product._id };
+};
+
+/**
  * @desc    Cancelar un crédito
  * @route   POST /api/credits/:id/cancel
  * @access  Private/Admin
@@ -496,7 +613,7 @@ export const cancelCredit = async (req, res) => {
   const userId = req.user?.id;
 
   try {
-    const { reason } = req.body;
+    const { reason, restoreStock = true } = req.body;
 
     const credit = await Credit.findOne({
       _id: req.params.id,
@@ -515,6 +632,33 @@ export const cancelCredit = async (req, res) => {
         message: "No se puede cancelar un crédito pagado",
         requestId,
       });
+    }
+
+    // Si tiene venta asociada y se solicita restaurar stock
+    let stockRestored = false;
+    let saleDeleted = false;
+
+    if (restoreStock && credit.sale) {
+      const sale = await Sale.findById(credit.sale);
+      if (sale) {
+        const result = await restoreStockAndMetricsFromSale(
+          sale,
+          businessId,
+          requestId
+        );
+        stockRestored = result.restored;
+
+        // Eliminar la venta asociada
+        await Sale.findByIdAndDelete(sale._id);
+        saleDeleted = true;
+
+        logApiInfo({
+          message: "sale_deleted_on_cancel",
+          module: "credit",
+          requestId,
+          extra: { saleId: sale._id },
+        });
+      }
     }
 
     credit.status = "cancelled";
@@ -538,12 +682,18 @@ export const cancelCredit = async (req, res) => {
       requestId,
       businessId,
       userId,
-      extra: { creditId: credit._id.toString() },
+      extra: {
+        creditId: credit._id.toString(),
+        stockRestored,
+        saleDeleted,
+      },
     });
 
     res.json({
       success: true,
       credit,
+      stockRestored,
+      saleDeleted,
       requestId,
     });
   } catch (error) {
@@ -715,6 +865,112 @@ export const getCreditMetrics = async (req, res) => {
     });
     res.status(500).json({
       message: error.message,
+      requestId,
+    });
+  }
+};
+
+/**
+ * @desc    Eliminar un crédito
+ * @route   DELETE /api/credits/:id
+ * @access  Private/Admin
+ */
+export const deleteCredit = async (req, res) => {
+  const requestId = req.reqId;
+  const businessId = req.businessId;
+  const userId = req.user?.id;
+  const { id } = req.params;
+
+  try {
+    // Verificar que el crédito existe y pertenece al negocio
+    const credit = await Credit.findOne({
+      _id: id,
+      business: businessId,
+    });
+
+    if (!credit) {
+      return res.status(404).json({
+        message: "Crédito no encontrado",
+        requestId,
+      });
+    }
+
+    // No permitir eliminar créditos con pagos parciales o pagados
+    if (credit.status === "paid") {
+      return res.status(400).json({
+        message: "No se puede eliminar un crédito que ya fue pagado",
+        requestId,
+      });
+    }
+
+    if (credit.paidAmount > 0) {
+      return res.status(400).json({
+        message:
+          "No se puede eliminar un crédito con pagos parciales. Cancélalo en su lugar.",
+        requestId,
+      });
+    }
+
+    // Si el crédito tiene una venta asociada, restaurar stock y métricas
+    let stockRestored = false;
+    if (credit.sale) {
+      const sale = await Sale.findById(credit.sale);
+      if (sale) {
+        const result = await restoreStockAndMetricsFromSale(
+          sale,
+          businessId,
+          requestId
+        );
+        stockRestored = result.restored;
+
+        // Eliminar la venta asociada
+        await Sale.findByIdAndDelete(sale._id);
+        logApiInfo({
+          message: "sale_deleted_with_credit",
+          module: "credit",
+          requestId,
+          extra: { saleId: sale._id },
+        });
+      }
+    }
+
+    // Restar la deuda del cliente
+    if (credit.customer) {
+      await Customer.findByIdAndUpdate(credit.customer, {
+        $inc: { totalDebt: -credit.remainingAmount },
+      });
+    }
+
+    // Eliminar el crédito
+    await Credit.findByIdAndDelete(id);
+
+    logApiInfo({
+      message: "fiado_deleted",
+      module: "credit",
+      requestId,
+      businessId,
+      userId,
+      extra: { creditId: id, stockRestored },
+    });
+
+    res.status(200).json({
+      message: "Crédito eliminado exitosamente. El stock ha sido restaurado.",
+      stockRestored,
+      requestId,
+    });
+  } catch (error) {
+    logApiError({
+      message: "fiado_delete_error",
+      module: "credit",
+      requestId,
+      businessId,
+      userId,
+      error,
+    });
+
+    res.status(500).json({
+      message: "Error al eliminar el crédito",
+      error: error.message,
       requestId,
     });
   }

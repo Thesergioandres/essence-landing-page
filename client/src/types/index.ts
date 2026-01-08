@@ -62,6 +62,12 @@ export interface BusinessFeatures {
   reports?: boolean;
   transfers?: boolean;
   promotions?: boolean;
+  distributors?: boolean;
+  rankings?: boolean;
+  branches?: boolean;
+  credits?: boolean;
+  customers?: boolean;
+  defectiveProducts?: boolean;
 }
 
 export interface BusinessConfig {
@@ -111,6 +117,8 @@ export interface Membership {
   user: User | string;
   role: "admin" | "distribuidor" | "super_admin";
   status: "active" | "invited" | "inactive";
+  allowedBranches?: (Branch | string)[];
+  permissions?: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -160,6 +168,8 @@ export interface Sale {
   distributor: User | string;
   product: Product | string;
   branch?: Branch | string;
+  customer?: Customer | string;
+  customerName?: string;
   quantity: number;
   purchasePrice: number;
   distributorPrice: number;
@@ -175,6 +185,15 @@ export interface Sale {
   paymentConfirmedBy?: User | string;
   paymentProof?: string;
   paymentProofMimeType?: string;
+  credit?: {
+    _id: string;
+    sale: string;
+    originalAmount: number;
+    paidAmount: number;
+    remainingAmount: number;
+    status: "pendiente" | "parcial" | "pagado";
+    dueDate?: string;
+  } | null;
   createdAt?: string;
   updatedAt?: string;
 }

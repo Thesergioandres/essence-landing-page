@@ -44,6 +44,14 @@ const StockManagement = () => {
   const [originBranchId, setOriginBranchId] = useState<string>("");
   const [targetBranchId, setTargetBranchId] = useState<string>("");
   const [branchItems, setBranchItems] = useState<BranchItem[]>([]);
+  const [originBranchStock, setOriginBranchStock] = useState<
+    Array<{
+      _id: string;
+      product: { _id: string; name: string };
+      quantity: number;
+    }>
+  >([]);
+  const [loadingOriginStock, setLoadingOriginStock] = useState(false);
   const [branchSelectedProductId, setBranchSelectedProductId] =
     useState<string>("");
   const [branchNotes, setBranchNotes] = useState<string>("");
@@ -69,6 +77,14 @@ const StockManagement = () => {
     setError("");
     setSuccess("");
   }, [mode]);
+
+  useEffect(() => {
+    if (originBranchId) {
+      loadOriginBranchStock(originBranchId);
+    } else {
+      setOriginBranchStock([]);
+    }
+  }, [originBranchId]);
 
   const loadData = async () => {
     try {
@@ -139,6 +155,58 @@ const StockManagement = () => {
       setDistributorStock([]);
     } finally {
       setLoadingDistributorStock(false);
+    }
+  };
+
+  const loadOriginBranchStock = async (branchId: string) => {
+    try {
+      setLoadingOriginStock(true);
+      console.log("[DEBUG] Loading stock for branchId:", branchId);
+
+      // Verificar si es bodega (warehouse)
+      const isWarehouse =
+        branchId === "warehouse" ||
+        branches.find(b => b._id === branchId)?.isWarehouse;
+
+      console.log("[DEBUG] isWarehouse:", isWarehouse);
+
+      if (isWarehouse) {
+        // Para bodega, usar el warehouseStock de los productos
+        const productsData = await productService.getAll();
+        const productsList = productsData.data || productsData;
+        console.log("[DEBUG] Total productos:", productsList.length);
+        const warehouseStock = productsList
+          .filter((p: Product) => (p.warehouseStock || 0) > 0)
+          .map((p: Product) => ({
+            _id: `warehouse-${p._id}`,
+            product: { _id: p._id, name: p.name },
+            quantity: p.warehouseStock || 0,
+          }));
+        console.log(
+          "[DEBUG] Productos con stock en bodega:",
+          warehouseStock.length
+        );
+        console.log("[DEBUG] Warehouse stock:", warehouseStock);
+        setOriginBranchStock(warehouseStock);
+      } else {
+        // Para sedes, usar BranchStock
+        const stock = await stockService.getBranchStock(branchId);
+        console.log("[DEBUG] Branch stock:", stock);
+        const mappedStock = (stock || []).map(s => ({
+          _id: s._id,
+          product:
+            typeof s.product === "object"
+              ? { _id: s.product._id, name: s.product.name }
+              : { _id: s.product, name: "" },
+          quantity: s.quantity,
+        }));
+        setOriginBranchStock(mappedStock);
+      }
+    } catch (err) {
+      console.error("Error al cargar inventario de la sede:", err);
+      setOriginBranchStock([]);
+    } finally {
+      setLoadingOriginStock(false);
     }
   };
 
@@ -333,6 +401,15 @@ const StockManagement = () => {
       setSuccess(
         `Transferencia creada entre sedes (${branchItems.length} producto(s))`
       );
+
+      // Recargar datos para actualizar el inventario de bodega
+      await loadData();
+
+      // Recargar el stock de la sede origen si fue seleccionada
+      if (originBranchId) {
+        await loadOriginBranchStock(originBranchId);
+      }
+
       setBranchItems([]);
       setBranchNotes("");
     } catch (err: any) {
@@ -358,9 +435,39 @@ const StockManagement = () => {
     p => !items.some(item => item.productId === p._id)
   );
 
-  const availableBranchProducts = products.filter(
-    p => !branchItems.some(item => item.productId === p._id)
+  const availableBranchProducts = products
+    .filter(p => !branchItems.some(item => item.productId === p._id))
+    .map(p => {
+      const stockItem = originBranchStock.find(s => {
+        const productId =
+          typeof s.product === "object" ? s.product._id : s.product;
+        return productId === p._id;
+      });
+      return {
+        ...p,
+        branchStock: stockItem?.quantity || 0,
+      };
+    })
+    .filter(p => p.branchStock > 0);
+
+  // Debug logs
+  console.log("[DEBUG] Total products:", products.length);
+  console.log("[DEBUG] originBranchStock:", originBranchStock.length);
+  console.log(
+    "[DEBUG] availableBranchProducts:",
+    availableBranchProducts.length
   );
+  if (
+    availableBranchProducts.length === 0 &&
+    originBranchStock.length > 0 &&
+    products.length > 0
+  ) {
+    console.log("[DEBUG] Sample product from products:", products[0]);
+    console.log(
+      "[DEBUG] Sample stock from originBranchStock:",
+      originBranchStock[0]
+    );
+  }
 
   const hasWarehouseBranch = branches.some(branch => branch.isWarehouse);
   const branchOptions: Branch[] = [
@@ -912,11 +1019,19 @@ const StockManagement = () => {
                     value={branchSelectedProductId}
                     onChange={e => setBranchSelectedProductId(e.target.value)}
                     className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={!originBranchId || loadingOriginStock}
                   >
-                    <option value="">Selecciona un producto</option>
+                    <option value="">
+                      {!originBranchId
+                        ? "Primero selecciona sede origen"
+                        : loadingOriginStock
+                          ? "Cargando stock..."
+                          : "Selecciona un producto"}
+                    </option>
                     {availableBranchProducts.map(product => (
                       <option key={product._id} value={product._id}>
-                        {product.name} | Total: {product.totalStock || 0}
+                        {product.name} | Stock en origen:{" "}
+                        {product.branchStock || 0}
                       </option>
                     ))}
                   </select>
@@ -932,7 +1047,9 @@ const StockManagement = () => {
               </Button>
             </div>
             <p className="mt-2 text-xs text-gray-400">
-              Validación de stock se realiza en el backend según la sede origen.
+              {originBranchId
+                ? `Mostrando solo productos con stock en ${branchOptions.find(b => b._id === originBranchId)?.name || "la sede seleccionada"}`
+                : "Selecciona una sede origen para ver productos disponibles"}
             </p>
           </div>
 
@@ -953,8 +1070,14 @@ const StockManagement = () => {
                           {item.product.name}
                         </h3>
                         <p className="text-xs text-gray-400">
-                          Total disponible: {item.product.totalStock || 0}{" "}
-                          (origen se validará al enviar)
+                          Stock disponible en origen:{" "}
+                          {originBranchStock.find(s => {
+                            const productId =
+                              typeof s.product === "object"
+                                ? s.product._id
+                                : s.product;
+                            return productId === item.productId;
+                          })?.quantity || 0}
                         </p>
 
                         <div className="mt-3 grid gap-4 md:grid-cols-2">
