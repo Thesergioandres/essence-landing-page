@@ -231,13 +231,20 @@ export default function ProductSelector({
         </div>
         <div className="flex items-center gap-1">
           {value && !disabled && (
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
               onClick={handleClear}
-              className="rounded p-0.5 hover:bg-gray-600"
+              onKeyDown={e => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleClear(e as any);
+                }
+              }}
+              className="cursor-pointer rounded p-0.5 hover:bg-gray-600"
             >
               <X className="h-4 w-4 text-gray-400" />
-            </button>
+            </div>
           )}
           <ChevronDown
             className={`h-5 w-5 text-gray-400 transition ${isOpen ? "rotate-180" : ""}`}
