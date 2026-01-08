@@ -23,6 +23,7 @@ interface EstimatedProfitData {
   hasDistributors: boolean;
   warehouse: {
     grossProfit: number;
+    adminProfit: number;
     netProfit: number;
     totalProducts: number;
     totalUnits: number;
@@ -31,6 +32,7 @@ interface EstimatedProfitData {
   };
   branches: {
     grossProfit: number;
+    adminProfit: number;
     netProfit: number;
     totalProducts: number;
     totalUnits: number;
@@ -40,6 +42,7 @@ interface EstimatedProfitData {
       id: string;
       name: string;
       grossProfit: number;
+      adminProfit: number;
       investment: number;
       salesValue: number;
       totalProducts: number;
@@ -48,6 +51,7 @@ interface EstimatedProfitData {
   };
   distributors: {
     grossProfit: number;
+    adminProfit: number;
     netProfit: number;
     totalProducts: number;
     totalUnits: number;
@@ -58,6 +62,7 @@ interface EstimatedProfitData {
       name: string;
       email: string;
       grossProfit: number;
+      adminProfit: number;
       investment: number;
       salesValue: number;
       totalProducts: number;
@@ -66,6 +71,7 @@ interface EstimatedProfitData {
   };
   consolidated: {
     grossProfit: number;
+    adminProfit: number;
     netProfit: number;
     totalProducts: number;
     totalUnits: number;
@@ -410,12 +416,10 @@ export default function ProfitHistory() {
                 <>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                     <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
-                      <p className="text-xs text-gray-400">
-                        Ganancia Bruta Est.
-                      </p>
-                      <p className="mt-1 text-xl font-bold text-teal-300">
+                      <p className="text-xs text-gray-400">Tu Ganancia Admin</p>
+                      <p className="mt-1 text-xl font-bold text-emerald-400">
                         {formatCurrency(
-                          estimatedProfit.consolidated.grossProfit
+                          estimatedProfit.consolidated.adminProfit
                         )}
                       </p>
                     </div>
@@ -449,10 +453,10 @@ export default function ProfitHistory() {
                     </div>
                     <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
                       <p className="text-xs text-gray-400">Margen Est.</p>
-                      <p className="mt-1 text-xl font-bold text-emerald-300">
+                      <p className="mt-1 text-xl font-bold text-teal-300">
                         {estimatedProfit.consolidated.investment > 0
                           ? (
-                              (estimatedProfit.consolidated.grossProfit /
+                              (estimatedProfit.consolidated.adminProfit /
                                 estimatedProfit.consolidated.investment) *
                               100
                             ).toFixed(1)
@@ -491,12 +495,10 @@ export default function ProfitHistory() {
                             </span>
                           </div>
                           <div>
-                            <span className="text-gray-400">
-                              Ganancia est.:
-                            </span>
-                            <span className="ml-1 font-semibold text-teal-300">
+                            <span className="text-gray-400">Tu ganancia:</span>
+                            <span className="ml-1 font-semibold text-emerald-400">
                               {formatCurrency(
-                                estimatedProfit.warehouse.grossProfit
+                                estimatedProfit.warehouse.adminProfit
                               )}
                             </span>
                           </div>
@@ -527,8 +529,8 @@ export default function ProfitHistory() {
                                     <span className="text-gray-400">
                                       {branch.totalUnits} uds
                                     </span>
-                                    <span className="font-semibold text-teal-300">
-                                      {formatCurrency(branch.grossProfit)}
+                                    <span className="font-semibold text-emerald-400">
+                                      {formatCurrency(branch.adminProfit)}
                                     </span>
                                   </div>
                                 </div>
@@ -536,11 +538,11 @@ export default function ProfitHistory() {
                             </div>
                             <div className="mt-2 flex justify-end border-t border-gray-700 pt-2 text-xs">
                               <span className="text-gray-400">
-                                Total sedes:
+                                Tu ganancia de sedes:
                               </span>
-                              <span className="ml-2 font-bold text-teal-300">
+                              <span className="ml-2 font-bold text-emerald-400">
                                 {formatCurrency(
-                                  estimatedProfit.branches.grossProfit
+                                  estimatedProfit.branches.adminProfit
                                 )}
                               </span>
                             </div>
@@ -561,6 +563,10 @@ export default function ProfitHistory() {
                                 unidades
                               </span>
                             </h4>
+                            <p className="mb-2 text-xs text-gray-400">
+                              Tu ganancia es solo el margen (precio distribuidor
+                              - costo)
+                            </p>
                             <div className="space-y-2">
                               {estimatedProfit.distributors.distributors
                                 .slice(0, 10)
@@ -583,8 +589,8 @@ export default function ProfitHistory() {
                                       <span className="text-gray-400">
                                         {dist.totalUnits} uds
                                       </span>
-                                      <span className="font-semibold text-cyan-300">
-                                        {formatCurrency(dist.grossProfit)}
+                                      <span className="font-semibold text-emerald-400">
+                                        {formatCurrency(dist.adminProfit)}
                                       </span>
                                     </div>
                                   </div>
@@ -592,11 +598,11 @@ export default function ProfitHistory() {
                             </div>
                             <div className="mt-2 flex justify-end border-t border-gray-700 pt-2 text-xs">
                               <span className="text-gray-400">
-                                Total distribuidores:
+                                Tu ganancia de distribuidores:
                               </span>
-                              <span className="ml-2 font-bold text-cyan-300">
+                              <span className="ml-2 font-bold text-emerald-400">
                                 {formatCurrency(
-                                  estimatedProfit.distributors.grossProfit
+                                  estimatedProfit.distributors.adminProfit
                                 )}
                               </span>
                             </div>

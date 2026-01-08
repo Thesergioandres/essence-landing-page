@@ -1550,6 +1550,7 @@ export const analyticsService = {
     hasDistributors: boolean;
     warehouse: {
       grossProfit: number;
+      adminProfit: number;
       netProfit: number;
       totalProducts: number;
       totalUnits: number;
@@ -1558,6 +1559,7 @@ export const analyticsService = {
     };
     branches: {
       grossProfit: number;
+      adminProfit: number;
       netProfit: number;
       totalProducts: number;
       totalUnits: number;
@@ -1567,6 +1569,7 @@ export const analyticsService = {
         id: string;
         name: string;
         grossProfit: number;
+        adminProfit: number;
         investment: number;
         salesValue: number;
         totalProducts: number;
@@ -1575,6 +1578,7 @@ export const analyticsService = {
     };
     distributors: {
       grossProfit: number;
+      adminProfit: number;
       netProfit: number;
       totalProducts: number;
       totalUnits: number;
@@ -1585,6 +1589,7 @@ export const analyticsService = {
         name: string;
         email: string;
         grossProfit: number;
+        adminProfit: number;
         investment: number;
         salesValue: number;
         totalProducts: number;
@@ -1593,6 +1598,7 @@ export const analyticsService = {
     };
     consolidated: {
       grossProfit: number;
+      adminProfit: number;
       netProfit: number;
       totalProducts: number;
       totalUnits: number;

@@ -1433,8 +1433,10 @@ export const getEstimatedProfit = async (req, res) => {
     const hasDistributors = distributorMemberships.length > 0;
 
     // Calcular ganancia estimada de bodega
+    // ADMIN gana: clientPrice - purchasePrice
     let warehouseEstimate = {
       grossProfit: 0,
+      adminProfit: 0, // Ganancia del admin
       netProfit: 0,
       totalProducts: 0,
       totalUnits: 0,
@@ -1459,13 +1461,16 @@ export const getEstimatedProfit = async (req, res) => {
         warehouseEstimate.investment += investment;
         warehouseEstimate.salesValue += salesValue;
         warehouseEstimate.grossProfit += grossProfit;
+        warehouseEstimate.adminProfit += grossProfit; // Admin gana todo en ventas de bodega
       }
     }
     warehouseEstimate.netProfit = warehouseEstimate.grossProfit; // Sin gastos deducidos aquí
 
     // Calcular ganancia estimada de sedes
+    // ADMIN gana: clientPrice - purchasePrice (las sedes trabajan con precio de compra del admin)
     let branchesEstimate = {
       grossProfit: 0,
+      adminProfit: 0, // Ganancia del admin
       netProfit: 0,
       totalProducts: 0,
       totalUnits: 0,
@@ -1484,6 +1489,7 @@ export const getEstimatedProfit = async (req, res) => {
         branchStockByBranch[branchId] = {
           name: branchName,
           grossProfit: 0,
+          adminProfit: 0,
           investment: 0,
           salesValue: 0,
           totalProducts: 0,
@@ -1498,16 +1504,19 @@ export const getEstimatedProfit = async (req, res) => {
         purchasePrice * 1.3;
       const investment = purchasePrice * stock.quantity;
       const salesValue = clientPrice * stock.quantity;
+      const profit = salesValue - investment;
 
       branchStockByBranch[branchId].investment += investment;
       branchStockByBranch[branchId].salesValue += salesValue;
-      branchStockByBranch[branchId].grossProfit += salesValue - investment;
+      branchStockByBranch[branchId].grossProfit += profit;
+      branchStockByBranch[branchId].adminProfit += profit; // Admin gana todo en ventas de sedes
       branchStockByBranch[branchId].totalProducts += 1;
       branchStockByBranch[branchId].totalUnits += stock.quantity;
     }
 
     for (const [branchId, data] of Object.entries(branchStockByBranch)) {
       branchesEstimate.grossProfit += data.grossProfit;
+      branchesEstimate.adminProfit += data.adminProfit;
       branchesEstimate.investment += data.investment;
       branchesEstimate.salesValue += data.salesValue;
       branchesEstimate.totalProducts += data.totalProducts;
@@ -1517,8 +1526,10 @@ export const getEstimatedProfit = async (req, res) => {
     branchesEstimate.netProfit = branchesEstimate.grossProfit;
 
     // Calcular ganancia estimada de distribuidores
+    // ADMIN gana: distributorPrice - purchasePrice (solo el markup/margen, NO la comisión del distribuidor)
     let distributorsEstimate = {
-      grossProfit: 0,
+      grossProfit: 0, // Ganancia total del distribuidor (clientPrice - distributorPrice)
+      adminProfit: 0, // Ganancia del ADMIN (distributorPrice - purchasePrice)
       netProfit: 0,
       totalProducts: 0,
       totalUnits: 0,
@@ -1539,6 +1550,7 @@ export const getEstimatedProfit = async (req, res) => {
           name: distName,
           email: distEmail,
           grossProfit: 0,
+          adminProfit: 0,
           investment: 0,
           salesValue: 0,
           totalProducts: 0,
@@ -1551,33 +1563,36 @@ export const getEstimatedProfit = async (req, res) => {
         stock.product.distributorPrice || purchasePrice * 1.2;
       const clientPrice = stock.product.clientPrice || distributorPrice * 1.1;
 
-      // Para distribuidores: inversión es lo que pagaron (distributorPrice), venta es clientPrice
-      const investment = distributorPrice * stock.quantity;
-      const salesValue = clientPrice * stock.quantity;
+      // Para distribuidores:
+      // - Inversión del admin: purchasePrice
+      // - Venta del admin al distribuidor: distributorPrice
+      // - Ganancia del admin: distributorPrice - purchasePrice
+      // - Ganancia del distribuidor: clientPrice - distributorPrice (esto NO es del admin)
+      const adminInvestment = purchasePrice * stock.quantity;
+      const adminSalesValue = distributorPrice * stock.quantity;
+      const adminProfit = adminSalesValue - adminInvestment;
+      
+      // Ganancia bruta del distribuidor (para referencia)
+      const distributorInvestment = distributorPrice * stock.quantity;
+      const distributorSalesValue = clientPrice * stock.quantity;
+      const distributorGrossProfit = distributorSalesValue - distributorInvestment;
 
-      distStockByDist[distId].investment += investment;
-      distStockByDist[distId].salesValue += salesValue;
-      distStockByDist[distId].grossProfit += salesValue - investment;
+      distStockByDist[distId].investment += adminInvestment;
+      distStockByDist[distId].salesValue += adminSalesValue;
+      distStockByDist[distId].adminProfit += adminProfit; // Admin gana solo el markup
+      distStockByDist[distId].grossProfit += distributorGrossProfit; // Ganancia del distribuidor (referencia)
       distStockByDist[distId].totalProducts += 1;
-      distStockByDist[distId].totalUnits += stock.quantity;
-    }
+      distadminProfitTotal =
+      warehouseEstimate.adminProfit +
+      branchesEstimate.adminProfit +
+      distributorsEstimate.adminProfit;
 
-    for (const [distId, data] of Object.entries(distStockByDist)) {
-      distributorsEstimate.grossProfit += data.grossProfit;
-      distributorsEstimate.investment += data.investment;
-      distributorsEstimate.salesValue += data.salesValue;
-      distributorsEstimate.totalProducts += data.totalProducts;
-      distributorsEstimate.totalUnits += data.totalUnits;
-      distributorsEstimate.distributors.push({ id: distId, ...data });
-    }
-    distributorsEstimate.netProfit = distributorsEstimate.grossProfit;
-
-    // Calcular totales consolidados
     const consolidated = {
       grossProfit:
         warehouseEstimate.grossProfit +
         branchesEstimate.grossProfit +
         distributorsEstimate.grossProfit,
+      adminProfit: adminProfitTotal, // GANANCIA REAL DEL ADMIN
       netProfit:
         warehouseEstimate.netProfit +
         branchesEstimate.netProfit +
@@ -1599,6 +1614,21 @@ export const getEstimatedProfit = async (req, res) => {
         branchesEstimate.salesValue +
         distributorsEstimate.salesValue,
     };
+
+    // Determinar el escenario
+    let scenario = "D"; // Default: tiene sedes y distribuidores
+    let message = "Tu ganancia si se vende todo el inventario de bodega, sedes y distribuidores.";
+
+    if (!hasBranches && !hasDistributors) {
+      scenario = "A";
+      message =
+        "Tu ganancia si se vende todo el inventario de la bodega principal.";
+    } else if (!hasBranches && hasDistributors) {
+      scenario = "B";
+      message = "Tu ganancia si se vende todo el inventario de bodega y distribuidores.";
+    } else if (hasBranches && !hasDistributors) {
+      scenario = "C";
+      message = "Tu ganancia si se vende todo el inventario de bodega y sedes
 
     // Determinar el escenario
     let scenario = "D"; // Default: tiene sedes y distribuidores
