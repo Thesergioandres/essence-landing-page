@@ -1,21 +1,24 @@
 /**
  * Combina clases CSS de forma inteligente
  */
-export function cn(...classes: (string | undefined | null | boolean)[]): string {
+export function cn(
+  ...classes: (string | undefined | null | boolean)[]
+): string {
   return classes.filter(Boolean).join(" ");
 }
 
 /**
- * Formatea números como moneda
+ * Formatea números como moneda (Peso Colombiano)
  */
 export function formatCurrency(
   amount: number,
-  currency: string = "EUR",
-  locale: string = "es-ES"
+  currency: string = "COP",
+  locale: string = "es-CO"
 ): string {
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
+    maximumFractionDigits: 0,
   }).format(amount);
 }
 

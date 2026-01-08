@@ -6,6 +6,7 @@ import swaggerUi from "swagger-ui-express";
 import connectDB from "./config/database.js";
 import { initRedis } from "./config/redis.js";
 import swaggerSpec from "./config/swagger.config.js";
+import { startBackupWorker } from "./jobs/backup.worker.js";
 import { startBusinessAssistantWorker } from "./jobs/businessAssistant.worker.js";
 import { startDebtNotificationWorker } from "./jobs/debtNotification.worker.js";
 import { errorHandler } from "./middleware/errorHandler.middleware.js";
@@ -40,12 +41,14 @@ import creditRoutes from "./routes/credit.routes.js";
 import customerRoutes from "./routes/customer.routes.js";
 import customerPointsRoutes from "./routes/customerPoints.routes.js";
 import defectiveProductRoutes from "./routes/defectiveProduct.routes.js";
+import deliveryMethodRoutes from "./routes/deliveryMethod.routes.js";
 import distributorRoutes from "./routes/distributor.routes.js";
 import expenseRoutes from "./routes/expense.routes.js";
 import gamificationRoutes from "./routes/gamification.routes.js";
 import inventoryRoutes from "./routes/inventory.routes.js";
 import issueRoutes from "./routes/issue.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import paymentMethodRoutes from "./routes/paymentMethod.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import profitHistoryRoutes from "./routes/profitHistory.routes.js";
 import promotionRoutes from "./routes/promotion.routes.js";
@@ -84,6 +87,15 @@ if (process.env.BA_ENABLE_WORKER === "true") {
 // Worker para notificaciones de deudas vencidas
 if (process.env.DEBT_WORKER_ENABLED === "true") {
   startDebtNotificationWorker();
+}
+
+// Worker de backups automáticos (cada 6 horas, mantiene 30 días)
+// Habilitado por defecto en desarrollo y producción, deshabilitado en tests
+if (
+  process.env.NODE_ENV !== "test" &&
+  process.env.BACKUP_WORKER_DISABLED !== "true"
+) {
+  startBackupWorker();
 }
 
 // Compression middleware (debe ir antes de las rutas)
@@ -219,6 +231,8 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/segments", segmentRoutes);
 app.use("/api/credits", creditRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/payment-methods", paymentMethodRoutes);
+app.use("/api/delivery-methods", deliveryMethodRoutes);
 app.use("/api/push", pushSubscriptionRoutes);
 app.use("/api", customerPointsRoutes);
 

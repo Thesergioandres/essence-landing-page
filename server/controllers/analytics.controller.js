@@ -1261,3 +1261,127 @@ export const getCombinedSummary = async (req, res) => {
     });
   }
 };
+
+// @desc    Obtener métricas por método de pago
+// @route   GET /api/analytics/payment-methods
+// @access  Private/Admin
+export const getPaymentMethodMetrics = async (req, res) => {
+  try {
+    const businessFilter = buildBusinessFilter(req);
+    const { startDate, endDate, paymentMethodId, paymentMethodCode } =
+      req.query;
+
+    // Construir filtro base
+    const filter = { paymentStatus: "confirmado", ...businessFilter };
+
+    // Agregar filtro de fechas si se proporciona
+    const dateRange = buildColombiaRange(startDate, endDate);
+    if (dateRange) {
+      filter.saleDate = dateRange;
+    }
+
+    // Filtrar por método de pago específico si se proporciona
+    if (paymentMethodId) {
+      filter.paymentMethod = new mongoose.Types.ObjectId(paymentMethodId);
+    } else if (paymentMethodCode) {
+      filter.paymentMethodCode = paymentMethodCode;
+    }
+
+    // Agregación por método de pago
+    const byPaymentMethod = await Sale.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: {
+            paymentMethod: "$paymentMethod",
+            paymentMethodCode: "$paymentMethodCode",
+            isCredit: "$isCredit",
+          },
+          totalSales: { $sum: 1 },
+          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+          totalProfit: { $sum: "$totalProfit" },
+          totalQuantity: { $sum: "$quantity" },
+        },
+      },
+      {
+        $lookup: {
+          from: "paymentmethods",
+          localField: "_id.paymentMethod",
+          foreignField: "_id",
+          as: "methodInfo",
+        },
+      },
+      {
+        $project: {
+          paymentMethodId: "$_id.paymentMethod",
+          paymentMethodCode: {
+            $ifNull: [
+              "$_id.paymentMethodCode",
+              { $cond: ["$_id.isCredit", "credit", "cash"] },
+            ],
+          },
+          paymentMethodName: {
+            $ifNull: [
+              { $arrayElemAt: ["$methodInfo.name", 0] },
+              { $cond: ["$_id.isCredit", "Crédito", "Efectivo"] },
+            ],
+          },
+          isCredit: { $ifNull: ["$_id.isCredit", false] },
+          totalSales: 1,
+          totalRevenue: 1,
+          totalProfit: 1,
+          totalQuantity: 1,
+        },
+      },
+      { $sort: { totalRevenue: -1 } },
+    ]);
+
+    // Calcular totales generales
+    const totals = byPaymentMethod.reduce(
+      (acc, item) => {
+        acc.totalSales += item.totalSales;
+        acc.totalRevenue += item.totalRevenue;
+        acc.totalProfit += item.totalProfit;
+        acc.totalQuantity += item.totalQuantity;
+        if (item.isCredit) {
+          acc.creditSales += item.totalSales;
+          acc.creditRevenue += item.totalRevenue;
+        } else {
+          acc.cashSales += item.totalSales;
+          acc.cashRevenue += item.totalRevenue;
+        }
+        return acc;
+      },
+      {
+        totalSales: 0,
+        totalRevenue: 0,
+        totalProfit: 0,
+        totalQuantity: 0,
+        creditSales: 0,
+        creditRevenue: 0,
+        cashSales: 0,
+        cashRevenue: 0,
+      }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        byPaymentMethod,
+        totals,
+        filters: {
+          startDate,
+          endDate,
+          paymentMethodId,
+          paymentMethodCode,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener métricas por método de pago:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener métricas por método de pago",
+    });
+  }
+};

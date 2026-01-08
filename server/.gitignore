@@ -1,5 +1,14 @@
 node_modules/
 .env
+.env.local
+.env.production
+.env.test
 *.log
 .DS_Store
 uploads/
+backups/
+
+# Archivos de seguridad
+*.pem
+*.key
+*.crt

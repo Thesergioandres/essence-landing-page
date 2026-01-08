@@ -74,102 +74,137 @@ export const FinancialKPICards: React.FC<{
   const daily = kpis?.daily || {};
   const weekly = kpis?.weekly || {};
   const monthly = kpis?.monthly || {};
+  const range = kpis?.range || {}; // Datos del rango personalizado
 
   const hasCustomRange = Boolean(startDate || endDate);
-  const todayLabel = hasCustomRange ? "Ventas rango" : "Ventas Hoy";
-  const todayRevenueLabel = hasCustomRange ? "Ingresos rango" : "Ingresos Hoy";
-  const todayProfitLabel = hasCustomRange ? "Ganancia rango" : "Ganancia Hoy";
-  const weekSalesLabel = hasCustomRange ? "Ventas rango" : "Ventas Semana";
-  const weekRevenueLabel = hasCustomRange
-    ? "Ingresos rango"
-    : "Ingresos Semana";
-  const weekProfitLabel = hasCustomRange ? "Ganancia rango" : "Ganancia Semana";
-  const monthSalesLabel = hasCustomRange ? "Ventas rango" : "Ventas Mes";
-  const monthRevenueLabel = hasCustomRange ? "Ingresos rango" : "Ingresos Mes";
-  const monthProfitLabel = hasCustomRange ? "Ganancia rango" : "Ganancia Mes";
-  const avgTicketLabel = hasCustomRange
-    ? "Ticket promedio rango"
-    : "Ticket promedio";
 
-  const kpiCards: KPI[] = [
-    {
-      id: "todaySales",
-      label: todayLabel,
-      value: safeNumber(daily.sales ?? summary.todaySales),
-      icon: <ShoppingCart className="h-8 w-8" />,
-      color: "bg-purple-500",
-    },
-    {
-      id: "todayRevenue",
-      label: todayRevenueLabel,
-      value: formatMoney(daily.revenue ?? summary.todayRevenue),
-      icon: <DollarSign className="h-8 w-8" />,
-      color: "bg-violet-500",
-    },
-    {
-      id: "todayProfit",
-      label: todayProfitLabel,
-      value: formatMoney(daily.profit ?? summary.todayProfit),
-      icon: <TrendingUp className="h-8 w-8" />,
-      color: "bg-emerald-500",
-    },
-    {
-      id: "weekSales",
-      label: weekSalesLabel,
-      value: safeNumber(weekly.sales ?? summary.weekSales),
-      icon: <ShoppingCart className="h-8 w-8" />,
-      color: "bg-pink-500",
-    },
-    {
-      id: "weekRevenue",
-      label: weekRevenueLabel,
-      value: formatMoney(weekly.revenue ?? summary.weekRevenue),
-      icon: <DollarSign className="h-8 w-8" />,
-      color: "bg-teal-500",
-    },
-    {
-      id: "weekProfit",
-      label: weekProfitLabel,
-      value: formatMoney(weekly.profit ?? summary.weekProfit),
-      icon: <TrendingUp className="h-8 w-8" />,
-      color: "bg-green-500",
-    },
-    {
-      id: "monthSales",
-      label: monthSalesLabel,
-      value: safeNumber(monthly.sales ?? summary.monthSales),
-      icon: <ShoppingCart className="h-8 w-8" />,
-      color: "bg-blue-500",
-    },
-    {
-      id: "monthRevenue",
-      label: monthRevenueLabel,
-      value: formatMoney(monthly.revenue ?? summary.monthRevenue),
-      icon: <DollarSign className="h-8 w-8" />,
-      color: "bg-indigo-600",
-    },
-    {
-      id: "monthProfit",
-      label: monthProfitLabel,
-      value: formatMoney(monthly.profit ?? summary.monthProfit),
-      icon: <TrendingUp className="h-8 w-8" />,
-      color: "bg-cyan-600",
-    },
-    {
-      id: "avgTicket",
-      label: avgTicketLabel,
-      value: formatMoney(summary.averageTicket ?? kpis?.avgTicket),
-      icon: <Target className="h-8 w-8" />,
-      color: "bg-orange-500",
-    },
-    {
-      id: "activeDistributors",
-      label: "Distribuidores activos",
-      value: safeNumber(summary.totalActiveDistributors),
-      icon: <Users className="h-8 w-8" />,
-      color: "bg-gray-600",
-    },
-  ];
+  // Cuando hay rango personalizado, mostrar solo datos del rango
+  // Si no hay rango, mostrar Hoy, Semana y Mes
+  const kpiCards: KPI[] = hasCustomRange
+    ? [
+        // Con rango personalizado: solo 4 tarjetas (ventas, ingresos, ganancia, ticket)
+        {
+          id: "rangeSales",
+          label: "Ventas (rango)",
+          value: safeNumber(range.sales ?? daily.sales ?? summary.todaySales),
+          icon: <ShoppingCart className="h-8 w-8" />,
+          color: "bg-purple-500",
+        },
+        {
+          id: "rangeRevenue",
+          label: "Ingresos (rango)",
+          value: formatMoney(
+            range.revenue ?? daily.revenue ?? summary.todayRevenue
+          ),
+          icon: <DollarSign className="h-8 w-8" />,
+          color: "bg-violet-500",
+        },
+        {
+          id: "rangeProfit",
+          label: "Ganancia (rango)",
+          value: formatMoney(
+            range.profit ?? daily.profit ?? summary.todayProfit
+          ),
+          icon: <TrendingUp className="h-8 w-8" />,
+          color: "bg-emerald-500",
+        },
+        {
+          id: "avgTicket",
+          label: "Ticket promedio",
+          value: formatMoney(
+            range.averageTicket ?? summary.averageTicket ?? kpis?.avgTicket
+          ),
+          icon: <Target className="h-8 w-8" />,
+          color: "bg-orange-500",
+        },
+        {
+          id: "activeDistributors",
+          label: "Distribuidores activos",
+          value: safeNumber(summary.totalActiveDistributors),
+          icon: <Users className="h-8 w-8" />,
+          color: "bg-gray-600",
+        },
+      ]
+    : [
+        // Sin rango: mostrar Hoy, Semana y Mes
+        {
+          id: "todaySales",
+          label: "Ventas Hoy",
+          value: safeNumber(daily.sales ?? summary.todaySales),
+          icon: <ShoppingCart className="h-8 w-8" />,
+          color: "bg-purple-500",
+        },
+        {
+          id: "todayRevenue",
+          label: "Ingresos Hoy",
+          value: formatMoney(daily.revenue ?? summary.todayRevenue),
+          icon: <DollarSign className="h-8 w-8" />,
+          color: "bg-violet-500",
+        },
+        {
+          id: "todayProfit",
+          label: "Ganancia Hoy",
+          value: formatMoney(daily.profit ?? summary.todayProfit),
+          icon: <TrendingUp className="h-8 w-8" />,
+          color: "bg-emerald-500",
+        },
+        {
+          id: "weekSales",
+          label: "Ventas Semana",
+          value: safeNumber(weekly.sales ?? summary.weekSales),
+          icon: <ShoppingCart className="h-8 w-8" />,
+          color: "bg-pink-500",
+        },
+        {
+          id: "weekRevenue",
+          label: "Ingresos Semana",
+          value: formatMoney(weekly.revenue ?? summary.weekRevenue),
+          icon: <DollarSign className="h-8 w-8" />,
+          color: "bg-teal-500",
+        },
+        {
+          id: "weekProfit",
+          label: "Ganancia Semana",
+          value: formatMoney(weekly.profit ?? summary.weekProfit),
+          icon: <TrendingUp className="h-8 w-8" />,
+          color: "bg-green-500",
+        },
+        {
+          id: "monthSales",
+          label: "Ventas Mes",
+          value: safeNumber(monthly.sales ?? summary.monthSales),
+          icon: <ShoppingCart className="h-8 w-8" />,
+          color: "bg-blue-500",
+        },
+        {
+          id: "monthRevenue",
+          label: "Ingresos Mes",
+          value: formatMoney(monthly.revenue ?? summary.monthRevenue),
+          icon: <DollarSign className="h-8 w-8" />,
+          color: "bg-indigo-600",
+        },
+        {
+          id: "monthProfit",
+          label: "Ganancia Mes",
+          value: formatMoney(monthly.profit ?? summary.monthProfit),
+          icon: <TrendingUp className="h-8 w-8" />,
+          color: "bg-cyan-600",
+        },
+        {
+          id: "avgTicket",
+          label: "Ticket promedio",
+          value: formatMoney(summary.averageTicket ?? kpis?.avgTicket),
+          icon: <Target className="h-8 w-8" />,
+          color: "bg-orange-500",
+        },
+        {
+          id: "activeDistributors",
+          label: "Distribuidores activos",
+          value: safeNumber(summary.totalActiveDistributors),
+          icon: <Users className="h-8 w-8" />,
+          color: "bg-gray-600",
+        },
+      ];
 
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">

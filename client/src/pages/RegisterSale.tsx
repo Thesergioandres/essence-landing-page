@@ -3,11 +3,16 @@ import { useNavigate } from "react-router-dom";
 import {
   authService,
   customerService,
+  deliveryMethodService,
+  paymentMethodService,
   productService,
   saleService,
   stockService,
+  type DeliveryMethod,
+  type PaymentMethod,
 } from "../api/services";
 import { Button } from "../components/Button";
+import CustomerSelector from "../components/CustomerSelector";
 import type { DistributorStock, Product } from "../types";
 
 interface SaleItem {
@@ -47,14 +52,25 @@ interface AllowedBranch {
   totalUnits: number;
 }
 
+interface AdditionalCost {
+  id: string;
+  type: "warranty" | "gift" | "other";
+  description: string;
+  amount: number;
+}
+
 interface FormState {
   notes: string;
   paymentProof: string | null;
   saleDate: string;
-  paymentType: "cash" | "credit"; // contado o crédito
+  paymentMethodId: string;
+  deliveryMethodId: string;
+  shippingCost: number;
+  deliveryAddress: string;
   customerId: string;
   creditDueDate: string;
   initialPayment: number;
+  discount: number;
 }
 
 export default function RegisterSale() {
@@ -62,15 +78,26 @@ export default function RegisterSale() {
   const [stock, setStock] = useState<DistributorStock[]>([]);
   const [items, setItems] = useState<SaleItem[]>([]);
   const [customers, setCustomers] = useState<CustomerData[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [deliveryMethods, setDeliveryMethods] = useState<DeliveryMethod[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<PaymentMethod | null>(null);
+  const [selectedDeliveryMethod, setSelectedDeliveryMethod] =
+    useState<DeliveryMethod | null>(null);
   const [formData, setFormData] = useState<FormState>({
     notes: "",
     paymentProof: null,
     saleDate: new Date().toISOString().slice(0, 10),
-    paymentType: "cash",
+    paymentMethodId: "",
+    deliveryMethodId: "",
+    shippingCost: 0,
+    deliveryAddress: "",
     customerId: "",
     creditDueDate: "",
     initialPayment: 0,
+    discount: 0,
   });
+  const [additionalCosts, setAdditionalCosts] = useState<AdditionalCost[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStock, setLoadingStock] = useState(true);
@@ -86,6 +113,8 @@ export default function RegisterSale() {
     loadStock();
     loadCustomers();
     loadAllowedBranches();
+    loadPaymentMethods();
+    loadDeliveryMethods();
   }, []);
 
   const loadAllowedBranches = async () => {
@@ -119,6 +148,75 @@ export default function RegisterSale() {
       console.error("Error al cargar clientes:", error);
       // No mostramos error porque no es crítico
     }
+  };
+
+  const loadPaymentMethods = async () => {
+    try {
+      const { paymentMethods: methods } = await paymentMethodService.getAll();
+      const activeMethods = methods.filter(m => m.isActive);
+      setPaymentMethods(activeMethods);
+
+      // Seleccionar el primer método por defecto (usualmente Efectivo)
+      if (activeMethods.length > 0 && !formData.paymentMethodId) {
+        const defaultMethod =
+          activeMethods.find(m => m.code === "cash") || activeMethods[0];
+        setFormData(prev => ({
+          ...prev,
+          paymentMethodId: defaultMethod._id,
+        }));
+        setSelectedPaymentMethod(defaultMethod);
+      }
+    } catch {
+      console.error("No se pudieron cargar los métodos de pago");
+    }
+  };
+
+  const handlePaymentMethodChange = (methodId: string) => {
+    const method = paymentMethods.find(m => m._id === methodId);
+    setSelectedPaymentMethod(method || null);
+    setFormData(prev => ({
+      ...prev,
+      paymentMethodId: methodId,
+      // Limpiar datos de crédito si cambia a método no-crédito
+      ...(method && !method.isCredit
+        ? { customerId: "", creditDueDate: "", initialPayment: 0 }
+        : {}),
+    }));
+  };
+
+  const loadDeliveryMethods = async () => {
+    try {
+      const { deliveryMethods: methods } = await deliveryMethodService.getAll();
+      const activeMethods = methods.filter((m: DeliveryMethod) => m.isActive);
+      setDeliveryMethods(activeMethods);
+
+      // Seleccionar el primer método por defecto (usualmente Portería)
+      if (activeMethods.length > 0 && !formData.deliveryMethodId) {
+        const defaultMethod =
+          activeMethods.find((m: DeliveryMethod) => m.code === "porteria") ||
+          activeMethods[0];
+        setFormData(prev => ({
+          ...prev,
+          deliveryMethodId: defaultMethod._id,
+          shippingCost: defaultMethod.defaultCost || 0,
+        }));
+        setSelectedDeliveryMethod(defaultMethod);
+      }
+    } catch {
+      console.error("No se pudieron cargar los métodos de entrega");
+    }
+  };
+
+  const handleDeliveryMethodChange = (methodId: string) => {
+    const method = deliveryMethods.find(m => m._id === methodId);
+    setSelectedDeliveryMethod(method || null);
+    setFormData(prev => ({
+      ...prev,
+      deliveryMethodId: methodId,
+      shippingCost: method?.defaultCost || 0,
+      // Limpiar dirección si el método no requiere dirección
+      ...(method && !method.requiresAddress ? { deliveryAddress: "" } : {}),
+    }));
   };
 
   // Obtener stock disponible según la fuente seleccionada
@@ -239,6 +337,31 @@ export default function RegisterSale() {
     );
   };
 
+  // Funciones para costos adicionales
+  const handleAddCost = () => {
+    const newCost: AdditionalCost = {
+      id: Date.now().toString(),
+      type: "warranty",
+      description: "",
+      amount: 0,
+    };
+    setAdditionalCosts(prev => [...prev, newCost]);
+  };
+
+  const handleRemoveCost = (id: string) => {
+    setAdditionalCosts(prev => prev.filter(cost => cost.id !== id));
+  };
+
+  const handleUpdateCost = (
+    id: string,
+    field: keyof Omit<AdditionalCost, "id">,
+    value: string | number
+  ) => {
+    setAdditionalCosts(prev =>
+      prev.map(cost => (cost.id === id ? { ...cost, [field]: value } : cost))
+    );
+  };
+
   const calculateTotal = () => {
     return items.reduce(
       (total, item) => total + item.salePrice * item.quantity,
@@ -261,6 +384,22 @@ export default function RegisterSale() {
     }, 0);
   };
 
+  const calculateTotalAdditionalCosts = () => {
+    return additionalCosts.reduce((sum, cost) => sum + cost.amount, 0);
+  };
+
+  const calculateFinalTotal = () => {
+    return Math.max(0, calculateTotal() - (formData.discount || 0));
+  };
+
+  const calculateNetProfit = () => {
+    return (
+      calculateTotalProfit() -
+      calculateTotalAdditionalCosts() -
+      (formData.shippingCost || 0)
+    );
+  };
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -268,6 +407,28 @@ export default function RegisterSale() {
   ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCustomerChange = (
+    customerId: string,
+    customer?: CustomerData
+  ) => {
+    if (!customerId) {
+      setFormData(prev => ({ ...prev, customerId: "" }));
+      return;
+    }
+    // Si viene el objeto customer del CustomerSelector, agregarlo a la lista
+    if (customer && !customers.find(c => c._id === customer._id)) {
+      setCustomers(prev => [customer, ...prev]);
+    }
+    setFormData(prev => ({ ...prev, customerId }));
+  };
+
+  const handleCustomerCreated = (customer: CustomerData) => {
+    // Agregar el nuevo cliente a la lista local
+    setCustomers(prev => [customer, ...prev]);
+    // Seleccionarlo automáticamente
+    handleCustomerChange(customer._id, customer);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -308,8 +469,11 @@ export default function RegisterSale() {
       return;
     }
 
+    // Determinar si es método de crédito
+    const isCredit = selectedPaymentMethod?.isCredit ?? false;
+
     // Validar campos de crédito
-    if (formData.paymentType === "credit") {
+    if (isCredit) {
       if (!formData.customerId) {
         setError("Debes seleccionar un cliente para ventas a crédito");
         return;
@@ -334,17 +498,40 @@ export default function RegisterSale() {
           paymentProof?: string;
           paymentProofMimeType?: string;
           paymentType?: string;
+          paymentMethodId?: string;
           customerId?: string;
           creditDueDate?: string;
           initialPayment?: number;
           branchId?: string;
+          deliveryMethodId?: string;
+          shippingCost?: number;
+          deliveryAddress?: string;
+          additionalCosts?: Array<{
+            type: string;
+            description: string;
+            amount: number;
+          }>;
+          discount?: number;
         } = {
           productId: item.productId,
           quantity: item.quantity,
           salePrice: item.salePrice,
           notes: formData.notes,
           saleDate: formData.saleDate,
-          paymentType: formData.paymentType,
+          paymentMethodId: formData.paymentMethodId || undefined,
+          paymentType: isCredit ? "credit" : "cash",
+          deliveryMethodId: formData.deliveryMethodId || undefined,
+          shippingCost: formData.shippingCost || undefined,
+          deliveryAddress: formData.deliveryAddress || undefined,
+          additionalCosts:
+            additionalCosts.length > 0
+              ? additionalCosts.map(c => ({
+                  type: c.type,
+                  description: c.description,
+                  amount: c.amount,
+                }))
+              : undefined,
+          discount: formData.discount || undefined,
         };
 
         // Si la venta es desde una bodega, agregar el branchId
@@ -358,7 +545,7 @@ export default function RegisterSale() {
         }
 
         // Agregar campos de crédito si aplica
-        if (formData.paymentType === "credit") {
+        if (isCredit) {
           saleData.customerId = formData.customerId;
           saleData.creditDueDate = formData.creditDueDate;
           if (formData.initialPayment > 0) {
@@ -373,15 +560,28 @@ export default function RegisterSale() {
 
       // Resetear formulario
       setItems([]);
+      setAdditionalCosts([]);
+      // Restaurar el método de pago por defecto
+      const defaultMethod =
+        paymentMethods.find(m => m.code === "cash") || paymentMethods[0];
+      // Restaurar el método de entrega por defecto
+      const defaultDelivery =
+        deliveryMethods.find(m => m.code === "porteria") || deliveryMethods[0];
       setFormData({
         notes: "",
         paymentProof: null,
         saleDate: new Date().toISOString().slice(0, 10),
-        paymentType: "cash",
+        paymentMethodId: defaultMethod?._id || "",
+        deliveryMethodId: defaultDelivery?._id || "",
+        shippingCost: defaultDelivery?.defaultCost || 0,
+        deliveryAddress: "",
         customerId: "",
         creditDueDate: "",
         initialPayment: 0,
+        discount: 0,
       });
+      setSelectedPaymentMethod(defaultMethod || null);
+      setSelectedDeliveryMethod(defaultDelivery || null);
       setImagePreview(null);
       setSelectedSource("own");
 
@@ -782,23 +982,88 @@ export default function RegisterSale() {
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-300">
-                  Tipo de Pago *
+                  Método de Pago *
                 </label>
                 <select
-                  name="paymentType"
-                  value={formData.paymentType}
-                  onChange={handleChange}
+                  name="paymentMethodId"
+                  value={formData.paymentMethodId}
+                  onChange={e => handlePaymentMethodChange(e.target.value)}
                   required
                   className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="cash">Contado (Efectivo/Transferencia)</option>
-                  <option value="credit">A Crédito (Fiado)</option>
+                  <option value="">Selecciona un método</option>
+                  {paymentMethods.map(method => (
+                    <option key={method._id} value={method._id}>
+                      {method.name}
+                      {method.isCredit ? " (Crédito)" : ""}
+                    </option>
+                  ))}
+                </select>
+                {selectedPaymentMethod?.isCredit && (
+                  <p className="mt-1 text-xs text-orange-400">
+                    ⚠️ Este método genera una venta a crédito
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">
+                  Método de Entrega
+                </label>
+                <select
+                  name="deliveryMethodId"
+                  value={formData.deliveryMethodId}
+                  onChange={e => handleDeliveryMethodChange(e.target.value)}
+                  className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Sin método de entrega</option>
+                  {deliveryMethods.map(method => (
+                    <option key={method._id} value={method._id}>
+                      {method.name}
+                      {method.defaultCost > 0
+                        ? ` (+$${method.defaultCost.toLocaleString()})`
+                        : ""}
+                    </option>
+                  ))}
                 </select>
               </div>
+              {/* Costo de envío variable */}
+              {selectedDeliveryMethod?.hasVariableCost && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-300">
+                    Costo de envío
+                  </label>
+                  <input
+                    type="number"
+                    name="shippingCost"
+                    value={formData.shippingCost}
+                    onChange={handleChange}
+                    min={0}
+                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                </div>
+              )}
+              {/* Dirección de entrega */}
+              {selectedDeliveryMethod?.requiresAddress && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-300">
+                    Dirección de entrega
+                  </label>
+                  <input
+                    type="text"
+                    name="deliveryAddress"
+                    value={formData.deliveryAddress}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Dirección completa de entrega..."
+                  />
+                </div>
+              )}
             </div>
 
             {/* Campos de crédito (solo si es a crédito) */}
-            {formData.paymentType === "credit" && (
+            {selectedPaymentMethod?.isCredit && (
               <div className="mt-4 rounded-lg border border-orange-500/30 bg-orange-900/10 p-4">
                 <h3 className="mb-3 text-sm font-semibold text-orange-400">
                   ⚠️ Información de Crédito
@@ -808,24 +1073,14 @@ export default function RegisterSale() {
                     <label className="mb-2 block text-sm font-medium text-gray-300">
                       Cliente *
                     </label>
-                    <select
-                      name="customerId"
+                    <CustomerSelector
                       value={formData.customerId}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    >
-                      <option value="">Selecciona un cliente</option>
-                      {customers.map(customer => (
-                        <option key={customer._id} value={customer._id}>
-                          {customer.name}
-                          {customer.phone && ` - ${customer.phone}`}
-                          {customer.totalDebt && customer.totalDebt > 0
-                            ? ` (Deuda: ${formatCurrency(customer.totalDebt)})`
-                            : ""}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={handleCustomerChange}
+                      placeholder="Buscar cliente por nombre o teléfono..."
+                      required={true}
+                      allowCreate={true}
+                      onCreateSuccess={handleCustomerCreated}
+                    />
                   </div>
 
                   <div>
@@ -866,8 +1121,8 @@ export default function RegisterSale() {
               </div>
             )}
 
-            {/* Comprobante (solo para contado) */}
-            {formData.paymentType === "cash" && (
+            {/* Comprobante (solo para no-crédito) */}
+            {!selectedPaymentMethod?.isCredit && (
               <div className="mt-4">
                 <label className="mb-2 block text-sm font-medium text-gray-300">
                   Comprobante de Transferencia
@@ -917,6 +1172,98 @@ export default function RegisterSale() {
                 placeholder="Cliente, método de pago, etc."
               />
             </div>
+
+            <div className="mt-4">
+              <label className="mb-2 block text-sm font-medium text-gray-300">
+                Descuento al cliente
+              </label>
+              <input
+                type="number"
+                name="discount"
+                value={formData.discount}
+                onChange={handleChange}
+                min={0}
+                className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0"
+              />
+            </div>
+
+            {/* Costos Adicionales */}
+            <div className="mt-4 rounded-lg border border-purple-500/30 bg-purple-900/10 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-purple-400">
+                  🎁 Costos Adicionales (Garantías, Obsequios)
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleAddCost}
+                  className="rounded-lg bg-purple-600 px-3 py-1 text-sm text-white hover:bg-purple-500"
+                >
+                  + Agregar
+                </button>
+              </div>
+              {additionalCosts.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  No hay costos adicionales. Agrega garantías u obsequios si
+                  aplica.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {additionalCosts.map(cost => (
+                    <div
+                      key={cost.id}
+                      className="flex items-center gap-3 rounded-lg border border-purple-500/20 bg-gray-800/50 p-3"
+                    >
+                      <select
+                        value={cost.type}
+                        onChange={e =>
+                          handleUpdateCost(cost.id, "type", e.target.value)
+                        }
+                        className="rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-white"
+                      >
+                        <option value="warranty">🛡️ Garantía</option>
+                        <option value="gift">🎁 Obsequio</option>
+                        <option value="other">📦 Otro</option>
+                      </select>
+                      <input
+                        type="text"
+                        value={cost.description}
+                        onChange={e =>
+                          handleUpdateCost(
+                            cost.id,
+                            "description",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Descripción..."
+                        className="flex-1 rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-white"
+                      />
+                      <input
+                        type="number"
+                        value={cost.amount}
+                        onChange={e =>
+                          handleUpdateCost(
+                            cost.id,
+                            "amount",
+                            Number(e.target.value) || 0
+                          )
+                        }
+                        placeholder="Costo"
+                        min={0}
+                        className="w-24 rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCost(cost.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Resumen */}
@@ -939,9 +1286,21 @@ export default function RegisterSale() {
                   </span>
                 </div>
                 <div className="mt-2 flex justify-between border-t border-gray-700 pt-2 text-lg">
-                  <span className="text-gray-300">Total venta:</span>
+                  <span className="text-gray-300">Subtotal venta:</span>
                   <span className="font-bold text-green-400">
                     {formatCurrency(calculateTotal())}
+                  </span>
+                </div>
+                {formData.discount > 0 && (
+                  <div className="flex justify-between text-sm text-orange-400">
+                    <span>Descuento al cliente:</span>
+                    <span>-{formatCurrency(formData.discount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg">
+                  <span className="text-gray-300">Total a cobrar:</span>
+                  <span className="font-bold text-green-400">
+                    {formatCurrency(calculateFinalTotal())}
                   </span>
                 </div>
                 <div className="flex justify-between rounded-lg border border-blue-500/30 bg-blue-900/20 p-2 text-base">
@@ -950,11 +1309,40 @@ export default function RegisterSale() {
                     {formatCurrency(calculateTotalPayment())}
                   </span>
                 </div>
-                <div className="flex justify-between rounded-lg border border-green-500/30 bg-green-900/20 p-2 text-base">
-                  <span className="text-green-300">Tu ganancia total:</span>
-                  <span className="font-bold text-green-400">
-                    {formatCurrency(calculateTotalProfit())}
-                  </span>
+                <div className="mt-3 border-t border-gray-700 pt-3">
+                  <p className="mb-2 text-xs font-medium text-gray-400">
+                    Análisis de Ganancias:
+                  </p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Ganancia bruta:</span>
+                    <span className="font-semibold text-blue-400">
+                      {formatCurrency(calculateTotalProfit())}
+                    </span>
+                  </div>
+                  {calculateTotalAdditionalCosts() > 0 && (
+                    <div className="flex justify-between text-sm text-gray-400">
+                      <span>- Costos adicionales:</span>
+                      <span className="text-red-400">
+                        -{formatCurrency(calculateTotalAdditionalCosts())}
+                      </span>
+                    </div>
+                  )}
+                  {formData.shippingCost > 0 && (
+                    <div className="flex justify-between text-sm text-gray-400">
+                      <span>- Costo de envío:</span>
+                      <span className="text-red-400">
+                        -{formatCurrency(formData.shippingCost)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="mt-2 flex justify-between rounded-lg border border-green-500/30 bg-green-900/20 p-2 text-base">
+                    <span className="text-green-300">Ganancia neta:</span>
+                    <span
+                      className={`font-bold ${calculateNetProfit() >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                    >
+                      {formatCurrency(calculateNetProfit())}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

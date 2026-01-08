@@ -4,7 +4,9 @@ import Branch from "../models/Branch.js";
 import BranchStock from "../models/BranchStock.js";
 import Credit from "../models/Credit.js";
 import Customer from "../models/Customer.js";
+import DeliveryMethod from "../models/DeliveryMethod.js";
 import DistributorStock from "../models/DistributorStock.js";
+import PaymentMethod from "../models/PaymentMethod.js";
 import Product from "../models/Product.js";
 import ProfitHistory from "../models/ProfitHistory.js";
 import Sale from "../models/Sale.js";
@@ -367,8 +369,14 @@ export const registerAdminSale = async (req, res) => {
       branchId,
       customerId,
       paymentType,
+      paymentMethodId,
       creditDueDate,
       initialPayment,
+      deliveryMethodId,
+      shippingCost,
+      deliveryAddress,
+      additionalCosts,
+      discount,
     } = req.body;
 
     const normalizedSaleDate = toColombiaStartOfDay(saleDate);
@@ -456,6 +464,30 @@ export const registerAdminSale = async (req, res) => {
     // Calcular el costo promedio al momento de la venta
     const averageCostAtSale = product.averageCost || product.purchasePrice;
 
+    // Resolver método de pago si se envía
+    let paymentMethodDoc = null;
+    let isCredit = paymentType === "credit";
+    if (paymentMethodId) {
+      paymentMethodDoc = await PaymentMethod.findOne({
+        _id: paymentMethodId,
+        business: businessId,
+        isActive: true,
+      });
+      if (paymentMethodDoc) {
+        isCredit = paymentMethodDoc.isCredit;
+      }
+    }
+
+    // Resolver método de entrega si se envía
+    let deliveryMethodDoc = null;
+    if (deliveryMethodId) {
+      deliveryMethodDoc = await DeliveryMethod.findOne({
+        _id: deliveryMethodId,
+        business: businessId,
+        isActive: true,
+      });
+    }
+
     const saleData = {
       business: businessId,
       branch: branch?._id,
@@ -477,6 +509,19 @@ export const registerAdminSale = async (req, res) => {
       paymentConfirmedBy: req.user?.id || req.user?.userId,
       commissionBonus: 0, // Admin no tiene bonus
       distributorProfitPercentage: 0, // Admin no tiene porcentaje de ganancia
+      // Método de pago personalizado
+      paymentMethod: paymentMethodDoc?._id || null,
+      paymentMethodCode:
+        paymentMethodDoc?.code || (isCredit ? "credit" : "cash"),
+      isCredit,
+      // Método de entrega
+      deliveryMethod: deliveryMethodDoc?._id || null,
+      deliveryMethodCode: deliveryMethodDoc?.code || null,
+      shippingCost: shippingCost || deliveryMethodDoc?.defaultCost || 0,
+      deliveryAddress: deliveryAddress || null,
+      // Costos adicionales y descuento
+      additionalCosts: additionalCosts || [],
+      discount: discount || 0,
     };
 
     // Cliente asociado (opcional)
@@ -557,7 +602,7 @@ export const registerAdminSale = async (req, res) => {
 
     // Crear crédito si es venta a crédito
     let credit = null;
-    if (paymentType === "credit" && customerDoc) {
+    if (isCredit && customerDoc) {
       const totalAmount = Number(salePrice) * Number(quantity);
       const creditAmount = totalAmount - (Number(initialPayment) || 0);
 
@@ -662,8 +707,14 @@ export const registerSale = async (req, res) => {
       branchId,
       customerId,
       paymentType,
+      paymentMethodId,
       creditDueDate,
       initialPayment,
+      deliveryMethodId,
+      shippingCost,
+      deliveryAddress,
+      additionalCosts,
+      discount,
     } = req.body;
     const distributorId = req.user.id;
     const usesBranchStock = Boolean(branchId);
@@ -742,6 +793,30 @@ export const registerSale = async (req, res) => {
     // Calcular el costo promedio al momento de la venta
     const averageCostAtSale = product.averageCost || product.purchasePrice;
 
+    // Resolver método de pago si se envía
+    let paymentMethodDoc = null;
+    let isCredit = paymentType === "credit";
+    if (paymentMethodId) {
+      paymentMethodDoc = await PaymentMethod.findOne({
+        _id: paymentMethodId,
+        business: businessId,
+        isActive: true,
+      });
+      if (paymentMethodDoc) {
+        isCredit = paymentMethodDoc.isCredit;
+      }
+    }
+
+    // Resolver método de entrega si se envía
+    let deliveryMethodDoc = null;
+    if (deliveryMethodId) {
+      deliveryMethodDoc = await DeliveryMethod.findOne({
+        _id: deliveryMethodId,
+        business: businessId,
+        isActive: true,
+      });
+    }
+
     // Crear la venta
     const saleData = {
       business: businessId,
@@ -757,6 +832,19 @@ export const registerSale = async (req, res) => {
       notes,
       commissionBonus,
       distributorProfitPercentage,
+      // Método de pago personalizado
+      paymentMethod: paymentMethodDoc?._id || null,
+      paymentMethodCode:
+        paymentMethodDoc?.code || (isCredit ? "credit" : "cash"),
+      isCredit,
+      // Método de entrega
+      deliveryMethod: deliveryMethodDoc?._id || null,
+      deliveryMethodCode: deliveryMethodDoc?.code || null,
+      shippingCost: shippingCost || deliveryMethodDoc?.defaultCost || 0,
+      deliveryAddress: deliveryAddress || null,
+      // Costos adicionales y descuento
+      additionalCosts: additionalCosts || [],
+      discount: discount || 0,
     };
 
     Object.assign(saleData, customerData);
@@ -836,7 +924,7 @@ export const registerSale = async (req, res) => {
 
       // Crear crédito si es venta a crédito
       let credit = null;
-      if (paymentType === "credit" && customerDoc) {
+      if (isCredit && customerDoc) {
         const totalAmount = Number(salePrice) * Number(quantity);
         const creditAmount = totalAmount - (Number(initialPayment) || 0);
 

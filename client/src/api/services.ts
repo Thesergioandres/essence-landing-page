@@ -1088,6 +1088,22 @@ export const saleService = {
     branchId?: string;
     notes?: string;
     saleDate?: string;
+    paymentType?: string;
+    paymentMethodId?: string;
+    customerId?: string;
+    creditDueDate?: string;
+    initialPayment?: number;
+    paymentProof?: string;
+    paymentProofMimeType?: string;
+    deliveryMethodId?: string;
+    shippingCost?: number;
+    deliveryAddress?: string;
+    additionalCosts?: Array<{
+      type: string;
+      description: string;
+      amount: number;
+    }>;
+    discount?: number;
   }): Promise<{
     message: string;
     sale: Sale;
@@ -1105,9 +1121,19 @@ export const saleService = {
     notes?: string;
     saleDate?: string;
     paymentType?: string;
+    paymentMethodId?: string;
     customerId?: string;
     creditDueDate?: string;
     initialPayment?: number;
+    deliveryMethodId?: string;
+    shippingCost?: number;
+    deliveryAddress?: string;
+    additionalCosts?: Array<{
+      type: string;
+      description: string;
+      amount: number;
+    }>;
+    discount?: number;
   }): Promise<{
     message: string;
     sale: Sale;
@@ -1445,6 +1471,43 @@ export const analyticsService = {
 
   async getAnalyticsDashboard(): Promise<AnalyticsDashboard> {
     const response = await api.get<AnalyticsDashboard>("/analytics/dashboard");
+    return response.data;
+  },
+
+  async getPaymentMethodMetrics(params?: {
+    startDate?: string;
+    endDate?: string;
+    paymentMethodId?: string;
+    paymentMethodCode?: string;
+  }): Promise<{
+    success: boolean;
+    data: {
+      byPaymentMethod: Array<{
+        paymentMethodId: string | null;
+        paymentMethodCode: string;
+        paymentMethodName: string;
+        isCredit: boolean;
+        totalSales: number;
+        totalRevenue: number;
+        totalProfit: number;
+        averageTicket: number;
+        percentageOfTotal: number;
+      }>;
+      totals: {
+        totalSales: number;
+        totalRevenue: number;
+        totalProfit: number;
+        averageTicket: number;
+      };
+      filters: {
+        startDate?: string;
+        endDate?: string;
+        paymentMethodId?: string;
+        paymentMethodCode?: string;
+      };
+    };
+  }> {
+    const response = await api.get("/analytics/payment-methods", { params });
     return response.data;
   },
 };
@@ -2679,6 +2742,173 @@ export const inventoryService = {
     destination: string;
   }> {
     const response = await api.delete(`/inventory/entry/${id}`);
+    return response.data;
+  },
+};
+
+// ==================== PAYMENT METHOD SERVICE ====================
+export interface PaymentMethod {
+  _id: string;
+  business: string;
+  name: string;
+  code: string;
+  description?: string;
+  isCredit: boolean;
+  requiresConfirmation: boolean;
+  requiresProof: boolean;
+  icon?: string;
+  color?: string;
+  isActive: boolean;
+  displayOrder: number;
+  isSystem: boolean;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const paymentMethodService = {
+  async getAll(): Promise<{ paymentMethods: PaymentMethod[] }> {
+    const response = await api.get("/payment-methods");
+    return response.data;
+  },
+
+  async getById(id: string): Promise<{ paymentMethod: PaymentMethod }> {
+    const response = await api.get(`/payment-methods/${id}`);
+    return response.data;
+  },
+
+  async create(payload: {
+    name: string;
+    description?: string;
+    isCredit?: boolean;
+    requiresConfirmation?: boolean;
+    requiresProof?: boolean;
+    icon?: string;
+    color?: string;
+  }): Promise<{ paymentMethod: PaymentMethod }> {
+    const response = await api.post("/payment-methods", payload);
+    return response.data;
+  },
+
+  async update(
+    id: string,
+    payload: {
+      name?: string;
+      description?: string;
+      isCredit?: boolean;
+      requiresConfirmation?: boolean;
+      requiresProof?: boolean;
+      icon?: string;
+      color?: string;
+      isActive?: boolean;
+    }
+  ): Promise<{ paymentMethod: PaymentMethod }> {
+    const response = await api.put(`/payment-methods/${id}`, payload);
+    return response.data;
+  },
+
+  async delete(id: string): Promise<{ message: string }> {
+    const response = await api.delete(`/payment-methods/${id}`);
+    return response.data;
+  },
+
+  async reorder(
+    orderedIds: string[]
+  ): Promise<{ message: string; paymentMethods: PaymentMethod[] }> {
+    const response = await api.put("/payment-methods/reorder", { orderedIds });
+    return response.data;
+  },
+
+  async initializeDefaults(): Promise<{
+    message: string;
+    paymentMethods: PaymentMethod[];
+  }> {
+    const response = await api.post("/payment-methods/initialize");
+    return response.data;
+  },
+};
+
+// ==================== DELIVERY METHOD SERVICE ====================
+export interface DeliveryMethod {
+  _id: string;
+  business: string;
+  name: string;
+  code: string;
+  description?: string;
+  defaultCost: number;
+  hasVariableCost: boolean;
+  requiresAddress: boolean;
+  estimatedTime?: string;
+  icon: string;
+  color: string;
+  isActive: boolean;
+  displayOrder: number;
+  isSystem: boolean;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const deliveryMethodService = {
+  async getAll(): Promise<{ deliveryMethods: DeliveryMethod[] }> {
+    const response = await api.get("/delivery-methods");
+    return response.data;
+  },
+
+  async getById(id: string): Promise<{ deliveryMethod: DeliveryMethod }> {
+    const response = await api.get(`/delivery-methods/${id}`);
+    return response.data;
+  },
+
+  async create(payload: {
+    name: string;
+    description?: string;
+    defaultCost?: number;
+    hasVariableCost?: boolean;
+    requiresAddress?: boolean;
+    estimatedTime?: string;
+    icon?: string;
+    color?: string;
+  }): Promise<{ deliveryMethod: DeliveryMethod }> {
+    const response = await api.post("/delivery-methods", payload);
+    return response.data;
+  },
+
+  async update(
+    id: string,
+    payload: {
+      name?: string;
+      description?: string;
+      defaultCost?: number;
+      hasVariableCost?: boolean;
+      requiresAddress?: boolean;
+      estimatedTime?: string;
+      icon?: string;
+      color?: string;
+      isActive?: boolean;
+    }
+  ): Promise<{ deliveryMethod: DeliveryMethod }> {
+    const response = await api.put(`/delivery-methods/${id}`, payload);
+    return response.data;
+  },
+
+  async delete(id: string): Promise<{ message: string }> {
+    const response = await api.delete(`/delivery-methods/${id}`);
+    return response.data;
+  },
+
+  async reorder(
+    orderedIds: string[]
+  ): Promise<{ message: string; deliveryMethods: DeliveryMethod[] }> {
+    const response = await api.put("/delivery-methods/reorder", { orderedIds });
+    return response.data;
+  },
+
+  async initializeDefaults(): Promise<{
+    message: string;
+    deliveryMethods: DeliveryMethod[];
+  }> {
+    const response = await api.post("/delivery-methods/initialize");
     return response.data;
   },
 };

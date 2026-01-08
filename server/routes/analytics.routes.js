@@ -5,6 +5,7 @@ import {
   getCombinedSummary,
   getFinancialSummary,
   getMonthlyProfit,
+  getPaymentMethodMetrics,
   getProfitByDistributor,
   getProfitByProduct,
   getSalesTimeline,
@@ -41,5 +42,6 @@ router.get("/sales-timeline", cacheIfEnabled, getSalesTimeline);
 router.get("/financial-summary", cacheIfEnabled, getFinancialSummary);
 router.get("/dashboard", cacheIfEnabled, getAnalyticsDashboard);
 router.get("/combined-summary", cacheIfEnabled, getCombinedSummary);
+router.get("/payment-methods", cacheIfEnabled, getPaymentMethodMetrics);
 
 export default router;
