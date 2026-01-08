@@ -9,6 +9,7 @@ import {
   getStockAlerts,
   getTransferHistory,
   transferStockBetweenDistributors,
+  transferStockToBranch,
   withdrawStockFromDistributor,
 } from "../controllers/stock.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
@@ -106,6 +107,13 @@ router.post(
   requireFeature("transfers"),
   requirePermission({ module: "transfers", action: "create" }),
   transferStockBetweenDistributors
+);
+router.post(
+  "/transfer-to-branch",
+  protect,
+  businessContext,
+  requireFeature("inventory"),
+  transferStockToBranch
 );
 
 export default router;

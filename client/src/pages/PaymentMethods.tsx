@@ -71,11 +71,13 @@ export default function PaymentMethods() {
     try {
       if (!opts?.silent) setLoading(true);
       const data = await paymentMethodService.getAll();
-      setPaymentMethods(data.paymentMethods);
-      writeSessionCache(PAYMENT_METHODS_CACHE_KEY, data.paymentMethods);
+      const methods = data?.paymentMethods || [];
+      setPaymentMethods(methods);
+      writeSessionCache(PAYMENT_METHODS_CACHE_KEY, methods);
     } catch (err) {
       console.error("Error al cargar métodos de pago:", err);
       setError("Error al cargar los métodos de pago");
+      setPaymentMethods([]);
     } finally {
       if (!opts?.silent) setLoading(false);
     }

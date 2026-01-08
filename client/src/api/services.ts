@@ -1,3 +1,4 @@
+import { invalidateProductCache } from "../hooks";
 import type {
   Achievement,
   AnalyticsDashboard,
@@ -603,6 +604,8 @@ export const productService = {
         "Content-Type": "multipart/form-data",
       },
     });
+    // Invalidar caché de productos al crear uno nuevo
+    invalidateProductCache();
     return response.data;
   },
 
@@ -634,11 +637,15 @@ export const productService = {
         "Content-Type": "multipart/form-data",
       },
     });
+    // Invalidar caché de productos al actualizar
+    invalidateProductCache();
     return response.data;
   },
 
   async delete(id: string): Promise<{ message: string }> {
     const response = await api.delete<{ message: string }>(`/products/${id}`);
+    // Invalidar caché de productos al eliminar
+    invalidateProductCache();
     return response.data;
   },
 
@@ -963,6 +970,17 @@ export const stockService = {
     };
   }> {
     const response = await api.post("/stock/transfer", data);
+    return response.data;
+  },
+
+  async transferStockToBranch(data: {
+    toBranchId: string;
+    productId: string;
+    quantity: number;
+  }): Promise<{
+    message: string;
+  }> {
+    const response = await api.post("/stock/transfer-to-branch", data);
     return response.data;
   },
 

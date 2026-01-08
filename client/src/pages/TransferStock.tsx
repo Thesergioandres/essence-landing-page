@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
-import { distributorService, stockService } from "../api/services";
+import { branchService, distributorService, stockService } from "../api/services";
 import LoadingSpinner from "../components/LoadingSpinner";
-import type { DistributorStock, User } from "../types";
+import type { Branch, DistributorStock, User } from "../types";
 
 export default function TransferStock() {
   const [distributors, setDistributors] = useState<User[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [myStock, setMyStock] = useState<DistributorStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  const [transferType, setTransferType] = useState<"distributor" | "branch">("distributor");
   const [selectedDistributor, setSelectedDistributor] = useState("");
+  const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -33,8 +36,9 @@ export default function TransferStock() {
         return;
       }
 
-      const [distributorsData, stockData] = await Promise.all([
+      const [distributorsData, branchesData, stockData] = await Promise.all([
         distributorService.getAll({ active: true }),
+        branchService.list(),
         stockService.getDistributorStock(user._id),
       ]);
 
@@ -48,6 +52,7 @@ export default function TransferStock() {
       );
 
       setDistributors(filteredDistributors);
+      setBranches(branchesData);
       setMyStock(stockData);
     } catch (error) {
       console.error("Error al cargar datos:", error);
@@ -76,16 +81,32 @@ export default function TransferStock() {
       setSubmitting(true);
       setMessage(null);
 
-      const result = await stockService.transferStock({
-        toDistributorId: selectedDistributor,
-        productId: selectedProduct,
-        quantity,
-      });
+      let result;
+      
+      if (transferType === "distributor") {
+        // Transferir a otro distribuidor
+        result = await stockService.transferStock({
+          toDistributorId: selectedDistributor,
+          productId: selectedProduct,
+          quantity,
+        });
+      } else {
+        // Transferir a sede - necesitamos obtener el distributor stock para usar como origin
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        // Para transferir a sede, usamos la sede principal del distribuidor como origen
+        result = await stockService.transferStockToBranch({
+          toBranchId: selectedBranch,
+          productId: selectedProduct,
+          quantity,
+        });
+      }
 
-      setMessage({ type: "success", text: result.message });
+      setMessage({ type: "success", text: result.message || "Transferencia realizada exitosamente" });
 
       // Limpiar formulario
+      setTransferType("distributor");
       setSelectedDistributor("");
+      setSelectedBranch("");
       setSelectedProduct("");
       setQuantity(1);
       setShowConfirmation(false);
@@ -107,7 +128,25 @@ export default function TransferStock() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedDistributor || !selectedProduct || quantity <= 0) {
+    if (transferType === "distributor") {
+      if (!selectedDistributor) {
+        setMessage({
+          type: "error",
+          text: "Selecciona un distribuidor",
+        });
+        return;
+      }
+    } else {
+      if (!selectedBranch) {
+        setMessage({
+          type: "error",
+          text: "Selecciona una sede",
+        });
+        return;
+      }
+    }
+
+    if (!selectedProduct || quantity <= 0) {
       setMessage({
         type: "error",
         text: "Completa todos los campos correctamente",
@@ -127,8 +166,12 @@ export default function TransferStock() {
     setShowConfirmation(true);
   };
 
-  const getDistributorName = () => {
-    return distributors.find(d => d._id === selectedDistributor)?.name || "";
+  const getDestinationName = () => {
+    if (transferType === "distributor") {
+      return distributors.find(d => d._id === selectedDistributor)?.name || "";
+    } else {
+      return branches.find(b => b._id === selectedBranch)?.name || "";
+    }
   };
 
   const getProductName = () => {
@@ -158,7 +201,7 @@ export default function TransferStock() {
       <div>
         <h1 className="text-3xl font-bold text-white">Transferir Inventario</h1>
         <p className="mt-2 text-gray-300">
-          Transfiere productos de tu inventario a otro distribuidor
+          Transfiere productos de tu inventario a otro distribuidor o a una sede
         </p>
       </div>
 
@@ -178,25 +221,85 @@ export default function TransferStock() {
 
       <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Seleccionar distribuidor */}
+          {/* Tipo de transferencia */}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-300">
-              Distribuidor Destino *
+              Tipo de Transferencia *
             </label>
-            <select
-              value={selectedDistributor}
-              onChange={e => setSelectedDistributor(e.target.value)}
-              className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2.5 text-gray-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-              required
-            >
-              <option value="">Selecciona un distribuidor</option>
-              {distributors.map(dist => (
-                <option key={dist._id} value={dist._id}>
-                  {dist.name} - {dist.email}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setTransferType("distributor");
+                  setSelectedBranch("");
+                }}
+                className={`rounded-lg border px-4 py-3 text-center transition ${
+                  transferType === "distributor"
+                    ? "border-purple-500 bg-purple-500/20 text-purple-300"
+                    : "border-gray-700 bg-gray-900/40 text-gray-400 hover:border-gray-600"
+                }`}
+              >
+                <div className="text-2xl mb-1">👥</div>
+                <div className="font-medium">A Distribuidor</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTransferType("branch");
+                  setSelectedDistributor("");
+                }}
+                className={`rounded-lg border px-4 py-3 text-center transition ${
+                  transferType === "branch"
+                    ? "border-purple-500 bg-purple-500/20 text-purple-300"
+                    : "border-gray-700 bg-gray-900/40 text-gray-400 hover:border-gray-600"
+                }`}
+              >
+                <div className="text-2xl mb-1">🏢</div>
+                <div className="font-medium">A Sede</div>
+              </button>
+            </div>
           </div>
+
+          {/* Seleccionar distribuidor o sede según el tipo */}
+          {transferType === "distributor" ? (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-300">
+                Distribuidor Destino *
+              </label>
+              <select
+                value={selectedDistributor}
+                onChange={e => setSelectedDistributor(e.target.value)}
+                className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2.5 text-gray-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                required
+              >
+                <option value="">Selecciona un distribuidor</option>
+                {distributors.map(dist => (
+                  <option key={dist._id} value={dist._id}>
+                    {dist.name} - {dist.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-300">
+                Sede Destino *
+              </label>
+              <select
+                value={selectedBranch}
+                onChange={e => setSelectedBranch(e.target.value)}
+                className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2.5 text-gray-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                required
+              >
+                <option value="">Selecciona una sede</option>
+                {branches.map(branch => (
+                  <option key={branch._id} value={branch._id}>
+                    {branch.name}{branch.address ? ` - ${branch.address}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Seleccionar producto */}
           <div>
@@ -281,12 +384,15 @@ export default function TransferStock() {
                 <strong>Cantidad:</strong> {quantity} unidades
               </p>
               <p>
-                <strong>Destino:</strong> {getDistributorName()}
+                <strong>Destino:</strong> {getDestinationName()}
+              </p>
+              <p>
+                <strong>Tipo:</strong> {transferType === "distributor" ? "Distribuidor" : "Sede"}
               </p>
               <p className="mt-4 text-sm text-amber-300">
                 ⚠️ Esta acción no se puede deshacer. El stock se restará de tu
-                inventario y se agregará al inventario del distribuidor
-                seleccionado.
+                inventario y se agregará al inventario del {transferType === "distributor" ? "distribuidor" : "sede"}{" "}
+                seleccionado{transferType === "distributor" ? "" : "."}.
               </p>
             </div>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">

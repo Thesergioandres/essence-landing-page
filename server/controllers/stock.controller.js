@@ -806,3 +806,182 @@ export const getMyAllowedBranches = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Transferir stock de distribuidor a sede
+// @route   POST /api/stock/transfer-to-branch
+// @access  Private/Distributor
+export const transferStockToBranch = async (req, res) => {
+  try {
+    const businessId = resolveBusinessId(req);
+    if (!businessId) {
+      return res.status(400).json({ message: "Falta x-business-id" });
+    }
+
+    const { toBranchId, productId, quantity } = req.body;
+    const distributorId = req.user.userId || req.user.id;
+
+    // Validaciones
+    if (!toBranchId || !productId || !quantity) {
+      return res.status(400).json({
+        message: "Faltan datos requeridos: sede destino, producto y cantidad",
+      });
+    }
+
+    if (quantity <= 0) {
+      return res.status(400).json({
+        message: "La cantidad debe ser mayor a 0",
+      });
+    }
+
+    // Verificar que el usuario sea distribuidor
+    const distributor = await User.findById(distributorId);
+    if (!distributor || distributor.role !== "distribuidor") {
+      return res.status(403).json({ message: "Solo distribuidores pueden realizar esta acción" });
+    }
+
+    // Verificar membership del distribuidor
+    const membership = await Membership.findOne({
+      business: businessId,
+      user: distributorId,
+      status: "active",
+    });
+
+    if (!membership) {
+      return res.status(403).json({
+        message: "No tienes membresía activa en este negocio",
+      });
+    }
+
+    // Verificar que la sede existe y está activa
+    const Branch = mongoose.model("Branch");
+    const branch = await Branch.findOne({
+      _id: toBranchId,
+      business: businessId,
+      active: true,
+    });
+
+    if (!branch) {
+      return res.status(404).json({ message: "Sede no encontrada o inactiva" });
+    }
+
+    // Verificar que el distribuidor tiene acceso a esta sede
+    const allowedBranchIds = membership.allowedBranches?.map((b) => b.toString()) || [];
+    if (allowedBranchIds.length > 0 && !allowedBranchIds.includes(toBranchId)) {
+      return res.status(403).json({
+        message: "No tienes acceso a esta sede",
+      });
+    }
+
+    // Verificar que el producto existe
+    const product = await Product.findOne({
+      _id: productId,
+      business: businessId,
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    // Verificar stock del distribuidor
+    const distributorStock = await DistributorStock.findOne({
+      distributor: distributorId,
+      product: productId,
+      business: businessId,
+    });
+
+    if (!distributorStock || distributorStock.quantity < quantity) {
+      return res.status(400).json({
+        message: `Stock insuficiente. Disponible: ${
+          distributorStock?.quantity || 0
+        }, Solicitado: ${quantity}`,
+      });
+    }
+
+    // Iniciar transacción
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Reducir stock del distribuidor
+      distributorStock.quantity -= quantity;
+      await distributorStock.save({ session });
+
+      // Agregar stock a la sede
+      let branchStock = await BranchStock.findOne({
+        branch: toBranchId,
+        product: productId,
+        business: businessId,
+      }).session(session);
+
+      if (branchStock) {
+        branchStock.quantity += quantity;
+        await branchStock.save({ session });
+      } else {
+        branchStock = await BranchStock.create(
+          [
+            {
+              branch: toBranchId,
+              product: productId,
+              business: businessId,
+              quantity: quantity,
+            },
+          ],
+          { session }
+        );
+        branchStock = branchStock[0];
+      }
+
+      // Registrar la transferencia
+      await StockTransfer.create(
+        [
+          {
+            business: businessId,
+            type: "distributor_to_branch",
+            fromDistributor: distributorId,
+            toBranch: toBranchId,
+            product: productId,
+            quantity: quantity,
+            status: "completed",
+            completedAt: new Date(),
+          },
+        ],
+        { session }
+      );
+
+      await session.commitTransaction();
+
+      res.json({
+        success: true,
+        message: `${quantity} unidades de ${product.name} transferidas a ${branch.name}`,
+        transfer: {
+          from: {
+            distributorId: distributorId,
+            name: distributor.name,
+            remainingStock: distributorStock.quantity,
+          },
+          to: {
+            branchId: toBranchId,
+            name: branch.name,
+            newStock: branchStock.quantity,
+          },
+          product: {
+            id: product._id,
+            name: product.name,
+          },
+          quantity: quantity,
+        },
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  } catch (error) {
+    console.error("Error en transferencia a sede:", error);
+    res.status(500).json({
+      message: error.message || "Error al transferir stock a sede",
+    });
+  }
+};
+

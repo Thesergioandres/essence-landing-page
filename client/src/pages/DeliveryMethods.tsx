@@ -12,6 +12,7 @@ const DELIVERY_METHODS_CACHE_KEY = buildCacheKey("delivery-methods:list");
 
 // Iconos disponibles para métodos de entrega
 const AVAILABLE_ICONS = [
+  { value: "hand", label: "🤝 Entrega Personal" },
   { value: "building", label: "🏢 Edificio" },
   { value: "truck", label: "🚚 Camión" },
   { value: "send", label: "📤 Enviar" },
@@ -72,11 +73,13 @@ export default function DeliveryMethods() {
     try {
       if (!opts?.silent) setLoading(true);
       const data = await deliveryMethodService.getAll();
-      setDeliveryMethods(data.deliveryMethods);
-      writeSessionCache(DELIVERY_METHODS_CACHE_KEY, data.deliveryMethods);
+      const methods = data?.deliveryMethods || [];
+      setDeliveryMethods(methods);
+      writeSessionCache(DELIVERY_METHODS_CACHE_KEY, methods);
     } catch (err) {
       console.error("Error al cargar métodos de entrega:", err);
       setError("Error al cargar los métodos de entrega");
+      setDeliveryMethods([]);
     } finally {
       if (!opts?.silent) setLoading(false);
     }
