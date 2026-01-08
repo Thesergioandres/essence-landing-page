@@ -1328,6 +1328,38 @@ export const defectiveProductService = {
     const response = await api.get("/defective-products/stats");
     return response.data;
   },
+
+  async approveWarranty(
+    reportId: string,
+    adminNotes?: string
+  ): Promise<{
+    message: string;
+    report: DefectiveProduct;
+    newStock: {
+      warehouseStock: number;
+      totalStock: number;
+    };
+  }> {
+    const response = await api.put(
+      `/defective-products/${reportId}/approve-warranty`,
+      { adminNotes }
+    );
+    return response.data;
+  },
+
+  async rejectWarranty(
+    reportId: string,
+    adminNotes?: string
+  ): Promise<{
+    message: string;
+    report: DefectiveProduct;
+  }> {
+    const response = await api.put(
+      `/defective-products/${reportId}/reject-warranty`,
+      { adminNotes }
+    );
+    return response.data;
+  },
 };
 
 // ==================== ANALYTICS SERVICE ====================

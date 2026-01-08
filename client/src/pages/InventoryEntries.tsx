@@ -85,6 +85,19 @@ export default function InventoryEntries() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Cart for multiple products
+  const [cart, setCart] = useState<
+    Array<{
+      id: string;
+      product: string;
+      productName: string;
+      quantity: number;
+      branch: string;
+      provider: string;
+      notes: string;
+    }>
+  >([]);
+
   // Form
   const [formData, setFormData] = useState({
     product: "",
@@ -157,21 +170,73 @@ export default function InventoryEntries() {
     loadData();
   }, [loadData]);
 
+  const handleAddToCart = () => {
+    if (!formData.product || !formData.quantity) {
+      setError("Selecciona un producto y cantidad");
+      return;
+    }
+
+    const productInfo = _products.find(p => p._id === formData.product);
+    if (!productInfo) {
+      setError("Producto no encontrado");
+      return;
+    }
+
+    const cartItem = {
+      id: Date.now().toString() + Math.random().toString(36),
+      product: formData.product,
+      productName: productInfo.name,
+      quantity: parseInt(formData.quantity),
+      branch: formData.branch,
+      provider: formData.provider,
+      notes: formData.notes,
+    };
+
+    setCart([...cart, cartItem]);
+
+    // Clear form except branch and provider (to reuse for next product)
+    setFormData({
+      ...formData,
+      product: "",
+      quantity: "",
+      notes: "",
+    });
+    setError("");
+  };
+
+  const handleRemoveFromCart = (id: string) => {
+    setCart(cart.filter(item => item.id !== id));
+  };
+
+  const handleClearCart = () => {
+    setCart([]);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (cart.length === 0) {
+      setError("Agrega al menos un producto al carrito");
+      return;
+    }
+
     setSaving(true);
     setError("");
 
     try {
-      await inventoryService.createEntry({
-        product: formData.product,
-        quantity: parseInt(formData.quantity),
-        branch: formData.branch || undefined,
-        provider: formData.provider || undefined,
-        notes: formData.notes || undefined,
-      });
+      // Create all entries sequentially
+      for (const item of cart) {
+        await inventoryService.createEntry({
+          product: item.product,
+          quantity: item.quantity,
+          branch: item.branch || undefined,
+          provider: item.provider || undefined,
+          notes: item.notes || undefined,
+        });
+      }
 
       setShowModal(false);
+      setCart([]);
       setFormData({
         product: "",
         quantity: "",
@@ -183,7 +248,7 @@ export default function InventoryEntries() {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || "Error al registrar la entrada";
+          ?.message || "Error al registrar las entradas";
       setError(message);
     } finally {
       setSaving(false);
@@ -626,146 +691,250 @@ export default function InventoryEntries() {
         </>
       )}
 
-      {/* Modal */}
+      {/* Modal con Carrito */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md rounded-xl border border-gray-700 bg-gray-800 p-6">
-            <h2 className="text-xl font-bold text-white">
-              Registrar Entrada de Inventario
-            </h2>
-
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-300">
-                    Producto *
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowProductModal(true)}
-                    className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Crear producto
-                  </button>
-                </div>
-                <ProductSelector
-                  value={formData.product}
-                  onChange={productId =>
-                    setFormData({ ...formData, product: productId })
-                  }
-                  placeholder="Buscar y seleccionar producto..."
-                  showStock={true}
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300">
-                  Cantidad *
-                </label>
-                <input
-                  type="number"
-                  value={formData.quantity}
-                  onChange={e =>
-                    setFormData({ ...formData, quantity: e.target.value })
-                  }
-                  required
-                  min="1"
-                  placeholder="Ej: 50"
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300">
-                  Destino
-                </label>
-                <select
-                  value={formData.branch}
-                  onChange={e =>
-                    setFormData({ ...formData, branch: e.target.value })
-                  }
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white focus:border-purple-500 focus:outline-none"
-                >
-                  <option value="">Bodega principal</option>
-                  {branches
-                    .filter(b => !b.isWarehouse)
-                    .map(b => (
-                      <option key={b._id} value={b._id}>
-                        {b.name}
-                      </option>
-                    ))}
-                </select>
-                <p className="mt-1 text-xs text-gray-500">
-                  Deja vacío para enviar a bodega principal
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300">
-                  Proveedor
-                </label>
-                <select
-                  value={formData.provider}
-                  onChange={e =>
-                    setFormData({ ...formData, provider: e.target.value })
-                  }
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white focus:border-purple-500 focus:outline-none"
-                >
-                  <option value="">Sin proveedor</option>
-                  {providers.map(p => (
-                    <option key={p._id} value={p._id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300">
-                  Notas
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={e =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                  placeholder="Observaciones adicionales..."
-                  rows={2}
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
-                />
-              </div>
-
-              {error && <p className="text-sm text-red-400">{error}</p>}
-
-              <div className="flex justify-end gap-3 pt-4">
+          <div className="w-full max-w-5xl rounded-xl border border-gray-700 bg-gray-800 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white">
+                Registrar Entrada de Inventario
+              </h2>
+              {cart.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setFormData({
-                      product: "",
-                      quantity: "",
-                      branch: "",
-                      provider: "",
-                      notes: "",
-                    });
-                  }}
-                  className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700"
+                  onClick={handleClearCart}
+                  className="text-sm text-red-400 hover:text-red-300"
                 >
-                  Cancelar
+                  Limpiar carrito
                 </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Formulario */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-white">Agregar Producto</h3>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-gray-300">
+                      Producto *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowProductModal(true)}
+                      className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Crear producto
+                    </button>
+                  </div>
+                  <ProductSelector
+                    value={formData.product}
+                    onChange={productId =>
+                      setFormData({ ...formData, product: productId })
+                    }
+                    placeholder="Buscar y seleccionar producto..."
+                    showStock={true}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">
+                    Cantidad *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.quantity}
+                    onChange={e =>
+                      setFormData({ ...formData, quantity: e.target.value })
+                    }
+                    min="1"
+                    placeholder="Ej: 50"
+                    className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">
+                    Destino
+                  </label>
+                  <select
+                    value={formData.branch}
+                    onChange={e =>
+                      setFormData({ ...formData, branch: e.target.value })
+                    }
+                    className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white focus:border-purple-500 focus:outline-none"
+                  >
+                    <option value="">Bodega principal</option>
+                    {branches
+                      .filter(b => !b.isWarehouse)
+                      .map(b => (
+                        <option key={b._id} value={b._id}>
+                          {b.name}
+                        </option>
+                      ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Deja vacío para enviar a bodega principal
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">
+                    Proveedor
+                  </label>
+                  <select
+                    value={formData.provider}
+                    onChange={e =>
+                      setFormData({ ...formData, provider: e.target.value })
+                    }
+                    className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white focus:border-purple-500 focus:outline-none"
+                  >
+                    <option value="">Sin proveedor</option>
+                    {providers.map(p => (
+                      <option key={p._id} value={p._id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">
+                    Notas
+                  </label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={e =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
+                    placeholder="Observaciones adicionales..."
+                    rows={2}
+                    className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
                 <button
-                  type="submit"
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+                  type="button"
+                  onClick={handleAddToCart}
+                  className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
                 >
-                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Registrar Entrada
+                  <Plus className="mr-1 inline h-4 w-4" />
+                  Agregar al Carrito
                 </button>
               </div>
-            </form>
+
+              {/* Carrito */}
+              <div className="flex flex-col">
+                <h3 className="mb-3 font-semibold text-white">
+                  Carrito ({cart.length}{" "}
+                  {cart.length === 1 ? "producto" : "productos"})
+                </h3>
+
+                <div className="flex-1 overflow-y-auto rounded-lg border border-gray-700 bg-gray-900/50 p-4">
+                  {cart.length === 0 ? (
+                    <div className="flex h-full items-center justify-center text-center">
+                      <p className="text-sm text-gray-500">
+                        No hay productos en el carrito.
+                        <br />
+                        Agrega productos usando el formulario.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {cart.map(item => {
+                        const branchName = item.branch
+                          ? branches.find(b => b._id === item.branch)?.name
+                          : "Bodega principal";
+                        const providerName = item.provider
+                          ? providers.find(p => p._id === item.provider)?.name
+                          : "Sin proveedor";
+
+                        return (
+                          <div
+                            key={item.id}
+                            className="rounded-lg border border-gray-700 bg-gray-800 p-3"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-white">
+                                  {item.productName}
+                                </h4>
+                                <div className="mt-1 space-y-1 text-xs text-gray-400">
+                                  <p>Cantidad: {item.quantity}</p>
+                                  <p>Destino: {branchName}</p>
+                                  <p>Proveedor: {providerName}</p>
+                                  {item.notes && <p>Notas: {item.notes}</p>}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFromCart(item.id)}
+                                className="text-red-400 hover:text-red-300"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 rounded-lg bg-gray-900/50 p-3">
+                  <p className="text-sm text-gray-400">
+                    Total de productos:{" "}
+                    <span className="font-semibold text-white">
+                      {cart.length}
+                    </span>
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    Total unidades:{" "}
+                    <span className="font-semibold text-white">
+                      {cart.reduce(
+                        (sum, item) => sum + parseInt(item.quantity),
+                        0
+                      )}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowModal(false);
+                  setFormData({
+                    product: "",
+                    quantity: "",
+                    branch: "",
+                    provider: "",
+                    notes: "",
+                  });
+                  handleClearCart();
+                }}
+                className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={saving || cart.length === 0}
+                className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+              >
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Registrar {cart.length}{" "}
+                {cart.length === 1 ? "Entrada" : "Entradas"}
+              </button>
+            </div>
           </div>
         </div>
       )}

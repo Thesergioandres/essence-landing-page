@@ -382,6 +382,11 @@ export interface DefectiveProduct {
   quantity: number;
   reason: string;
   images?: ProductImage[];
+  hasWarranty?: boolean;
+  warrantyStatus?: "pending" | "approved" | "rejected" | "not_applicable";
+  lossAmount?: number;
+  stockRestored?: boolean;
+  stockRestoredAt?: string;
   status: "pendiente" | "confirmado" | "rechazado";
   reportDate: string;
   confirmedAt?: string;

@@ -38,7 +38,9 @@ export default function DefectiveProductsManagement() {
     null
   );
   const [adminNotes, setAdminNotes] = useState("");
-  const [actionType, setActionType] = useState<"confirm" | "reject">("confirm");
+  const [actionType, setActionType] = useState<
+    "confirm" | "reject" | "approveWarranty" | "rejectWarranty"
+  >("confirm");
 
   // Estados para reportar desde admin
   const [showReportModal, setShowReportModal] = useState(false);
@@ -53,6 +55,7 @@ export default function DefectiveProductsManagement() {
     productId: "",
     quantity: 1,
     reason: "",
+    hasWarranty: false,
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -110,7 +113,7 @@ export default function DefectiveProductsManagement() {
 
   const handleAction = (
     report: DefectiveProduct,
-    action: "confirm" | "reject"
+    action: "confirm" | "reject" | "approveWarranty" | "rejectWarranty"
   ) => {
     setSelectedReport(report);
     setActionType(action);
@@ -126,8 +129,18 @@ export default function DefectiveProductsManagement() {
 
       if (actionType === "confirm") {
         await defectiveProductService.confirm(selectedReport._id, adminNotes);
-      } else {
+      } else if (actionType === "reject") {
         await defectiveProductService.reject(selectedReport._id, adminNotes);
+      } else if (actionType === "approveWarranty") {
+        await defectiveProductService.approveWarranty(
+          selectedReport._id,
+          adminNotes
+        );
+      } else if (actionType === "rejectWarranty") {
+        await defectiveProductService.rejectWarranty(
+          selectedReport._id,
+          adminNotes
+        );
       }
 
       await loadReports();
@@ -215,7 +228,12 @@ export default function DefectiveProductsManagement() {
         await Promise.all([loadReports(), loadProducts()]);
       }
 
-      setReportForm({ productId: "", quantity: 1, reason: "" });
+      setReportForm({
+        productId: "",
+        quantity: 1,
+        reason: "",
+        hasWarranty: false,
+      });
       setShowReportModal(false);
       alert(
         reportOrigin === "branch"
@@ -269,7 +287,12 @@ export default function DefectiveProductsManagement() {
             setReportOrigin("warehouse");
             setSelectedBranchId("");
             setBranchStock([]);
-            setReportForm({ productId: "", quantity: 1, reason: "" });
+            setReportForm({
+              productId: "",
+              quantity: 1,
+              reason: "",
+              hasWarranty: false,
+            });
             setShowReportModal(true);
           }}
           className="bg-linear-to-r w-full rounded-lg from-red-600 to-orange-600 px-6 py-3 text-center font-semibold text-white shadow-lg transition hover:from-red-700 hover:to-orange-700 sm:w-auto"
@@ -358,8 +381,8 @@ export default function DefectiveProductsManagement() {
 
       {/* Tabla de reportes */}
       <div className="overflow-hidden rounded-lg border border-gray-800 bg-gray-900">
-        <div className="hidden overflow-x-auto md:block">
-          <table className="min-w-[960px] divide-y divide-gray-800">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1200px] divide-y divide-gray-800">
             <thead className="bg-gray-800/50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
@@ -379,6 +402,9 @@ export default function DefectiveProductsManagement() {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                   Razón
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
+                  Garantía
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                   Estado
@@ -464,6 +490,34 @@ export default function DefectiveProductsManagement() {
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
+                      {report.hasWarranty ? (
+                        <div className="flex flex-col gap-1">
+                          <span className="inline-flex items-center rounded-full bg-blue-500/15 px-2.5 py-0.5 text-xs font-medium text-blue-300">
+                            ✓ Con garantía
+                          </span>
+                          {report.warrantyStatus === "approved" && (
+                            <span className="text-xs text-green-400">
+                              ✓ Aprobada
+                            </span>
+                          )}
+                          {report.warrantyStatus === "rejected" && (
+                            <span className="text-xs text-red-400">
+                              ✗ Rechazada
+                            </span>
+                          )}
+                          {report.warrantyStatus === "pending" && (
+                            <span className="text-xs text-yellow-400">
+                              ⏳ Pendiente
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-gray-500/15 px-2.5 py-0.5 text-xs font-medium text-gray-400">
+                          Sin garantía
+                        </span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4">
                       {report.status === "pendiente" && (
                         <span className="inline-flex rounded-full bg-yellow-500/15 px-3 py-1 text-xs font-semibold leading-5 text-yellow-300">
                           Pendiente
@@ -498,6 +552,29 @@ export default function DefectiveProductsManagement() {
                             Rechazar
                           </button>
                         </div>
+                      ) : report.status === "confirmado" &&
+                        report.hasWarranty &&
+                        report.warrantyStatus === "pending" ? (
+                        <div className="flex flex-col gap-1">
+                          <button
+                            onClick={() =>
+                              handleAction(report, "approveWarranty")
+                            }
+                            disabled={processingId === report._id}
+                            className="rounded bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                          >
+                            ✓ Aprobar Garantía
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleAction(report, "rejectWarranty")
+                            }
+                            disabled={processingId === report._id}
+                            className="rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
+                          >
+                            ✗ Rechazar Garantía
+                          </button>
+                        </div>
                       ) : (
                         <div className="flex flex-col gap-1">
                           <span className="text-xs text-gray-400">
@@ -508,6 +585,16 @@ export default function DefectiveProductsManagement() {
                             {report.confirmedAt &&
                               new Date(report.confirmedAt).toLocaleDateString()}
                           </span>
+                          {report.stockRestored && (
+                            <span className="text-xs text-green-400">
+                              Stock repuesto
+                            </span>
+                          )}
+                          {report.lossAmount && report.lossAmount > 0 && (
+                            <span className="text-xs text-red-400">
+                              Pérdida: ${report.lossAmount}
+                            </span>
+                          )}
                           <button
                             onClick={() => handleCancelReport(report)}
                             disabled={processingId === report._id}
@@ -530,7 +617,7 @@ export default function DefectiveProductsManagement() {
                                     d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
                                   />
                                 </svg>
-                                Cancelar y restaurar stock
+                                Cancelar y restaurar
                               </>
                             )}
                           </button>
@@ -549,117 +636,6 @@ export default function DefectiveProductsManagement() {
             </div>
           )}
         </div>
-
-        {/* Vista móvil en tarjetas */}
-        <div className="space-y-3 p-3 md:hidden">
-          {filteredReports.length === 0 && (
-            <div className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-center text-gray-300">
-              No hay reportes
-            </div>
-          )}
-
-          {filteredReports.map(report => {
-            const product =
-              typeof report.product === "object" ? report.product : null;
-            const distributor =
-              typeof report.distributor === "object"
-                ? report.distributor
-                : null;
-            const branch =
-              typeof report.branch === "object" ? report.branch : null;
-
-            return (
-              <div
-                key={report._id}
-                className="rounded-lg border border-gray-800 bg-gray-900 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-400">
-                      {new Date(report.reportDate).toLocaleDateString("es-ES", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </p>
-                    <p className="text-sm font-semibold text-white">
-                      {product?.name || "Producto"}
-                    </p>
-                    {product?.image?.url && (
-                      <img
-                        src={product.image.url}
-                        alt={product.name}
-                        className="mt-2 h-12 w-12 rounded object-cover"
-                      />
-                    )}
-                  </div>
-                  <span className="inline-flex rounded-full bg-gray-800 px-2 py-1 text-[11px] font-semibold uppercase text-gray-200">
-                    {report.status}
-                  </span>
-                </div>
-
-                <div className="mt-3 space-y-2 text-sm text-gray-200">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-gray-400">Origen</span>
-                    <span className="text-right text-white">
-                      {branch
-                        ? `Sede: ${branch.name}`
-                        : report.distributor
-                          ? "Distribuidor"
-                          : "Bodega"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-gray-400">Distribuidor</span>
-                    <span className="text-right text-white">
-                      {distributor?.name || "Admin"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-gray-400">Cantidad</span>
-                    <span className="font-semibold text-white">
-                      {report.quantity}
-                    </span>
-                  </div>
-                  <div className="text-gray-200">
-                    <p className="text-gray-400">Razón</p>
-                    <p className="text-sm leading-snug text-white">
-                      {report.reason}
-                    </p>
-                  </div>
-                </div>
-
-                {report.status === "pendiente" ? (
-                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
-                    <button
-                      onClick={() => handleAction(report, "confirm")}
-                      disabled={processingId === report._id}
-                      className="rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-500 disabled:opacity-50"
-                    >
-                      Confirmar
-                    </button>
-                    <button
-                      onClick={() => handleAction(report, "reject")}
-                      disabled={processingId === report._id}
-                      className="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-50"
-                    >
-                      Rechazar
-                    </button>
-                  </div>
-                ) : (
-                  <p className="mt-3 text-xs text-gray-400">
-                    {report.status === "confirmado"
-                      ? "Confirmado"
-                      : "Rechazado"}
-                    {report.confirmedAt
-                      ? ` el ${new Date(report.confirmedAt).toLocaleDateString("es-ES")}`
-                      : ""}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </div>
       </div>
 
       {/* Modal de notas */}
@@ -669,7 +645,11 @@ export default function DefectiveProductsManagement() {
             <h2 className="mb-4 text-2xl font-bold text-white">
               {actionType === "confirm"
                 ? "Confirmar Recepción"
-                : "Rechazar Reporte"}
+                : actionType === "reject"
+                  ? "Rechazar Reporte"
+                  : actionType === "approveWarranty"
+                    ? "✓ Aprobar Garantía"
+                    : "✗ Rechazar Garantía"}
             </h2>
 
             <div className="mb-4">
@@ -685,6 +665,21 @@ export default function DefectiveProductsManagement() {
               <p className="mt-2 text-sm text-gray-300">
                 <strong>Razón:</strong> {selectedReport.reason}
               </p>
+              {actionType === "approveWarranty" && (
+                <div className="mt-3 rounded-lg border border-green-500/20 bg-green-500/10 p-3">
+                  <p className="text-sm text-green-200">
+                    ✓ Se repondrán {selectedReport.quantity} unidades al stock
+                    de bodega.
+                  </p>
+                </div>
+              )}
+              {actionType === "rejectWarranty" && (
+                <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
+                  <p className="text-sm text-red-200">
+                    ✗ Se registrará como pérdida definitiva.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="mb-4">
@@ -719,14 +714,22 @@ export default function DefectiveProductsManagement() {
                 className={`flex-1 rounded-lg px-4 py-2 font-semibold transition disabled:opacity-50 ${
                   actionType === "confirm"
                     ? "bg-green-600 text-white hover:bg-green-700"
-                    : "bg-red-600 text-white hover:bg-red-700"
+                    : actionType === "reject"
+                      ? "bg-red-600 text-white hover:bg-red-700"
+                      : actionType === "approveWarranty"
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "bg-orange-600 text-white hover:bg-orange-700"
                 }`}
               >
                 {processingId !== null
                   ? "Procesando..."
                   : actionType === "confirm"
                     ? "Confirmar"
-                    : "Rechazar"}
+                    : actionType === "reject"
+                      ? "Rechazar"
+                      : actionType === "approveWarranty"
+                        ? "Aprobar Garantía"
+                        : "Rechazar Garantía"}
               </button>
             </div>
           </div>
@@ -749,7 +752,12 @@ export default function DefectiveProductsManagement() {
                     setReportOrigin("warehouse");
                     setSelectedBranchId("");
                     setBranchStock([]);
-                    setReportForm({ productId: "", quantity: 1, reason: "" });
+                    setReportForm({
+                      productId: "",
+                      quantity: 1,
+                      reason: "",
+                      hasWarranty: false,
+                    });
                   }}
                   className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                     reportOrigin === "warehouse"
@@ -763,7 +771,12 @@ export default function DefectiveProductsManagement() {
                   type="button"
                   onClick={() => {
                     setReportOrigin("branch");
-                    setReportForm({ productId: "", quantity: 1, reason: "" });
+                    setReportForm({
+                      productId: "",
+                      quantity: 1,
+                      reason: "",
+                      hasWarranty: false,
+                    });
                   }}
                   className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                     reportOrigin === "branch"
@@ -785,7 +798,12 @@ export default function DefectiveProductsManagement() {
                     onChange={async e => {
                       const value = e.target.value;
                       setSelectedBranchId(value);
-                      setReportForm({ productId: "", quantity: 1, reason: "" });
+                      setReportForm({
+                        productId: "",
+                        quantity: 1,
+                        reason: "",
+                        hasWarranty: false,
+                      });
                       await loadBranchStock(value);
                     }}
                     className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -879,6 +897,31 @@ export default function DefectiveProductsManagement() {
                 />
               </div>
 
+              <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={reportForm.hasWarranty}
+                    onChange={e =>
+                      setReportForm({
+                        ...reportForm,
+                        hasWarranty: e.target.checked,
+                      })
+                    }
+                    className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-200">
+                      Este producto tiene garantía del proveedor
+                    </p>
+                    <p className="text-xs text-blue-300/80">
+                      Si el proveedor acepta la garantía, se repondrá el stock
+                      automáticamente
+                    </p>
+                  </div>
+                </label>
+              </div>
+
               <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3">
                 <p className="text-sm text-yellow-200">
                   ℹ️ Los reportes desde bodega o sede se auto-confirman
@@ -894,7 +937,12 @@ export default function DefectiveProductsManagement() {
                     setReportOrigin("warehouse");
                     setSelectedBranchId("");
                     setBranchStock([]);
-                    setReportForm({ productId: "", quantity: 1, reason: "" });
+                    setReportForm({
+                      productId: "",
+                      quantity: 1,
+                      reason: "",
+                      hasWarranty: false,
+                    });
                   }}
                   className="flex-1 rounded-lg border border-gray-700 px-4 py-2 text-gray-200 transition hover:bg-white/5"
                   disabled={submitting}

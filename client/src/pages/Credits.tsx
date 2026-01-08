@@ -208,39 +208,39 @@ export default function Credits() {
       {/* Metrics Cards */}
       {metrics && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-            <p className="text-sm text-gray-500">Total Fiados</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">
+          <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-5 shadow-sm">
+            <p className="text-sm text-gray-400">Total Fiados</p>
+            <p className="mt-1 text-2xl font-bold text-white">
               {formatCurrency(metrics.total.totalRemainingAmount)}
             </p>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-gray-500">
               {metrics.total.totalCredits} créditos activos
             </p>
           </div>
 
-          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-            <p className="text-sm text-gray-500">Vencidos</p>
-            <p className="mt-1 text-2xl font-bold text-red-600">
+          <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-5 shadow-sm">
+            <p className="text-sm text-red-300">Vencidos</p>
+            <p className="mt-1 text-2xl font-bold text-red-400">
               {formatCurrency(metrics.overdue.amount)}
             </p>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-red-300/60">
               {metrics.overdue.count} créditos
             </p>
           </div>
 
-          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-            <p className="text-sm text-gray-500">Recuperado</p>
-            <p className="mt-1 text-2xl font-bold text-green-600">
+          <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-5 shadow-sm">
+            <p className="text-sm text-green-300">Recuperado</p>
+            <p className="mt-1 text-2xl font-bold text-green-400">
               {formatCurrency(metrics.total.totalPaidAmount)}
             </p>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-green-300/60">
               Tasa: {metrics.recoveryRate}%
             </p>
           </div>
 
-          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-            <p className="text-sm text-gray-500">Original Total</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">
+          <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-5 shadow-sm">
+            <p className="text-sm text-gray-400">Original Total</p>
+            <p className="mt-1 text-2xl font-bold text-white">
               {formatCurrency(metrics.total.totalOriginalAmount)}
             </p>
           </div>
@@ -252,7 +252,7 @@ export default function Credits() {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
+          className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">Todos los estados</option>
           <option value="pending">Pendiente</option>
@@ -264,59 +264,59 @@ export default function Credits() {
       </div>
 
       {/* Credits Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50 shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-indigo-600"></div>
           </div>
         ) : credits.length === 0 ? (
-          <div className="py-12 text-center text-gray-500">
+          <div className="py-12 text-center text-gray-400">
             No hay créditos registrados
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-700">
+              <thead className="bg-gray-800/800/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                     Cliente
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                     Monto Original
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                     Saldo Pendiente
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                     Estado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                     Vencimiento
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-gray-700 bg-gray-900/30">
                 {credits.map(credit => {
                   const customer = credit.customer as Customer;
                   return (
-                    <tr key={credit._id} className="hover:bg-gray-50">
+                    <tr key={credit._id} className="hover:bg-gray-800/50">
                       <td className="whitespace-nowrap px-6 py-4">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-white">
                             {customer?.name || "Cliente"}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-400">
                             {customer?.phone || customer?.email || ""}
                           </div>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-200">
                         {formatCurrency(credit.originalAmount)}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-gray-900">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-white">
                         {formatCurrency(credit.remainingAmount)}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
@@ -326,7 +326,7 @@ export default function Credits() {
                           {statusLabels[credit.status]}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-400">
                         {formatDate(credit.dueDate)}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm">
@@ -369,30 +369,30 @@ export default function Credits() {
 
       {/* Top Debtors */}
       {metrics && metrics.topDebtors.length > 0 && (
-        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold text-white">
             Principales Deudores
           </h3>
           <div className="space-y-3">
             {metrics.topDebtors.slice(0, 5).map((debtor, index) => (
               <div
                 key={debtor.customerId}
-                className="flex items-center justify-between border-b border-gray-100 py-2 last:border-0"
+                className="flex items-center justify-between border-b border-gray-700 py-2 last:border-0"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-700 text-xs font-medium text-gray-300">
                     {index + 1}
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-white">
                       {debtor.customerName}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-400">
                       {debtor.creditsCount} créditos
                     </p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold text-red-600">
+                <span className="text-sm font-semibold text-red-400">
                   {formatCurrency(debtor.totalDebt)}
                 </span>
               </div>
@@ -404,13 +404,13 @@ export default function Credits() {
       {/* Create Credit Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">
+          <div className="mx-4 w-full max-w-md rounded-xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
+            <h2 className="mb-4 text-xl font-semibold text-white">
               Nuevo Fiado
             </h2>
             <form onSubmit={handleCreateCredit} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-300">
                   Cliente
                 </label>
                 <CustomerSelector
@@ -438,7 +438,7 @@ export default function Credits() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-300">
                   Monto
                 </label>
                 <input
@@ -449,14 +449,14 @@ export default function Credits() {
                   onChange={e =>
                     setNewCredit({ ...newCredit, amount: e.target.value })
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500"
                   placeholder="0.00"
                   required
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-300">
                   Fecha de Vencimiento (Opcional)
                 </label>
                 <input
@@ -465,12 +465,12 @@ export default function Credits() {
                   onChange={e =>
                     setNewCredit({ ...newCredit, dueDate: e.target.value })
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-300">
                   Descripción (Opcional)
                 </label>
                 <textarea
@@ -478,7 +478,7 @@ export default function Credits() {
                   onChange={e =>
                     setNewCredit({ ...newCredit, description: e.target.value })
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500"
                   rows={3}
                   placeholder="Notas adicionales..."
                 />
@@ -488,7 +488,7 @@ export default function Credits() {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="rounded-lg px-4 py-2 text-gray-700 transition-colors hover:bg-gray-100"
+                  className="rounded-lg border border-gray-700 px-4 py-2 text-gray-300 transition-colors hover:bg-gray-800"
                 >
                   Cancelar
                 </button>
@@ -507,20 +507,20 @@ export default function Credits() {
       {/* Payment Modal */}
       {showPaymentModal && selectedCredit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="mb-2 text-xl font-semibold text-gray-900">
+          <div className="mx-4 w-full max-w-md rounded-xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
+            <h2 className="mb-2 text-xl font-semibold text-white">
               Registrar Pago
             </h2>
-            <p className="mb-4 text-sm text-gray-500">
+            <p className="mb-4 text-sm text-gray-400">
               Saldo pendiente:{" "}
-              <span className="font-semibold text-gray-900">
+              <span className="font-semibold text-white">
                 {formatCurrency(selectedCredit.remainingAmount)}
               </span>
             </p>
 
             <form onSubmit={handlePayment} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-300">
                   Monto del Pago
                 </label>
                 <input
@@ -530,14 +530,14 @@ export default function Credits() {
                   max={selectedCredit.remainingAmount}
                   value={paymentAmount}
                   onChange={e => setPaymentAmount(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500"
                   placeholder="0.00"
                   required
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-300">
                   Método de Pago
                 </label>
                 <select
@@ -545,7 +545,7 @@ export default function Credits() {
                   onChange={e =>
                     setPaymentMethod(e.target.value as typeof paymentMethod)
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="cash">Efectivo</option>
                   <option value="transfer">Transferencia</option>
@@ -555,14 +555,14 @@ export default function Credits() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-300">
                   Notas (Opcional)
                 </label>
                 <input
                   type="text"
                   value={paymentNotes}
                   onChange={e => setPaymentNotes(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500"
                   placeholder="Referencia o nota..."
                 />
               </div>
@@ -574,7 +574,7 @@ export default function Credits() {
                     setShowPaymentModal(false);
                     setSelectedCredit(null);
                   }}
-                  className="rounded-lg px-4 py-2 text-gray-700 transition-colors hover:bg-gray-100"
+                  className="rounded-lg border border-gray-700 px-4 py-2 text-gray-300 transition-colors hover:bg-gray-800"
                 >
                   Cancelar
                 </button>
