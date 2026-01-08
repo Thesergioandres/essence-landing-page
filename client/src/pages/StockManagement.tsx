@@ -9,6 +9,7 @@ import {
 } from "../api/services";
 import { Button } from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ProductSelector from "../components/ProductSelector";
 import type { Branch, DistributorStock, Product, User } from "../types";
 
 type OperationType = "assign" | "withdraw";
@@ -723,19 +724,12 @@ const StockManagement = () => {
                       </Button>
                     </div>
                   ) : (
-                    <select
+                    <ProductSelector
                       value={selectedProductId}
-                      onChange={e => setSelectedProductId(e.target.value)}
-                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Selecciona un producto</option>
-                      {availableProducts.map(product => (
-                        <option key={product._id} value={product._id}>
-                          {product.name} | Bodega: {product.warehouseStock || 0}{" "}
-                          | {formatCurrency(product.distributorPrice || 0)}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(id) => setSelectedProductId(id)}
+                      placeholder="Buscar y seleccionar producto..."
+                      showStock={true}
+                    />
                   )}
                 </div>
                 <Button
@@ -1015,26 +1009,19 @@ const StockManagement = () => {
                     </Button>
                   </div>
                 ) : (
-                  <select
+                  <ProductSelector
                     value={branchSelectedProductId}
-                    onChange={e => setBranchSelectedProductId(e.target.value)}
-                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={!originBranchId || loadingOriginStock}
-                  >
-                    <option value="">
-                      {!originBranchId
+                    onChange={(id) => setBranchSelectedProductId(id)}
+                    placeholder={
+                      !originBranchId
                         ? "Primero selecciona sede origen"
                         : loadingOriginStock
                           ? "Cargando stock..."
-                          : "Selecciona un producto"}
-                    </option>
-                    {availableBranchProducts.map(product => (
-                      <option key={product._id} value={product._id}>
-                        {product.name} | Stock en origen:{" "}
-                        {product.branchStock || 0}
-                      </option>
-                    ))}
-                  </select>
+                          : "Buscar y seleccionar producto..."
+                    }
+                    disabled={!originBranchId || loadingOriginStock}
+                    showStock={true}
+                  />
                 )}
               </div>
               <Button

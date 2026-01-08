@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { defectiveProductService, stockService } from "../api/services";
+import ProductSelector from "../components/ProductSelector";
 import type { DefectiveProduct, DistributorStock } from "../types";
 
 export default function DefectiveReports() {
@@ -277,33 +278,18 @@ export default function DefectiveReports() {
                 <label className="mb-2 block text-sm font-medium text-gray-300">
                   Producto *
                 </label>
-                <select
+                <ProductSelector
                   value={formData.productId}
-                  onChange={e =>
+                  onChange={(id) => {
                     setFormData({
                       ...formData,
-                      productId: e.target.value,
+                      productId: id,
                       quantity: 1,
-                    })
-                  }
-                  className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Selecciona un producto</option>
-                  {stock
-                    .filter(s => s.quantity > 0)
-                    .map(s => {
-                      const product =
-                        typeof s.product === "object" ? s.product : null;
-                      return (
-                        <option key={s._id} value={product?._id}>
-                          {product?.name} | Stock: {s.quantity} | Precio dist: $
-                          {product?.distributorPrice || 0} | Cliente: $
-                          {product?.clientPrice || 0}
-                        </option>
-                      );
-                    })}
-                </select>
+                    });
+                  }}
+                  placeholder="Buscar y seleccionar producto..."
+                  showStock={true}
+                />
               </div>
 
               <div>
