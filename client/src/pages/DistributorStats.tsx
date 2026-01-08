@@ -1,11 +1,39 @@
 import React, { useEffect, useState } from "react";
-import { saleService } from "../api/services";
+import { analyticsService, saleService } from "../api/services";
 import type { Sale } from "../types";
+
+interface EstimatedProfitProduct {
+  productId: string;
+  name: string;
+  image?: { url: string; publicId: string };
+  quantity: number;
+  distributorPrice: number;
+  clientPrice: number;
+  investment: number;
+  salesValue: number;
+  estimatedProfit: number;
+  profitPercentage: string;
+}
+
+interface DistributorEstimate {
+  grossProfit: number;
+  netProfit: number;
+  totalProducts: number;
+  totalUnits: number;
+  investment: number;
+  salesValue: number;
+  profitMargin: string;
+  products: EstimatedProfitProduct[];
+}
 
 export default function DistributorStats() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<"week" | "month" | "all">("month");
+  const [estimatedProfit, setEstimatedProfit] =
+    useState<DistributorEstimate | null>(null);
+  const [loadingEstimated, setLoadingEstimated] = useState(true);
+  const [showEstimatedProducts, setShowEstimatedProducts] = useState(false);
 
   const loadStats = React.useCallback(async () => {
     try {
@@ -34,9 +62,26 @@ export default function DistributorStats() {
     }
   }, [period]);
 
+  const loadEstimatedProfit = React.useCallback(async () => {
+    try {
+      setLoadingEstimated(true);
+      const response =
+        await analyticsService.getDistributorEstimatedProfit("me");
+      setEstimatedProfit(response.estimate);
+    } catch (error) {
+      console.error("Error al cargar ganancia estimada:", error);
+    } finally {
+      setLoadingEstimated(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadStats();
   }, [period, loadStats]);
+
+  useEffect(() => {
+    loadEstimatedProfit();
+  }, [loadEstimatedProfit]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("es-CO", {
@@ -182,6 +227,125 @@ export default function DistributorStats() {
             {formatCurrency(avgSaleValue)}
           </p>
         </div>
+      </div>
+
+      {/* Ganancia Estimada con Inventario Actual */}
+      <div className="rounded-xl border border-teal-700/50 bg-gradient-to-br from-teal-900/30 to-gray-800/50 p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-white">
+              📊 Ganancia Estimada
+            </h2>
+            <p className="text-sm text-gray-400">
+              Basado en tu inventario actual
+            </p>
+          </div>
+          {estimatedProfit && estimatedProfit.products.length > 0 && (
+            <button
+              onClick={() => setShowEstimatedProducts(!showEstimatedProducts)}
+              className="rounded-full bg-teal-500/20 px-3 py-1 text-xs font-semibold text-teal-300 transition hover:bg-teal-500/30"
+            >
+              {showEstimatedProducts ? "Ocultar productos" : "Ver productos"}
+            </button>
+          )}
+        </div>
+
+        {loadingEstimated ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-teal-500"></div>
+          </div>
+        ) : estimatedProfit ? (
+          <>
+            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
+                <p className="text-xs text-gray-400">Ganancia Bruta Est.</p>
+                <p className="mt-1 text-xl font-bold text-teal-300">
+                  {formatCurrency(estimatedProfit.grossProfit)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
+                <p className="text-xs text-gray-400">Inversión (tu costo)</p>
+                <p className="mt-1 text-xl font-bold text-amber-300">
+                  {formatCurrency(estimatedProfit.investment)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
+                <p className="text-xs text-gray-400">Valor en Ventas</p>
+                <p className="mt-1 text-xl font-bold text-green-300">
+                  {formatCurrency(estimatedProfit.salesValue)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
+                <p className="text-xs text-gray-400">Productos</p>
+                <p className="mt-1 text-xl font-bold text-purple-300">
+                  {estimatedProfit.totalProducts}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
+                <p className="text-xs text-gray-400">Total Unidades</p>
+                <p className="mt-1 text-xl font-bold text-blue-300">
+                  {estimatedProfit.totalUnits.toLocaleString()}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
+                <p className="text-xs text-gray-400">Margen Est.</p>
+                <p className="mt-1 text-xl font-bold text-emerald-300">
+                  {estimatedProfit.profitMargin}%
+                </p>
+              </div>
+            </div>
+
+            {/* Lista de productos con ganancia estimada */}
+            {showEstimatedProducts && estimatedProfit.products.length > 0 && (
+              <div className="mt-4 rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-white">
+                  Desglose por Producto
+                </h3>
+                <div className="max-h-80 space-y-2 overflow-y-auto">
+                  {estimatedProfit.products
+                    .sort((a, b) => b.estimatedProfit - a.estimatedProfit)
+                    .map(product => (
+                      <div
+                        key={product.productId}
+                        className="flex items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2"
+                      >
+                        <div className="flex items-center gap-3">
+                          {product.image?.url && (
+                            <img
+                              src={product.image.url}
+                              alt={product.name}
+                              className="h-10 w-10 rounded-lg object-cover"
+                            />
+                          )}
+                          <div>
+                            <p className="text-sm font-medium text-white">
+                              {product.name}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {product.quantity} uds ×{" "}
+                              {formatCurrency(product.clientPrice)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-teal-300">
+                            {formatCurrency(product.estimatedProfit)}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            +{product.profitPercentage}%
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="py-8 text-center text-gray-400">
+            No tienes inventario disponible para calcular ganancia estimada
+          </div>
+        )}
       </div>
 
       {/* Additional Metrics */}

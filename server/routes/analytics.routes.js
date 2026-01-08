@@ -3,6 +3,8 @@ import {
   getAnalyticsDashboard,
   getAverages,
   getCombinedSummary,
+  getDistributorEstimatedProfit,
+  getEstimatedProfit,
   getFinancialSummary,
   getMonthlyProfit,
   getPaymentMethodMetrics,
@@ -43,5 +45,11 @@ router.get("/financial-summary", cacheIfEnabled, getFinancialSummary);
 router.get("/dashboard", cacheIfEnabled, getAnalyticsDashboard);
 router.get("/combined-summary", cacheIfEnabled, getCombinedSummary);
 router.get("/payment-methods", cacheIfEnabled, getPaymentMethodMetrics);
+router.get("/estimated-profit", cacheIfEnabled, getEstimatedProfit);
+router.get(
+  "/estimated-profit/distributor/:distributorId",
+  cacheIfEnabled,
+  getDistributorEstimatedProfit
+);
 
 export default router;

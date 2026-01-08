@@ -114,6 +114,25 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     void run();
   }, [refresh]);
 
+  // Escuchar evento session-refresh para actualizar cuando cambie el usuario/rol
+  useEffect(() => {
+    const handleSessionRefresh = async () => {
+      console.log("[BusinessContext] Session refresh triggered");
+      tokenRef.current = localStorage.getItem("token");
+      setInitializing(true);
+      await refresh();
+      setInitializing(false);
+    };
+
+    window.addEventListener("session-refresh", handleSessionRefresh);
+    window.addEventListener("auth-changed", handleSessionRefresh);
+
+    return () => {
+      window.removeEventListener("session-refresh", handleSessionRefresh);
+      window.removeEventListener("auth-changed", handleSessionRefresh);
+    };
+  }, [refresh]);
+
   useEffect(() => {
     const currentToken = localStorage.getItem("token");
     if (currentToken !== tokenRef.current) {

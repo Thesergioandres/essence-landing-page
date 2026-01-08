@@ -197,6 +197,12 @@ export const authService = {
   },
 
   async login(email: string, password: string): Promise<AuthResponse> {
+    // Limpiar datos anteriores para evitar conflictos de sesión
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    localStorage.removeItem("businessId");
+
     const response = await api.post<AuthResponse>("/auth/login", {
       email,
       password,
@@ -210,7 +216,14 @@ export const authService = {
       }
       await trySetBusinessForGod(response.data.role);
       if (typeof window !== "undefined") {
+        // Disparar evento de cambio de auth para refrescar contextos
         window.dispatchEvent(new Event("auth-changed"));
+        // Disparar evento personalizado para forzar refresh de business context
+        window.dispatchEvent(
+          new CustomEvent("session-refresh", {
+            detail: { role: response.data.role, userId: response.data._id },
+          })
+        );
       }
     }
 
@@ -1526,6 +1539,99 @@ export const analyticsService = {
     };
   }> {
     const response = await api.get("/analytics/payment-methods", { params });
+    return response.data;
+  },
+
+  async getEstimatedProfit(): Promise<{
+    success: boolean;
+    scenario: "A" | "B" | "C" | "D";
+    message: string;
+    hasBranches: boolean;
+    hasDistributors: boolean;
+    warehouse: {
+      grossProfit: number;
+      netProfit: number;
+      totalProducts: number;
+      totalUnits: number;
+      investment: number;
+      salesValue: number;
+    };
+    branches: {
+      grossProfit: number;
+      netProfit: number;
+      totalProducts: number;
+      totalUnits: number;
+      investment: number;
+      salesValue: number;
+      branches: Array<{
+        id: string;
+        name: string;
+        grossProfit: number;
+        investment: number;
+        salesValue: number;
+        totalProducts: number;
+        totalUnits: number;
+      }>;
+    };
+    distributors: {
+      grossProfit: number;
+      netProfit: number;
+      totalProducts: number;
+      totalUnits: number;
+      investment: number;
+      salesValue: number;
+      distributors: Array<{
+        id: string;
+        name: string;
+        email: string;
+        grossProfit: number;
+        investment: number;
+        salesValue: number;
+        totalProducts: number;
+        totalUnits: number;
+      }>;
+    };
+    consolidated: {
+      grossProfit: number;
+      netProfit: number;
+      totalProducts: number;
+      totalUnits: number;
+      investment: number;
+      salesValue: number;
+    };
+  }> {
+    const response = await api.get("/analytics/estimated-profit");
+    return response.data;
+  },
+
+  async getDistributorEstimatedProfit(distributorId: string): Promise<{
+    success: boolean;
+    distributorId: string;
+    estimate: {
+      grossProfit: number;
+      netProfit: number;
+      totalProducts: number;
+      totalUnits: number;
+      investment: number;
+      salesValue: number;
+      profitMargin: string;
+      products: Array<{
+        productId: string;
+        name: string;
+        image?: { url: string; publicId: string };
+        quantity: number;
+        distributorPrice: number;
+        clientPrice: number;
+        investment: number;
+        salesValue: number;
+        estimatedProfit: number;
+        profitPercentage: string;
+      }>;
+    };
+  }> {
+    const response = await api.get(
+      `/analytics/estimated-profit/distributor/${distributorId}`
+    );
     return response.data;
   },
 };

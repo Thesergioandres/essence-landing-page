@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
+import Branch from "../models/Branch.js";
+import BranchStock from "../models/BranchStock.js";
 import Credit from "../models/Credit.js";
 import DefectiveProduct from "../models/DefectiveProduct.js";
+import DistributorStock from "../models/DistributorStock.js";
+import Membership from "../models/Membership.js";
+import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
 import SpecialSale from "../models/SpecialSale.js";
 
@@ -1382,6 +1387,346 @@ export const getPaymentMethodMetrics = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error al obtener métricas por método de pago",
+    });
+  }
+};
+
+// @desc    Obtener ganancia estimada total del sistema
+// @route   GET /api/analytics/estimated-profit
+// @access  Private/Admin
+export const getEstimatedProfit = async (req, res) => {
+  try {
+    const businessId = ensureBusinessId(req, res);
+    if (!businessId) return;
+
+    const businessObjId = new mongoose.Types.ObjectId(businessId);
+
+    // 1. Obtener productos con su warehouseStock (bodega)
+    const products = await Product.find({ business: businessObjId }).lean();
+
+    // 2. Obtener stock de sedes
+    const branchStocks = await BranchStock.find({ business: businessObjId })
+      .populate("product", "name purchasePrice clientPrice distributorPrice")
+      .populate("branch", "name")
+      .lean();
+
+    // 3. Obtener stock de distribuidores
+    const distributorStocks = await DistributorStock.find({
+      business: businessObjId,
+    })
+      .populate("product", "name purchasePrice clientPrice distributorPrice")
+      .populate("distributor", "name email")
+      .lean();
+
+    // 4. Verificar si hay sedes activas
+    const branches = await Branch.find({
+      business: businessObjId,
+      active: true,
+    }).lean();
+    const hasBranches = branches.length > 0;
+
+    // 5. Verificar si hay distribuidores activos
+    const distributorMemberships = await Membership.find({
+      business: businessObjId,
+      role: "distribuidor",
+    }).lean();
+    const hasDistributors = distributorMemberships.length > 0;
+
+    // Calcular ganancia estimada de bodega
+    let warehouseEstimate = {
+      grossProfit: 0,
+      netProfit: 0,
+      totalProducts: 0,
+      totalUnits: 0,
+      investment: 0,
+      salesValue: 0,
+    };
+
+    for (const product of products) {
+      const qty = product.warehouseStock || 0;
+      if (qty > 0) {
+        const purchasePrice = product.purchasePrice || 0;
+        const clientPrice =
+          product.clientPrice ||
+          product.distributorPrice ||
+          purchasePrice * 1.3;
+        const investment = purchasePrice * qty;
+        const salesValue = clientPrice * qty;
+        const grossProfit = salesValue - investment;
+
+        warehouseEstimate.totalProducts += 1;
+        warehouseEstimate.totalUnits += qty;
+        warehouseEstimate.investment += investment;
+        warehouseEstimate.salesValue += salesValue;
+        warehouseEstimate.grossProfit += grossProfit;
+      }
+    }
+    warehouseEstimate.netProfit = warehouseEstimate.grossProfit; // Sin gastos deducidos aquí
+
+    // Calcular ganancia estimada de sedes
+    let branchesEstimate = {
+      grossProfit: 0,
+      netProfit: 0,
+      totalProducts: 0,
+      totalUnits: 0,
+      investment: 0,
+      salesValue: 0,
+      branches: [],
+    };
+
+    const branchStockByBranch = {};
+    for (const stock of branchStocks) {
+      if (!stock.product || stock.quantity <= 0) continue;
+      const branchId = stock.branch?._id?.toString() || "unknown";
+      const branchName = stock.branch?.name || "Sin nombre";
+
+      if (!branchStockByBranch[branchId]) {
+        branchStockByBranch[branchId] = {
+          name: branchName,
+          grossProfit: 0,
+          investment: 0,
+          salesValue: 0,
+          totalProducts: 0,
+          totalUnits: 0,
+        };
+      }
+
+      const purchasePrice = stock.product.purchasePrice || 0;
+      const clientPrice =
+        stock.product.clientPrice ||
+        stock.product.distributorPrice ||
+        purchasePrice * 1.3;
+      const investment = purchasePrice * stock.quantity;
+      const salesValue = clientPrice * stock.quantity;
+
+      branchStockByBranch[branchId].investment += investment;
+      branchStockByBranch[branchId].salesValue += salesValue;
+      branchStockByBranch[branchId].grossProfit += salesValue - investment;
+      branchStockByBranch[branchId].totalProducts += 1;
+      branchStockByBranch[branchId].totalUnits += stock.quantity;
+    }
+
+    for (const [branchId, data] of Object.entries(branchStockByBranch)) {
+      branchesEstimate.grossProfit += data.grossProfit;
+      branchesEstimate.investment += data.investment;
+      branchesEstimate.salesValue += data.salesValue;
+      branchesEstimate.totalProducts += data.totalProducts;
+      branchesEstimate.totalUnits += data.totalUnits;
+      branchesEstimate.branches.push({ id: branchId, ...data });
+    }
+    branchesEstimate.netProfit = branchesEstimate.grossProfit;
+
+    // Calcular ganancia estimada de distribuidores
+    let distributorsEstimate = {
+      grossProfit: 0,
+      netProfit: 0,
+      totalProducts: 0,
+      totalUnits: 0,
+      investment: 0,
+      salesValue: 0,
+      distributors: [],
+    };
+
+    const distStockByDist = {};
+    for (const stock of distributorStocks) {
+      if (!stock.product || stock.quantity <= 0) continue;
+      const distId = stock.distributor?._id?.toString() || "unknown";
+      const distName = stock.distributor?.name || "Sin nombre";
+      const distEmail = stock.distributor?.email || "";
+
+      if (!distStockByDist[distId]) {
+        distStockByDist[distId] = {
+          name: distName,
+          email: distEmail,
+          grossProfit: 0,
+          investment: 0,
+          salesValue: 0,
+          totalProducts: 0,
+          totalUnits: 0,
+        };
+      }
+
+      const purchasePrice = stock.product.purchasePrice || 0;
+      const distributorPrice =
+        stock.product.distributorPrice || purchasePrice * 1.2;
+      const clientPrice = stock.product.clientPrice || distributorPrice * 1.1;
+
+      // Para distribuidores: inversión es lo que pagaron (distributorPrice), venta es clientPrice
+      const investment = distributorPrice * stock.quantity;
+      const salesValue = clientPrice * stock.quantity;
+
+      distStockByDist[distId].investment += investment;
+      distStockByDist[distId].salesValue += salesValue;
+      distStockByDist[distId].grossProfit += salesValue - investment;
+      distStockByDist[distId].totalProducts += 1;
+      distStockByDist[distId].totalUnits += stock.quantity;
+    }
+
+    for (const [distId, data] of Object.entries(distStockByDist)) {
+      distributorsEstimate.grossProfit += data.grossProfit;
+      distributorsEstimate.investment += data.investment;
+      distributorsEstimate.salesValue += data.salesValue;
+      distributorsEstimate.totalProducts += data.totalProducts;
+      distributorsEstimate.totalUnits += data.totalUnits;
+      distributorsEstimate.distributors.push({ id: distId, ...data });
+    }
+    distributorsEstimate.netProfit = distributorsEstimate.grossProfit;
+
+    // Calcular totales consolidados
+    const consolidated = {
+      grossProfit:
+        warehouseEstimate.grossProfit +
+        branchesEstimate.grossProfit +
+        distributorsEstimate.grossProfit,
+      netProfit:
+        warehouseEstimate.netProfit +
+        branchesEstimate.netProfit +
+        distributorsEstimate.netProfit,
+      totalProducts:
+        warehouseEstimate.totalProducts +
+        branchesEstimate.totalProducts +
+        distributorsEstimate.totalProducts,
+      totalUnits:
+        warehouseEstimate.totalUnits +
+        branchesEstimate.totalUnits +
+        distributorsEstimate.totalUnits,
+      investment:
+        warehouseEstimate.investment +
+        branchesEstimate.investment +
+        distributorsEstimate.investment,
+      salesValue:
+        warehouseEstimate.salesValue +
+        branchesEstimate.salesValue +
+        distributorsEstimate.salesValue,
+    };
+
+    // Determinar el escenario
+    let scenario = "D"; // Default: tiene sedes y distribuidores
+    let message = "Cálculo basado en bodega, sedes y distribuidores.";
+
+    if (!hasBranches && !hasDistributors) {
+      scenario = "A";
+      message =
+        "Cálculo basado únicamente en la bodega principal (sin sedes ni distribuidores).";
+    } else if (!hasBranches && hasDistributors) {
+      scenario = "B";
+      message = "Cálculo basado en bodega y distribuidores (sin sedes).";
+    } else if (hasBranches && !hasDistributors) {
+      scenario = "C";
+      message = "Cálculo basado en bodega y sedes (sin distribuidores).";
+    }
+
+    res.json({
+      success: true,
+      scenario,
+      message,
+      hasBranches,
+      hasDistributors,
+      warehouse: warehouseEstimate,
+      branches: branchesEstimate,
+      distributors: distributorsEstimate,
+      consolidated,
+    });
+  } catch (error) {
+    console.error("Error al calcular ganancia estimada:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al calcular ganancia estimada",
+    });
+  }
+};
+
+// @desc    Obtener ganancia estimada para un distribuidor específico
+// @route   GET /api/analytics/estimated-profit/distributor/:distributorId
+// @access  Private
+export const getDistributorEstimatedProfit = async (req, res) => {
+  try {
+    const businessId = ensureBusinessId(req, res);
+    if (!businessId) return;
+
+    const { distributorId } = req.params;
+    const businessObjId = new mongoose.Types.ObjectId(businessId);
+
+    // Si distributorId es "me", usar el usuario actual
+    const targetDistributorId =
+      distributorId === "me" ? req.user.id : distributorId;
+
+    const distObjId = new mongoose.Types.ObjectId(targetDistributorId);
+
+    // Obtener stock del distribuidor
+    const distributorStocks = await DistributorStock.find({
+      business: businessObjId,
+      distributor: distObjId,
+      quantity: { $gt: 0 },
+    })
+      .populate(
+        "product",
+        "name purchasePrice clientPrice distributorPrice image"
+      )
+      .lean();
+
+    let estimate = {
+      grossProfit: 0,
+      netProfit: 0,
+      totalProducts: 0,
+      totalUnits: 0,
+      investment: 0,
+      salesValue: 0,
+      products: [],
+    };
+
+    for (const stock of distributorStocks) {
+      if (!stock.product) continue;
+
+      const purchasePrice = stock.product.purchasePrice || 0;
+      const distributorPrice =
+        stock.product.distributorPrice || purchasePrice * 1.2;
+      const clientPrice = stock.product.clientPrice || distributorPrice * 1.1;
+
+      const investment = distributorPrice * stock.quantity;
+      const salesValue = clientPrice * stock.quantity;
+      const profit = salesValue - investment;
+
+      estimate.investment += investment;
+      estimate.salesValue += salesValue;
+      estimate.grossProfit += profit;
+      estimate.totalProducts += 1;
+      estimate.totalUnits += stock.quantity;
+
+      estimate.products.push({
+        productId: stock.product._id,
+        name: stock.product.name,
+        image: stock.product.image,
+        quantity: stock.quantity,
+        distributorPrice,
+        clientPrice,
+        investment,
+        salesValue,
+        estimatedProfit: profit,
+        profitPercentage:
+          investment > 0 ? ((profit / investment) * 100).toFixed(2) : 0,
+      });
+    }
+
+    estimate.netProfit = estimate.grossProfit;
+    estimate.profitMargin =
+      estimate.investment > 0
+        ? ((estimate.grossProfit / estimate.investment) * 100).toFixed(2)
+        : 0;
+
+    res.json({
+      success: true,
+      distributorId: targetDistributorId,
+      estimate,
+    });
+  } catch (error) {
+    console.error(
+      "Error al calcular ganancia estimada del distribuidor:",
+      error
+    );
+    res.status(500).json({
+      success: false,
+      message: "Error al calcular ganancia estimada",
     });
   }
 };

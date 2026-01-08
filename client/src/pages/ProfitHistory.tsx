@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  analyticsService,
   creditService,
   expenseService,
   profitHistoryService,
@@ -13,6 +14,65 @@ import type {
   ProfitHistoryAdminEntry,
   ProfitHistoryAdminOverview,
 } from "../types";
+
+interface EstimatedProfitData {
+  success: boolean;
+  scenario: "A" | "B" | "C" | "D";
+  message: string;
+  hasBranches: boolean;
+  hasDistributors: boolean;
+  warehouse: {
+    grossProfit: number;
+    netProfit: number;
+    totalProducts: number;
+    totalUnits: number;
+    investment: number;
+    salesValue: number;
+  };
+  branches: {
+    grossProfit: number;
+    netProfit: number;
+    totalProducts: number;
+    totalUnits: number;
+    investment: number;
+    salesValue: number;
+    branches: Array<{
+      id: string;
+      name: string;
+      grossProfit: number;
+      investment: number;
+      salesValue: number;
+      totalProducts: number;
+      totalUnits: number;
+    }>;
+  };
+  distributors: {
+    grossProfit: number;
+    netProfit: number;
+    totalProducts: number;
+    totalUnits: number;
+    investment: number;
+    salesValue: number;
+    distributors: Array<{
+      id: string;
+      name: string;
+      email: string;
+      grossProfit: number;
+      investment: number;
+      salesValue: number;
+      totalProducts: number;
+      totalUnits: number;
+    }>;
+  };
+  consolidated: {
+    grossProfit: number;
+    netProfit: number;
+    totalProducts: number;
+    totalUnits: number;
+    investment: number;
+    salesValue: number;
+  };
+}
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("es-CO", {
@@ -50,8 +110,12 @@ export default function ProfitHistory() {
   const [creditMetrics, setCreditMetrics] = useState<CreditMetrics | null>(
     null
   );
+  const [estimatedProfit, setEstimatedProfit] =
+    useState<EstimatedProfitData | null>(null);
+  const [loadingEstimated, setLoadingEstimated] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<string>("");
   const [limit, setLimit] = useState(150);
+  const [showEstimatedDetails, setShowEstimatedDetails] = useState(false);
 
   const today = useMemo(() => new Date(), []);
   const [dateRange, setDateRange] = useState(() => {
@@ -110,9 +174,22 @@ export default function ProfitHistory() {
     }
   };
 
+  const loadEstimatedProfit = async () => {
+    try {
+      setLoadingEstimated(true);
+      const data = await analyticsService.getEstimatedProfit();
+      setEstimatedProfit(data);
+    } catch (error) {
+      console.error("Error cargando ganancia estimada", error);
+    } finally {
+      setLoadingEstimated(false);
+    }
+  };
+
   useEffect(() => {
     // No dependemos de businessId para god/super_admin, pero lo mantenemos para refrescar cuando cambie
     void loadOverview();
+    void loadEstimatedProfit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedDistributor,
@@ -307,6 +384,233 @@ export default function ProfitHistory() {
                 </div>
               </div>
             )}
+
+            {/* Ganancia Estimada Total */}
+            <div className="rounded-xl border border-teal-900/50 bg-gradient-to-br from-teal-950/40 to-gray-900 p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-teal-200">
+                    📊 Ganancia Estimada Total
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    {estimatedProfit?.message || "Cargando..."}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowEstimatedDetails(!showEstimatedDetails)}
+                  className="rounded-full bg-teal-500/20 px-3 py-1 text-xs font-semibold text-teal-300 transition hover:bg-teal-500/30"
+                >
+                  {showEstimatedDetails ? "Ocultar detalles" : "Ver detalles"}
+                </button>
+              </div>
+
+              {loadingEstimated ? (
+                <div className="text-center text-gray-400">Calculando...</div>
+              ) : estimatedProfit ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                      <p className="text-xs text-gray-400">
+                        Ganancia Bruta Est.
+                      </p>
+                      <p className="mt-1 text-xl font-bold text-teal-300">
+                        {formatCurrency(
+                          estimatedProfit.consolidated.grossProfit
+                        )}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                      <p className="text-xs text-gray-400">Inversión Total</p>
+                      <p className="mt-1 text-xl font-bold text-amber-300">
+                        {formatCurrency(
+                          estimatedProfit.consolidated.investment
+                        )}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                      <p className="text-xs text-gray-400">Valor en Ventas</p>
+                      <p className="mt-1 text-xl font-bold text-green-300">
+                        {formatCurrency(
+                          estimatedProfit.consolidated.salesValue
+                        )}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                      <p className="text-xs text-gray-400">Total Productos</p>
+                      <p className="mt-1 text-xl font-bold text-purple-300">
+                        {estimatedProfit.consolidated.totalProducts}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                      <p className="text-xs text-gray-400">Total Unidades</p>
+                      <p className="mt-1 text-xl font-bold text-blue-300">
+                        {estimatedProfit.consolidated.totalUnits.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                      <p className="text-xs text-gray-400">Margen Est.</p>
+                      <p className="mt-1 text-xl font-bold text-emerald-300">
+                        {estimatedProfit.consolidated.investment > 0
+                          ? (
+                              (estimatedProfit.consolidated.grossProfit /
+                                estimatedProfit.consolidated.investment) *
+                              100
+                            ).toFixed(1)
+                          : 0}
+                        %
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Detalles por origen */}
+                  {showEstimatedDetails && (
+                    <div className="mt-4 space-y-4">
+                      {/* Bodega */}
+                      <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+                        <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                          🏭 Bodega Principal
+                          <span className="rounded-full bg-gray-700 px-2 py-0.5 text-xs font-normal text-gray-300">
+                            {estimatedProfit.warehouse.totalUnits} unidades
+                          </span>
+                        </h4>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div>
+                            <span className="text-gray-400">Inversión:</span>
+                            <span className="ml-1 font-semibold text-amber-300">
+                              {formatCurrency(
+                                estimatedProfit.warehouse.investment
+                              )}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Valor venta:</span>
+                            <span className="ml-1 font-semibold text-green-300">
+                              {formatCurrency(
+                                estimatedProfit.warehouse.salesValue
+                              )}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">
+                              Ganancia est.:
+                            </span>
+                            <span className="ml-1 font-semibold text-teal-300">
+                              {formatCurrency(
+                                estimatedProfit.warehouse.grossProfit
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Sedes */}
+                      {estimatedProfit.hasBranches &&
+                        estimatedProfit.branches.branches.length > 0 && (
+                          <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+                            <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                              🏪 Sedes (
+                              {estimatedProfit.branches.branches.length})
+                              <span className="rounded-full bg-gray-700 px-2 py-0.5 text-xs font-normal text-gray-300">
+                                {estimatedProfit.branches.totalUnits} unidades
+                              </span>
+                            </h4>
+                            <div className="space-y-2">
+                              {estimatedProfit.branches.branches.map(branch => (
+                                <div
+                                  key={branch.id}
+                                  className="flex items-center justify-between rounded bg-gray-900/50 px-2 py-1.5 text-xs"
+                                >
+                                  <span className="font-medium text-gray-200">
+                                    {branch.name}
+                                  </span>
+                                  <div className="flex gap-4">
+                                    <span className="text-gray-400">
+                                      {branch.totalUnits} uds
+                                    </span>
+                                    <span className="font-semibold text-teal-300">
+                                      {formatCurrency(branch.grossProfit)}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="mt-2 flex justify-end border-t border-gray-700 pt-2 text-xs">
+                              <span className="text-gray-400">
+                                Total sedes:
+                              </span>
+                              <span className="ml-2 font-bold text-teal-300">
+                                {formatCurrency(
+                                  estimatedProfit.branches.grossProfit
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Distribuidores */}
+                      {estimatedProfit.hasDistributors &&
+                        estimatedProfit.distributors.distributors.length >
+                          0 && (
+                          <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+                            <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                              👥 Distribuidores (
+                              {estimatedProfit.distributors.distributors.length}
+                              )
+                              <span className="rounded-full bg-gray-700 px-2 py-0.5 text-xs font-normal text-gray-300">
+                                {estimatedProfit.distributors.totalUnits}{" "}
+                                unidades
+                              </span>
+                            </h4>
+                            <div className="space-y-2">
+                              {estimatedProfit.distributors.distributors
+                                .slice(0, 10)
+                                .map(dist => (
+                                  <div
+                                    key={dist.id}
+                                    className="flex items-center justify-between rounded bg-gray-900/50 px-2 py-1.5 text-xs"
+                                  >
+                                    <div>
+                                      <span className="font-medium text-gray-200">
+                                        {dist.name}
+                                      </span>
+                                      {dist.email && (
+                                        <span className="ml-2 text-gray-500">
+                                          {dist.email}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-4">
+                                      <span className="text-gray-400">
+                                        {dist.totalUnits} uds
+                                      </span>
+                                      <span className="font-semibold text-cyan-300">
+                                        {formatCurrency(dist.grossProfit)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                            <div className="mt-2 flex justify-end border-t border-gray-700 pt-2 text-xs">
+                              <span className="text-gray-400">
+                                Total distribuidores:
+                              </span>
+                              <span className="ml-2 font-bold text-cyan-300">
+                                {formatCurrency(
+                                  estimatedProfit.distributors.grossProfit
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center text-gray-400">
+                  No se pudo cargar la información de ganancia estimada
+                </div>
+              )}
+            </div>
 
             {/* Métricas de Créditos */}
             {creditsEnabled &&

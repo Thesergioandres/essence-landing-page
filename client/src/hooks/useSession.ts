@@ -18,18 +18,17 @@ export function useSession() {
 
   useEffect(() => {
     let mounted = true;
+
     const syncFromStorage = () => {
       if (!mounted) return;
       const current = authService.getCurrentUser();
       setState(prev => ({ ...prev, user: current }));
     };
 
-    // Sync on auth change (login/logout) and storage events (other tabs)
-    window.addEventListener("auth-changed", syncFromStorage);
-    window.addEventListener("storage", syncFromStorage);
-    const load = async () => {
+    const loadProfile = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
+        setState({ user: null, loading: false, error: null });
         return;
       }
 
@@ -37,8 +36,8 @@ export function useSession() {
       try {
         const profile = await authService.getProfile();
         if (!mounted) return;
-        setState(prev => {
-          const merged = { ...prev.user, ...profile } as User;
+        setState(() => {
+          const merged = { ...profile } as User;
           localStorage.setItem("user", JSON.stringify(merged));
           return { user: merged, loading: false, error: null };
         });
@@ -72,7 +71,7 @@ export function useSession() {
         const code = (error as { response?: { status?: number; data?: any } })
           ?.response?.data?.code;
 
-        // Si el token expiró o no tiene permisos, limpia sesión para evitar más peticiones 403/401 en páginas públicas
+        // Si el token expiró o no tiene permisos, limpia sesión
         if (status === 401 || (status === 403 && code !== "owner_inactive")) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
@@ -87,11 +86,26 @@ export function useSession() {
         }));
       }
     };
-    load();
+
+    // Handler para session-refresh: recarga completamente el perfil
+    const handleSessionRefresh = async () => {
+      console.log("[useSession] Session refresh triggered");
+      await loadProfile();
+    };
+
+    // Sync on auth change (login/logout) and storage events (other tabs)
+    window.addEventListener("auth-changed", syncFromStorage);
+    window.addEventListener("storage", syncFromStorage);
+    window.addEventListener("session-refresh", handleSessionRefresh);
+
+    // Carga inicial
+    loadProfile();
+
     return () => {
       mounted = false;
       window.removeEventListener("auth-changed", syncFromStorage);
       window.removeEventListener("storage", syncFromStorage);
+      window.removeEventListener("session-refresh", handleSessionRefresh);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
