@@ -726,9 +726,10 @@ const StockManagement = () => {
                   ) : (
                     <ProductSelector
                       value={selectedProductId}
-                      onChange={(id) => setSelectedProductId(id)}
+                      onChange={id => setSelectedProductId(id)}
                       placeholder="Buscar y seleccionar producto..."
                       showStock={true}
+                      excludeProductIds={items.map(item => item.productId)}
                     />
                   )}
                 </div>
@@ -1011,7 +1012,7 @@ const StockManagement = () => {
                 ) : (
                   <ProductSelector
                     value={branchSelectedProductId}
-                    onChange={(id) => setBranchSelectedProductId(id)}
+                    onChange={id => setBranchSelectedProductId(id)}
                     placeholder={
                       !originBranchId
                         ? "Primero selecciona sede origen"
@@ -1021,6 +1022,7 @@ const StockManagement = () => {
                     }
                     disabled={!originBranchId || loadingOriginStock}
                     showStock={true}
+                    excludeProductIds={branchItems.map(item => item.productId)}
                   />
                 )}
               </div>

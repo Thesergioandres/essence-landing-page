@@ -41,6 +41,7 @@ interface ProductSelectorProps {
   disabled?: boolean;
   showStock?: boolean;
   className?: string;
+  excludeProductIds?: string[]; // IDs de productos a excluir del selector
 }
 
 export default function ProductSelector({
@@ -50,6 +51,7 @@ export default function ProductSelector({
   disabled = false,
   showStock = true,
   className = "",
+  excludeProductIds = [],
 }: ProductSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -132,6 +134,11 @@ export default function ProductSelector({
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
+    // Excluir productos ya agregados
+    if (excludeProductIds.length > 0) {
+      result = result.filter(p => !excludeProductIds.includes(p._id));
+    }
+
     // Filtrar por búsqueda
     if (search.trim()) {
       const searchLower = search.toLowerCase();
@@ -168,7 +175,14 @@ export default function ProductSelector({
     });
 
     return result;
-  }, [products, search, selectedCategory, sortBy, categories]);
+  }, [
+    products,
+    search,
+    selectedCategory,
+    sortBy,
+    categories,
+    excludeProductIds,
+  ]);
 
   const handleSelect = (product: Product) => {
     onChange(product._id, product);

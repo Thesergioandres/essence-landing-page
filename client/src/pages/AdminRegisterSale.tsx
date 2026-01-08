@@ -598,6 +598,7 @@ export default function AdminRegisterSale() {
                     }}
                     placeholder="Buscar producto..."
                     showStock={true}
+                    excludeProductIds={saleItems.map(item => item.product._id)}
                   />
                 </div>
                 {selectedProduct && (
