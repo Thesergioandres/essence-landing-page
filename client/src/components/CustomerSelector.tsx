@@ -293,9 +293,7 @@ export default function CustomerSelector({
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
             <div className="w-full max-w-md rounded-xl border border-gray-700 bg-gray-800 p-6">
               <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">
-                  Nuevo Cliente
-                </h2>
+                <h2 className="text-xl font-bold text-white">Nuevo Cliente</h2>
                 <button
                   type="button"
                   onClick={() => {
@@ -309,79 +307,79 @@ export default function CustomerSelector({
               </div>
 
               <form onSubmit={handleCreateCustomer} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300">
-                  Nombre *
-                </label>
-                <input
-                  type="text"
-                  value={newCustomer.name}
-                  onChange={e =>
-                    setNewCustomer({ ...newCustomer, name: e.target.value })
-                  }
-                  required
-                  placeholder="Nombre completo"
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">
+                    Nombre *
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustomer.name}
+                    onChange={e =>
+                      setNewCustomer({ ...newCustomer, name: e.target.value })
+                    }
+                    required
+                    placeholder="Nombre completo"
+                    className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300">
-                  Teléfono
-                </label>
-                <input
-                  type="tel"
-                  value={newCustomer.phone}
-                  onChange={e =>
-                    setNewCustomer({ ...newCustomer, phone: e.target.value })
-                  }
-                  placeholder="Ej: 300 123 4567"
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">
+                    Teléfono
+                  </label>
+                  <input
+                    type="tel"
+                    value={newCustomer.phone}
+                    onChange={e =>
+                      setNewCustomer({ ...newCustomer, phone: e.target.value })
+                    }
+                    placeholder="Ej: 300 123 4567"
+                    className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={newCustomer.email}
-                  onChange={e =>
-                    setNewCustomer({ ...newCustomer, email: e.target.value })
-                  }
-                  placeholder="cliente@email.com"
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={newCustomer.email}
+                    onChange={e =>
+                      setNewCustomer({ ...newCustomer, email: e.target.value })
+                    }
+                    placeholder="cliente@email.com"
+                    className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
 
-              {createError && (
-                <p className="text-sm text-red-400">{createError}</p>
-              )}
+                {createError && (
+                  <p className="text-sm text-red-400">{createError}</p>
+                )}
 
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setCreateError("");
-                  }}
-                  className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating || !newCustomer.name}
-                  className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
-                >
-                  {creating && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Crear Cliente
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      setCreateError("");
+                    }}
+                    className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creating || !newCustomer.name}
+                    className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    {creating && <Loader2 className="h-4 w-4 animate-spin" />}
+                    Crear Cliente
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
           document.body
         )}
     </>

@@ -31,14 +31,8 @@ router.get(
 );
 
 // Rutas para distribuidores
-router.post(
-  "/",
-  reportDefectiveProduct
-);
-router.get(
-  "/distributor/:distributorId?",
-  getDistributorDefectiveReports
-);
+router.post("/", reportDefectiveProduct);
+router.get("/distributor/:distributorId?", getDistributorDefectiveReports);
 
 // Rutas de administrador
 router.post(
