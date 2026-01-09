@@ -51,17 +51,12 @@ export default function CustomerSelector({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Debounced search
+  // Load or search customers
   const searchCustomers = useCallback(async (term: string) => {
-    if (term.length < 2) {
-      setCustomers([]);
-      return;
-    }
-
     setLoading(true);
     try {
       const response = await customerService.getAll({
-        search: term,
+        search: term || undefined,
         limit: 10,
       });
       setCustomers(response.customers);
@@ -76,10 +71,12 @@ export default function CustomerSelector({
   // Debounce effect
   useEffect(() => {
     const timer = setTimeout(() => {
-      searchCustomers(searchTerm);
+      if (isOpen && !selectedCustomer) {
+        searchCustomers(searchTerm);
+      }
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, searchCustomers]);
+  }, [searchTerm, searchCustomers, isOpen, selectedCustomer]);
 
   // Load selected customer on mount if value exists
   useEffect(() => {
@@ -243,15 +240,13 @@ export default function CustomerSelector({
                   </li>
                 ))}
               </ul>
-            ) : searchTerm.length >= 2 ? (
+            ) : (
               <div className="p-4 text-center text-sm text-gray-400">
-                No se encontraron clientes
+                {searchTerm
+                  ? "No se encontraron clientes"
+                  : "No hay clientes registrados"}
               </div>
-            ) : searchTerm.length > 0 ? (
-              <div className="p-4 text-center text-sm text-gray-400">
-                Escribe al menos 2 caracteres para buscar
-              </div>
-            ) : null}
+            )}
 
             {/* Create New Option */}
             {allowCreate && searchTerm.length >= 2 && (

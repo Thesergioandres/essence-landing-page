@@ -135,8 +135,8 @@ export default function AdminRegisterSale() {
       if (!businessId) return;
       const { data } = await api.get<{ customers: Customer[] }>("/customers");
       setCustomers(data.customers || []);
-    } catch {
-      console.error("No se pudieron cargar los clientes");
+    } catch (error) {
+      console.error("No se pudieron cargar los clientes", error);
     }
   };
 

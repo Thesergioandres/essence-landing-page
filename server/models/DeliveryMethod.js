@@ -120,6 +120,21 @@ deliveryMethodSchema.statics.createDefaultMethods = async function (
   const defaultMethods = [
     {
       business: businessId,
+      name: "Personal / En tienda",
+      code: "personal",
+      description: "Cliente compra y recoge en el local",
+      defaultCost: 0,
+      hasVariableCost: false,
+      requiresAddress: false,
+      icon: "store",
+      color: "#10B981", // green-500
+      isActive: true,
+      displayOrder: 1,
+      isSystem: true,
+      createdBy: userId,
+    },
+    {
+      business: businessId,
       name: "Portería",
       code: "porteria",
       description: "Entrega en portería del edificio",
@@ -129,7 +144,7 @@ deliveryMethodSchema.statics.createDefaultMethods = async function (
       icon: "building",
       color: "#22C55E", // green-500
       isActive: true,
-      displayOrder: 1,
+      displayOrder: 2,
       isSystem: true,
       createdBy: userId,
     },
@@ -144,7 +159,7 @@ deliveryMethodSchema.statics.createDefaultMethods = async function (
       icon: "send",
       color: "#3B82F6", // blue-500
       isActive: true,
-      displayOrder: 2,
+      displayOrder: 3,
       isSystem: true,
       createdBy: userId,
     },
@@ -159,7 +174,7 @@ deliveryMethodSchema.statics.createDefaultMethods = async function (
       icon: "package",
       color: "#8B5CF6", // purple-500
       isActive: true,
-      displayOrder: 3,
+      displayOrder: 4,
       isSystem: true,
       createdBy: userId,
     },
@@ -174,7 +189,7 @@ deliveryMethodSchema.statics.createDefaultMethods = async function (
       icon: "truck",
       color: "#F59E0B", // amber-500
       isActive: true,
-      displayOrder: 4,
+      displayOrder: 5,
       isSystem: true,
       createdBy: userId,
     },
