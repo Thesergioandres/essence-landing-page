@@ -33,12 +33,10 @@ router.get(
 // Rutas para distribuidores
 router.post(
   "/",
-  requirePermission({ module: "inventory", action: "create" }),
   reportDefectiveProduct
 );
 router.get(
   "/distributor/:distributorId?",
-  requirePermission({ module: "inventory", action: "read" }),
   getDistributorDefectiveReports
 );
 
