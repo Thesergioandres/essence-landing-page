@@ -162,6 +162,129 @@ export interface BranchStock {
   updatedAt?: string;
 }
 
+// ==================== PROMOTION TYPES ====================
+export type PromotionType = "bogo" | "combo" | "volume" | "discount" | "bundle";
+export type PromotionStatus = "draft" | "active" | "paused" | "archived";
+
+export interface PromotionComboItem {
+  product: Product | string;
+  quantity: number;
+  unitPrice?: number;
+}
+
+export interface PromotionRewardItem {
+  product: Product | string;
+  quantity: number;
+  discountType: "percentage" | "amount" | "free";
+  discountValue: number;
+}
+
+export interface Promotion {
+  _id: string;
+  business: string;
+  name: string;
+  description?: string;
+  image?: {
+    url: string;
+    publicId?: string;
+  };
+  type: PromotionType;
+  status: PromotionStatus;
+  exclusive?: boolean;
+  startDate?: string;
+  endDate?: string;
+  branches?: Branch[] | string[];
+  segments?: string[];
+  customers?: Customer[] | string[];
+  // BOGO fields
+  buyItems?: PromotionComboItem[];
+  rewardItems?: PromotionRewardItem[];
+  // Combo/Bundle fields
+  comboItems?: PromotionComboItem[];
+  promotionPrice?: number;
+  originalPrice?: number;
+  // Discount fields
+  discount?: {
+    type: "percentage" | "amount";
+    value: number;
+  };
+  thresholds?: {
+    minQty?: number;
+    minSubtotal?: number;
+  };
+  volumeRule?: {
+    minQty: number;
+    discountType: "percentage" | "amount";
+    discountValue: number;
+  };
+  // Stock and limits
+  totalStock?: number | null;
+  usageLimit?: number | null;
+  usageLimitPerCustomer?: number | null;
+  // Display
+  displayOrder?: number;
+  showInCatalog?: boolean;
+  // Financial
+  financialImpact?: {
+    expectedMargin?: number;
+    distributorCommission?: number;
+    notes?: string;
+  };
+  // Metrics
+  usageCount?: number;
+  lastUsedAt?: string;
+  totalRevenue?: number;
+  totalUnitsSold?: number;
+  // Audit
+  createdBy?: User | string;
+  updatedBy?: User | string;
+  createdAt?: string;
+  updatedAt?: string;
+  // Computed fields (from API)
+  savings?: number;
+  savingsPercentage?: number;
+}
+
+export interface PromotionStats {
+  total: number;
+  active: number;
+  paused: number;
+  archived: number;
+  totalRevenue: number;
+  totalUnitsSold: number;
+}
+
+export interface PromotionMetrics {
+  overview: {
+    totalPromotions: number;
+    activePromotions: number;
+    totalRevenue: number;
+    totalUnitsSold: number;
+    totalSavings: number;
+    averageOrderValue: number;
+  };
+  topSelling: Array<{
+    _id: string;
+    name: string;
+    type: PromotionType;
+    unitsSold: number;
+    revenue: number;
+  }>;
+  topRevenue: Array<{
+    _id: string;
+    name: string;
+    type: PromotionType;
+    revenue: number;
+    unitsSold: number;
+  }>;
+  topProducts: Array<{
+    productId: string;
+    name: string;
+    count: number;
+    quantity: number;
+  }>;
+}
+
 export interface Sale {
   _id: string;
   saleId: string;
@@ -187,14 +310,17 @@ export interface Sale {
   paymentProofMimeType?: string;
   // Backend fields for credit
   isCredit?: boolean;
-  creditId?: {
-    _id: string;
-    originalAmount: number;
-    paidAmount: number;
-    remainingAmount: number;
-    status: string;
-    dueDate?: string;
-  } | string | null;
+  creditId?:
+    | {
+        _id: string;
+        originalAmount: number;
+        paidAmount: number;
+        remainingAmount: number;
+        status: string;
+        dueDate?: string;
+      }
+    | string
+    | null;
   // Alternative nested credit field (some endpoints use this)
   credit?: {
     _id: string;

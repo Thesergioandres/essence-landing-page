@@ -39,6 +39,9 @@ import type {
   ProfitHistoryEntry,
   ProfitHistoryResponse,
   ProfitSummary,
+  Promotion,
+  PromotionMetrics,
+  PromotionStats,
   RankingResponse,
   Sale,
   SaleStats,
@@ -2483,32 +2486,16 @@ export const notificationService = {
 };
 
 // ==================== PROMOTION SERVICE ====================
-interface Promotion {
-  _id: string;
-  name: string;
-  description?: string;
-  type: "bogo" | "discount" | "combo" | "volume" | "event";
-  discountType?: "percentage" | "fixed";
-  discountValue?: number;
-  minQuantity?: number;
-  maxUses?: number;
-  currentUses?: number;
-  startDate?: string;
-  endDate?: string;
-  isActive: boolean;
-  applicableProducts?: { _id: string; name: string }[];
-  branches?: { _id: string; name: string }[];
-  createdAt: string;
-}
-
 export const promotionService = {
   async getAll(params?: {
     status?: string;
     type?: string;
+    showInCatalog?: boolean;
     page?: number;
     limit?: number;
   }): Promise<{
     promotions: Promotion[];
+    stats: PromotionStats;
     pagination?: { page: number; limit: number; total: number; pages: number };
   }> {
     const response = await api.get("/promotions", { params });
@@ -2538,8 +2525,66 @@ export const promotionService = {
     return response.data;
   },
 
-  async toggleStatus(id: string): Promise<{ promotion: Promotion }> {
-    const response = await api.patch(`/promotions/${id}/toggle`);
+  async toggleStatus(
+    id: string
+  ): Promise<{ promotion: Promotion; message: string }> {
+    const response = await api.patch(`/promotions/${id}/toggle-status`);
+    return response.data;
+  },
+
+  async checkStock(
+    id: string,
+    quantity?: number
+  ): Promise<{
+    available: boolean;
+    maxAvailable: number;
+    stockIssues: Array<{
+      product: string;
+      productId: string;
+      required: number;
+      available: number;
+      shortfall: number;
+    }>;
+    requestedQuantity: number;
+  }> {
+    const response = await api.get(`/promotions/${id}/check-stock`, {
+      params: { quantity },
+    });
+    return response.data;
+  },
+
+  async getMetrics(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<PromotionMetrics> {
+    const response = await api.get("/promotions/metrics", { params });
+    return response.data;
+  },
+
+  async getCatalogPromotions(): Promise<{ promotions: Promotion[] }> {
+    const response = await api.get("/promotions/catalog");
+    return response.data;
+  },
+
+  async evaluate(
+    id: string,
+    payload: {
+      items: Array<{ product: string; quantity: number; price: number }>;
+      branchId?: string;
+      customerId?: string;
+      segments?: string[];
+    }
+  ): Promise<{
+    result: {
+      applicable: boolean;
+      discountAmount: number;
+      appliedTimes?: number;
+      exclusive?: boolean;
+      subtotal?: number;
+      reason?: string;
+    };
+  }> {
+    const response = await api.post(`/promotions/${id}/evaluate`, payload);
     return response.data;
   },
 };

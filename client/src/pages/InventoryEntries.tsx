@@ -737,6 +737,7 @@ export default function InventoryEntries() {
                     placeholder="Buscar y seleccionar producto..."
                     showStock={true}
                     className="mt-1"
+                    excludeProductIds={cart.map(item => item.product)}
                   />
                 </div>
 

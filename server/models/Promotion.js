@@ -45,9 +45,14 @@ const promotionSchema = new mongoose.Schema(
     },
     name: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
+    // Imagen de la promoción
+    image: {
+      url: { type: String },
+      publicId: { type: String },
+    },
     type: {
       type: String,
-      enum: ["bogo", "combo", "volume", "discount"],
+      enum: ["bogo", "combo", "volume", "discount", "bundle"],
       default: "discount",
       index: true,
     },
@@ -63,6 +68,8 @@ const promotionSchema = new mongoose.Schema(
     branches: [{ type: mongoose.Schema.Types.ObjectId, ref: "Branch" }],
     segments: [{ type: String, trim: true }],
     customers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Customer" }],
+
+    // Para tipo BOGO (Buy One Get One)
     buyItems: [
       {
         product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
@@ -70,12 +77,21 @@ const promotionSchema = new mongoose.Schema(
       },
     ],
     rewardItems: [rewardSchema],
+
+    // Para tipo COMBO/BUNDLE - productos incluidos con sus cantidades y precios
     comboItems: [
       {
         product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
         quantity: { type: Number, default: 1, min: 1 },
+        unitPrice: { type: Number, default: 0 }, // Precio por unidad en el combo
       },
     ],
+
+    // Precio total de la promoción/bundle
+    promotionPrice: { type: Number, default: 0 },
+    // Precio original (suma de precios individuales) para mostrar ahorro
+    originalPrice: { type: Number, default: 0 },
+
     discount: {
       type: {
         type: String,
@@ -86,15 +102,32 @@ const promotionSchema = new mongoose.Schema(
     },
     thresholds: ruleThresholdSchema,
     volumeRule: volumeRuleSchema,
+
+    // Control de stock y límites
+    totalStock: { type: Number, default: null }, // null = ilimitado
+    usageLimit: { type: Number, default: null }, // Límite total de usos
+    usageLimitPerCustomer: { type: Number, default: null }, // Límite por cliente
+
+    // Orden de visualización en catálogo
+    displayOrder: { type: Number, default: 0 },
+    // Mostrar en catálogo público
+    showInCatalog: { type: Boolean, default: true },
+
     financialImpact: {
       expectedMargin: { type: Number },
       distributorCommission: { type: Number },
       notes: { type: String },
     },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
+    // Métricas
     usageCount: { type: Number, default: 0 },
     lastUsedAt: { type: Date },
+    totalRevenue: { type: Number, default: 0 }, // Ingresos totales generados
+    totalUnitsSold: { type: Number, default: 0 }, // Unidades vendidas
+
+    // Auditoría
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
