@@ -316,14 +316,14 @@ export const confirmDefectiveProduct = async (req, res) => {
     report.confirmedBy = req.user._id;
     report.hasWarranty = hasWarranty;
     report.warrantyStatus = hasWarranty ? "pending" : "not_applicable";
-    
+
     // Calcular pérdida solo si NO tiene garantía
     if (!hasWarranty) {
       report.lossAmount = (product.purchasePrice || 0) * report.quantity;
     } else {
       report.lossAmount = 0;
     }
-    
+
     if (adminNotes) {
       report.adminNotes = adminNotes;
     } else if (hasWarranty) {
