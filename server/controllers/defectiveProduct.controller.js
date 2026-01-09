@@ -282,7 +282,7 @@ export const getAllDefectiveReports = async (req, res) => {
 // @access  Private/Admin
 export const confirmDefectiveProduct = async (req, res) => {
   try {
-    const { adminNotes } = req.body;
+    const { adminNotes, hasWarranty = false } = req.body;
     const report = await DefectiveProduct.findOne({
       _id: req.params.id,
       business: req.businessId,
@@ -304,29 +304,52 @@ export const confirmDefectiveProduct = async (req, res) => {
         .json({ message: "Este reporte fue rechazado anteriormente" });
     }
 
+    // Obtener el producto para calcular pérdida
+    const product = await Product.findById(report.product);
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    // Actualizar reporte con información de garantía
     report.status = "confirmado";
     report.confirmedAt = Date.now();
     report.confirmedBy = req.user._id;
-    if (adminNotes) report.adminNotes = adminNotes;
+    report.hasWarranty = hasWarranty;
+    report.warrantyStatus = hasWarranty ? "pending" : "not_applicable";
+    
+    // Calcular pérdida solo si NO tiene garantía
+    if (!hasWarranty) {
+      report.lossAmount = (product.purchasePrice || 0) * report.quantity;
+    } else {
+      report.lossAmount = 0;
+    }
+    
+    if (adminNotes) {
+      report.adminNotes = adminNotes;
+    } else if (hasWarranty) {
+      report.adminNotes = "Producto con garantía - pendiente de reposición";
+    } else {
+      report.adminNotes = "Producto sin garantía - registrado como pérdida";
+    }
 
     await report.save();
 
     // Descontar del stock total del producto (el stock ya se descontó del distribuidor al crear el reporte)
-    const product = await Product.findById(report.product);
-    if (product) {
-      product.totalStock -= report.quantity;
-      await product.save();
-    }
+    product.totalStock -= report.quantity;
+    await product.save();
 
     const populatedReport = await DefectiveProduct.findById(report._id)
-      .populate("product", "name image")
+      .populate("product", "name image purchasePrice")
       .populate("distributor", "name email")
       .populate("branch", "name")
       .populate("confirmedBy", "name email");
 
     res.json({
-      message: "Recepción del producto defectuoso confirmada",
+      message: hasWarranty
+        ? "Recepción confirmada. Producto con garantía - pendiente de reposición"
+        : `Recepción confirmada. Pérdida registrada: $${report.lossAmount.toLocaleString()}`,
       report: populatedReport,
+      lossAmount: report.lossAmount,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

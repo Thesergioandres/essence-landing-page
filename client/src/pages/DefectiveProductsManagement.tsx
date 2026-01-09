@@ -38,6 +38,7 @@ export default function DefectiveProductsManagement() {
     null
   );
   const [adminNotes, setAdminNotes] = useState("");
+  const [hasWarrantyOnConfirm, setHasWarrantyOnConfirm] = useState(false);
   const [actionType, setActionType] = useState<
     "confirm" | "reject" | "approveWarranty" | "rejectWarranty"
   >("confirm");
@@ -128,7 +129,11 @@ export default function DefectiveProductsManagement() {
       setProcessingId(selectedReport._id);
 
       if (actionType === "confirm") {
-        await defectiveProductService.confirm(selectedReport._id, adminNotes);
+        await defectiveProductService.confirm(
+          selectedReport._id,
+          adminNotes,
+          hasWarrantyOnConfirm
+        );
       } else if (actionType === "reject") {
         await defectiveProductService.reject(selectedReport._id, adminNotes);
       } else if (actionType === "approveWarranty") {
@@ -147,6 +152,7 @@ export default function DefectiveProductsManagement() {
       setShowNotesModal(false);
       setSelectedReport(null);
       setAdminNotes("");
+      setHasWarrantyOnConfirm(false);
     } catch (error: any) {
       console.error("Error al procesar reporte:", error);
       alert(error.response?.data?.message || "Error al procesar el reporte");
@@ -681,6 +687,29 @@ export default function DefectiveProductsManagement() {
                 </div>
               )}
             </div>
+
+            {actionType === "confirm" && (
+              <div className="mb-4">
+                <label className="flex items-center gap-3 rounded-lg border border-gray-700 bg-gray-800 p-4 cursor-pointer hover:border-purple-500 transition">
+                  <input
+                    type="checkbox"
+                    checked={hasWarrantyOnConfirm}
+                    onChange={(e) => setHasWarrantyOnConfirm(e.target.checked)}
+                    className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-white">
+                      ✓ Tiene garantía de proveedor
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {hasWarrantyOnConfirm
+                        ? "Se marcará pendiente de reposición por garantía"
+                        : "Se registrará como pérdida definitiva"}
+                    </p>
+                  </div>
+                </label>
+              </div>
+            )}
 
             <div className="mb-4">
               <label className="mb-2 block text-sm font-medium text-gray-300">

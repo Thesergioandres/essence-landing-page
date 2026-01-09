@@ -1342,13 +1342,15 @@ export const defectiveProductService = {
 
   async confirm(
     reportId: string,
-    adminNotes?: string
+    adminNotes?: string,
+    hasWarranty?: boolean
   ): Promise<{
     message: string;
     report: DefectiveProduct;
   }> {
     const response = await api.put(`/defective-products/${reportId}/confirm`, {
       adminNotes,
+      hasWarranty,
     });
     return response.data;
   },
