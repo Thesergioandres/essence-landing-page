@@ -73,4 +73,25 @@ export const deleteImage = async (publicId) => {
   }
 };
 
+// Alias para compatibilidad
+export const deleteFromCloudinary = deleteImage;
+
+// Función para subir imagen desde base64
+export const uploadToCloudinary = async (base64String, folder = "essence-products") => {
+  if (!isCloudinaryConfigured) {
+    throw new Error("Cloudinary no está configurado");
+  }
+  
+  try {
+    const result = await cloudinary.uploader.upload(base64String, {
+      folder,
+      transformation: [{ width: 800, height: 800, crop: "limit" }],
+    });
+    return result;
+  } catch (error) {
+    console.error("❌ Error subiendo imagen a Cloudinary:", error);
+    throw error;
+  }
+};
+
 export default cloudinary;
