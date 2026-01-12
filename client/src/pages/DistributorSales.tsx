@@ -125,46 +125,6 @@ export default function DistributorSales() {
       }, 0),
   };
 
-  // Agrupar ventas por saleGroupId
-  const groupSales = () => {
-    const groups = new Map<
-      string,
-      {
-        groupId: string;
-        sales: Sale[];
-        totalQuantity: number;
-        totalRevenue: number;
-        totalProfit: number;
-        saleDate: string;
-        isCredit: boolean;
-        hasActiveCredit: boolean;
-      }
-    >();
-
-    sales.forEach(sale => {
-      const groupId = sale.saleGroupId || sale._id;
-      if (!groups.has(groupId)) {
-        groups.set(groupId, {
-          groupId,
-          sales: [],
-          totalQuantity: 0,
-          totalRevenue: 0,
-          totalProfit: 0,
-          saleDate: sale.saleDate,
-          isCredit: sale.isCredit || false,
-          hasActiveCredit: hasActiveCredit(sale),
-        });
-      }
-      const group = groups.get(groupId)!;
-      group.sales.push(sale);
-      group.totalQuantity += sale.quantity;
-      group.totalRevenue += sale.salePrice * sale.quantity;
-      group.totalProfit += sale.distributorProfit || 0;
-    });
-
-    return Array.from(groups.values());
-  };
-
   const toggleGroup = (groupId: string) => {
     setExpandedGroups(prev => {
       const newSet = new Set(prev);
