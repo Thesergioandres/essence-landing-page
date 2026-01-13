@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Branch from "../models/Branch.js";
 import BranchStock from "../models/BranchStock.js";
 import BranchTransfer from "../models/BranchTransfer.js";
@@ -145,38 +146,85 @@ export const createBranchTransfer = async (req, res) => {
       requestedBy: req.user?.id,
     });
 
-    // Aplicar movimientos inmediatos (simple)
-    for (const item of items) {
-      const product = await getProduct(item.product);
+    // 🔒 Usar transacción para garantizar atomicidad
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-      if (originIsWarehouse) {
-        product.warehouseStock -= item.quantity;
-        await product.save();
-      } else {
-        await BranchStock.findOneAndUpdate(
-          { business: businessId, branch: origin._id, product: item.product },
-          { $inc: { quantity: -item.quantity } },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
+    try {
+      // Aplicar movimientos dentro de la transacción
+      for (const item of items) {
+        const product = await getProduct(item.product);
+
+        if (originIsWarehouse) {
+          // Validar y descontar atómicamente con la sesión
+          const updateResult = await Product.findOneAndUpdate(
+            {
+              _id: item.product,
+              business: businessId,
+              warehouseStock: { $gte: item.quantity },
+            },
+            { $inc: { warehouseStock: -item.quantity } },
+            { session, new: true }
+          );
+          if (!updateResult) {
+            throw new Error(
+              `Stock insuficiente en bodega para ${
+                product?.name || item.product
+              }`
+            );
+          }
+        } else {
+          const updateResult = await BranchStock.findOneAndUpdate(
+            {
+              business: businessId,
+              branch: origin._id,
+              product: item.product,
+              quantity: { $gte: item.quantity },
+            },
+            { $inc: { quantity: -item.quantity } },
+            { session, new: true }
+          );
+          if (!updateResult) {
+            throw new Error(
+              `Stock insuficiente en ${origin.name} para producto ${
+                product?.name || item.product
+              }`
+            );
+          }
+        }
+
+        if (targetIsWarehouse) {
+          await Product.findOneAndUpdate(
+            { _id: item.product, business: businessId },
+            { $inc: { warehouseStock: item.quantity } },
+            { session, new: true, upsert: false }
+          );
+        } else {
+          await BranchStock.findOneAndUpdate(
+            { business: businessId, branch: target._id, product: item.product },
+            { $inc: { quantity: item.quantity } },
+            { session, upsert: true, new: true, setDefaultsOnInsert: true }
+          );
+        }
       }
 
-      if (targetIsWarehouse) {
-        product.warehouseStock += item.quantity;
-        await product.save();
-      } else {
-        await BranchStock.findOneAndUpdate(
-          { business: businessId, branch: target._id, product: item.product },
-          { $inc: { quantity: item.quantity } },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-      }
+      transfer.status = "completed";
+      transfer.approvedBy = req.user?.id;
+      await transfer.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
+
+      res.status(201).json({ transfer });
+    } catch (txError) {
+      await session.abortTransaction();
+      session.endSession();
+
+      // Eliminar el transfer si falló la transacción
+      await BranchTransfer.findByIdAndDelete(transfer._id);
+
+      throw txError;
     }
-
-    transfer.status = "completed";
-    transfer.approvedBy = req.user?.id;
-    await transfer.save();
-
-    res.status(201).json({ transfer });
   } catch (error) {
     console.error("createBranchTransfer error", error);
     const status = error?.statusCode || 500;

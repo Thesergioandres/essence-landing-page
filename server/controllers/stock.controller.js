@@ -87,9 +87,31 @@ export const assignStockToDistributor = async (req, res) => {
       });
     }
 
-    // Descontar de bodega
-    product.warehouseStock -= quantity;
-    await product.save();
+    // 🔒 Descontar de bodega de forma ATÓMICA para evitar condiciones de carrera
+    const updateResult = await Product.findOneAndUpdate(
+      {
+        _id: productId,
+        business: businessId,
+        warehouseStock: { $gte: quantity },
+      },
+      { $inc: { warehouseStock: -quantity } },
+      { new: true }
+    );
+
+    if (!updateResult) {
+      // Si falla la actualización atómica, revertir el stock del distribuidor
+      if (distributorStock) {
+        distributorStock.quantity -= quantity;
+        await distributorStock.save();
+      }
+      return res.status(400).json({
+        message: `Stock insuficiente en bodega (verificación concurrente falló)`,
+        requestId: req.reqId,
+      });
+    }
+
+    // Usar el producto actualizado para la respuesta
+    const updatedProduct = updateResult;
 
     // Asignar producto al distribuidor si no lo tiene
     if (!distributor.assignedProducts.includes(productId)) {
@@ -112,7 +134,7 @@ export const assignStockToDistributor = async (req, res) => {
         { path: "distributor", select: "name email" },
         { path: "product", select: "name" },
       ]),
-      warehouseStock: product.warehouseStock,
+      warehouseStock: updatedProduct.warehouseStock,
       requestId: req.reqId,
     });
   } catch (error) {
@@ -171,21 +193,32 @@ export const withdrawStockFromDistributor = async (req, res) => {
       });
     }
 
-    // Descontar del distribuidor
-    distributorStock.quantity -= quantity;
-    await distributorStock.save();
+    // 🔒 Descontar del distribuidor de forma ATÓMICA para evitar condiciones de carrera
+    const stockUpdateResult = await DistributorStock.findOneAndUpdate(
+      {
+        _id: distributorStock._id,
+        quantity: { $gte: quantity },
+      },
+      { $inc: { quantity: -quantity } },
+      { new: true }
+    );
 
-    // Devolver a bodega
-    const product = await Product.findOne({
-      _id: productId,
-      business: businessId,
-    });
-    product.warehouseStock += quantity;
-    await product.save();
+    if (!stockUpdateResult) {
+      return res.status(400).json({
+        message: `Error al retirar stock (verificación concurrente falló)`,
+      });
+    }
+
+    // Devolver a bodega de forma atómica
+    const product = await Product.findOneAndUpdate(
+      { _id: productId, business: businessId },
+      { $inc: { warehouseStock: quantity } },
+      { new: true }
+    );
 
     res.json({
       message: "Stock retirado correctamente",
-      distributorStock: await distributorStock.populate([
+      distributorStock: await stockUpdateResult.populate([
         { path: "distributor", select: "name email" },
         { path: "product", select: "name" },
       ]),

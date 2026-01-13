@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import api from "../api/axios";
@@ -8,6 +8,7 @@ import {
   paymentMethodService,
   productService,
   saleService,
+  stockService,
   type DeliveryMethod,
   type PaymentMethod,
 } from "../api/services";
@@ -16,7 +17,7 @@ import CustomerSelector from "../components/CustomerSelector";
 import PointsRedemption from "../components/PointsRedemption";
 import ProductSelector from "../components/ProductSelector";
 import { useBusiness } from "../context/BusinessContext";
-import type { Branch, Customer, Product } from "../types";
+import type { Branch, BranchStock, Customer, Product } from "../types";
 
 interface SaleItem {
   id: string;
@@ -94,6 +95,44 @@ export default function AdminRegisterSale() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  // Stock de la sede seleccionada (para validación de ventas múltiples)
+  const [branchStock, setBranchStock] = useState<BranchStock[]>([]);
+
+  // Cargar stock de la sede cuando cambia la selección
+  const loadBranchStock = useCallback(
+    async (branchId: string) => {
+      if (!branchId) {
+        setBranchStock([]);
+        return;
+      }
+
+      const selectedBranch = branches.find(b => b._id === branchId);
+
+      // Si es bodega, no necesitamos cargar BranchStock (usamos warehouseStock del producto)
+      if (!selectedBranch || selectedBranch.isWarehouse) {
+        setBranchStock([]);
+        return;
+      }
+
+      try {
+        const stock = await stockService.getBranchStock(branchId);
+        setBranchStock(stock);
+      } catch (err) {
+        console.error("Error cargando stock de sede:", err);
+        setBranchStock([]);
+      }
+    },
+    [branches]
+  );
+
+  // Efecto para cargar stock cuando cambia la sede
+  useEffect(() => {
+    if (formData.branchId) {
+      void loadBranchStock(formData.branchId);
+    } else {
+      setBranchStock([]);
+    }
+  }, [formData.branchId, loadBranchStock]);
 
   useEffect(() => {
     if (!businessId || businessHydrating || businessLoading) return;
@@ -414,17 +453,32 @@ export default function AdminRegisterSale() {
         const product = products.find(p => p._id === productId);
         if (!product) continue;
 
-        // Si hay sede seleccionada y NO es bodega, el stock se valida en el servidor
-        // Solo validamos aquí el warehouseStock si no hay sede o si es bodega
+        // Determinar si es venta de bodega o sede normal
         const selectedBranch = branches.find(b => b._id === formData.branchId);
         const isWarehouseSale =
           !formData.branchId || selectedBranch?.isWarehouse;
 
         if (isWarehouseSale) {
+          // Validar contra warehouseStock del producto
           const availableStock = product.warehouseStock || 0;
           if (availableStock < totalQuantity) {
             setError(
               `Stock insuficiente de "${product.name}". Disponible en bodega: ${availableStock}, solicitado en total: ${totalQuantity}`
+            );
+            setLoading(false);
+            return;
+          }
+        } else {
+          // Validar contra BranchStock de la sede seleccionada
+          const stockItem = branchStock.find(s => {
+            const stockProductId =
+              typeof s.product === "string" ? s.product : s.product?._id;
+            return stockProductId === productId;
+          });
+          const availableStock = stockItem?.quantity || 0;
+          if (availableStock < totalQuantity) {
+            setError(
+              `Stock insuficiente de "${product.name}" en ${selectedBranch?.name || "la sede"}. Disponible: ${availableStock}, solicitado en total: ${totalQuantity}`
             );
             setLoading(false);
             return;

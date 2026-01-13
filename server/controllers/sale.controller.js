@@ -537,39 +537,79 @@ export const registerAdminSale = async (req, res) => {
     const sale = await Sale.create(saleData);
     console.log(`[${reqId}] Ô£à Venta creada:`, sale._id);
 
-    // Descontar stock según el origen (bodega o sede)
-    console.log(`[${reqId}] Actualizando stock...`);
-    product.totalStock -= quantity;
+    // 🔒 Descontar stock de forma ATÓMICA para evitar condiciones de carrera
+    console.log(`[${reqId}] Actualizando stock (atómico)...`);
 
-    // Actualizar valor total del inventario (reducir por el costo promedio de las unidades vendidas)
+    // Calcular los decrementos
     const inventoryValueReduction = quantity * averageCostAtSale;
-    product.totalInventoryValue = Math.max(
-      (product.totalInventoryValue || 0) - inventoryValueReduction,
-      0
-    );
 
     if (isWarehouseSale) {
-      // Si es venta de bodega (sin sede o con sede isWarehouse), descontar de warehouseStock
-      product.warehouseStock = Math.max(
-        (product.warehouseStock || 0) - quantity,
-        0
+      // Actualizar atómicamente warehouseStock, totalStock y totalInventoryValue
+      // Usar $gte en la condición para garantizar que hay stock suficiente
+      const updateResult = await Product.findOneAndUpdate(
+        {
+          _id: productId,
+          business: businessId,
+          warehouseStock: { $gte: quantity },
+        },
+        {
+          $inc: {
+            warehouseStock: -quantity,
+            totalStock: -quantity,
+            totalInventoryValue: -inventoryValueReduction,
+          },
+        },
+        { new: true }
       );
+
+      if (!updateResult) {
+        // Si falla la actualización atómica, eliminar la venta y devolver error
+        await Sale.findByIdAndDelete(sale._id);
+        console.warn(`[${reqId}] ÔØî Stock insuficiente (carrera) en bodega`);
+        return res.status(400).json({
+          message: `Stock insuficiente en bodega (verificación concurrente falló)`,
+        });
+      }
+
       console.log(
         `[${reqId}] Ô£à Stock actualizado en bodega. Nuevo stock bodega:`,
-        product.warehouseStock
+        updateResult.warehouseStock
       );
     } else if (branchStock) {
-      // Si es venta de sede normal, descontar del stock de la sede
-      branchStock.quantity -= quantity;
-      await branchStock.save();
+      // Actualizar atómicamente el stock de la sede
+      const branchUpdateResult = await BranchStock.findOneAndUpdate(
+        {
+          _id: branchStock._id,
+          quantity: { $gte: quantity },
+        },
+        { $inc: { quantity: -quantity } },
+        { new: true }
+      );
+
+      if (!branchUpdateResult) {
+        // Si falla la actualización atómica, eliminar la venta y devolver error
+        await Sale.findByIdAndDelete(sale._id);
+        console.warn(`[${reqId}] ÔØî Stock insuficiente (carrera) en sede`);
+        return res.status(400).json({
+          message: `Stock insuficiente en la sede (verificación concurrente falló)`,
+        });
+      }
+
+      // También actualizar totalStock y totalInventoryValue del producto
+      await Product.findByIdAndUpdate(productId, {
+        $inc: {
+          totalStock: -quantity,
+          totalInventoryValue: -inventoryValueReduction,
+        },
+      });
+
       console.log(
         `[${reqId}] Ô£à Stock actualizado en sede. Nuevo stock sede:`,
-        branchStock.quantity
+        branchUpdateResult.quantity
       );
     }
 
-    await product.save();
-    console.log(`[${reqId}] Ô£à Stock total actualizado:`, product.totalStock);
+    console.log(`[${reqId}] Ô£à Stock actualizado correctamente`);
 
     console.log(`[${reqId}] ­ƒöä Obteniendo venta con populate...`);
     const populatedSale = await Sale.findById(sale._id).populate(
@@ -880,17 +920,32 @@ export const registerSale = async (req, res) => {
 
       const sale = await Sale.create(saleData);
 
-      branchStock.quantity -= quantity;
-      await branchStock.save();
-
-      product.totalStock -= quantity;
-      // Actualizar valor total del inventario (reducir por el costo promedio de las unidades vendidas)
-      const inventoryValueReduction = quantity * averageCostAtSale;
-      product.totalInventoryValue = Math.max(
-        (product.totalInventoryValue || 0) - inventoryValueReduction,
-        0
+      // 🔒 Descontar stock de forma ATÓMICA para evitar condiciones de carrera
+      const branchUpdateResult = await BranchStock.findOneAndUpdate(
+        {
+          _id: branchStock._id,
+          quantity: { $gte: quantity },
+        },
+        { $inc: { quantity: -quantity } },
+        { new: true }
       );
-      await product.save();
+
+      if (!branchUpdateResult) {
+        // Si falla la actualización atómica, eliminar la venta y devolver error
+        await Sale.findByIdAndDelete(sale._id);
+        return res.status(400).json({
+          message: `Stock insuficiente en la sede (verificación concurrente falló)`,
+        });
+      }
+
+      // Actualizar totalStock y totalInventoryValue del producto de forma atómica
+      const inventoryValueReduction = quantity * averageCostAtSale;
+      await Product.findByIdAndUpdate(productId, {
+        $inc: {
+          totalStock: -quantity,
+          totalInventoryValue: -inventoryValueReduction,
+        },
+      });
 
       const populatedSale = await Sale.findById(sale._id)
         .populate("product", "name image")
