@@ -2905,6 +2905,7 @@ export const inventoryService = {
   async createEntry(payload: {
     product: string;
     quantity: number;
+    unitCost?: number;
     branch?: string;
     provider?: string;
     notes?: string;

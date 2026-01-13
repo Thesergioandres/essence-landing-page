@@ -23,6 +23,8 @@ export interface Product {
   clientPrice?: number;
   distributorCommission?: number;
   cost?: number;
+  averageCost?: number; // Costo promedio ponderado
+  totalInventoryValue?: number; // Valor total del inventario
   // Stock
   totalStock: number;
   warehouseStock: number;

@@ -296,7 +296,7 @@ export default function EditProduct() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-300">
-                    Precio de Compra *
+                    Precio de Compra Base *
                   </label>
                   <input
                     type="number"
@@ -309,10 +309,27 @@ export default function EditProduct() {
                     className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    Costo base del producto
+                    Costo inicial del producto
                   </p>
                 </div>
 
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-blue-400">
+                    Costo Promedio Ponderado
+                  </label>
+                  <input
+                    type="text"
+                    value={product?.averageCost ? `$${product.averageCost.toLocaleString()}` : "No calculado"}
+                    readOnly
+                    className="w-full rounded-lg border border-blue-500/50 bg-blue-900/20 px-4 py-3 text-blue-300 cursor-not-allowed"
+                  />
+                  <p className="mt-1 text-xs text-blue-500">
+                    Promedio según entradas de inventario (solo lectura)
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-green-400">
                     Precio Sugerido (30% ganancia)
