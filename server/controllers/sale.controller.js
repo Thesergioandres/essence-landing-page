@@ -1394,6 +1394,7 @@ export const getAllSales = async (req, res) => {
 
     const projection = {
       saleId: 1,
+      saleGroupId: 1,
       saleDate: 1,
       paymentStatus: 1,
       paymentConfirmedAt: 1,

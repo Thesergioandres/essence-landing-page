@@ -531,7 +531,7 @@ export default function Sales() {
                 <option value="date-desc">Fecha (Más reciente primero)</option>
                 <option value="date-asc">Fecha (Más antigua primero)</option>
                 {distributorsEnabled && (
-                  <option value="distributor">Distribuidor (A-Z)</option>
+                  <option value="distributor">Responsable (A-Z)</option>
                 )}
               </select>
             </div>
@@ -553,7 +553,7 @@ export default function Sales() {
                     )}
                     {distributorsEnabled && (
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
-                        Distribuidor
+                        Responsable
                       </th>
                     )}
                     {distributorsEnabled && gamificationEnabled && (

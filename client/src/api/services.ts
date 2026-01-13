@@ -2318,9 +2318,7 @@ export const creditService = {
     return response.data;
   },
 
-  async getById(
-    id: string
-  ): Promise<{
+  async getById(id: string): Promise<{
     credit: Credit;
     payments: CreditPayment[];
     profitInfo?: CreditProfitInfo;
