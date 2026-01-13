@@ -1,15 +1,15 @@
 /**
  * Script para corregir el totalInventoryValue y averageCost de productos existentes
  * que no fueron inicializados correctamente.
- * 
+ *
  * Uso: node fixProductCosts.js
  */
 
-import mongoose from "mongoose";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
 
 const ProductSchema = new mongoose.Schema({}, { strict: false });
 const Product = mongoose.model("Product", ProductSchema);
@@ -57,7 +57,7 @@ async function fixProductCosts() {
 
         console.log(
           `  ✅ ${product.name}: Stock=${totalStock}, PurchasePrice=${purchasePrice}, ` +
-          `AverageCost=${averageCost}, TotalValue=${totalInventoryValue}`
+            `AverageCost=${averageCost}, TotalValue=${totalInventoryValue}`
         );
         fixed++;
       }
