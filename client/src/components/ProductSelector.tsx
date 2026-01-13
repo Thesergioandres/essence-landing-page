@@ -67,7 +67,7 @@ export default function ProductSelector({
 
   // Usar hook de caché para productos y categorías
   const { products: cachedProducts, categories, loading } = useProductCache();
-  
+
   // Usar productos externos si se proporcionan, de lo contrario usar el cache
   const products = externalProducts || cachedProducts;
 

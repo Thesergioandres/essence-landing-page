@@ -119,7 +119,9 @@ export default function AdminRegisterSale() {
       // Si es bodega, filtrar por warehouseStock > 0
       if (isWarehouse) {
         setBranchStock([]);
-        const productsWithStock = products.filter(p => (p.warehouseStock || 0) > 0);
+        const productsWithStock = products.filter(
+          p => (p.warehouseStock || 0) > 0
+        );
         setFilteredProducts(productsWithStock);
         return;
       }
@@ -128,14 +130,18 @@ export default function AdminRegisterSale() {
       try {
         const stock = await stockService.getBranchStock(branchId);
         setBranchStock(stock);
-        
+
         // Filtrar solo productos que tienen stock en esta sede
         const productIdsWithStock = new Set(
           stock
             .filter(s => s.quantity > 0)
-            .map(s => (typeof s.product === 'string' ? s.product : s.product?._id))
+            .map(s =>
+              typeof s.product === "string" ? s.product : s.product?._id
+            )
         );
-        const productsWithStock = products.filter(p => productIdsWithStock.has(p._id));
+        const productsWithStock = products.filter(p =>
+          productIdsWithStock.has(p._id)
+        );
         setFilteredProducts(productsWithStock);
       } catch (err) {
         console.error("Error cargando stock de sede:", err);
@@ -688,14 +694,18 @@ export default function AdminRegisterSale() {
           </div>
           <div className="flex items-center">
             {formData.branchId && (
-              <div className={`rounded-lg p-4 ${isWarehouseSelected ? 'bg-green-900/30 border border-green-500/50' : 'bg-blue-900/30 border border-blue-500/50'}`}>
+              <div
+                className={`rounded-lg p-4 ${isWarehouseSelected ? "border border-green-500/50 bg-green-900/30" : "border border-blue-500/50 bg-blue-900/30"}`}
+              >
                 <p className="font-semibold text-white">
-                  {isWarehouseSelected ? '🏭 Bodega Principal' : '🏪 Sede Normal'}
+                  {isWarehouseSelected
+                    ? "🏭 Bodega Principal"
+                    : "🏪 Sede Normal"}
                 </p>
                 <p className="text-sm text-gray-300">
-                  {isWarehouseSelected 
-                    ? 'Stock se descuenta de warehouseStock' 
-                    : 'Stock se descuenta de BranchStock de esta sede'}
+                  {isWarehouseSelected
+                    ? "Stock se descuenta de warehouseStock"
+                    : "Stock se descuenta de BranchStock de esta sede"}
                 </p>
                 <p className="mt-1 text-sm font-medium text-green-400">
                   ✓ {filteredProducts.length} productos disponibles
@@ -709,8 +719,12 @@ export default function AdminRegisterSale() {
       {/* SECCIÓN 2: Contenido principal (solo visible si hay sede seleccionada) */}
       {!formData.branchId ? (
         <div className="rounded-xl border border-yellow-500/50 bg-yellow-900/20 p-8 text-center">
-          <p className="text-xl text-yellow-300">⚠️ Selecciona una sede para continuar</p>
-          <p className="mt-2 text-gray-400">Debes elegir desde qué sede/bodega se descontará el stock</p>
+          <p className="text-xl text-yellow-300">
+            ⚠️ Selecciona una sede para continuar
+          </p>
+          <p className="mt-2 text-gray-400">
+            Debes elegir desde qué sede/bodega se descontará el stock
+          </p>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
@@ -718,47 +732,70 @@ export default function AdminRegisterSale() {
           <div className="lg:col-span-1">
             <div className="sticky top-4 rounded-xl border border-gray-700 bg-gray-800/50 p-4">
               <h2 className="mb-4 text-lg font-semibold text-white">
-                📦 Inventario {isWarehouseSelected ? 'Bodega' : 'Sede'}
+                📦 Inventario {isWarehouseSelected ? "Bodega" : "Sede"}
               </h2>
-              <div className="max-h-[600px] overflow-y-auto space-y-2">
+              <div className="max-h-[600px] space-y-2 overflow-y-auto">
                 {filteredProducts.length === 0 ? (
-                  <p className="text-center text-gray-500 py-4">
+                  <p className="py-4 text-center text-gray-500">
                     No hay productos con stock
                   </p>
                 ) : (
                   filteredProducts.map(product => {
-                    const stock = isWarehouseSelected 
+                    const stock = isWarehouseSelected
                       ? product.warehouseStock || 0
                       : branchStock.find(s => {
-                          const pid = typeof s.product === 'string' ? s.product : s.product?._id;
+                          const pid =
+                            typeof s.product === "string"
+                              ? s.product
+                              : s.product?._id;
                           return pid === product._id;
                         })?.quantity || 0;
-                    const inCart = saleItems.filter(i => i.productId === product._id).reduce((sum, i) => sum + i.quantity, 0);
+                    const inCart = saleItems
+                      .filter(i => i.productId === product._id)
+                      .reduce((sum, i) => sum + i.quantity, 0);
                     const remaining = stock - inCart;
-                    
+
                     return (
                       <div
                         key={product._id}
                         className={`rounded-lg border p-3 text-sm ${
-                          remaining <= 0 
-                            ? 'border-red-500/50 bg-red-900/20 opacity-60' 
-                            : remaining <= 3 
-                              ? 'border-yellow-500/50 bg-yellow-900/20'
-                              : 'border-gray-600 bg-gray-900/50'
+                          remaining <= 0
+                            ? "border-red-500/50 bg-red-900/20 opacity-60"
+                            : remaining <= 3
+                              ? "border-yellow-500/50 bg-yellow-900/20"
+                              : "border-gray-600 bg-gray-900/50"
                         }`}
                       >
-                        <p className="font-medium text-white truncate" title={product.name}>
+                        <p
+                          className="truncate font-medium text-white"
+                          title={product.name}
+                        >
                           {product.name}
                         </p>
                         <div className="mt-1 flex justify-between text-xs">
                           <span className="text-gray-400">Stock:</span>
-                          <span className={remaining <= 0 ? 'text-red-400 font-bold' : remaining <= 3 ? 'text-yellow-400' : 'text-green-400'}>
-                            {remaining} {inCart > 0 && <span className="text-orange-400">(-{inCart} en carrito)</span>}
+                          <span
+                            className={
+                              remaining <= 0
+                                ? "font-bold text-red-400"
+                                : remaining <= 3
+                                  ? "text-yellow-400"
+                                  : "text-green-400"
+                            }
+                          >
+                            {remaining}{" "}
+                            {inCart > 0 && (
+                              <span className="text-orange-400">
+                                (-{inCart} en carrito)
+                              </span>
+                            )}
                           </span>
                         </div>
                         <div className="mt-1 flex justify-between text-xs">
                           <span className="text-gray-400">P.Venta:</span>
-                          <span className="text-green-400">${(product.clientPrice || 0).toLocaleString()}</span>
+                          <span className="text-green-400">
+                            ${(product.clientPrice || 0).toLocaleString()}
+                          </span>
                         </div>
                       </div>
                     );
@@ -769,7 +806,7 @@ export default function AdminRegisterSale() {
           </div>
 
           {/* Panel central: Formulario para agregar productos */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="space-y-6 lg:col-span-1">
             <form
               onSubmit={e => {
                 e.preventDefault();
@@ -788,254 +825,256 @@ export default function AdminRegisterSale() {
                       className="mb-2 block text-sm font-medium text-gray-300"
                     >
                       Producto *
-                  </label>
-                  <ProductSelector
-                    value={formData.productId}
-                    onChange={(productId, _product) => {
-                      handleProductChange(productId);
-                    }}
-                    placeholder="Buscar producto..."
-                    showStock={true}
-                    excludeProductIds={saleItems.map(item => item.productId)}
-                    products={filteredProducts}
-                  />
-                </div>
-                {selectedProduct && (
-                  <div className="rounded-lg border border-blue-500/30 bg-blue-900/10 p-4">
-                    <h3 className="mb-2 font-semibold text-white">
-                      {selectedProduct.name}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-400">Precio de compra:</p>
-                        <p className="font-bold text-white">
-                          {formatCurrency(selectedProduct.purchasePrice)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Precio sugerido:</p>
-                        <p className="font-bold text-green-400">
-                          {formatCurrency(selectedProduct.clientPrice || 0)}
-                        </p>
+                    </label>
+                    <ProductSelector
+                      value={formData.productId}
+                      onChange={(productId, _product) => {
+                        handleProductChange(productId);
+                      }}
+                      placeholder="Buscar producto..."
+                      showStock={true}
+                      excludeProductIds={saleItems.map(item => item.productId)}
+                      products={filteredProducts}
+                    />
+                  </div>
+                  {selectedProduct && (
+                    <div className="rounded-lg border border-blue-500/30 bg-blue-900/10 p-4">
+                      <h3 className="mb-2 font-semibold text-white">
+                        {selectedProduct.name}
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-400">Precio de compra:</p>
+                          <p className="font-bold text-white">
+                            {formatCurrency(selectedProduct.purchasePrice)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Precio sugerido:</p>
+                          <p className="font-bold text-green-400">
+                            {formatCurrency(selectedProduct.clientPrice || 0)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="quantity"
-                      className="mb-2 block text-sm font-medium text-gray-300"
-                    >
-                      Cantidad *
-                    </label>
-                    <input
-                      type="number"
-                      id="quantity"
-                      name="quantity"
-                      value={formData.quantity}
-                      onChange={handleChange}
-                      min="1"
-                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="salePrice"
-                      className="mb-2 block text-sm font-medium text-gray-300"
-                    >
-                      Precio Unitario *
-                    </label>
-                    <input
-                      type="number"
-                      id="salePrice"
-                      name="salePrice"
-                      value={formData.salePrice}
-                      onChange={handleChange}
-                      min="0"
-                      step="1"
-                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                  )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor="quantity"
+                        className="mb-2 block text-sm font-medium text-gray-300"
+                      >
+                        Cantidad *
+                      </label>
+                      <input
+                        type="number"
+                        id="quantity"
+                        name="quantity"
+                        value={formData.quantity}
+                        onChange={handleChange}
+                        min="1"
+                        className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="salePrice"
+                        className="mb-2 block text-sm font-medium text-gray-300"
+                      >
+                        Precio Unitario *
+                      </label>
+                      <input
+                        type="number"
+                        id="salePrice"
+                        name="salePrice"
+                        value={formData.salePrice}
+                        onChange={handleChange}
+                        min="0"
+                        step="1"
+                        className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <Button
-              type="submit"
-              disabled={!formData.productId}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-            >
-              ➕ Agregar al Pedido
-            </Button>
-          </form>
-        </div>
+              <Button
+                type="submit"
+                disabled={!formData.productId}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+              >
+                ➕ Agregar al Pedido
+              </Button>
+            </form>
+          </div>
 
-        {/* Lista de productos agregados */}
-        <div className="space-y-6">
-          <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-            <h2 className="mb-4 text-lg font-semibold text-white">
-              Productos en el Pedido ({saleItems.length})
-            </h2>
-            {saleItems.length === 0 ? (
-              <p className="py-8 text-center text-gray-500">
-                No hay productos agregados
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {saleItems.map(item => (
-                  <div
-                    key={item.id}
-                    className="rounded-lg border border-gray-700 bg-gray-900/50 p-4"
-                  >
-                    <div className="mb-2 flex items-start justify-between">
-                      <h3 className="font-semibold text-white">
-                        {item.productName}
-                      </h3>
-                      <button
-                        onClick={() => handleRemoveItem(item.id)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        ✕
-                      </button>
+          {/* Lista de productos agregados */}
+          <div className="space-y-6">
+            <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+              <h2 className="mb-4 text-lg font-semibold text-white">
+                Productos en el Pedido ({saleItems.length})
+              </h2>
+              {saleItems.length === 0 ? (
+                <p className="py-8 text-center text-gray-500">
+                  No hay productos agregados
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {saleItems.map(item => (
+                    <div
+                      key={item.id}
+                      className="rounded-lg border border-gray-700 bg-gray-900/50 p-4"
+                    >
+                      <div className="mb-2 flex items-start justify-between">
+                        <h3 className="font-semibold text-white">
+                          {item.productName}
+                        </h3>
+                        <button
+                          onClick={() => handleRemoveItem(item.id)}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="text-gray-400">Cantidad:</p>
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={e =>
+                              handleUpdateItem(
+                                item.id,
+                                "quantity",
+                                Number(e.target.value) || 1
+                              )
+                            }
+                            className="w-full rounded border border-gray-600 bg-gray-800 px-2 py-1 text-white focus:border-purple-500 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Precio unit:</p>
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.salePrice}
+                            onChange={e =>
+                              handleUpdateItem(
+                                item.id,
+                                "salePrice",
+                                Number(e.target.value) || 0
+                              )
+                            }
+                            className="w-full rounded border border-gray-600 bg-gray-800 px-2 py-1 text-white focus:border-purple-500 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Subtotal:</p>
+                          <p className="font-bold text-green-400">
+                            {formatCurrency(item.salePrice * item.quantity)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Ganancia:</p>
+                          <p className="font-bold text-blue-400">
+                            {formatCurrency(
+                              (item.salePrice - item.purchasePrice) *
+                                item.quantity
+                            )}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <p className="text-gray-400">Cantidad:</p>
-                        <input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={e =>
-                            handleUpdateItem(
-                              item.id,
-                              "quantity",
-                              Number(e.target.value) || 1
-                            )
-                          }
-                          className="w-full rounded border border-gray-600 bg-gray-800 px-2 py-1 text-white focus:border-purple-500 focus:outline-none"
-                        />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Totales del pedido */}
+            {saleItems.length > 0 && (
+              <div className="bg-linear-to-br rounded-xl border border-gray-700 from-purple-900/30 to-blue-900/30 p-6">
+                <h2 className="mb-4 text-lg font-semibold text-white">
+                  Resumen del Pedido
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-lg">
+                    <span className="font-semibold text-white">Subtotal:</span>
+                    <span className="font-bold text-green-400">
+                      {formatCurrency(totals.totalSale)}
+                    </span>
+                  </div>
+                  {totals.pointsDiscount > 0 && (
+                    <div className="flex justify-between text-lg">
+                      <span className="font-semibold text-amber-400">
+                        Descuento por puntos ({pointsToRedeem} pts):
+                      </span>
+                      <span className="font-bold text-amber-400">
+                        -{formatCurrency(totals.pointsDiscount)}
+                      </span>
+                    </div>
+                  )}
+                  {totals.discount > 0 && (
+                    <div className="flex justify-between text-lg">
+                      <span className="font-semibold text-orange-400">
+                        Descuento al cliente:
+                      </span>
+                      <span className="font-bold text-orange-400">
+                        -{formatCurrency(totals.discount)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t border-gray-600 pt-3 text-lg">
+                    <span className="font-semibold text-white">
+                      Total a pagar:
+                    </span>
+                    <span className="font-bold text-green-400">
+                      {formatCurrency(totals.finalTotal)}
+                    </span>
+                  </div>
+                  <div className="mt-4 border-t border-gray-600 pt-3">
+                    <p className="mb-2 text-sm font-medium text-gray-400">
+                      Análisis de Ganancias:
+                    </p>
+                    <div className="flex justify-between text-lg">
+                      <span className="font-semibold text-white">
+                        Ganancia bruta:
+                      </span>
+                      <span className="font-bold text-blue-400">
+                        {formatCurrency(totals.totalProfit)}
+                      </span>
+                    </div>
+                    {totals.totalAdditionalCosts > 0 && (
+                      <div className="flex justify-between text-sm text-gray-400">
+                        <span>- Costos adicionales:</span>
+                        <span className="text-red-400">
+                          -{formatCurrency(totals.totalAdditionalCosts)}
+                        </span>
                       </div>
-                      <div>
-                        <p className="text-gray-400">Precio unit:</p>
-                        <input
-                          type="number"
-                          min="0"
-                          value={item.salePrice}
-                          onChange={e =>
-                            handleUpdateItem(
-                              item.id,
-                              "salePrice",
-                              Number(e.target.value) || 0
-                            )
-                          }
-                          className="w-full rounded border border-gray-600 bg-gray-800 px-2 py-1 text-white focus:border-purple-500 focus:outline-none"
-                        />
+                    )}
+                    {totals.shippingCost > 0 && (
+                      <div className="flex justify-between text-sm text-gray-400">
+                        <span>- Costo de envío:</span>
+                        <span className="text-red-400">
+                          -{formatCurrency(totals.shippingCost)}
+                        </span>
                       </div>
-                      <div>
-                        <p className="text-gray-400">Subtotal:</p>
-                        <p className="font-bold text-green-400">
-                          {formatCurrency(item.salePrice * item.quantity)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Ganancia:</p>
-                        <p className="font-bold text-blue-400">
-                          {formatCurrency(
-                            (item.salePrice - item.purchasePrice) *
-                              item.quantity
-                          )}
-                        </p>
-                      </div>
+                    )}
+                    <div className="mt-2 flex justify-between border-t border-gray-700 pt-2 text-lg">
+                      <span className="font-bold text-white">
+                        Ganancia neta:
+                      </span>
+                      <span
+                        className={`font-bold ${totals.netProfit >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                      >
+                        {formatCurrency(totals.netProfit)}
+                      </span>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             )}
           </div>
-
-          {/* Totales del pedido */}
-          {saleItems.length > 0 && (
-            <div className="bg-linear-to-br rounded-xl border border-gray-700 from-purple-900/30 to-blue-900/30 p-6">
-              <h2 className="mb-4 text-lg font-semibold text-white">
-                Resumen del Pedido
-              </h2>
-              <div className="space-y-3">
-                <div className="flex justify-between text-lg">
-                  <span className="font-semibold text-white">Subtotal:</span>
-                  <span className="font-bold text-green-400">
-                    {formatCurrency(totals.totalSale)}
-                  </span>
-                </div>
-                {totals.pointsDiscount > 0 && (
-                  <div className="flex justify-between text-lg">
-                    <span className="font-semibold text-amber-400">
-                      Descuento por puntos ({pointsToRedeem} pts):
-                    </span>
-                    <span className="font-bold text-amber-400">
-                      -{formatCurrency(totals.pointsDiscount)}
-                    </span>
-                  </div>
-                )}
-                {totals.discount > 0 && (
-                  <div className="flex justify-between text-lg">
-                    <span className="font-semibold text-orange-400">
-                      Descuento al cliente:
-                    </span>
-                    <span className="font-bold text-orange-400">
-                      -{formatCurrency(totals.discount)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between border-t border-gray-600 pt-3 text-lg">
-                  <span className="font-semibold text-white">
-                    Total a pagar:
-                  </span>
-                  <span className="font-bold text-green-400">
-                    {formatCurrency(totals.finalTotal)}
-                  </span>
-                </div>
-                <div className="mt-4 border-t border-gray-600 pt-3">
-                  <p className="mb-2 text-sm font-medium text-gray-400">
-                    Análisis de Ganancias:
-                  </p>
-                  <div className="flex justify-between text-lg">
-                    <span className="font-semibold text-white">
-                      Ganancia bruta:
-                    </span>
-                    <span className="font-bold text-blue-400">
-                      {formatCurrency(totals.totalProfit)}
-                    </span>
-                  </div>
-                  {totals.totalAdditionalCosts > 0 && (
-                    <div className="flex justify-between text-sm text-gray-400">
-                      <span>- Costos adicionales:</span>
-                      <span className="text-red-400">
-                        -{formatCurrency(totals.totalAdditionalCosts)}
-                      </span>
-                    </div>
-                  )}
-                  {totals.shippingCost > 0 && (
-                    <div className="flex justify-between text-sm text-gray-400">
-                      <span>- Costo de envío:</span>
-                      <span className="text-red-400">
-                        -{formatCurrency(totals.shippingCost)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="mt-2 flex justify-between border-t border-gray-700 pt-2 text-lg">
-                    <span className="font-bold text-white">Ganancia neta:</span>
-                    <span
-                      className={`font-bold ${totals.netProfit >= 0 ? "text-emerald-400" : "text-red-400"}`}
-                    >
-                      {formatCurrency(totals.netProfit)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-      </div>
       )}
 
       {/* Información general del pedido */}
