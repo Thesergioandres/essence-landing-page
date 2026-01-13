@@ -193,6 +193,7 @@ export default function Sales() {
     totalQuantity: number;
     totalRevenue: number;
     totalProfit: number;
+    totalDistributorProfit: number;
     date: string;
     distributor: Sale["distributor"];
     branch: Sale["branch"];
@@ -234,6 +235,10 @@ export default function Sales() {
           (sum, s) => sum + (s.adminProfit || 0),
           0
         ),
+        totalDistributorProfit: groupSales.reduce(
+          (sum, s) => sum + (s.distributorProfit || 0),
+          0
+        ),
         date: firstSale.saleDate,
         distributor: firstSale.distributor,
         branch: firstSale.branch,
@@ -251,6 +256,7 @@ export default function Sales() {
         totalQuantity: sale.quantity,
         totalRevenue: sale.salePrice * sale.quantity,
         totalProfit: sale.adminProfit || 0,
+        totalDistributorProfit: sale.distributorProfit || 0,
         date: sale.saleDate,
         distributor: sale.distributor,
         branch: sale.branch,
@@ -586,6 +592,11 @@ export default function Sales() {
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Ganancia Admin
                     </th>
+                    {distributorsEnabled && (
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
+                        A Entregar
+                      </th>
+                    )}
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Estado
                     </th>
@@ -780,6 +791,21 @@ export default function Sales() {
                           <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-green-400">
                             ${group.totalProfit.toLocaleString()}
                           </td>
+                          {distributorsEnabled && (
+                            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
+                              {distributor ? (
+                                <span className="text-yellow-400">
+                                  $
+                                  {(
+                                    group.totalRevenue -
+                                    group.totalDistributorProfit
+                                  ).toLocaleString()}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">-</span>
+                              )}
+                            </td>
+                          )}
                           <td className="whitespace-nowrap px-6 py-4">
                             {group.paymentStatus === "pendiente" ? (
                               <span className="inline-flex rounded-full bg-yellow-500/20 px-3 py-1 text-xs font-semibold leading-5 text-yellow-300">
@@ -916,6 +942,13 @@ export default function Sales() {
                                 <td className="whitespace-nowrap px-6 py-3 text-sm text-green-400">
                                   ${sale.adminProfit.toLocaleString()}
                                 </td>
+                                {distributorsEnabled && (
+                                  <td className="whitespace-nowrap px-6 py-3 text-sm text-yellow-400">
+                                    {distributor
+                                      ? `$${(sale.salePrice * sale.quantity - (sale.distributorProfit || 0)).toLocaleString()}`
+                                      : "-"}
+                                  </td>
+                                )}
                                 <td className="whitespace-nowrap px-6 py-3">
                                   {/* Vacío */}
                                 </td>
