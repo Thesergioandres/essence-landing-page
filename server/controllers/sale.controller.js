@@ -933,8 +933,11 @@ export const registerSale = async (req, res) => {
       if (!branchUpdateResult) {
         // Si falla la actualización atómica, eliminar la venta y devolver error
         await Sale.findByIdAndDelete(sale._id);
+        console.error(
+          `[ATOMIC STOCK ERROR] Stock concurrente falló para producto ${productId}, branchStock ${branchStock._id}, cantidad requerida: ${quantity}, stock disponible al momento de validación: ${branchStock.quantity}`
+        );
         return res.status(400).json({
-          message: `Stock insuficiente en la sede (verificación concurrente falló)`,
+          message: `Stock insuficiente en la sede. Disponible: ${branchStock.quantity}`,
         });
       }
 
@@ -1023,7 +1026,7 @@ export const registerSale = async (req, res) => {
       res.status(201).json({
         message: "Venta registrada exitosamente",
         sale: populatedSale,
-        remainingStock: branchStock.quantity,
+        remainingStock: branchUpdateResult.quantity,
         commissionBonus: commissionBonus > 0 ? `+${commissionBonus}%` : null,
         credit: credit
           ? { _id: credit._id, remainingAmount: credit.remainingAmount }
@@ -1063,12 +1066,15 @@ export const registerSale = async (req, res) => {
       });
 
       // Verificar stock bajo
-      if (branchStock.quantity <= 10 && branchStock.quantity > 0) {
+      if (
+        branchUpdateResult.quantity <= 10 &&
+        branchUpdateResult.quantity > 0
+      ) {
         void NotificationService.notifyLowStock({
           businessId,
           productId: product._id,
           productName: product.name,
-          currentStock: branchStock.quantity,
+          currentStock: branchUpdateResult.quantity,
           threshold: 10,
           requestId: req.reqId,
         });
