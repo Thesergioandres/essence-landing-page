@@ -417,7 +417,8 @@ export default function AdminRegisterSale() {
         // Si hay sede seleccionada y NO es bodega, el stock se valida en el servidor
         // Solo validamos aquí el warehouseStock si no hay sede o si es bodega
         const selectedBranch = branches.find(b => b._id === formData.branchId);
-        const isWarehouseSale = !formData.branchId || selectedBranch?.isWarehouse;
+        const isWarehouseSale =
+          !formData.branchId || selectedBranch?.isWarehouse;
 
         if (isWarehouseSale) {
           const availableStock = product.warehouseStock || 0;
