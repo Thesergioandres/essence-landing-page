@@ -492,6 +492,7 @@ export const registerAdminSale = async (req, res) => {
       business: businessId,
       branch: branch?._id,
       distributor: null,
+      createdBy: req.user?.id || req.user?.userId, // Usuario que registró la venta
       product: productId,
       quantity,
       purchasePrice: product.purchasePrice,
@@ -1348,6 +1349,7 @@ export const getAllSales = async (req, res) => {
       distributorProfitPercentage: 1,
       notes: 1,
       distributor: 1,
+      createdBy: 1,
       product: 1,
       branch: 1,
       customer: 1,
@@ -1362,6 +1364,7 @@ export const getAllSales = async (req, res) => {
         Sale.find(filter, projection)
           .populate("product", "name image description")
           .populate("distributor", "name email phone address")
+          .populate("createdBy", "name email")
           .populate("branch", "name")
           .sort(sortOption)
           .skip(skip)
@@ -1404,6 +1407,8 @@ export const getAllSales = async (req, res) => {
       !distributorId;
 
     const tAggStart = Date.now();
+
+    // Agregación de ventas con lookup a créditos para determinar si las ganancias deben contar
     const salesAgg = await Sale.aggregate([
       {
         $match: {
@@ -1411,21 +1416,136 @@ export const getAllSales = async (req, res) => {
           business: new mongoose.Types.ObjectId(businessId),
         },
       },
+      // Lookup para obtener información de crédito asociado
+      {
+        $lookup: {
+          from: "credits",
+          localField: "_id",
+          foreignField: "sale",
+          as: "creditInfo",
+        },
+      },
+      {
+        $addFields: {
+          // Una venta a crédito tiene creditInfo con status diferente de "paid"
+          hasPendingCredit: {
+            $cond: {
+              if: { $gt: [{ $size: "$creditInfo" }, 0] },
+              then: {
+                $ne: [{ $arrayElemAt: ["$creditInfo.status", 0] }, "paid"],
+              },
+              else: false,
+            },
+          },
+          // Determinar si el crédito está pagado
+          creditIsPaid: {
+            $cond: {
+              if: { $gt: [{ $size: "$creditInfo" }, 0] },
+              then: {
+                $eq: [{ $arrayElemAt: ["$creditInfo.status", 0] }, "paid"],
+              },
+              else: true, // Si no hay crédito, consideramos las ganancias válidas
+            },
+          },
+        },
+      },
       {
         $group: {
           _id: null,
           totalSales: { $sum: 1 },
           totalQuantity: { $sum: "$quantity" },
-          totalDistributorProfit: { $sum: "$distributorProfit" },
-          totalAdminProfit: { $sum: "$adminProfit" },
+          // Ganancias de distribuidor: solo sumar si no hay crédito pendiente
+          totalDistributorProfit: {
+            $sum: {
+              $cond: ["$creditIsPaid", "$distributorProfit", 0],
+            },
+          },
+          // Ganancias de admin: solo sumar si no hay crédito pendiente
+          totalAdminProfit: {
+            $sum: {
+              $cond: ["$creditIsPaid", "$adminProfit", 0],
+            },
+          },
           totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
+          // Ingresos confirmados: solo ventas sin crédito pendiente
+          confirmedRevenue: {
+            $sum: {
+              $cond: [
+                "$creditIsPaid",
+                { $multiply: ["$salePrice", "$quantity"] },
+                0,
+              ],
+            },
+          },
           confirmedSales: {
             $sum: { $cond: [{ $eq: ["$paymentStatus", "confirmado"] }, 1, 0] },
           },
           pendingSales: {
             $sum: { $cond: [{ $eq: ["$paymentStatus", "pendiente"] }, 1, 0] },
           },
-          totalProfit: { $sum: "$totalProfit" },
+          // Ganancia total: solo sumar si no hay crédito pendiente
+          totalProfit: {
+            $sum: {
+              $cond: ["$creditIsPaid", "$totalProfit", 0],
+            },
+          },
+          // NUEVAS MÉTRICAS: Para separar ganancias realizadas vs pendientes de crédito
+          totalProfitFromCreditSales: {
+            $sum: {
+              $cond: [
+                { $gt: [{ $size: "$creditInfo" }, 0] },
+                "$totalProfit",
+                0,
+              ],
+            },
+          },
+          realizedProfitFromCredits: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $gt: [{ $size: "$creditInfo" }, 0] },
+                    "$creditIsPaid",
+                  ],
+                },
+                "$totalProfit",
+                0,
+              ],
+            },
+          },
+          pendingProfitFromCredits: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $gt: [{ $size: "$creditInfo" }, 0] },
+                    { $not: "$creditIsPaid" },
+                  ],
+                },
+                "$totalProfit",
+                0,
+              ],
+            },
+          },
+          creditSalesCount: {
+            $sum: {
+              $cond: [{ $gt: [{ $size: "$creditInfo" }, 0] }, 1, 0],
+            },
+          },
+          paidCreditSalesCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $gt: [{ $size: "$creditInfo" }, 0] },
+                    "$creditIsPaid",
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
         },
       },
     ]).option(aggOptions);
@@ -1473,9 +1593,16 @@ export const getAllSales = async (req, res) => {
       totalDistributorProfit: 0,
       totalAdminProfit: 0,
       totalRevenue: 0,
+      confirmedRevenue: 0,
       confirmedSales: 0,
       pendingSales: 0,
       totalProfit: 0,
+      // Nuevas métricas de créditos
+      creditSalesCount: 0,
+      paidCreditSalesCount: 0,
+      totalProfitFromCreditSales: 0,
+      realizedProfitFromCredits: 0,
+      pendingProfitFromCredits: 0,
       ...(salesStats || {}),
     };
 

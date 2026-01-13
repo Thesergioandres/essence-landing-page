@@ -602,10 +602,21 @@ export default function Sales() {
                       typeof group.distributor === "object"
                         ? group.distributor
                         : null;
+                    const createdByUser =
+                      typeof firstSale.createdBy === "object"
+                        ? firstSale.createdBy
+                        : null;
                     const branchName =
                       typeof group.branch === "object"
                         ? group.branch?.name
                         : undefined;
+
+                    // Obtener el nombre para mostrar: si hay distribuidor mostrar su nombre,
+                    // si no, mostrar el createdBy (quien registró la venta), o "Admin" como fallback
+                    const displayName =
+                      distributor?.name || createdByUser?.name || "Admin";
+                    const displayEmail =
+                      distributor?.email || createdByUser?.email || "";
 
                     // Determinar rango según comisión
                     let rankBadge = {
@@ -683,10 +694,10 @@ export default function Sales() {
                           {distributorsEnabled && (
                             <td className="whitespace-nowrap px-6 py-4">
                               <div className="text-sm font-medium text-gray-200">
-                                {distributor?.name || "Admin"}
+                                {displayName}
                               </div>
                               <div className="text-sm text-gray-400">
-                                {distributor?.email || ""}
+                                {displayEmail}
                               </div>
                             </td>
                           )}

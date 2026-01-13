@@ -103,6 +103,12 @@ const saleSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // Usuario que registró la venta (para ventas admin o cuando distributor es null)
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+    },
     // Estado de pago
     paymentStatus: {
       type: String,

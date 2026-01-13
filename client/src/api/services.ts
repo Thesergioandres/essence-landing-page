@@ -18,6 +18,7 @@ import type {
   Credit,
   CreditMetrics,
   CreditPayment,
+  CreditProfitInfo,
   DailySummary,
   DefectiveProduct,
   DistributorProfit,
@@ -2318,7 +2319,11 @@ export const creditService = {
 
   async getById(
     id: string
-  ): Promise<{ credit: Credit; payments: CreditPayment[] }> {
+  ): Promise<{
+    credit: Credit;
+    payments: CreditPayment[];
+    profitInfo?: CreditProfitInfo;
+  }> {
     const response = await api.get(`/credits/${id}`);
     return response.data;
   },

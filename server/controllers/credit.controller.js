@@ -234,7 +234,7 @@ export const getCredits = async (req, res) => {
 };
 
 /**
- * @desc    Obtener un crédito por ID
+ * @desc    Obtener un crédito por ID con información completa de ganancias
  * @route   GET /api/credits/:id
  * @access  Private/Admin
  */
@@ -252,12 +252,16 @@ export const getCreditById = async (req, res) => {
       .populate("createdBy", "name email")
       .populate({
         path: "sale",
-        populate: {
-          path: "distributor",
-          select: "name email phone",
-        },
+        populate: [
+          { path: "distributor", select: "name email phone" },
+          {
+            path: "product",
+            select: "name image purchasePrice suggestedPrice",
+          },
+          { path: "paymentMethod", select: "name code" },
+        ],
       })
-      .populate("items.product", "name");
+      .populate("items.product", "name image purchasePrice suggestedPrice");
 
     if (!credit) {
       return res.status(404).json({
@@ -271,10 +275,98 @@ export const getCreditById = async (req, res) => {
       .populate("registeredBy", "name")
       .sort({ createdAt: -1 });
 
+    // Calcular información de ganancias del crédito
+    let profitInfo = null;
+    if (credit.sale) {
+      const sale = credit.sale;
+      const totalSaleAmount = (sale.salePrice || 0) * (sale.quantity || 1);
+      const totalCost =
+        (sale.averageCostAtSale || sale.purchasePrice || 0) *
+        (sale.quantity || 1);
+
+      profitInfo = {
+        // Montos del crédito
+        originalAmount: credit.originalAmount,
+        paidAmount: credit.paidAmount,
+        remainingAmount: credit.remainingAmount,
+        isPaidCompletely: credit.status === "paid",
+
+        // Información de la venta asociada
+        saleId: sale._id,
+        productName:
+          sale.product?.name || credit.items?.[0]?.productName || "Producto",
+        quantity: sale.quantity,
+        unitPrice: sale.salePrice,
+        totalSaleAmount,
+
+        // Costos
+        unitCost: sale.averageCostAtSale || sale.purchasePrice,
+        totalCost,
+
+        // Ganancias
+        adminProfit: sale.adminProfit || 0,
+        distributorProfit: sale.distributorProfit || 0,
+        totalProfit: sale.totalProfit || 0,
+
+        // Porcentajes
+        distributorProfitPercentage: sale.distributorProfitPercentage || 0,
+        profitMarginPercentage:
+          totalSaleAmount > 0
+            ? (((sale.totalProfit || 0) / totalSaleAmount) * 100).toFixed(2)
+            : 0,
+
+        // Información del vendedor
+        isDistributorSale: !!sale.distributor,
+        distributorName: sale.distributor?.name || null,
+        distributorEmail: sale.distributor?.email || null,
+
+        // Lo que el distribuidor debe enviar al admin (si aplica)
+        amountDistributorOwesToAdmin: sale.distributor
+          ? totalSaleAmount - (sale.distributorProfit || 0)
+          : 0,
+
+        // Estado de ganancia realizada (solo cuando el crédito está pagado)
+        profitRealized: credit.status === "paid",
+        realizedProfit: credit.status === "paid" ? sale.totalProfit || 0 : 0,
+        pendingProfit: credit.status !== "paid" ? sale.totalProfit || 0 : 0,
+      };
+    } else if (credit.items && credit.items.length > 0) {
+      // Si no hay venta asociada pero hay items, calcular desde los items
+      const totalFromItems = credit.items.reduce(
+        (sum, item) => sum + (item.subtotal || 0),
+        0
+      );
+      const estimatedCost = credit.items.reduce((sum, item) => {
+        const product = item.product;
+        const purchasePrice =
+          typeof product === "object" ? product.purchasePrice || 0 : 0;
+        return sum + purchasePrice * (item.quantity || 1);
+      }, 0);
+
+      profitInfo = {
+        originalAmount: credit.originalAmount,
+        paidAmount: credit.paidAmount,
+        remainingAmount: credit.remainingAmount,
+        isPaidCompletely: credit.status === "paid",
+
+        totalSaleAmount: totalFromItems,
+        totalCost: estimatedCost,
+        totalProfit: totalFromItems - estimatedCost,
+
+        isDistributorSale: false,
+        profitRealized: credit.status === "paid",
+        realizedProfit:
+          credit.status === "paid" ? totalFromItems - estimatedCost : 0,
+        pendingProfit:
+          credit.status !== "paid" ? totalFromItems - estimatedCost : 0,
+      };
+    }
+
     res.json({
       success: true,
       credit,
       payments,
+      profitInfo,
       requestId,
     });
   } catch (error) {
@@ -785,6 +877,8 @@ export const getCreditMetrics = async (req, res) => {
       byStatusStats,
       topDebtors,
       recentPayments,
+      paidCreditsProfit,
+      pendingCreditsProfit,
     ] = await Promise.all([
       // Total de créditos
       Credit.aggregate([
@@ -873,6 +967,73 @@ export const getCreditMetrics = async (req, res) => {
         .populate("registeredBy", "name")
         .sort({ createdAt: -1 })
         .limit(10),
+
+      // Ganancias de créditos PAGADOS (solo estos se consideran ganancias realizadas)
+      Credit.aggregate([
+        {
+          $match: {
+            ...matchFilter,
+            status: "paid",
+          },
+        },
+        {
+          $lookup: {
+            from: "sales",
+            localField: "sale",
+            foreignField: "_id",
+            as: "saleData",
+          },
+        },
+        { $unwind: { path: "$saleData", preserveNullAndEmptyArrays: true } },
+        {
+          $group: {
+            _id: null,
+            count: { $sum: 1 },
+            totalAmount: { $sum: "$originalAmount" },
+            totalAdminProfit: {
+              $sum: { $ifNull: ["$saleData.adminProfit", 0] },
+            },
+            totalDistributorProfit: {
+              $sum: { $ifNull: ["$saleData.distributorProfit", 0] },
+            },
+            totalProfit: { $sum: { $ifNull: ["$saleData.totalProfit", 0] } },
+          },
+        },
+      ]),
+
+      // Ganancias PENDIENTES (créditos no pagados completamente)
+      Credit.aggregate([
+        {
+          $match: {
+            ...matchFilter,
+            status: { $in: ["pending", "partial", "overdue"] },
+          },
+        },
+        {
+          $lookup: {
+            from: "sales",
+            localField: "sale",
+            foreignField: "_id",
+            as: "saleData",
+          },
+        },
+        { $unwind: { path: "$saleData", preserveNullAndEmptyArrays: true } },
+        {
+          $group: {
+            _id: null,
+            count: { $sum: 1 },
+            totalAmount: { $sum: "$originalAmount" },
+            remainingAmount: { $sum: "$remainingAmount" },
+            totalAdminProfit: {
+              $sum: { $ifNull: ["$saleData.adminProfit", 0] },
+            },
+            totalDistributorProfit: {
+              $sum: { $ifNull: ["$saleData.distributorProfit", 0] },
+            },
+            totalProfit: { $sum: { $ifNull: ["$saleData.totalProfit", 0] } },
+          },
+        },
+      ]),
     ]);
 
     const metrics = {
@@ -897,6 +1058,22 @@ export const getCreditMetrics = async (req, res) => {
               100
             ).toFixed(2)
           : 0,
+      // NUEVO: Ganancias de créditos
+      paidCreditsProfit: {
+        count: paidCreditsProfit[0]?.count || 0,
+        totalAmount: paidCreditsProfit[0]?.totalAmount || 0,
+        adminProfit: paidCreditsProfit[0]?.totalAdminProfit || 0,
+        distributorProfit: paidCreditsProfit[0]?.totalDistributorProfit || 0,
+        totalProfit: paidCreditsProfit[0]?.totalProfit || 0,
+      },
+      pendingCreditsProfit: {
+        count: pendingCreditsProfit[0]?.count || 0,
+        totalAmount: pendingCreditsProfit[0]?.totalAmount || 0,
+        remainingAmount: pendingCreditsProfit[0]?.remainingAmount || 0,
+        adminProfit: pendingCreditsProfit[0]?.totalAdminProfit || 0,
+        distributorProfit: pendingCreditsProfit[0]?.totalDistributorProfit || 0,
+        totalProfit: pendingCreditsProfit[0]?.totalProfit || 0,
+      },
     };
 
     res.json({

@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { creditService } from "../api/services";
-import type { Credit, CreditPayment, Customer, Sale, User } from "../types";
+import type {
+  Credit,
+  CreditPayment,
+  CreditProfitInfo,
+  Customer,
+  Sale,
+  User,
+} from "../types";
 
 export default function CreditDetail() {
   const { id } = useParams<{ id: string }>();
   const [credit, setCredit] = useState<Credit | null>(null);
   const [payments, setPayments] = useState<CreditPayment[]>([]);
+  const [profitInfo, setProfitInfo] = useState<CreditProfitInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -22,6 +30,7 @@ export default function CreditDetail() {
       const response = await creditService.getById(id);
       setCredit(response.credit);
       setPayments(response.payments || []);
+      setProfitInfo(response.profitInfo || null);
     } catch (err) {
       setError("No se pudo cargar el detalle del crédito");
       console.error(err);
@@ -283,6 +292,185 @@ export default function CreditDetail() {
           </div>
         )}
       </div>
+
+      {/* Profit Information Card */}
+      {profitInfo && (
+        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 text-green-600"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Información Financiera
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* Información del producto */}
+            <div className="rounded-lg bg-gray-50 p-4">
+              <h3 className="mb-2 text-xs font-medium uppercase text-gray-500">
+                Venta
+              </h3>
+              <p className="text-sm font-medium text-gray-900">
+                {profitInfo.productName || "Producto"}
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                {profitInfo.quantity} x {formatCurrency(profitInfo.unitPrice)}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-gray-900">
+                Total: {formatCurrency(profitInfo.totalSaleAmount)}
+              </p>
+            </div>
+
+            {/* Costos */}
+            <div className="rounded-lg bg-red-50 p-4">
+              <h3 className="mb-2 text-xs font-medium uppercase text-red-600">
+                Costos
+              </h3>
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Costo unitario:</span>
+                  <span className="text-red-600">
+                    {formatCurrency(profitInfo.unitCost)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm font-semibold">
+                  <span className="text-gray-600">Costo total:</span>
+                  <span className="text-red-700">
+                    {formatCurrency(profitInfo.totalCost)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Ganancias */}
+            <div className="rounded-lg bg-green-50 p-4">
+              <h3 className="mb-2 text-xs font-medium uppercase text-green-600">
+                Ganancias
+              </h3>
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Ganancia Admin:</span>
+                  <span className="font-semibold text-green-700">
+                    {formatCurrency(profitInfo.adminProfit)}
+                  </span>
+                </div>
+                {profitInfo.isDistributorSale && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Ganancia Distrib.:</span>
+                    <span className="text-indigo-600">
+                      {formatCurrency(profitInfo.distributorProfit)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-green-200 pt-1 text-sm font-bold">
+                  <span className="text-gray-700">Ganancia Total:</span>
+                  <span className="text-green-800">
+                    {formatCurrency(profitInfo.totalProfit)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Margen */}
+            <div className="rounded-lg bg-blue-50 p-4">
+              <h3 className="mb-2 text-xs font-medium uppercase text-blue-600">
+                Rentabilidad
+              </h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Margen:</span>
+                  <span className="text-lg font-bold text-blue-700">
+                    {profitInfo.profitMarginPercentage.toFixed(1)}%
+                  </span>
+                </div>
+                {profitInfo.isDistributorSale && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Comisión Distrib.:</span>
+                    <span className="text-indigo-600">
+                      {profitInfo.distributorProfitPercentage}%
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Estado de la ganancia */}
+          <div className="mt-4 border-t border-gray-200 pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                {profitInfo.profitRealized ? (
+                  <>
+                    <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                    <span className="text-sm font-medium text-green-700">
+                      Ganancia Realizada
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
+                    <span className="text-sm font-medium text-yellow-700">
+                      Ganancia Pendiente (crédito sin pagar completamente)
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {profitInfo.isDistributorSale &&
+                profitInfo.amountDistributorOwesToAdmin !== undefined &&
+                profitInfo.amountDistributorOwesToAdmin > 0 && (
+                  <div className="rounded-lg bg-indigo-100 px-4 py-2">
+                    <span className="text-sm text-indigo-800">
+                      El distribuidor debe entregar:{" "}
+                      <strong>
+                        {formatCurrency(
+                          profitInfo.amountDistributorOwesToAdmin
+                        )}
+                      </strong>
+                    </span>
+                  </div>
+                )}
+            </div>
+
+            {/* Barra de progreso de ganancia */}
+            {!profitInfo.profitRealized && profitInfo.totalProfit > 0 && (
+              <div className="mt-3">
+                <div className="mb-1 flex justify-between text-xs text-gray-500">
+                  <span>Progreso de pago</span>
+                  <span>
+                    {(
+                      (profitInfo.paidAmount / profitInfo.originalAmount) *
+                      100
+                    ).toFixed(0)}
+                    %
+                  </span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-gray-200">
+                  <div
+                    className="h-2 rounded-full bg-gradient-to-r from-yellow-400 to-green-500 transition-all"
+                    style={{
+                      width: `${(profitInfo.paidAmount / profitInfo.originalAmount) * 100}%`,
+                    }}
+                  ></div>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Cuando el crédito esté completamente pagado, la ganancia de{" "}
+                  {formatCurrency(profitInfo.totalProfit)} se considerará
+                  realizada.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Payment History */}
       <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">

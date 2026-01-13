@@ -290,6 +290,7 @@ export interface Sale {
   saleId: string;
   saleGroupId?: string; // ⭐ Campo para agrupar ventas del mismo carrito
   distributor: User | string;
+  createdBy?: User | string; // Usuario que registró la venta (para ventas admin)
   product: Product | string;
   branch?: Branch | string;
   customer?: Customer | string;
@@ -505,6 +506,16 @@ export interface SaleStats {
   totalDistributorProfit: number;
   totalAdminProfit: number;
   totalRevenue: number;
+  confirmedRevenue?: number; // Ingresos solo de ventas sin crédito pendiente
+  confirmedSales?: number;
+  pendingSales?: number;
+  totalProfit?: number;
+  // Métricas de créditos
+  creditSalesCount?: number;
+  paidCreditSalesCount?: number;
+  totalProfitFromCreditSales?: number;
+  realizedProfitFromCredits?: number;
+  pendingProfitFromCredits?: number;
 }
 
 export interface StockAlert {
@@ -1083,7 +1094,7 @@ export interface Credit {
   _id: string;
   customer: Customer | string;
   business: string;
-  sale?: string;
+  sale?: Sale | string;
   branch?: Branch | string;
   createdBy: User | string;
   originalAmount: number;
@@ -1098,6 +1109,41 @@ export interface Credit {
   statusHistory: CreditStatusHistory[];
   createdAt?: string;
   updatedAt?: string;
+  // Información de ganancias (viene cuando se carga el detalle)
+  profitInfo?: CreditProfitInfo;
+}
+
+// Información de ganancias del crédito
+export interface CreditProfitInfo {
+  // Información básica del crédito
+  originalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  isPaidCompletely: boolean;
+  // Información de la venta asociada
+  saleId?: string;
+  productName?: string;
+  quantity: number;
+  unitPrice: number;
+  totalSaleAmount: number;
+  // Costos
+  unitCost: number;
+  totalCost: number;
+  // Ganancias
+  adminProfit: number;
+  distributorProfit: number;
+  totalProfit: number;
+  distributorProfitPercentage: number;
+  profitMarginPercentage: number;
+  // Información del distribuidor (si aplica)
+  isDistributorSale: boolean;
+  distributorName?: string;
+  distributorEmail?: string;
+  amountDistributorOwesToAdmin?: number;
+  // Estado de realización de la ganancia
+  profitRealized: boolean;
+  realizedProfit: number;
+  pendingProfit: number;
 }
 
 export interface CreditPayment {
@@ -1139,6 +1185,22 @@ export interface CreditMetrics {
   }>;
   recentPayments: CreditPayment[];
   recoveryRate: number | string;
+  // Nuevas métricas de ganancias
+  paidCreditsProfit?: {
+    count: number;
+    totalAmount: number;
+    adminProfit: number;
+    distributorProfit: number;
+    totalProfit: number;
+  };
+  pendingCreditsProfit?: {
+    count: number;
+    totalAmount: number;
+    remainingAmount: number; // Lo que falta por pagar
+    adminProfit: number;
+    distributorProfit: number;
+    totalProfit: number;
+  };
 }
 
 // ==================== NOTIFICATION TYPES ====================
