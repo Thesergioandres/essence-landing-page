@@ -115,6 +115,28 @@ interface ComboItemForm {
 }
 
 export default function Promotions() {
+  // Módulo en desarrollo - mostrar mensaje
+  const isUnderDevelopment = true;
+
+  if (isUnderDevelopment) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center">
+        <div className="rounded-xl border border-purple-700/50 bg-purple-900/30 p-8 text-center">
+          <div className="mb-4 text-6xl">🚧</div>
+          <h1 className="mb-2 text-2xl font-bold text-purple-300">
+            Módulo en Desarrollo
+          </h1>
+          <p className="text-gray-400">
+            El módulo de Promociones está siendo mejorado.
+          </p>
+          <p className="mt-2 text-sm text-gray-500">
+            Estará disponible próximamente con nuevas funcionalidades.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [stats, setStats] = useState<PromotionStats | null>(null);
   const [metrics, setMetrics] = useState<PromotionMetrics | null>(null);
@@ -1110,13 +1132,22 @@ export default function Promotions() {
                           type="number"
                           min="0"
                           step="100"
-                          value={formData.promotionPrice}
+                          value={
+                            formData.promotionPrice === 0
+                              ? ""
+                              : formData.promotionPrice
+                          }
                           onChange={e =>
                             setFormData({
                               ...formData,
                               promotionPrice: parseFloat(e.target.value) || 0,
                             })
                           }
+                          onBlur={e => {
+                            if (e.target.value === "") {
+                              setFormData({ ...formData, promotionPrice: 0 });
+                            }
+                          }}
                           className="w-full rounded-lg border border-purple-700/50 bg-purple-900/30 px-4 py-2 text-xl font-bold text-purple-300 focus:border-purple-500 focus:outline-none"
                           required
                         />

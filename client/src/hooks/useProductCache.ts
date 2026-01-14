@@ -10,8 +10,11 @@ interface Product {
   name: string;
   category?: { _id: string; name: string } | string;
   totalStock?: number;
+  warehouseStock?: number;
   purchasePrice?: number;
+  averageCost?: number;
   suggestedPrice?: number;
+  clientPrice?: number;
   image?: { url: string };
 }
 

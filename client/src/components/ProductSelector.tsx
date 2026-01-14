@@ -24,6 +24,7 @@ interface Product {
   totalStock?: number;
   warehouseStock?: number;
   purchasePrice?: number;
+  averageCost?: number;
   suggestedPrice?: number;
   clientPrice?: number;
   image?: { url: string } | null;
@@ -448,9 +449,14 @@ export default function ProductSelector({
                         )}
                       </div>
                     </div>
-                    {product.suggestedPrice && (
+                    {(product.averageCost || product.purchasePrice) && (
                       <span className="text-sm text-gray-400">
-                        ${product.suggestedPrice.toLocaleString()}
+                        $
+                        {(
+                          product.averageCost ||
+                          product.purchasePrice ||
+                          0
+                        ).toLocaleString()}
                       </span>
                     )}
                   </button>

@@ -107,10 +107,34 @@ export const getMonthlyProfit = async (req, res) => {
           adminProfit: { $sum: "$adminProfit" },
           distributorProfit: { $sum: "$distributorProfit" },
           totalProfit: { $sum: "$totalProfit" },
+          // Ganancia neta (descontando costos adicionales, envío y descuentos)
+          netProfit: { $sum: { $ifNull: ["$netProfit", "$totalProfit"] } },
+          // Costos adicionales totales
+          totalAdditionalCosts: {
+            $sum: { $ifNull: ["$totalAdditionalCosts", 0] },
+          },
+          totalShippingCosts: { $sum: { $ifNull: ["$shippingCost", 0] } },
+          totalDiscounts: { $sum: { $ifNull: ["$discount", 0] } },
           revenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
           cost: { $sum: { $multiply: ["$purchasePrice", "$quantity"] } },
+          // Contar ventas únicas por saleGroupId
+          saleGroupIds: { $addToSet: "$saleGroupId" },
           salesCount: { $sum: 1 },
           unitsCount: { $sum: "$quantity" },
+        },
+      },
+      {
+        $addFields: {
+          // Número de órdenes únicas (grupos de ventas)
+          ordersCount: {
+            $size: {
+              $filter: {
+                input: "$saleGroupIds",
+                as: "groupId",
+                cond: { $ne: ["$$groupId", null] },
+              },
+            },
+          },
         },
       },
     ];
@@ -156,9 +180,18 @@ export const getMonthlyProfit = async (req, res) => {
         adminProfit: m.adminProfit || 0,
         distributorProfit: m.distributorProfit || 0,
         totalProfit: (m.totalProfit || 0) + (s.totalProfit || 0),
+        // Ganancia neta (después de costos adicionales, envío y descuentos)
+        netProfit: (m.netProfit || 0) + (s.totalProfit || 0),
+        // Costos adicionales agregados
+        totalAdditionalCosts: m.totalAdditionalCosts || 0,
+        totalShippingCosts: m.totalShippingCosts || 0,
+        totalDiscounts: m.totalDiscounts || 0,
         revenue: (m.revenue || 0) + (s.revenue || 0),
         cost: (m.cost || 0) + (s.cost || 0),
+        // salesCount = número de documentos de venta (productos vendidos)
         salesCount: (m.salesCount || 0) + (s.salesCount || 0),
+        // ordersCount = número de órdenes únicas (grupos de productos)
+        ordersCount: (m.ordersCount || m.salesCount || 0) + (s.salesCount || 0),
         unitsCount: (m.unitsCount || 0) + (s.unitsCount || 0),
       };
     };
@@ -166,13 +199,13 @@ export const getMonthlyProfit = async (req, res) => {
     const currentMonth = normalize(currentSaleAgg[0], currentSpecialAgg[0]);
     const lastMonth = normalize(lastSaleAgg[0], lastSpecialAgg[0]);
 
-    // Calcular porcentaje de crecimiento
+    // Calcular porcentaje de crecimiento usando ganancia NETA
     const growthPercentage =
-      lastMonth.totalProfit > 0
-        ? ((currentMonth.totalProfit - lastMonth.totalProfit) /
-            lastMonth.totalProfit) *
+      lastMonth.netProfit > 0
+        ? ((currentMonth.netProfit - lastMonth.netProfit) /
+            lastMonth.netProfit) *
           100
-        : currentMonth.totalProfit > 0
+        : currentMonth.netProfit > 0
         ? 100
         : 0;
 
@@ -180,9 +213,10 @@ export const getMonthlyProfit = async (req, res) => {
       currentMonth,
       lastMonth,
       growthPercentage: parseFloat(growthPercentage.toFixed(2)),
+      // Ticket promedio por orden (no por documento de venta)
       averageTicket:
-        currentMonth.salesCount > 0
-          ? currentMonth.revenue / currentMonth.salesCount
+        currentMonth.ordersCount > 0
+          ? currentMonth.revenue / currentMonth.ordersCount
           : 0,
       // Debug info
       _debug: {
@@ -193,7 +227,9 @@ export const getMonthlyProfit = async (req, res) => {
         startOfLastMonth: startOfLastMonth.toISOString(),
         endOfLastMonth: endOfLastMonth.toISOString(),
         currentMonthSalesCount: currentMonth.salesCount,
+        currentMonthOrdersCount: currentMonth.ordersCount,
         lastMonthSalesCount: lastMonth.salesCount,
+        lastMonthOrdersCount: lastMonth.ordersCount,
       },
     });
   } catch (error) {
@@ -259,6 +295,26 @@ export const getProfitByProduct = async (req, res) => {
           totalAdminProfit: { $sum: "$adminProfit" },
           totalDistributorProfit: { $sum: "$distributorProfit" },
           totalProfit: { $sum: "$totalProfit" },
+          // Ganancia neta después de costos adicionales
+          totalNetProfit: { $sum: { $ifNull: ["$netProfit", "$totalProfit"] } },
+          totalAdditionalCosts: {
+            $sum: { $ifNull: ["$totalAdditionalCosts", 0] },
+          },
+          // Contar órdenes únicas
+          saleGroupIds: { $addToSet: "$saleGroupId" },
+        },
+      },
+      {
+        $addFields: {
+          totalOrders: {
+            $size: {
+              $filter: {
+                input: "$saleGroupIds",
+                as: "groupId",
+                cond: { $ne: ["$$groupId", null] },
+              },
+            },
+          },
         },
       },
     ]);

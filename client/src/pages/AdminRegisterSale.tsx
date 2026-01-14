@@ -25,7 +25,7 @@ interface SaleItem {
   productName: string;
   quantity: number;
   salePrice: number;
-  purchasePrice: number;
+  costBasis: number; // Costo promedio ponderado (averageCost) o purchasePrice como fallback
   clientPrice: number;
 }
 
@@ -385,8 +385,10 @@ export default function AdminRegisterSale() {
       setError("El precio de venta debe ser mayor a 0");
       return;
     }
-    if (price < selectedProduct.purchasePrice) {
-      setError("El precio de venta no puede ser menor al precio de compra");
+    const costBasis =
+      selectedProduct.averageCost || selectedProduct.purchasePrice;
+    if (price < costBasis) {
+      setError("El precio de venta no puede ser menor al costo promedio");
       return;
     }
 
@@ -396,7 +398,7 @@ export default function AdminRegisterSale() {
       productName: selectedProduct.name,
       quantity: qty,
       salePrice: price,
-      purchasePrice: selectedProduct.purchasePrice,
+      costBasis: selectedProduct.averageCost || selectedProduct.purchasePrice,
       clientPrice: selectedProduct.clientPrice || 0,
     };
 
@@ -529,6 +531,9 @@ export default function AdminRegisterSale() {
 
       // Registrar cada venta con el mismo saleGroupId usando el endpoint de ADMIN
       for (const item of saleItems) {
+        // Solo el primer item lleva los costos adicionales y descuento del pedido completo
+        const isFirstItem = item === saleItems[0];
+
         await saleService.registerAdmin({
           productId: item.productId,
           quantity: item.quantity,
@@ -539,15 +544,24 @@ export default function AdminRegisterSale() {
           customerId: formData.customerId || undefined,
           paymentMethodId: formData.paymentMethodId || undefined,
           deliveryMethodId: formData.deliveryMethodId || undefined,
-          shippingCost: item === saleItems[0] ? formData.shippingCost : 0, // Solo el primer item lleva costo de envío
+          shippingCost: isFirstItem ? formData.shippingCost : 0, // Solo el primer item lleva costo de envío
           deliveryAddress: formData.deliveryAddress || undefined,
           paymentType: isCredit ? "credit" : "cash",
           creditDueDate: isCredit ? formData.creditDueDate : undefined,
           initialPayment:
-            isCredit && item === saleItems[0] && formData.initialPayment > 0
+            isCredit && isFirstItem && formData.initialPayment > 0
               ? formData.initialPayment
               : undefined,
           saleGroupId, // ⭐ Asignar el mismo ID de grupo a todas las ventas del carrito
+          // ⭐ Costos adicionales y descuento solo en el primer item
+          additionalCosts: isFirstItem
+            ? additionalCosts.map(c => ({
+                type: c.type,
+                description: c.description,
+                amount: c.amount,
+              }))
+            : [],
+          discount: isFirstItem ? formData.discount : 0,
         });
       }
 
@@ -607,8 +621,7 @@ export default function AdminRegisterSale() {
       0
     );
     const totalProfit = saleItems.reduce(
-      (sum, item) =>
-        sum + (item.salePrice - item.purchasePrice) * item.quantity,
+      (sum, item) => sum + (item.salePrice - item.costBasis) * item.quantity,
       0
     );
     // Calcular descuento de puntos (cada punto = $0.01 por defecto)
@@ -850,9 +863,12 @@ export default function AdminRegisterSale() {
                       </h3>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <p className="text-gray-400">Precio de compra:</p>
+                          <p className="text-gray-400">Costo Promedio:</p>
                           <p className="font-bold text-white">
-                            {formatCurrency(selectedProduct.purchasePrice)}
+                            {formatCurrency(
+                              selectedProduct.averageCost ||
+                                selectedProduct.purchasePrice
+                            )}
                           </p>
                         </div>
                         <div>
@@ -984,8 +1000,7 @@ export default function AdminRegisterSale() {
                           <p className="text-gray-400">Ganancia:</p>
                           <p className="font-bold text-blue-400">
                             {formatCurrency(
-                              (item.salePrice - item.purchasePrice) *
-                                item.quantity
+                              (item.salePrice - item.costBasis) * item.quantity
                             )}
                           </p>
                         </div>
@@ -1292,14 +1307,19 @@ export default function AdminRegisterSale() {
                       />
                       <input
                         type="number"
-                        value={cost.amount}
+                        value={cost.amount === 0 ? "" : cost.amount}
                         onChange={e =>
                           handleUpdateCost(
                             cost.id,
                             "amount",
-                            Number(e.target.value) || 0
+                            e.target.value === "" ? 0 : Number(e.target.value)
                           )
                         }
+                        onBlur={e => {
+                          if (e.target.value === "") {
+                            handleUpdateCost(cost.id, "amount", 0);
+                          }
+                        }}
                         placeholder="Costo"
                         min={0}
                         className="w-24 rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-white"

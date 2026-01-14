@@ -1266,7 +1266,14 @@ export const getDistributorSales = async (req, res) => {
 
     const { startDate, endDate, productId } = req.query;
 
-    const filter = { distributor: distributorId, business: businessId };
+    // Convertir a ObjectId para asegurar coincidencia en agregaciones
+    const distributorObjectId = new mongoose.Types.ObjectId(distributorId);
+    const businessObjectId = new mongoose.Types.ObjectId(businessId);
+
+    const filter = {
+      distributor: distributorObjectId,
+      business: businessObjectId,
+    };
     Object.assign(filter, branchFilter);
 
     if (startDate || endDate) {
@@ -1275,7 +1282,7 @@ export const getDistributorSales = async (req, res) => {
       if (endDate) filter.saleDate.$lte = new Date(endDate);
     }
 
-    if (productId) filter.product = productId;
+    if (productId) filter.product = new mongoose.Types.ObjectId(productId);
 
     // Totales vía agregación (evita cargar todas las ventas en memoria)
     const statsAgg = await Sale.aggregate([
@@ -1417,6 +1424,13 @@ export const getAllSales = async (req, res) => {
       adminProfit: 1,
       distributorProfit: 1,
       totalProfit: 1,
+      // Campos de costos adicionales y ganancia neta
+      netProfit: 1,
+      additionalCosts: 1,
+      totalAdditionalCosts: 1,
+      shippingCost: 1,
+      discount: 1,
+      actualPayment: 1,
       distributorProfitPercentage: 1,
       notes: 1,
       distributor: 1,

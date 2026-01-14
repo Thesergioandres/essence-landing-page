@@ -194,6 +194,7 @@ export default function Sales() {
     totalRevenue: number;
     totalProfit: number;
     totalDistributorProfit: number;
+    totalAdditionalCosts?: number;
     date: string;
     distributor: Sale["distributor"];
     branch: Sale["branch"];
@@ -231,12 +232,18 @@ export default function Sales() {
           (sum, s) => sum + s.salePrice * s.quantity,
           0
         ),
+        // Usar netProfit si está disponible, sino adminProfit
         totalProfit: groupSales.reduce(
-          (sum, s) => sum + (s.adminProfit || 0),
+          (sum, s) => sum + (s.netProfit ?? s.adminProfit ?? 0),
           0
         ),
         totalDistributorProfit: groupSales.reduce(
           (sum, s) => sum + (s.distributorProfit || 0),
+          0
+        ),
+        // Total de costos adicionales del grupo
+        totalAdditionalCosts: groupSales.reduce(
+          (sum, s) => sum + (s.totalAdditionalCosts || 0),
           0
         ),
         date: firstSale.saleDate,
@@ -255,8 +262,10 @@ export default function Sales() {
         sales: [sale],
         totalQuantity: sale.quantity,
         totalRevenue: sale.salePrice * sale.quantity,
-        totalProfit: sale.adminProfit || 0,
+        // Usar netProfit si está disponible, sino adminProfit
+        totalProfit: sale.netProfit ?? sale.adminProfit ?? 0,
         totalDistributorProfit: sale.distributorProfit || 0,
+        totalAdditionalCosts: sale.totalAdditionalCosts || 0,
         date: sale.saleDate,
         distributor: sale.distributor,
         branch: sale.branch,
@@ -315,8 +324,15 @@ export default function Sales() {
     totalRevenue:
       statsData.totalRevenue ||
       sales.reduce((sum, s) => sum + s.salePrice * s.quantity, 0),
+    // Usar netProfit si está disponible, sino adminProfit
     totalProfit:
-      statsData.totalProfit || sales.reduce((sum, s) => sum + s.adminProfit, 0),
+      statsData.totalProfit ||
+      sales.reduce((sum, s) => sum + (s.netProfit ?? s.adminProfit ?? 0), 0),
+    // Total de costos adicionales
+    totalAdditionalCosts: sales.reduce(
+      (sum, s) => sum + (s.totalAdditionalCosts || 0),
+      0
+    ),
   };
 
   const handlePageChange = (newPage: number) => {
@@ -670,26 +686,22 @@ export default function Sales() {
                         {/* Fila principal del grupo o venta individual */}
                         <tr
                           key={group.id}
-                          className={`hover:bg-gray-900/30 ${group.isGroup ? "bg-purple-900/10 font-semibold" : "cursor-pointer"}`}
+                          className={`cursor-pointer hover:bg-gray-900/30 ${group.isGroup ? "bg-purple-900/10 font-semibold" : ""}`}
                           onClick={e => {
                             if ((e.target as HTMLElement).closest("button"))
                               return;
-                            if (!group.isGroup) {
+                            if (group.isGroup) {
+                              toggleGroup(group.id);
+                            } else {
                               setSelectedSale(firstSale);
                             }
                           }}
                         >
                           <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-200">
                             {group.isGroup && (
-                              <button
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  toggleGroup(group.id);
-                                }}
-                                className="mr-2 text-purple-400 hover:text-purple-300"
-                              >
+                              <span className="mr-2 text-purple-400">
                                 {isExpanded ? "▼" : "▶"}
-                              </button>
+                              </span>
                             )}
                             {new Date(group.date).toLocaleDateString("es-ES", {
                               year: "numeric",
@@ -941,7 +953,12 @@ export default function Sales() {
                                   ).toLocaleString()}
                                 </td>
                                 <td className="whitespace-nowrap px-6 py-3 text-sm text-green-400">
-                                  ${sale.adminProfit.toLocaleString()}
+                                  $
+                                  {(
+                                    sale.netProfit ??
+                                    sale.adminProfit ??
+                                    0
+                                  ).toLocaleString()}
                                 </td>
                                 {distributorsEnabled && (
                                   <td className="whitespace-nowrap px-6 py-3 text-sm text-yellow-400">

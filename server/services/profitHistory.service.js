@@ -107,7 +107,18 @@ export const recordSaleProfit = async (sale) => {
     }
 
     // Registrar ganancia del admin
-    if (saleDoc.adminProfit > 0) {
+    // Usamos netProfit si está disponible para considerar costos adicionales
+    // Si hay distribuidor, los costos adicionales se restan de adminProfit
+    // Si es venta directa (sin distribuidor), los costos se restan del totalProfit
+    const extraCosts =
+      (saleDoc.totalAdditionalCosts || 0) +
+      (saleDoc.shippingCost || 0) +
+      (saleDoc.discount || 0);
+    const adminNetProfit = saleDoc.distributor
+      ? (saleDoc.adminProfit || 0) - extraCosts // Costos se restan de ganancia admin
+      : (saleDoc.totalProfit || 0) - extraCosts; // Venta directa: restar del total
+
+    if (adminNetProfit > 0) {
       // Obtener ID del admin
       const User = mongoose.model("User");
       const admin = await User.findOne({
@@ -118,13 +129,22 @@ export const recordSaleProfit = async (sale) => {
         await recordProfitHistory({
           userId: admin._id,
           type: "venta_normal",
-          amount: saleDoc.adminProfit,
+          amount: adminNetProfit,
           description: saleDoc.distributor
             ? `Ganancia de venta ${saleDoc.saleId} (distribuidor)`
             : `Venta directa ${saleDoc.saleId}`,
           saleId: saleDoc._id,
           productId: saleDoc.product,
-          metadata,
+          metadata: {
+            ...metadata,
+            // Agregar info de costos adicionales para transparencia
+            additionalCosts: saleDoc.totalAdditionalCosts || 0,
+            shippingCost: saleDoc.shippingCost || 0,
+            discount: saleDoc.discount || 0,
+            grossProfit: saleDoc.distributor
+              ? saleDoc.adminProfit
+              : saleDoc.totalProfit,
+          },
           date: saleDoc.saleDate,
           businessId,
         });

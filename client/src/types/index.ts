@@ -304,6 +304,18 @@ export interface Sale {
   distributorProfit: number;
   adminProfit: number;
   totalProfit: number;
+  // Ganancia neta (después de costos adicionales, envío y descuentos)
+  netProfit?: number;
+  // Costos adicionales por venta
+  additionalCosts?: Array<{
+    type: string;
+    description?: string;
+    amount: number;
+  }>;
+  totalAdditionalCosts?: number;
+  shippingCost?: number;
+  discount?: number;
+  actualPayment?: number;
   distributorProfitPercentage?: number;
   notes?: string;
   saleDate: string;

@@ -189,11 +189,20 @@ export default function SaleDetailModal({
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Ganancia Admin</p>
+                  <p className="text-sm text-gray-400">Ganancia Bruta</p>
                   <p className="text-xl font-bold text-green-600">
-                    ${sale.adminProfit.toLocaleString()}
+                    ${(sale.adminProfit || 0).toLocaleString()}
                   </p>
                 </div>
+                {sale.netProfit !== undefined &&
+                  sale.netProfit !== sale.adminProfit && (
+                    <div>
+                      <p className="text-sm text-gray-400">Ganancia Neta</p>
+                      <p className="text-xl font-bold text-emerald-400">
+                        ${(sale.netProfit || 0).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
                 {distributor && sale.distributorProfit > 0 && (
                   <div>
                     <p className="text-sm text-gray-400">
@@ -206,6 +215,64 @@ export default function SaleDetailModal({
                 )}
               </div>
             </div>
+
+            {/* Costos Adicionales y Descuentos */}
+            {((sale.additionalCosts && sale.additionalCosts.length > 0) ||
+              (sale.shippingCost && sale.shippingCost > 0) ||
+              (sale.discount && sale.discount > 0)) && (
+              <div className="border-b border-gray-800 pb-4">
+                <h3 className="mb-3 text-lg font-semibold text-gray-200">
+                  Costos Adicionales y Descuentos
+                </h3>
+                <div className="space-y-2">
+                  {sale.additionalCosts &&
+                    sale.additionalCosts.map((cost, index) => (
+                      <div key={index} className="flex justify-between text-sm">
+                        <span className="text-gray-400">
+                          {cost.type === "warranty"
+                            ? "🛡️ Garantía"
+                            : cost.type === "gift"
+                              ? "🎁 Regalo"
+                              : cost.type === "shipping"
+                                ? "📦 Envío"
+                                : cost.type === "other"
+                                  ? "📋 Otro"
+                                  : cost.type}
+                          {cost.description && ` - ${cost.description}`}
+                        </span>
+                        <span className="text-red-400">
+                          -${cost.amount.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  {sale.shippingCost && sale.shippingCost > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">🚚 Costo de Envío</span>
+                      <span className="text-red-400">
+                        -${sale.shippingCost.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {sale.discount && sale.discount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">🏷️ Descuento</span>
+                      <span className="text-red-400">
+                        -${sale.discount.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {sale.totalAdditionalCosts !== undefined &&
+                    sale.totalAdditionalCosts > 0 && (
+                      <div className="mt-2 flex justify-between border-t border-gray-700 pt-2 text-sm font-semibold">
+                        <span className="text-gray-300">Total Deducciones</span>
+                        <span className="text-red-400">
+                          -${sale.totalAdditionalCosts.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                </div>
+              </div>
+            )}
 
             {/* Información de Pago */}
             <div className="border-b border-gray-800 pb-4">
