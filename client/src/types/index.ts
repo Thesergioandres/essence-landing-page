@@ -20,6 +20,7 @@ export interface Product {
   purchasePrice: number;
   suggestedPrice: number;
   distributorPrice: number;
+  salePrice?: number;
   clientPrice?: number;
   distributorCommission?: number;
   cost?: number;
@@ -764,6 +765,8 @@ export interface ProfitHistoryAdminEntry {
   adminProfit: number;
   distributorProfit: number;
   totalProfit: number;
+  netProfit?: number;
+  totalDeductions?: number;
   quantity: number;
   productName: string;
   eventName?: string;
