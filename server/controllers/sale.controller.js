@@ -1536,8 +1536,9 @@ export const getDistributorSales = async (req, res) => {
       ? { branch: new mongoose.Types.ObjectId(req.query.branchId) }
       : {};
 
-    // Si no es admin y est├í consultando otro distribuidor, denegar
-    if (req.user.role !== "admin" && distributorId !== req.user.id) {
+    // Si no es admin/super_admin/god y está consultando otro distribuidor, denegar
+    const canViewAll = ["god", "super_admin", "admin"].includes(req.user.role);
+    if (!canViewAll && distributorId !== req.user.id) {
       return res
         .status(403)
         .json({ message: "No puedes ver ventas de otros distribuidores" });

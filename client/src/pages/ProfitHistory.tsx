@@ -311,8 +311,13 @@ export default function ProfitHistory() {
         const salesNetProfit =
           overview?.summary.netProfit ?? overview?.summary.adminProfit ?? 0;
         const totalDeductions = overview?.summary.totalDeductions || 0;
-        // Utilidad neta final = ganancia neta de ventas - gastos operativos
-        const netProfit = salesNetProfit - totalExpenses;
+        // Pérdidas por productos defectuosos
+        const defectiveLosses = defectiveStats?.totalLoss || 0;
+        // Utilidad neta final = ganancia neta de ventas - gastos operativos - pérdidas defectuosos
+        const netProfit = salesNetProfit - totalExpenses - defectiveLosses;
+        // Rentabilidad = utilidad neta / ganancia bruta * 100
+        const profitability =
+          totalProfit > 0 ? (netProfit / totalProfit) * 100 : 0;
         const expensesByType = expenses.reduce(
           (acc, e) => {
             const type = e.type || "Otros";
@@ -341,11 +346,13 @@ export default function ProfitHistory() {
               <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 text-white">
                 <p className="text-sm text-gray-300">Ganancia neta ventas</p>
                 <p className="mt-2 text-xl font-semibold text-emerald-300">
-                  {formatCurrency(salesNetProfit)}
+                  {formatCurrency(netProfit)}
                 </p>
                 <p className="text-xs text-gray-400">
-                  {totalDeductions > 0
-                    ? `Deducciones: -${formatCurrency(totalDeductions)}`
+                  {totalDeductions > 0 ||
+                  totalExpenses > 0 ||
+                  defectiveLosses > 0
+                    ? `- ${formatCurrency(totalDeductions + totalExpenses + defectiveLosses)} (deduc. + gastos + defec.)`
                     : distributorsEnabled
                       ? "Ventas directas + margen"
                       : "Ventas directas"}
@@ -368,28 +375,33 @@ export default function ProfitHistory() {
                 </div>
               )}
               <div className="rounded-xl border border-red-900/50 bg-red-950/30 p-4 text-white">
-                <p className="text-sm text-red-300">Total gastos</p>
+                <p className="text-sm text-red-300">Total gastos + pérdidas</p>
                 <p className="mt-2 text-xl font-semibold text-red-400">
-                  -{formatCurrency(totalExpenses)}
+                  -{formatCurrency(totalExpenses + defectiveLosses)}
                 </p>
                 <p className="text-xs text-red-300/70">
-                  {expenses.length} registros
+                  {expenses.length} gastos
+                  {defectiveLosses > 0
+                    ? ` + ${formatCurrency(defectiveLosses)} defec.`
+                    : ""}
                 </p>
               </div>
               <div
                 className={`rounded-xl border p-4 text-white shadow-lg ${
-                  netProfit >= 0
-                    ? "border-emerald-800/50 bg-gradient-to-br from-emerald-900/40 to-gray-900"
+                  profitability >= 0
+                    ? "border-blue-800/50 bg-gradient-to-br from-blue-900/40 to-gray-900"
                     : "border-red-800/50 bg-gradient-to-br from-red-900/40 to-gray-900"
                 }`}
               >
-                <p className="text-sm text-gray-200">Utilidad neta admin</p>
+                <p className="text-sm text-gray-200">📈 Rentabilidad</p>
                 <p
-                  className={`mt-2 text-2xl font-bold ${netProfit >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                  className={`mt-2 text-2xl font-bold ${profitability >= 0 ? "text-blue-400" : "text-red-400"}`}
                 >
-                  {formatCurrency(netProfit)}
+                  {profitability.toFixed(1)}%
                 </p>
-                <p className="text-xs text-gray-400">Ganancia admin - Gastos</p>
+                <p className="text-xs text-gray-400">
+                  Utilidad neta / Ganancia bruta
+                </p>
               </div>
             </div>
 
