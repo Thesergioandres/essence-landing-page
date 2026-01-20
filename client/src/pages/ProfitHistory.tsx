@@ -333,7 +333,10 @@ export default function ProfitHistory() {
                     {formatCurrency(overview?.summary.distributorProfit || 0)}
                   </p>
                   <p className="text-xs text-gray-400">
-                    {overview?.summary.count || 0} ventas
+                    {overview?.summary.ordersCount ??
+                      overview?.summary.count ??
+                      0}{" "}
+                    ventas
                   </p>
                 </div>
               )}
@@ -834,7 +837,8 @@ export default function ProfitHistory() {
             <div>
               <p className="text-sm text-gray-400">Transacciones recientes</p>
               <p className="text-lg font-semibold text-white">
-                {overview?.summary.count || 0} ventas
+                {overview?.summary.ordersCount ?? overview?.summary.count ?? 0}{" "}
+                ventas
               </p>
             </div>
             <button

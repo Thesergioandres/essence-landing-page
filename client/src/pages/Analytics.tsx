@@ -138,7 +138,11 @@ export default function Analytics() {
       revenue: (financial as any)?.revenue ?? financial?.totalRevenue ?? 0,
       cost: (financial as any)?.cost ?? financial?.totalCost ?? 0,
       profit: (financial as any)?.profit ?? financial?.totalProfit ?? 0,
-      salesCount: (financial as any)?.salesCount ?? financial?.totalSales ?? 0,
+      salesCount:
+        (financial as any)?.ordersCount ??
+        (financial as any)?.salesCount ??
+        financial?.totalSales ??
+        0,
     }),
     [financial]
   );
@@ -149,8 +153,13 @@ export default function Analytics() {
         (acc, item) => {
           acc.revenue += item.revenue || 0;
           acc.profit += item.profit || 0;
+          // Usar ordersCount si existe, sino fallback a salesCount/sales
           const sales =
-            (item as any).salesCount ?? (item as any).sales ?? item?.sales ?? 0;
+            (item as any).ordersCount ??
+            (item as any).salesCount ??
+            (item as any).sales ??
+            item?.sales ??
+            0;
           acc.salesCount += sales;
           return acc;
         },
@@ -490,7 +499,10 @@ export default function Analytics() {
           {!loading &&
             timeline.map((item, idx) => {
               const salesCount =
-                (item as any).salesCount ?? (item as any).sales ?? 0;
+                (item as any).ordersCount ??
+                (item as any).salesCount ??
+                (item as any).sales ??
+                0;
               const label = formatPeriodLabel(
                 (item as any).period || (item as any).date || ""
               );

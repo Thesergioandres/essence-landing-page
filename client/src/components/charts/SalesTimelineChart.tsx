@@ -55,7 +55,7 @@ export const SalesTimelineChart: React.FC<SalesTimelineChartProps> = ({
           }),
           revenue: Number(item.revenue) || 0,
           profit: Number(item.profit) || 0,
-          salesCount: Number(item.salesCount) || 0,
+          salesCount: Number(item.ordersCount ?? item.salesCount) || 0,
         }));
 
         setData(formattedData);

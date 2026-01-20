@@ -517,6 +517,7 @@ export interface Expense {
 
 export interface SaleStats {
   totalSales: number;
+  totalOrders?: number; // Número de órdenes únicas (por saleGroupId)
   totalQuantity: number;
   totalDistributorProfit: number;
   totalAdminProfit: number;
@@ -791,6 +792,7 @@ export interface ProfitHistoryAdminOverview {
     adminProfit: number;
     distributorProfit: number;
     count: number;
+    ordersCount?: number; // Número de órdenes únicas (por saleGroupId)
     averageTicket: number;
   };
   distributors: ProfitHistoryAdminDistributor[];

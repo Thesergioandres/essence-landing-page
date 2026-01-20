@@ -730,7 +730,7 @@ export const getSalesTimeline = async (req, res) => {
       ...opDateFilter,
     })
       .select(
-        "saleDate salePrice quantity totalProfit netProfit totalAdditionalCosts shippingCost discount purchasePrice paymentStatus",
+        "saleDate salePrice quantity totalProfit netProfit totalAdditionalCosts shippingCost discount purchasePrice paymentStatus saleGroupId",
       )
       .sort({ saleDate: 1 })
       .lean();
@@ -746,6 +746,7 @@ export const getSalesTimeline = async (req, res) => {
 
     // Agrupar por día
     const salesByDay = {};
+    const orderIdsByDay = {}; // Para contar órdenes únicas por día
     const toColombiaDayKey = (date) => {
       // Convertimos a día Colombia (UTC-5) para evitar corrimientos de fecha
       const colombia = new Date(date.getTime() - 5 * 60 * 60000);
@@ -759,13 +760,18 @@ export const getSalesTimeline = async (req, res) => {
         salesByDay[day] = {
           date: day,
           sales: 0,
+          ordersCount: 0,
           revenue: 0,
           profit: 0,
           units: 0,
           cost: 0,
         };
+        orderIdsByDay[day] = new Set();
       }
       salesByDay[day].sales += 1;
+      // Contar órdenes únicas por saleGroupId
+      const orderId = sale.saleGroupId?.toString() || sale._id?.toString();
+      orderIdsByDay[day].add(orderId);
       salesByDay[day].revenue += sale.salePrice * sale.quantity;
       // Usar netProfit si existe, sino calcular: totalProfit - deducciones
       const saleNetProfit =
@@ -788,17 +794,26 @@ export const getSalesTimeline = async (req, res) => {
         salesByDay[day] = {
           date: day,
           sales: 0,
+          ordersCount: 0,
           revenue: 0,
           profit: 0,
           units: 0,
           cost: 0,
         };
+        orderIdsByDay[day] = new Set();
       }
       salesByDay[day].sales += 1;
+      // Ventas especiales se cuentan como órdenes individuales
+      orderIdsByDay[day].add(`special_${sale._id?.toString()}`);
       salesByDay[day].revenue += sale.specialPrice * sale.quantity;
       salesByDay[day].profit += sale.totalProfit;
       salesByDay[day].units += sale.quantity;
       salesByDay[day].cost += sale.cost * sale.quantity;
+    });
+
+    // Calcular ordersCount final para cada día
+    Object.keys(salesByDay).forEach((day) => {
+      salesByDay[day].ordersCount = orderIdsByDay[day]?.size || 0;
     });
 
     const timeline = Object.values(salesByDay);
@@ -852,7 +867,7 @@ export const getFinancialSummary = async (req, res) => {
 
     const sales = await Sale.find(filter)
       .select(
-        "salePrice purchasePrice quantity totalProfit netProfit totalAdditionalCosts shippingCost discount adminProfit distributorProfit",
+        "salePrice purchasePrice quantity totalProfit netProfit totalAdditionalCosts shippingCost discount adminProfit distributorProfit saleGroupId",
       )
       .lean();
 
@@ -901,6 +916,7 @@ export const getFinancialSummary = async (req, res) => {
     });
 
     // Calcular totales
+    const saleGroupIds = new Set();
     const totals = sales.reduce(
       (acc, sale) => {
         acc.totalCost += sale.purchasePrice * sale.quantity;
@@ -917,6 +933,8 @@ export const getFinancialSummary = async (req, res) => {
         acc.totalProfit += saleNetProfit;
         acc.totalSales += 1;
         acc.totalUnits += sale.quantity;
+        // Agregar saleGroupId al Set (si no existe, usar _id del documento)
+        saleGroupIds.add(sale.saleGroupId?.toString() || sale._id?.toString());
         return acc;
       },
       {
@@ -944,14 +962,23 @@ export const getFinancialSummary = async (req, res) => {
       return sum + def.quantity;
     }, 0);
 
+    console.log("[getFinancialSummary] saleGroupIds:", [...saleGroupIds]);
+    console.log(
+      "[getFinancialSummary] totalSales:",
+      totals.totalSales,
+      "ordersCount:",
+      saleGroupIds.size,
+    );
+
     res.json({
       ...totals,
+      ordersCount: saleGroupIds.size,
       profitMargin:
         totals.totalRevenue > 0
           ? (totals.totalProfit / totals.totalRevenue) * 100
           : 0,
       averageTicket:
-        totals.totalSales > 0 ? totals.totalRevenue / totals.totalSales : 0,
+        saleGroupIds.size > 0 ? totals.totalRevenue / saleGroupIds.size : 0,
       defectiveUnits: defectiveLoss,
       defectiveRate:
         totals.totalUnits > 0 ? (defectiveLoss / totals.totalUnits) * 100 : 0,

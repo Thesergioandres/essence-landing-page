@@ -678,7 +678,7 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
 
     const sales = await Sale.find(saleFilter)
       .select(
-        "saleId saleDate distributor product quantity adminProfit distributorProfit totalProfit netProfit totalAdditionalCosts shippingCost discount paymentStatus",
+        "saleId saleDate saleGroupId distributor product quantity adminProfit distributorProfit totalProfit netProfit totalAdditionalCosts shippingCost discount paymentStatus",
       )
       .populate("product", "name")
       .populate("distributor", "name email role")
@@ -721,6 +721,7 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
       return {
         id: sale._id.toString(),
         saleId: sale.saleId,
+        saleGroupId: sale.saleGroupId?.toString() || sale._id.toString(),
         date: sale.saleDate,
         source: "normal",
         distributorId: distributorIdValue,
@@ -770,6 +771,12 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
       });
     });
 
+    // Contar órdenes únicas por saleGroupId
+    const uniqueOrderIds = new Set();
+    entries.forEach((entry) => {
+      uniqueOrderIds.add(entry.saleGroupId || entry.id);
+    });
+
     const summary = entries.reduce(
       (acc, entry) => {
         acc.totalProfit += entry.totalProfit;
@@ -789,6 +796,9 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
         count: 0,
       },
     );
+
+    // Agregar conteo de órdenes únicas
+    summary.ordersCount = uniqueOrderIds.size;
 
     summary.averageTicket = summary.count
       ? summary.netProfit / summary.count

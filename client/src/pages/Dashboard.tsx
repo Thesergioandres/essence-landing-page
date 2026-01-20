@@ -94,7 +94,10 @@ export default function Dashboard() {
         : distributorsResponse.data;
       const salesData = salesResponse.sales
         ? salesResponse
-        : { stats: { totalSales: 0, totalRevenue: 0 }, sales: salesResponse };
+        : {
+            stats: { totalSales: 0, totalRevenue: 0, totalOrders: 0 },
+            sales: salesResponse,
+          };
 
       setMonthlyData(monthly);
       setCreditMetrics(creditsResponse.metrics);
@@ -168,7 +171,7 @@ export default function Dashboard() {
         totalDistributors: distributors.length,
         activeDistributors,
         totalAlerts,
-        totalSales: salesData.stats.totalSales,
+        totalSales: salesData.stats.totalOrders ?? salesData.stats.totalSales,
         totalRevenue: salesData.stats.totalRevenue,
         categoryStats,
         recentProducts: products.slice(0, 5),
@@ -250,7 +253,8 @@ export default function Dashboard() {
             <div>
               <p className="text-xs text-gray-400 sm:text-sm">Ventas</p>
               <p className="mt-1 text-lg font-bold text-purple-400 sm:mt-2 sm:text-xl md:text-2xl">
-                {monthlyData.currentMonth.salesCount}
+                {monthlyData.currentMonth.ordersCount ??
+                  monthlyData.currentMonth.salesCount}
               </p>
             </div>
             <div>

@@ -88,7 +88,7 @@ const applyCustomerTotals = async ({
   await Customer.findOneAndUpdate(
     { _id: customerId, business: businessId },
     update,
-    { new: false }
+    { new: false },
   );
 
   // Acumular puntos solo en ventas nuevas (direction > 0)
@@ -115,8 +115,8 @@ const toColombiaStartOfDay = (dateStr) => {
       5,
       0,
       0,
-      0
-    )
+      0,
+    ),
   );
 };
 
@@ -164,13 +164,13 @@ export const deleteSale = async (req, res) => {
       await BranchStock.findOneAndUpdate(
         { business: sale.business, branch: sale.branch, product: sale.product },
         { $inc: { quantity: restoreQuantity } },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, new: true, setDefaultsOnInsert: true },
       );
     } else if (sale.distributor) {
       await DistributorStock.findOneAndUpdate(
         { distributor: sale.distributor, product: sale.product },
         { $inc: { quantity: restoreQuantity } },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, new: true, setDefaultsOnInsert: true },
       );
     }
     // Si es venta de bodega (isWarehouseSale), el stock se restaurará en warehouseStock abajo
@@ -204,7 +204,7 @@ export const deleteSale = async (req, res) => {
         console.error(
           "Error recalculando balance para usuario",
           userId,
-          balanceError?.message
+          balanceError?.message,
         );
       }
     }
@@ -269,7 +269,7 @@ export const fixAdminSales = async (req, res) => {
       0,
       23,
       59,
-      59
+      59,
     );
 
     // Obtener todas las ventas admin
@@ -302,7 +302,7 @@ export const fixAdminSales = async (req, res) => {
         const daysInCurrentMonth = new Date(
           now.getFullYear(),
           now.getMonth() + 1,
-          0
+          0,
         ).getDate();
         const dayToUse = Math.min(saleDay, daysInCurrentMonth);
 
@@ -392,7 +392,7 @@ export const registerAdminSale = async (req, res) => {
 
     if (!productId || !quantity || !salePrice) {
       console.warn(
-        `[${reqId}] ÔØî Campos faltantes - productId: ${productId}, quantity: ${quantity}, salePrice: ${salePrice}`
+        `[${reqId}] ÔØî Campos faltantes - productId: ${productId}, quantity: ${quantity}, salePrice: ${salePrice}`,
       );
       return res.status(400).json({
         message: "Campos obligatorios: productId, quantity, salePrice",
@@ -427,7 +427,7 @@ export const registerAdminSale = async (req, res) => {
         const warehouseStock = product.warehouseStock || 0;
         if (warehouseStock < quantity) {
           console.warn(
-            `[${reqId}] ÔØî Stock insuficiente en bodega. Disponible: ${warehouseStock}, solicitado: ${quantity}`
+            `[${reqId}] ÔØî Stock insuficiente en bodega. Disponible: ${warehouseStock}, solicitado: ${quantity}`,
           );
           return res.status(400).json({
             message: `Stock insuficiente en bodega. Disponible: ${warehouseStock}`,
@@ -444,7 +444,7 @@ export const registerAdminSale = async (req, res) => {
           console.warn(
             `[${reqId}] ÔØî Stock insuficiente en sede. Disponible: ${
               branchStock?.quantity || 0
-            }, solicitado: ${quantity}`
+            }, solicitado: ${quantity}`,
           );
           return res.status(400).json({
             message: `Stock insuficiente en la sede. Disponible: ${
@@ -459,7 +459,7 @@ export const registerAdminSale = async (req, res) => {
       const warehouseStock = product.warehouseStock || 0;
       if (warehouseStock < quantity) {
         console.warn(
-          `[${reqId}] ÔØî Stock insuficiente en bodega. Disponible: ${warehouseStock}, solicitado: ${quantity}`
+          `[${reqId}] ÔØî Stock insuficiente en bodega. Disponible: ${warehouseStock}, solicitado: ${quantity}`,
         );
         return res.status(400).json({
           message: `Stock insuficiente en bodega. Disponible: ${warehouseStock}`,
@@ -538,7 +538,7 @@ export const registerAdminSale = async (req, res) => {
     // Cliente asociado (opcional)
     const { customerDoc, customerData } = await resolveCustomerForSale(
       businessId,
-      customerId
+      customerId,
     );
     Object.assign(saleData, customerData);
     console.log(`[${reqId}] Sale data:`, saleData);
@@ -568,7 +568,7 @@ export const registerAdminSale = async (req, res) => {
             totalInventoryValue: -inventoryValueReduction,
           },
         },
-        { new: true }
+        { new: true },
       );
 
       if (!updateResult) {
@@ -582,7 +582,7 @@ export const registerAdminSale = async (req, res) => {
 
       console.log(
         `[${reqId}] Ô£à Stock actualizado en bodega. Nuevo stock bodega:`,
-        updateResult.warehouseStock
+        updateResult.warehouseStock,
       );
     } else if (branchStock) {
       // Actualizar atómicamente el stock de la sede
@@ -592,7 +592,7 @@ export const registerAdminSale = async (req, res) => {
           quantity: { $gte: quantity },
         },
         { $inc: { quantity: -quantity } },
-        { new: true }
+        { new: true },
       );
 
       if (!branchUpdateResult) {
@@ -614,7 +614,7 @@ export const registerAdminSale = async (req, res) => {
 
       console.log(
         `[${reqId}] Ô£à Stock actualizado en sede. Nuevo stock sede:`,
-        branchUpdateResult.quantity
+        branchUpdateResult.quantity,
       );
     }
 
@@ -623,7 +623,7 @@ export const registerAdminSale = async (req, res) => {
     console.log(`[${reqId}] ­ƒöä Obteniendo venta con populate...`);
     const populatedSale = await Sale.findById(sale._id).populate(
       "product",
-      "name image"
+      "name image",
     );
     console.log(`[${reqId}] Ô£à Venta obtenida`);
 
@@ -635,7 +635,7 @@ export const registerAdminSale = async (req, res) => {
     } catch (historyError) {
       console.error(
         `[${reqId}] ÔÜá´©Å Error registrando historial de ganancias:`,
-        historyError?.message
+        historyError?.message,
       );
       // Continuar sin bloquear la venta
     }
@@ -809,7 +809,7 @@ export const registerSale = async (req, res) => {
 
     const { customerDoc, customerData } = await resolveCustomerForSale(
       businessId,
-      customerId
+      customerId,
     );
 
     // Validar que el producto tenga los campos necesarios
@@ -827,7 +827,7 @@ export const registerSale = async (req, res) => {
     // Obtener el bonus/porcentaje del distribuidor seg├║n el ranking (misma l├│gica que usa el frontend)
     const commissionInfo = await getDistributorCommissionInfo(
       distributorId,
-      businessId
+      businessId,
     );
     const commissionBonus = commissionInfo.bonusCommission;
     const distributorProfitPercentage = commissionInfo.profitPercentage;
@@ -936,14 +936,14 @@ export const registerSale = async (req, res) => {
           quantity: { $gte: quantity },
         },
         { $inc: { quantity: -quantity } },
-        { new: true }
+        { new: true },
       );
 
       if (!branchUpdateResult) {
         // Si falla la actualización atómica, eliminar la venta y devolver error
         await Sale.findByIdAndDelete(sale._id);
         console.error(
-          `[ATOMIC STOCK ERROR] Stock concurrente falló para producto ${productId}, branchStock ${branchStock._id}, cantidad requerida: ${quantity}, stock disponible al momento de validación: ${branchStock.quantity}`
+          `[ATOMIC STOCK ERROR] Stock concurrente falló para producto ${productId}, branchStock ${branchStock._id}, cantidad requerida: ${quantity}, stock disponible al momento de validación: ${branchStock.quantity}`,
         );
         return res.status(400).json({
           message: `Stock insuficiente en la sede. Disponible: ${branchStock.quantity}`,
@@ -974,7 +974,7 @@ export const registerSale = async (req, res) => {
       } catch (historyError) {
         console.error(
           "Error registrando historial de ganancias:",
-          historyError
+          historyError,
         );
       }
 
@@ -1102,7 +1102,7 @@ export const registerSale = async (req, res) => {
     const inventoryValueReduction = quantity * averageCostAtSale;
     product.totalInventoryValue = Math.max(
       (product.totalInventoryValue || 0) - inventoryValueReduction,
-      0
+      0,
     );
     await product.save();
 
@@ -1314,14 +1314,14 @@ export const getDistributorSales = async (req, res) => {
 
     const sales = await Sale.find(filter)
       .select(
-        "product distributor salePrice quantity saleDate distributorProfit adminProfit saleStatus paymentStatus isCredit creditId notes customer distributorProfitPercentage saleId"
+        "product distributor salePrice quantity saleDate distributorProfit adminProfit saleStatus paymentStatus isCredit creditId notes customer distributorProfitPercentage saleId",
       )
       .populate("product", "name image")
       .populate("distributor", "name email")
       .populate("customer", "name phone")
       .populate(
         "creditId",
-        "originalAmount paidAmount remainingAmount status dueDate"
+        "originalAmount paidAmount remainingAmount status dueDate",
       )
       .sort({ saleDate: -1 })
       .limit(limit)
@@ -1482,7 +1482,7 @@ export const getAllSales = async (req, res) => {
       console.log(
         `[${req.reqId || "no-id"}] sales:list fetched ${
           sales.length
-        }/${total} in ${Date.now() - tListStart}ms`
+        }/${total} in ${Date.now() - tListStart}ms`,
       );
     }
     // Calcular estadísticas
@@ -1538,6 +1538,8 @@ export const getAllSales = async (req, res) => {
         $group: {
           _id: null,
           totalSales: { $sum: 1 },
+          // Contar órdenes únicas por saleGroupId (una venta puede tener múltiples productos)
+          saleGroupIds: { $addToSet: { $ifNull: ["$saleGroupId", "$_id"] } },
           totalQuantity: { $sum: "$quantity" },
           // Ganancias de distribuidor: solo sumar si no hay crédito pendiente
           totalDistributorProfit: {
@@ -1637,7 +1639,7 @@ export const getAllSales = async (req, res) => {
     console.log(
       `[${req.reqId || "no-id"}] sales:stats aggregate in ${
         Date.now() - tAggStart
-      }ms`
+      }ms`,
     );
     const salesStats = salesAgg[0] || null;
 
@@ -1688,8 +1690,13 @@ export const getAllSales = async (req, res) => {
       totalProfitFromCreditSales: 0,
       realizedProfitFromCredits: 0,
       pendingProfitFromCredits: 0,
+      // Contar órdenes únicas (agrupadas por saleGroupId)
+      totalOrders: salesStats?.saleGroupIds?.length || 0,
       ...(salesStats || {}),
     };
+
+    // Eliminar el array de IDs ya que no se necesita en la respuesta
+    delete stats.saleGroupIds;
 
     if (specialStats) {
       stats.totalSales += specialStats.totalSales || 0;

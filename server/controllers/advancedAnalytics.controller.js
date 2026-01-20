@@ -153,6 +153,8 @@ export const getSalesTimeline = async (req, res) => {
               },
             ],
           },
+          // Para contar órdenes únicas
+          saleGroupId: { $ifNull: ["$saleGroupId", "$_id"] },
         },
       },
       {
@@ -182,6 +184,8 @@ export const getSalesTimeline = async (req, res) => {
                 revenue: { $multiply: ["$specialPrice", "$quantity"] },
                 // Ventas especiales no tienen deducciones
                 profit: { $ifNull: ["$totalProfit", 0] },
+                // Cada venta especial es una orden única
+                saleGroupId: "$_id",
               },
             },
           ],
@@ -197,6 +201,8 @@ export const getSalesTimeline = async (req, res) => {
             },
           },
           totalSales: { $sum: 1 },
+          // Contar órdenes únicas por saleGroupId
+          saleGroupIds: { $addToSet: { $ifNull: ["$saleGroupId", "$_id"] } },
           totalRevenue: { $sum: "$revenue" },
           totalProfit: { $sum: "$profit" },
         },
@@ -211,6 +217,7 @@ export const getSalesTimeline = async (req, res) => {
     const formattedTimeline = timeline.map((item) => ({
       period: item._id,
       salesCount: item.totalSales,
+      ordersCount: item.saleGroupIds?.length || item.totalSales,
       revenue: item.totalRevenue || 0,
       profit: item.totalProfit || 0,
     }));
@@ -777,7 +784,8 @@ export const getFinancialKPIs = async (req, res) => {
                 },
               ],
             },
-            sales: 1,
+            // Para contar órdenes únicas
+            saleGroupId: { $ifNull: ["$saleGroupId", "$_id"] },
           },
         },
         {
@@ -797,7 +805,8 @@ export const getFinancialKPIs = async (req, res) => {
                   revenue: { $multiply: ["$specialPrice", "$quantity"] },
                   // Ventas especiales no tienen deducciones, usar totalProfit directamente
                   profit: { $ifNull: ["$totalProfit", 0] },
-                  sales: 1,
+                  // Cada venta especial es una orden única
+                  saleGroupId: "$_id",
                 },
               },
             ],
@@ -808,7 +817,13 @@ export const getFinancialKPIs = async (req, res) => {
             _id: null,
             revenue: { $sum: "$revenue" },
             profit: { $sum: "$profit" },
-            sales: { $sum: 1 },
+            salesDocs: { $sum: 1 },
+            saleGroupIds: { $addToSet: "$saleGroupId" },
+          },
+        },
+        {
+          $addFields: {
+            sales: { $size: "$saleGroupIds" },
           },
         },
       ];
@@ -987,6 +1002,8 @@ export const getComparativeAnalysis = async (req, res) => {
               },
             ],
           },
+          // Para contar órdenes únicas
+          saleGroupId: { $ifNull: ["$saleGroupId", "$_id"] },
         },
       },
       {
@@ -1004,6 +1021,8 @@ export const getComparativeAnalysis = async (req, res) => {
                 saleDate: "$saleDate",
                 revenue: { $multiply: ["$specialPrice", "$quantity"] },
                 profit: "$totalProfit",
+                // Cada venta especial es una orden única
+                saleGroupId: "$_id",
               },
             },
             {
@@ -1019,7 +1038,13 @@ export const getComparativeAnalysis = async (req, res) => {
           _id: null,
           revenue: { $sum: "$revenue" },
           profit: { $sum: "$profit" },
-          sales: { $sum: 1 },
+          salesDocs: { $sum: 1 },
+          saleGroupIds: { $addToSet: "$saleGroupId" },
+        },
+      },
+      {
+        $addFields: {
+          sales: { $size: "$saleGroupIds" },
         },
       },
     ];
@@ -1085,6 +1110,8 @@ export const getSalesFunnel = async (req, res) => {
         $project: {
           status: "$paymentStatus",
           value: { $multiply: ["$salePrice", "$quantity"] },
+          // Para contar órdenes únicas
+          saleGroupId: { $ifNull: ["$saleGroupId", "$_id"] },
         },
       },
       {
@@ -1099,6 +1126,8 @@ export const getSalesFunnel = async (req, res) => {
               $project: {
                 status: "confirmado", // tratamos ventas especiales activas como confirmadas
                 value: { $multiply: ["$specialPrice", "$quantity"] },
+                // Cada venta especial es una orden única
+                saleGroupId: "$_id",
               },
             },
           ],
@@ -1107,8 +1136,14 @@ export const getSalesFunnel = async (req, res) => {
       {
         $group: {
           _id: "$status",
-          count: { $sum: 1 },
+          countDocs: { $sum: 1 },
           totalValue: { $sum: "$value" },
+          saleGroupIds: { $addToSet: "$saleGroupId" },
+        },
+      },
+      {
+        $addFields: {
+          count: { $size: "$saleGroupIds" },
         },
       },
     ]);
