@@ -284,7 +284,7 @@ export default function Expenses() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-hidden">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -319,7 +319,7 @@ export default function Expenses() {
 
       {/* Métricas Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-rose-900/30 to-gray-800/50 p-4 backdrop-blur-lg">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
           <p className="text-xs text-gray-400 sm:text-sm">Gastos este mes</p>
           <p className="mt-1 text-xl font-bold text-rose-400 sm:text-2xl">
             {formatCurrency(metrics.totalThisMonth)}
@@ -332,7 +332,7 @@ export default function Expenses() {
           </p>
         </div>
 
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-amber-900/30 to-gray-800/50 p-4 backdrop-blur-lg">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
           <p className="text-xs text-gray-400 sm:text-sm">Mes anterior</p>
           <p className="mt-1 text-xl font-bold text-amber-400 sm:text-2xl">
             {formatCurrency(metrics.totalLastMonth)}
@@ -340,7 +340,7 @@ export default function Expenses() {
           <p className="mt-1 text-xs text-gray-500">Comparativo</p>
         </div>
 
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-purple-900/30 to-gray-800/50 p-4 backdrop-blur-lg">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
           <p className="text-xs text-gray-400 sm:text-sm">Total histórico</p>
           <p className="mt-1 text-xl font-bold text-purple-400 sm:text-2xl">
             {formatCurrency(metrics.total)}
@@ -350,7 +350,7 @@ export default function Expenses() {
           </p>
         </div>
 
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-cyan-900/30 to-gray-800/50 p-4 backdrop-blur-lg">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
           <p className="text-xs text-gray-400 sm:text-sm">Promedio por gasto</p>
           <p className="mt-1 text-xl font-bold text-cyan-400 sm:text-2xl">
             {formatCurrency(metrics.averageExpense)}
@@ -361,7 +361,7 @@ export default function Expenses() {
 
       {/* Top Categorías */}
       {metrics.topCategories.length > 0 && (
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 backdrop-blur-lg sm:p-6">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm sm:p-6">
           <h2 className="mb-4 text-lg font-semibold text-white">
             📊 Distribución por Categoría
           </h2>
@@ -404,7 +404,7 @@ export default function Expenses() {
       )}
 
       {/* Formulario */}
-      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 backdrop-blur-lg sm:p-6">
+      <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm sm:p-6">
         <h2 className="text-lg font-semibold text-white">
           {editingId ? "✏️ Editar gasto" : "➕ Registrar nuevo gasto"}
         </h2>
@@ -419,7 +419,7 @@ export default function Expenses() {
                 Categoría
               </label>
               <select
-                className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-2.5 text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+                className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-gray-100 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                 value={form.type}
                 onChange={e =>
                   setForm(prev => ({ ...prev, type: e.target.value }))
@@ -440,7 +440,7 @@ export default function Expenses() {
                 Monto (COP)
               </label>
               <input
-                className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-2.5 text-gray-100 placeholder:text-gray-500 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+                className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-gray-100 placeholder:text-gray-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                 type="number"
                 inputMode="numeric"
                 min={0}
@@ -458,7 +458,7 @@ export default function Expenses() {
                 Fecha
               </label>
               <input
-                className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-2.5 text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+                className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-gray-100 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                 type="date"
                 value={form.expenseDate}
                 onChange={e =>
@@ -488,7 +488,7 @@ export default function Expenses() {
       </div>
 
       {/* Lista de Gastos */}
-      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 backdrop-blur-lg sm:p-6">
+      <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm sm:p-6">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold text-white">
             📋 Historial de Gastos

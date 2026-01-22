@@ -395,49 +395,57 @@ export default function Sales() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-hidden">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-white">Gestión de Ventas</h1>
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6">
-          <p className="text-xs text-gray-400 sm:text-sm">Total Ventas</p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
+          <p className="truncate text-xs text-gray-400 sm:text-sm">
+            Total Ventas
+          </p>
           <p className="text-xl font-bold text-white sm:text-2xl">
             {stats.total}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6">
-          <p className="text-xs text-gray-400 sm:text-sm">Pendientes</p>
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
+          <p className="truncate text-xs text-gray-400 sm:text-sm">
+            Pendientes
+          </p>
           <p className="text-xl font-bold text-yellow-400 sm:text-2xl">
             {stats.pendiente}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6">
-          <p className="text-xs text-gray-400 sm:text-sm">Confirmadas</p>
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
+          <p className="truncate text-xs text-gray-400 sm:text-sm">
+            Confirmadas
+          </p>
           <p className="text-xl font-bold text-green-400 sm:text-2xl">
             {stats.confirmado}
           </p>
         </div>
-        <div className="rounded-xl border border-orange-700/50 bg-orange-900/20 p-4 sm:p-6">
-          <p className="text-xs text-orange-300 sm:text-sm">💳 Por Cobrar</p>
+        <div className="rounded-xl border border-orange-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
+          <p className="truncate text-xs text-orange-300 sm:text-sm">
+            💳 Por Cobrar
+          </p>
           <p className="text-xl font-bold text-orange-400 sm:text-2xl">
             {stats.pendingCollection}
           </p>
-          <p className="mt-1 text-xs text-orange-300/70">
+          <p className="mt-1 truncate text-xs text-orange-300/70">
             ${stats.pendingCollectionAmount.toLocaleString()}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6">
-          <p className="text-xs text-gray-400 sm:text-sm">Ingresos Totales</p>
-          <p className="text-xl font-bold text-white sm:text-2xl">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
+          <p className="truncate text-xs text-gray-400 sm:text-sm">Ingresos</p>
+          <p className="truncate text-xl font-bold text-white sm:text-2xl">
             ${stats.totalRevenue.toLocaleString()}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6">
-          <p className="text-xs text-gray-400 sm:text-sm">Ganancia Admin</p>
-          <p className="text-xl font-bold text-green-400 sm:text-2xl">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
+          <p className="truncate text-xs text-gray-400 sm:text-sm">Ganancia</p>
+          <p className="truncate text-xl font-bold text-green-400 sm:text-2xl">
             ${stats.totalProfit.toLocaleString()}
           </p>
         </div>
@@ -457,7 +465,7 @@ export default function Sales() {
       {/* Filtros y Ordenamiento */}
       {!loading && (
         <>
-          <div className="space-y-4 rounded-xl border border-gray-700 bg-gray-800/50 p-4">
+          <div className="space-y-4 rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
             {/* Filtro por sede */}
             {branchesEnabled && (
               <div>
@@ -472,7 +480,7 @@ export default function Sales() {
                         setBranchId(e.target.value);
                         setPagination(prev => ({ ...prev, page: 1 }));
                       }}
-                      className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                     >
                       <option value="">Todas las sedes (stock general)</option>
                       {branches.map(branch => (
@@ -508,7 +516,7 @@ export default function Sales() {
                         startDate: e.target.value,
                       })
                     }
-                    className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-2 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                   />
                 </div>
                 <div className="min-w-[180px] flex-1">
@@ -528,7 +536,7 @@ export default function Sales() {
                         endDate: e.target.value,
                       })
                     }
-                    className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-2 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                   />
                 </div>
                 {(dateFilters.startDate || dateFilters.endDate) && (
@@ -595,7 +603,7 @@ export default function Sales() {
                 id="sortBy"
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as any)}
-                className="rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-sm text-gray-100 focus:border-transparent focus:ring-2 focus:ring-purple-500/40"
+                className="rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
               >
                 <option value="date-desc">Fecha (Más reciente primero)</option>
                 <option value="date-asc">Fecha (Más antigua primero)</option>
@@ -607,8 +615,8 @@ export default function Sales() {
           </div>
 
           {/* Tabla de ventas */}
-          <div className="overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50">
-            <div className="table-responsive overflow-x-auto">
+          <div className="overflow-hidden rounded-xl border border-gray-700/50 bg-gray-800/50 shadow-lg backdrop-blur-sm">
+            <div className="w-full overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-700">
                 <thead className="bg-gray-900/50">
                   <tr>

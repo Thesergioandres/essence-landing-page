@@ -486,7 +486,7 @@ const StockManagement = () => {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 overflow-hidden">
       <div>
         <h1 className="text-4xl font-bold text-white">Gestión de Stock</h1>
         <p className="mt-2 text-gray-400">

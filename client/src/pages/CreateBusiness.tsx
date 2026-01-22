@@ -142,7 +142,7 @@ export default function CreateBusiness() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-6">
+    <div className="mx-auto max-w-2xl space-y-6 overflow-hidden p-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <button

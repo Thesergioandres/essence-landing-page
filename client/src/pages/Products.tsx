@@ -130,7 +130,7 @@ export default function Products() {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 overflow-hidden sm:space-y-8">
       <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl">
@@ -162,7 +162,7 @@ export default function Products() {
             }
           }}
           placeholder="Buscar por nombre..."
-          className="rounded-lg border border-gray-700 bg-gray-900/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
+          className="rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
         />
 
         <select
@@ -171,7 +171,7 @@ export default function Products() {
             setCategoryFilter(event.target.value);
             setPagination(prev => ({ ...prev, page: 1 }));
           }}
-          className="rounded-lg border border-gray-700 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
+          className="rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
         >
           <option value="">Todas las categorías</option>
           {categories.map(cat => (
@@ -189,7 +189,7 @@ export default function Products() {
             setSortOrder(order as "asc" | "desc");
             setPagination(prev => ({ ...prev, page: 1 }));
           }}
-          className="rounded-lg border border-gray-700 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
+          className="rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
         >
           <option value="createdAt-desc">Más recientes</option>
           <option value="createdAt-asc">Más antiguos</option>
@@ -207,7 +207,7 @@ export default function Products() {
             setStockFilter(event.target.value);
             setPagination(prev => ({ ...prev, page: 1 }));
           }}
-          className="rounded-lg border border-gray-700 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
+          className="rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
         >
           <option value="">Todo el stock</option>
           <option value="inStock">Con stock</option>
@@ -255,7 +255,7 @@ export default function Products() {
             {filteredProducts.map(product => (
               <div
                 key={product._id}
-                className="rounded-lg border border-gray-700 bg-gray-800/50 p-4 transition hover:border-purple-500"
+                className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm transition hover:border-purple-500"
               >
                 <div className="flex gap-4">
                   {product.image?.url ? (
@@ -311,7 +311,7 @@ export default function Products() {
 
           {/* Paginación Vista Móvil */}
           {pagination.pages > 1 && (
-            <div className="mt-6 flex flex-col items-center gap-4 rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-4 md:hidden">
+            <div className="mt-6 flex flex-col items-center gap-4 rounded-xl border border-gray-700/50 bg-gray-800/50 px-4 py-4 shadow-lg backdrop-blur-sm md:hidden">
               <div className="text-center text-sm text-gray-400">
                 Página {pagination.page} de {pagination.pages}
                 <br />
@@ -337,8 +337,8 @@ export default function Products() {
           )}
 
           {/* Desktop Table View */}
-          <div className="hidden overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50 md:block">
-            <div className="overflow-x-auto">
+          <div className="hidden overflow-hidden rounded-xl border border-gray-700/50 bg-gray-800/50 shadow-lg backdrop-blur-sm md:block">
+            <div className="w-full overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-700">
                 <thead className="bg-gray-900/60">
                   <tr>

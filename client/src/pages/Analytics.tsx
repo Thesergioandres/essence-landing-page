@@ -186,7 +186,7 @@ export default function Analytics() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 overflow-hidden p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm uppercase tracking-wide text-purple-300/70">

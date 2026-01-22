@@ -226,13 +226,13 @@ export default function Customers() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="space-y-6 overflow-hidden">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl">
             Clientes
           </h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-gray-400 sm:mt-2 sm:text-base">
             Gestiona tu base de clientes y CRM
           </p>
         </div>
@@ -242,7 +242,7 @@ export default function Customers() {
             setEditingCustomer(null);
             setShowModal(true);
           }}
-          className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white transition hover:bg-purple-700"
+          className="flex min-h-[48px] items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white transition hover:bg-purple-700 active:scale-[0.98]"
         >
           <Plus className="h-5 w-5" />
           Nuevo Cliente
@@ -256,74 +256,66 @@ export default function Customers() {
       )}
 
       {/* Métricas */}
-      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/30">
-              <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="rounded-lg bg-blue-500/20 p-2">
+              <Users className="h-5 w-5 text-blue-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-white">
                 {metrics.totalCustomers}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Total Clientes
-              </p>
+              <p className="text-sm text-gray-400">Total Clientes</p>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
-              <Star className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <div className="rounded-lg bg-purple-500/20 p-2">
+              <Star className="h-5 w-5 text-purple-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-white">
                 {metrics.totalVip}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Clientes VIP
-              </p>
+              <p className="text-sm text-gray-400">Clientes VIP</p>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
-              <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <div className="rounded-lg bg-green-500/20 p-2">
+              <TrendingUp className="h-5 w-5 text-green-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-white">
                 $
                 {metrics.avgSpend.toLocaleString(undefined, {
                   maximumFractionDigits: 0,
                 })}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Gasto Promedio
-              </p>
+              <p className="text-sm text-gray-400">Gasto Promedio</p>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-red-100 p-2 dark:bg-red-900/30">
-              <CreditCard className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <div className="rounded-lg bg-red-500/20 p-2">
+              <CreditCard className="h-5 w-5 text-red-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-white">
                 ${metrics.totalDebt.toLocaleString()}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Deuda Total
-              </p>
+              <p className="text-sm text-gray-400">Deuda Total</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Filtros */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row">
+      <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <input
@@ -331,13 +323,13 @@ export default function Customers() {
             placeholder="Buscar por nombre, teléfono o email..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-gray-600 bg-gray-900/50 py-2.5 pl-10 pr-4 text-white placeholder-gray-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
           />
         </div>
         <select
           value={filterSegment}
           onChange={e => setFilterSegment(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          className="rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2.5 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
         >
           <option value="all">Todos los segmentos</option>
           <option value="new">Nuevos</option>
@@ -348,55 +340,52 @@ export default function Customers() {
       </div>
 
       {/* Lista de clientes */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900/50">
+      <div className="overflow-hidden rounded-xl border border-gray-700/50 bg-gray-800/50 shadow-lg backdrop-blur-sm">
+        <div className="w-full overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-700">
+            <thead className="bg-gray-900/50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
                   Cliente
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
                   Contacto
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
                   Segmento
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-4 py-3 text-right text-sm font-medium text-gray-400">
                   Total Gastado
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-4 py-3 text-right text-sm font-medium text-gray-400">
                   Puntos
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-4 py-3 text-right text-sm font-medium text-gray-400">
                   Deuda
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-400">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-700">
               {filteredCustomers.map(customer => {
                 const segInfo =
                   segmentConfig[customer.segment] || segmentConfig.new;
                 return (
-                  <tr
-                    key={customer._id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-900/30"
-                  >
+                  <tr key={customer._id} className="hover:bg-gray-900/30">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
-                          <span className="font-medium text-gray-600 dark:text-gray-300">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-700">
+                          <span className="font-medium text-gray-300">
                             {customer.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
+                          <p className="font-medium text-white">
                             {customer.name}
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-gray-400">
                             {customer.purchaseCount || 0} compras
                           </p>
                         </div>
@@ -405,13 +394,13 @@ export default function Customers() {
                     <td className="px-4 py-3">
                       <div className="text-sm">
                         {customer.phone && (
-                          <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                          <div className="flex items-center gap-1 text-gray-300">
                             <Phone className="h-3 w-3" />
                             {customer.phone}
                           </div>
                         )}
                         {customer.email && (
-                          <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                          <div className="flex items-center gap-1 text-gray-300">
                             <Mail className="h-3 w-3" />
                             {customer.email}
                           </div>

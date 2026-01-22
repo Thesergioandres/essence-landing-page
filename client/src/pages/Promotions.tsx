@@ -477,7 +477,7 @@ export default function Promotions() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-hidden">
       {/* Messages */}
       {error && (
         <div className="rounded-lg border border-red-700 bg-red-900/50 p-4 text-red-400">

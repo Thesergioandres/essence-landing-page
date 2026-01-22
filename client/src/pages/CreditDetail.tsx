@@ -115,7 +115,7 @@ export default function CreditDetail() {
   const distributor = sale?.distributor as User | undefined;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 overflow-hidden p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

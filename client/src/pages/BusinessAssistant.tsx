@@ -518,7 +518,7 @@ export default function BusinessAssistant() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="space-y-6 overflow-hidden">
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-white">Business Assistant</h1>
         <p className="mt-2 text-gray-300">

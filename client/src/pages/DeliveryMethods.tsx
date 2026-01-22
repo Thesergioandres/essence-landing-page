@@ -204,7 +204,7 @@ export default function DeliveryMethods() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
+    <div className="mx-auto max-w-6xl space-y-4 overflow-hidden sm:space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl">

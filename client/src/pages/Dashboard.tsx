@@ -204,7 +204,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 overflow-hidden sm:space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl">
@@ -217,9 +217,9 @@ export default function Dashboard() {
 
       {/* Resumen Financiero Mensual */}
       {monthlyData && (
-        <div className="bg-linear-to-br rounded-lg border border-gray-700 from-green-900/50 to-gray-800/50 p-4 backdrop-blur-lg sm:rounded-xl sm:p-6">
-          <h2 className="mb-3 text-lg font-bold text-white sm:mb-4 sm:text-xl md:text-2xl">
-            💰 Resumen del Mes
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm sm:p-6">
+          <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-white sm:mb-4 sm:text-xl md:text-2xl">
+            <span>💰</span> Resumen del Mes
           </h2>
 
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
@@ -275,7 +275,7 @@ export default function Dashboard() {
       {/* Resumen de Créditos */}
       {creditMetrics && creditMetrics.total.totalCredits > 0 && (
         <div
-          className="bg-linear-to-br cursor-pointer rounded-lg border border-amber-700/50 from-amber-900/30 to-gray-800/50 p-4 backdrop-blur-lg transition hover:border-amber-500 sm:rounded-xl sm:p-6"
+          className="cursor-pointer rounded-xl border border-amber-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm transition hover:border-amber-500 sm:p-6"
           onClick={() => navigate("/admin/credits")}
         >
           <div className="mb-3 flex items-center justify-between sm:mb-4">
@@ -339,12 +339,12 @@ export default function Dashboard() {
       {/* Resumen de Gastos */}
       {stats.expensesThisMonth > 0 && (
         <div
-          className="bg-linear-to-br cursor-pointer rounded-lg border border-rose-700/50 from-rose-900/30 to-gray-800/50 p-4 backdrop-blur-lg transition hover:border-rose-500 sm:rounded-xl sm:p-6"
+          className="cursor-pointer rounded-xl border border-rose-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm transition hover:border-rose-500 sm:p-6"
           onClick={() => navigate("/admin/expenses")}
         >
           <div className="mb-3 flex items-center justify-between sm:mb-4">
-            <h2 className="text-lg font-bold text-rose-300 sm:text-xl">
-              📊 Gastos del Mes
+            <h2 className="flex items-center gap-2 text-lg font-bold text-rose-300 sm:text-xl">
+              <span>📊</span> Gastos del Mes
             </h2>
             <span className="text-xs text-rose-400/70">Ver detalle →</span>
           </div>
@@ -398,7 +398,7 @@ export default function Dashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
         {/* Total Products */}
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-purple-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-purple-500">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-6 shadow-lg backdrop-blur-sm transition hover:border-purple-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400">Total Productos</p>
@@ -426,7 +426,7 @@ export default function Dashboard() {
 
         {/* Total Distributors */}
         <FeatureSection feature="distributors">
-          <div className="bg-linear-to-br rounded-xl border border-gray-700 from-blue-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-blue-500">
+          <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-6 shadow-lg backdrop-blur-sm transition hover:border-blue-500">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Distribuidores</p>
@@ -457,7 +457,7 @@ export default function Dashboard() {
         </FeatureSection>
 
         {/* Total Sales */}
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-green-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-green-500">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-6 shadow-lg backdrop-blur-sm transition hover:border-green-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400">Ventas Totales</p>
@@ -488,7 +488,7 @@ export default function Dashboard() {
 
         {/* Stock Alerts */}
         <div
-          className="bg-linear-to-br cursor-pointer rounded-xl border border-gray-700 from-red-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-red-500"
+          className="cursor-pointer rounded-xl border border-gray-700/50 bg-gray-800/50 p-6 shadow-lg backdrop-blur-sm transition hover:border-red-500"
           onClick={() => navigate("/admin/stock-management")}
         >
           <div className="flex items-center justify-between">

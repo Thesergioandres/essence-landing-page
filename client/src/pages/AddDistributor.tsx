@@ -72,7 +72,7 @@ export default function AddDistributor() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6 overflow-hidden">
       <div>
         <button
           onClick={() => navigate("/admin/distributors")}
@@ -179,9 +179,7 @@ export default function AddDistributor() {
                 className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="••••••••"
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Mínimo 6 caracteres
-              </p>
+              <p className="mt-1 text-xs text-gray-500">Mínimo 6 caracteres</p>
             </div>
 
             <div>
@@ -213,7 +211,7 @@ export default function AddDistributor() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-linear-to-r from-purple-600 to-pink-600 px-6 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-linear-to-r rounded-lg from-purple-600 to-pink-600 px-6 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Creando..." : "Crear Distribuidor"}
           </button>

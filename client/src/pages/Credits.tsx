@@ -179,7 +179,7 @@ export default function Credits() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 overflow-hidden p-6">
       {/* Header */}
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -216,7 +216,7 @@ export default function Credits() {
       {/* Metrics Cards */}
       {metrics && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-5 shadow-sm">
+          <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-5 shadow-lg backdrop-blur-sm">
             <p className="text-sm text-gray-400">Total Fiados</p>
             <p className="mt-1 text-2xl font-bold text-white">
               {formatCurrency(metrics.total.totalRemainingAmount)}
@@ -226,7 +226,7 @@ export default function Credits() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-5 shadow-sm">
+          <div className="rounded-xl border border-red-500/30 bg-gray-800/50 p-5 shadow-lg backdrop-blur-sm">
             <p className="text-sm text-red-300">Vencidos</p>
             <p className="mt-1 text-2xl font-bold text-red-400">
               {formatCurrency(metrics.overdue.amount)}
@@ -236,7 +236,7 @@ export default function Credits() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-5 shadow-sm">
+          <div className="rounded-xl border border-green-500/30 bg-gray-800/50 p-5 shadow-lg backdrop-blur-sm">
             <p className="text-sm text-green-300">Recuperado</p>
             <p className="mt-1 text-2xl font-bold text-green-400">
               {formatCurrency(metrics.total.totalPaidAmount)}
@@ -246,7 +246,7 @@ export default function Credits() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-5 shadow-sm">
+          <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-5 shadow-lg backdrop-blur-sm">
             <p className="text-sm text-gray-400">Original Total</p>
             <p className="mt-1 text-2xl font-bold text-white">
               {formatCurrency(metrics.total.totalOriginalAmount)}
@@ -260,7 +260,7 @@ export default function Credits() {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
+          className="rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
         >
           <option value="">Todos los estados</option>
           <option value="pending">Pendiente</option>
@@ -272,7 +272,7 @@ export default function Credits() {
       </div>
 
       {/* Credits Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50 shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-gray-700/50 bg-gray-800/50 shadow-lg backdrop-blur-sm">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-indigo-600"></div>
@@ -284,7 +284,7 @@ export default function Credits() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-700">
-              <thead className="bg-gray-800/800/50">
+              <thead className="bg-gray-900/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                     Cliente
@@ -377,7 +377,7 @@ export default function Credits() {
 
       {/* Top Debtors */}
       {metrics && metrics.topDebtors.length > 0 && (
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6 shadow-sm">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-6 shadow-lg backdrop-blur-sm">
           <h3 className="mb-4 text-lg font-semibold text-white">
             Principales Deudores
           </h3>

@@ -56,7 +56,7 @@ export default function DashboardLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`w-74 fixed left-0 top-0 z-50 h-screen border-r border-gray-800 bg-[#0f1018]/95 backdrop-blur-xl transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-50 h-screen w-72 border-r border-gray-800 bg-[#0f1018]/95 backdrop-blur-xl transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -683,7 +683,7 @@ export default function DashboardLayout() {
 
       {/* Header (mobile + desktop) */}
       <div className="mobile-header-safe fixed left-0 right-0 top-0 z-30 border-b border-gray-800 bg-[#0d0e16]/80 backdrop-blur-lg lg:h-16">
-        <div className="safe-x flex h-full items-center justify-between px-3 sm:px-5 lg:px-8 lg:pl-[19rem]">
+        <div className="safe-x flex h-full items-center justify-between px-3 sm:px-5 lg:ml-72 lg:px-8">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -735,8 +735,8 @@ export default function DashboardLayout() {
       </div>
 
       {/* Main Content */}
-      <main className="content-with-safe-header min-h-screen lg:ml-72 lg:pt-20">
-        <div className="safe-x p-3 sm:p-4 md:p-6 lg:p-8">
+      <main className="content-with-safe-header min-h-screen overflow-x-hidden lg:ml-72 lg:pt-20">
+        <div className="mx-auto w-full max-w-screen-2xl p-4 md:p-6 lg:p-8">
           <BusinessGate>
             <Outlet />
           </BusinessGate>

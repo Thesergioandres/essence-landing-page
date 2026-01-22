@@ -193,7 +193,9 @@ export default function InventoryEntries() {
       product: formData.product,
       productName: productInfo.name,
       quantity: parseInt(formData.quantity),
-      unitCost: formData.unitCost ? parseFloat(formData.unitCost) : productInfo.purchasePrice || 0,
+      unitCost: formData.unitCost
+        ? parseFloat(formData.unitCost)
+        : productInfo.purchasePrice || 0,
       branch: formData.branch,
       provider: formData.provider,
       notes: formData.notes,
@@ -517,7 +519,7 @@ export default function InventoryEntries() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-hidden">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -958,7 +960,8 @@ export default function InventoryEntries() {
                     className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    Si no especificas, se usará el precio de compra actual del producto
+                    Si no especificas, se usará el precio de compra actual del
+                    producto
                   </p>
                 </div>
 
@@ -1070,7 +1073,10 @@ export default function InventoryEntries() {
                                 </h4>
                                 <div className="mt-1 space-y-1 text-xs text-gray-400">
                                   <p>Cantidad: {item.quantity}</p>
-                                  <p>Costo unit.: ${item.unitCost.toLocaleString()}</p>
+                                  <p>
+                                    Costo unit.: $
+                                    {item.unitCost.toLocaleString()}
+                                  </p>
                                   <p>Destino: {branchName}</p>
                                   <p>Proveedor: {providerName}</p>
                                   {item.notes && <p>Notas: {item.notes}</p>}
@@ -1107,7 +1113,13 @@ export default function InventoryEntries() {
                   <p className="text-sm text-gray-400">
                     Total inversión:{" "}
                     <span className="font-semibold text-green-400">
-                      ${cart.reduce((sum, item) => sum + item.quantity * item.unitCost, 0).toLocaleString()}
+                      $
+                      {cart
+                        .reduce(
+                          (sum, item) => sum + item.quantity * item.unitCost,
+                          0
+                        )
+                        .toLocaleString()}
                     </span>
                   </p>
                 </div>

@@ -189,7 +189,7 @@ export default function AddProduct() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 overflow-hidden">
       <div>
         <h1 className="text-4xl font-bold text-white">Agregar producto</h1>
         <p className="mt-2 text-gray-400">
