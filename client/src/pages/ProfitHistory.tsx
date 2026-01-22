@@ -315,9 +315,11 @@ export default function ProfitHistory() {
         const defectiveLosses = defectiveStats?.totalLoss || 0;
         // Utilidad neta final = ganancia neta de ventas - gastos operativos - pérdidas defectuosos
         const netProfit = salesNetProfit - totalExpenses - defectiveLosses;
-        // Rentabilidad = utilidad neta / ganancia bruta * 100
+        // Total vendido (revenue)
+        const totalSalesValue = overview?.summary.salesValue || 0;
+        // Rentabilidad = utilidad neta / total vendido * 100 (fórmula financiera correcta)
         const profitability =
-          totalProfit > 0 ? (netProfit / totalProfit) * 100 : 0;
+          totalSalesValue > 0 ? (netProfit / totalSalesValue) * 100 : 0;
         const expensesByType = expenses.reduce(
           (acc, e) => {
             const type = e.type || "Otros";
@@ -400,7 +402,7 @@ export default function ProfitHistory() {
                   {profitability.toFixed(1)}%
                 </p>
                 <p className="text-xs text-gray-400">
-                  Utilidad neta / Ganancia bruta
+                  Utilidad neta / Total vendido
                 </p>
               </div>
             </div>

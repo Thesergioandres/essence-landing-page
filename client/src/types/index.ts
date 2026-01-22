@@ -792,6 +792,7 @@ export interface ProfitHistoryAdminOverview {
     totalProfit: number;
     netProfit: number;
     totalDeductions: number;
+    salesValue: number; // Total vendido (salePrice * quantity)
     adminProfit: number;
     distributorProfit: number;
     count: number;

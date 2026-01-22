@@ -678,7 +678,7 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
 
     const sales = await Sale.find(saleFilter)
       .select(
-        "saleId saleDate saleGroupId distributor product quantity adminProfit distributorProfit totalProfit netProfit totalAdditionalCosts shippingCost discount paymentStatus",
+        "saleId saleDate saleGroupId distributor product quantity salePrice adminProfit distributorProfit totalProfit netProfit totalAdditionalCosts shippingCost discount paymentStatus",
       )
       .populate("product", "name")
       .populate("distributor", "name email role")
@@ -717,6 +717,15 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
         (sale.shippingCost || 0) +
         (sale.discount || 0);
       const netProfit = sale.netProfit ?? totalProfit - totalDeductions;
+      // salesValue = precio de venta * cantidad
+      // Fallback: si salePrice no existe o es 0, estimamos desde totalProfit (asumiendo ~30% de margen)
+      const rawSalesValue = (sale.salePrice || 0) * (sale.quantity || 1);
+      const salesValue =
+        rawSalesValue > 0
+          ? rawSalesValue
+          : totalProfit > 0
+            ? totalProfit / 0.3
+            : 0;
 
       return {
         id: sale._id.toString(),
@@ -734,6 +743,7 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
         totalProfit,
         netProfit,
         totalDeductions,
+        salesValue,
         quantity: sale.quantity,
         productName: sale.product?.name || "",
         paymentStatus: sale.paymentStatus,
@@ -763,6 +773,7 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
           totalProfit: amount,
           netProfit: amount, // Ventas especiales no tienen deducciones
           totalDeductions: 0,
+          salesValue: amount, // En ventas especiales, salesValue = amount distribuido
           quantity: sale.quantity,
           productName,
           eventName: sale.eventName,
@@ -782,6 +793,7 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
         acc.totalProfit += entry.totalProfit;
         acc.netProfit += entry.netProfit || entry.totalProfit;
         acc.totalDeductions += entry.totalDeductions || 0;
+        acc.salesValue += entry.salesValue || 0;
         acc.adminProfit += entry.adminProfit;
         acc.distributorProfit += entry.distributorProfit;
         acc.count += 1;
@@ -791,6 +803,7 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
         totalProfit: 0,
         netProfit: 0,
         totalDeductions: 0,
+        salesValue: 0,
         adminProfit: 0,
         distributorProfit: 0,
         count: 0,
