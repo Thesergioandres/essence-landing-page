@@ -338,8 +338,8 @@ export default function DistributorDashboardLayout() {
       </aside>
 
       {/* Mobile Header */}
-      <div className="fixed left-0 right-0 top-0 z-20 h-14 border-b border-gray-700 bg-gray-800/95 backdrop-blur-lg lg:hidden">
-        <div className="flex h-full items-center justify-between px-3 sm:px-4">
+      <div className="mobile-header-safe fixed left-0 right-0 top-0 z-20 border-b border-gray-700 bg-gray-800/95 backdrop-blur-lg lg:hidden">
+        <div className="safe-x flex h-full items-center justify-between px-3 sm:px-4">
           <button
             onClick={() => setSidebarOpen(true)}
             className="-ml-2 p-2 text-gray-300 transition hover:text-blue-400 active:scale-95"
@@ -367,8 +367,8 @@ export default function DistributorDashboardLayout() {
       </div>
 
       {/* Main Content */}
-      <main className="min-h-screen pt-14 lg:ml-72 lg:pt-0">
-        <div className="p-3 sm:p-4 md:p-6 lg:p-8">
+      <main className="content-with-safe-header min-h-screen lg:ml-72 lg:pt-0">
+        <div className="safe-x p-3 sm:p-4 md:p-6 lg:p-8">
           <BusinessGate>
             <Outlet />
           </BusinessGate>

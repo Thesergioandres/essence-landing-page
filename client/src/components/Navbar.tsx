@@ -7,9 +7,9 @@ export default function Navbar() {
   const brandLogo = useBrandLogo();
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-gray-700 bg-gray-900/95 backdrop-blur-lg">
-      <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
-        <div className="h-18 flex items-center justify-between sm:h-20">
+    <nav className="safe-top sticky top-0 z-50 border-b border-gray-700 bg-gray-900/95 backdrop-blur-lg">
+      <div className="safe-x mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
+        <div className="flex min-h-[3.5rem] items-center justify-between sm:min-h-[5rem]">
           {/* Logo */}
           <Link
             to="/"

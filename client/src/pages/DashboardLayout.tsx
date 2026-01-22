@@ -682,8 +682,8 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Header (mobile + desktop) */}
-      <div className="fixed left-0 right-0 top-0 z-30 h-14 border-b border-gray-800 bg-[#0d0e16]/80 backdrop-blur-lg lg:h-16">
-        <div className="flex h-full items-center justify-between px-3 sm:px-5 lg:px-8 lg:pl-[19rem]">
+      <div className="mobile-header-safe fixed left-0 right-0 top-0 z-30 border-b border-gray-800 bg-[#0d0e16]/80 backdrop-blur-lg lg:h-16">
+        <div className="safe-x flex h-full items-center justify-between px-3 sm:px-5 lg:px-8 lg:pl-[19rem]">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -735,8 +735,8 @@ export default function DashboardLayout() {
       </div>
 
       {/* Main Content */}
-      <main className="min-h-screen pt-16 lg:ml-72 lg:pt-20">
-        <div className="p-3 sm:p-4 md:p-6 lg:p-8">
+      <main className="content-with-safe-header min-h-screen lg:ml-72 lg:pt-20">
+        <div className="safe-x p-3 sm:p-4 md:p-6 lg:p-8">
           <BusinessGate>
             <Outlet />
           </BusinessGate>

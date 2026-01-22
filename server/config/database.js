@@ -30,26 +30,41 @@ mongoose.connection.on("error", (err) => {
 
 const connectDB = async () => {
   try {
-    // Soportar tanto MONGODB_URI como MONGO_URI (legacy)
-    const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+    // En desarrollo, preferir la BD local; en producción usar MONGODB_URI
+    let mongoUri;
+
+    if (process.env.NODE_ENV === "development") {
+      // Prioridad: MONGO_URI_DEV_LOCAL > MONGODB_URI > MONGO_URI
+      mongoUri =
+        process.env.MONGO_URI_DEV_LOCAL ||
+        process.env.MONGODB_URI ||
+        process.env.MONGO_URI;
+
+      if (process.env.MONGO_URI_DEV_LOCAL) {
+        console.log("📍 Usando base de datos LOCAL (desarrollo)");
+      }
+    } else {
+      // En producción/test: usar la URI principal
+      mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+    }
 
     if (!mongoUri) {
       throw new Error(
-        "MONGODB_URI no está definida en las variables de entorno"
+        "MONGODB_URI no está definida en las variables de entorno",
       );
     }
 
     // SEGURIDAD: Verificar que en producción no se use la BD de test
     if (process.env.NODE_ENV === "production" && mongoUri.includes("_test")) {
       throw new Error(
-        "❌ PELIGRO: Intentando usar base de datos de test en producción"
+        "❌ PELIGRO: Intentando usar base de datos de test en producción",
       );
     }
 
     // SEGURIDAD: Verificar que en test no se use la BD de producción
     if (process.env.NODE_ENV === "test" && !mongoUri.includes("_test")) {
       throw new Error(
-        "❌ PELIGRO: Los tests deben usar una base de datos separada (essence_test)"
+        "❌ PELIGRO: Los tests deben usar una base de datos separada (essence_test)",
       );
     }
 

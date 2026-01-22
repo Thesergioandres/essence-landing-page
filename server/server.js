@@ -24,6 +24,11 @@ import { requestLogger } from "./middleware/requestLogger.middleware.js";
 
 // Importar rutas
 import {
+  databaseOperationLogger,
+  productionWriteGuard,
+  validateDatabaseSecurity,
+} from "./middleware/databaseGuard.middleware.js";
+import {
   sanitizeHeaders,
   securityHeaders,
   suspiciousRequestDetector,
@@ -81,6 +86,16 @@ const allowedOrigins = [
 await connectDB();
 initRedis();
 
+// 🛡️ Validar seguridad de base de datos antes de continuar
+if (process.env.NODE_ENV === "development") {
+  try {
+    validateDatabaseSecurity();
+  } catch (secError) {
+    console.error(secError.message);
+    process.exit(1);
+  }
+}
+
 // Worker opcional para jobs (recomendaciones en background)
 if (process.env.BA_ENABLE_WORKER === "true") {
   startBusinessAssistantWorker();
@@ -110,7 +125,7 @@ app.use(
       return compression.filter(req, res);
     },
     level: 6,
-  })
+  }),
 );
 
 // RequestId + response injection
@@ -121,6 +136,12 @@ app.use(withResponseRequestId);
 app.use(securityHeaders);
 app.use(sanitizeHeaders);
 app.use(suspiciousRequestDetector);
+
+// 🛡️ Protección anti-escritura en producción
+app.use(productionWriteGuard);
+if (process.env.DEBUG_DB === "true") {
+  app.use(databaseOperationLogger);
+}
 
 // Aumentar límite de tamaño del body para imágenes Base64 (50MB)
 app.use(express.json({ limit: "50mb" }));
@@ -161,7 +182,7 @@ app.use(
     ],
     exposedHeaders: ["Content-Length", "X-Requested-With"],
     maxAge: 86400, // 24 horas de cache para preflight
-  })
+  }),
 );
 
 // Manejo explícito de preflight requests
@@ -189,7 +210,7 @@ app.use(
     explorer: true,
     customCss: ".swagger-ui .topbar { display: none }",
     customSiteTitle: "Essence API Docs",
-  })
+  }),
 );
 
 // JSON de la especificación OpenAPI
