@@ -54,6 +54,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
   const tokenRef = useRef<string | null>(localStorage.getItem("token"));
+  const isFetchingRef = useRef(false); // Guard against concurrent refresh calls
+  const retryRef = useRef(0); // Guard for auto-retry
 
   const syncBusinessId = (id: string | null) => {
     setBusinessId(id);
@@ -65,6 +67,12 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   };
 
   const refresh = useCallback(async () => {
+    // Debounce: Skip if already fetching
+    if (isFetchingRef.current) {
+      console.log("[BusinessContext] Refresh skipped - already fetching");
+      return;
+    }
+
     const token = localStorage.getItem("token");
     if (!token) {
       setMemberships([]);
@@ -72,11 +80,36 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    isFetchingRef.current = true;
     setLoading(true);
     setError(null);
     try {
       const { memberships: fetched } = await businessService.getMyMemberships();
-      setMemberships(fetched);
+      console.log(
+        "[BusinessContext] Fetched memberships:",
+        fetched?.length,
+        fetched
+      );
+      console.log(
+        "[BusinessContext] Fetched memberships:",
+        fetched?.length,
+        fetched
+      );
+      setMemberships(fetched || []);
+
+      // Safe Retry Logic: Si devuelve vacío y no hemos reintentado, prueba una vez más
+      if ((!fetched || fetched.length === 0) && retryRef.current < 1) {
+        console.log("[BusinessContext] Empty list, retrying once...");
+        retryRef.current += 1;
+        isFetchingRef.current = false; // Liberar lock para el reintento
+        setTimeout(() => refresh(), 800);
+        return;
+      }
+
+      // Si éxito, limpiar reintentos
+      if (fetched && fetched.length > 0) {
+        retryRef.current = 0;
+      }
 
       const stored = localStorage.getItem("businessId");
       const hasStored = stored && fetched.some(m => m.business?._id === stored);
@@ -103,6 +136,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       setError("No se pudieron cargar tus negocios");
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, []);
 

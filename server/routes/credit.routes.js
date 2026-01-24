@@ -100,7 +100,7 @@ router.get(
   "/customer/:customerId",
   creditValidation.getByCustomer,
   admin,
-  getCustomerCredits
+  getCustomerCredits,
 );
 
 /**
@@ -328,7 +328,7 @@ router.post("/:id/cancel", creditValidation.getById, admin, cancelCredit);
 router.post(
   "/:id/distributor-payment",
   creditValidation.getById,
-  registerDistributorPayment
+  registerDistributorPayment,
 );
 
 export default router;

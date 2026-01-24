@@ -187,7 +187,7 @@ export const createProduct = async (req, res) => {
       } else {
         // Usar Base64 si Cloudinary no está configurado
         console.log(
-          "💾 Guardando imagen como Base64 (Cloudinary deshabilitado)"
+          "💾 Guardando imagen como Base64 (Cloudinary deshabilitado)",
         );
         const base64Image = `data:${
           req.file.mimetype
@@ -212,7 +212,7 @@ export const createProduct = async (req, res) => {
     const product = await Product.create(productData);
     const populatedProduct = await Product.findById(product._id).populate(
       "category",
-      "name slug"
+      "name slug",
     );
 
     // Invalidar caché de productos
@@ -295,7 +295,7 @@ export const updateProduct = async (req, res) => {
       } else {
         // Usar Base64 si Cloudinary no está configurado
         console.log(
-          "💾 Actualizando imagen como Base64 (Cloudinary deshabilitado)"
+          "💾 Actualizando imagen como Base64 (Cloudinary deshabilitado)",
         );
         const base64Image = `data:${
           req.file.mimetype
@@ -338,7 +338,7 @@ export const updateProduct = async (req, res) => {
       updateData.clientPrice = Number(updateData.clientPrice);
     if (updateData.distributorCommission)
       updateData.distributorCommission = Number(
-        updateData.distributorCommission
+        updateData.distributorCommission,
       );
     if (updateData.totalStock)
       updateData.totalStock = Number(updateData.totalStock);
@@ -355,7 +355,7 @@ export const updateProduct = async (req, res) => {
       {
         new: true,
         runValidators: true,
-      }
+      },
     ).populate("category", "name slug");
 
     // Invalidar caché de productos
@@ -451,11 +451,11 @@ export const getDistributorPrice = async (req, res) => {
 
     const commissionInfo = await getDistributorCommissionInfo(
       distributorId,
-      businessId
+      businessId,
     );
     const profitPercentage = await getDistributorProfitPercentage(
       distributorId,
-      businessId
+      businessId,
     );
     const position = commissionInfo.position;
 
@@ -472,7 +472,10 @@ export const getDistributorPrice = async (req, res) => {
   }
 };
 
-export const getDistributorCatalog = async (req, res) => {
+// @desc    [LEGACY] Obtener catálogo de distribuidor
+// @route   GET /api/products/my-catalog
+// @access  Private/Distributor
+export const getDistributorCatalogLegacy = async (req, res) => {
   try {
     const businessId = resolveBusinessId(req);
     const isTest = process.env.NODE_ENV === "test";
@@ -480,16 +483,12 @@ export const getDistributorCatalog = async (req, res) => {
       return res.status(400).json({ message: "Falta x-business-id" });
     }
 
-    console.log("📦 getDistributorCatalog llamado");
-    console.log("Usuario autenticado:", req.user);
-
+    // ... Legacy implementation
     // Obtener el ID del distribuidor autenticado
     const distributorId = req.user.userId || req.user.id;
-    console.log("Distribuidor ID:", distributorId);
 
     // Verificar que el usuario sea distribuidor
     if (req.user.role !== "distribuidor") {
-      console.log("❌ Acceso denegado: rol", req.user.role);
       return res.status(403).json({
         message: "Solo los distribuidores pueden acceder a su catálogo",
       });
@@ -507,12 +506,7 @@ export const getDistributorCatalog = async (req, res) => {
       populate: { path: "category" },
     });
 
-    console.log(
-      `✅ Encontrados ${distributorStocks.length} productos en stock`
-    );
-
     // Extraer los productos y agregar la cantidad disponible del distribuidor
-    // Filtrar productos nulos (por si fueron eliminados)
     const products = distributorStocks
       .filter((stock) => stock.product) // Solo incluir si el producto existe
       .map((stock) => {
@@ -523,19 +517,17 @@ export const getDistributorCatalog = async (req, res) => {
         };
       });
 
-    console.log(`📤 Enviando ${products.length} productos al frontend`);
-
     // Deshabilitar caché para este endpoint
     res.setHeader(
       "Cache-Control",
-      "no-store, no-cache, must-revalidate, private"
+      "no-store, no-cache, must-revalidate, private",
     );
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
 
     res.json(products);
   } catch (error) {
-    console.error("❌ Error en getDistributorCatalog:", error);
+    console.error("❌ Error en getDistributorCatalogLegacy:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -543,7 +535,10 @@ export const getDistributorCatalog = async (req, res) => {
 // @desc    Inicializar costo promedio en productos existentes
 // @route   POST /api/products/initialize-average-cost
 // @access  Private/Admin
-export const initializeAverageCost = async (req, res) => {
+// @desc    [LEGACY] Inicializar costo promedio en productos
+// @route   POST /api/products/initialize-average-cost
+// @access  Private/Admin
+export const initializeAverageCostLegacy = async (req, res) => {
   try {
     const businessId = resolveBusinessId(req);
     if (!businessId) {
@@ -580,26 +575,9 @@ export const initializeAverageCost = async (req, res) => {
       updates.push({
         _id: product._id,
         name: product.name,
-        purchasePrice: product.purchasePrice,
         averageCost: averageCost,
-        totalStock: totalStock,
-        totalInventoryValue: totalInventoryValue,
       });
     }
-
-    // Registrar en auditoría
-    await AuditService.log({
-      user: req.user,
-      action: "initialize_average_cost",
-      module: "products",
-      description: `Inicializados costos promedio de ${updatedCount} productos`,
-      business: businessId,
-      req,
-      metadata: {
-        updatedCount,
-        totalProducts: products.length,
-      },
-    });
 
     res.json({
       message: `Se inicializaron los costos promedio de ${updatedCount} productos`,
@@ -608,6 +586,121 @@ export const initializeAverageCost = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error inicializando costos promedio:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    [OPTIMIZED] Inicializar costo promedio en productos existentes (BulkWrite)
+ * @route   POST /api/products/initialize-average-cost-optimized
+ * @access  Private/Admin
+ */
+/**
+ * @desc    [OPTIMIZED] Inicializar costo promedio (BulkWrite)
+ * @route   POST /api/products/initialize-average-cost
+ * @access  Private/Admin
+ */
+export const initializeAverageCost = async (req, res) => {
+  try {
+    const businessId = resolveBusinessId(req);
+    const products = await Product.find({
+      business: businessId,
+      $or: [
+        { averageCost: { $exists: false } },
+        { averageCost: null },
+        { averageCost: 0 },
+      ],
+    })
+      .select("_id purchasePrice totalStock costingMethod")
+      .lean();
+
+    if (products.length === 0) {
+      return res.json({
+        message: "No hay productos pendientes de inicialización",
+        updatedCount: 0,
+      });
+    }
+
+    const bulkOps = products.map((product) => {
+      const averageCost = product.purchasePrice || 0;
+      const totalStock = product.totalStock || 0;
+      const totalInventoryValue = totalStock * averageCost;
+
+      return {
+        updateOne: {
+          filter: { _id: product._id },
+          update: {
+            $set: {
+              averageCost: averageCost,
+              totalInventoryValue: totalInventoryValue,
+              lastCostUpdate: new Date(),
+              costingMethod: product.costingMethod || "average",
+            },
+          },
+        },
+      };
+    });
+
+    const result = await Product.bulkWrite(bulkOps);
+
+    res.json({
+      message: `Se inicializaron costos de ${result.modifiedCount} productos (Optimizado)`,
+      updatedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("❌ Error en initializeAverageCost:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    [OPTIMIZED] Obtener catálogo (Lean + No Hydration)
+ * @route   GET /api/products/distributor-catalog-optimized
+ * @access  Private/Distributor
+ */
+/**
+ * @desc    [OPTIMIZED] Obtener catálogo (Lean + No Hydration)
+ * @route   GET /api/products/my-catalog
+ * @access  Private/Distributor
+ */
+export const getDistributorCatalog = async (req, res) => {
+  try {
+    const businessId = resolveBusinessId(req);
+    const isTest = process.env.NODE_ENV === "test";
+
+    if (!businessId && !isTest) {
+      return res.status(400).json({ message: "Falta x-business-id" });
+    }
+
+    const distributorId = req.user?.userId || req.user?.id;
+
+    const DistributorStock = (await import("../models/DistributorStock.js"))
+      .default;
+
+    const distributorStocks = await DistributorStock.find({
+      distributor: distributorId,
+      business: businessId,
+      quantity: { $gt: 0 },
+    })
+      .populate({
+        path: "product",
+        populate: { path: "category" },
+      })
+      .lean();
+
+    const products = distributorStocks
+      .filter((stock) => stock.product)
+      .map((stock) => ({
+        ...stock.product,
+        distributorStock: stock.quantity,
+      }));
+
+    res.setHeader("Cache-Control", "no-store, no-cache");
+    res.setHeader("Expires", "0");
+
+    res.json(products);
+  } catch (error) {
+    console.error("❌ Error en getDistributorCatalog:", error);
     res.status(500).json({ message: error.message });
   }
 };

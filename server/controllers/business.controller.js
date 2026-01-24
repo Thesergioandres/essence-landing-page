@@ -176,7 +176,7 @@ export const addMember = async (req, res) => {
         ...(permissions ? { permissions } : {}),
         ...(Array.isArray(allowedBranches) ? { allowedBranches } : {}),
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true },
     );
 
     res.status(201).json({ membership });
@@ -200,7 +200,7 @@ export const updateMember = async (req, res) => {
         ...(permissions ? { permissions } : {}),
         ...(Array.isArray(allowedBranches) ? { allowedBranches } : {}),
       },
-      { new: true }
+      { new: true },
     );
 
     if (!membership) {
@@ -363,7 +363,7 @@ export const getMyMemberships = async (req, res) => {
     })
       .populate(
         "business",
-        "name description config status contactEmail contactPhone contactWhatsapp contactLocation metadata logoUrl logoPublicId"
+        "name description config status contactEmail contactPhone contactWhatsapp contactLocation metadata logoUrl logoPublicId",
       )
       .lean();
     res.json({ memberships });

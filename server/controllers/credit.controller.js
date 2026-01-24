@@ -104,7 +104,7 @@ export const createCredit = async (req, res) => {
         link: `/credits/${credit._id}`,
         relatedEntity: { type: "Credit", id: credit._id },
       },
-      requestId
+      requestId,
     );
 
     logApiInfo({
@@ -142,7 +142,7 @@ export const createCredit = async (req, res) => {
  * @route   GET /api/credits
  * @access  Private/Admin
  */
-export const getCredits = async (req, res) => {
+export const getCreditsLegacy = async (req, res) => {
   const requestId = req.reqId;
   const businessId = req.businessId;
 
@@ -334,7 +334,7 @@ export const getCreditById = async (req, res) => {
       // Si no hay venta asociada pero hay items, calcular desde los items
       const totalFromItems = credit.items.reduce(
         (sum, item) => sum + (item.subtotal || 0),
-        0
+        0,
       );
       const estimatedCost = credit.items.reduce((sum, item) => {
         const product = item.product;
@@ -434,7 +434,7 @@ export const registerPayment = async (req, res) => {
     if (amount > credit.remainingAmount) {
       return res.status(400).json({
         message: `El monto excede el saldo pendiente ($${credit.remainingAmount.toFixed(
-          2
+          2,
         )})`,
         requestId,
       });
@@ -486,7 +486,7 @@ export const registerPayment = async (req, res) => {
             confirmedAt: new Date(),
             confirmedBy: userId,
           },
-          { new: true }
+          { new: true },
         );
 
         if (saleUpdate) {
@@ -520,7 +520,7 @@ export const registerPayment = async (req, res) => {
         changedAt: new Date(),
         changedBy: userId,
         note: `Pago parcial: $${amount.toFixed(
-          2
+          2,
         )}. Saldo: $${balanceAfter.toFixed(2)}`,
       });
     }
@@ -540,13 +540,13 @@ export const registerPayment = async (req, res) => {
         type: "credit_payment",
         title: "Pago de fiado recibido",
         message: `${credit.customer.name} pagó $${amount.toFixed(
-          2
+          2,
         )}. Saldo: $${balanceAfter.toFixed(2)}`,
         priority: balanceAfter === 0 ? "low" : "medium",
         link: `/credits/${credit._id}`,
         relatedEntity: { type: "Credit", id: credit._id },
       },
-      requestId
+      requestId,
     );
 
     logApiInfo({
@@ -639,7 +639,7 @@ const restoreStockAndMetricsFromSale = async (
   sale,
   businessId,
   requestId,
-  options = {}
+  options = {},
 ) => {
   if (!sale) return { restored: false };
 
@@ -661,14 +661,14 @@ const restoreStockAndMetricsFromSale = async (
       await BranchStock.findOneAndUpdate(
         { business: businessId, branch: sale.branch, product: product._id },
         { $inc: { quantity: quantity } },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, new: true, setDefaultsOnInsert: true },
       );
     }
   } else if (sale.distributor) {
     await DistributorStock.findOneAndUpdate(
       { distributor: sale.distributor, product: product._id },
       { $inc: { quantity: quantity } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true },
     );
   } else {
     // Venta sin sede ni distribuidor: devolver a warehouseStock
@@ -785,7 +785,7 @@ export const cancelCredit = async (req, res) => {
         const result = await restoreStockAndMetricsFromSale(
           sale,
           businessId,
-          requestId
+          requestId,
         );
         stockRestored = result.restored;
 
@@ -1145,7 +1145,7 @@ export const deleteCredit = async (req, res) => {
         const result = await restoreStockAndMetricsFromSale(
           sale,
           businessId,
-          requestId
+          requestId,
         );
         stockRestored = result.restored;
 
@@ -1285,7 +1285,7 @@ export const getDistributorCredits = async (req, res) => {
     const stats = {
       totalCredits: credits.length,
       pendingCount: credits.filter((c) =>
-        ["pending", "partial", "overdue"].includes(c.status)
+        ["pending", "partial", "overdue"].includes(c.status),
       ).length,
       totalPending: credits
         .filter((c) => ["pending", "partial", "overdue"].includes(c.status))
@@ -1454,7 +1454,7 @@ export const registerDistributorPayment = async (req, res) => {
         link: `/admin/credits/${credit._id}`,
         relatedEntity: { type: "Credit", id: credit._id },
       },
-      requestId
+      requestId,
     );
 
     logApiInfo({
@@ -1495,6 +1495,98 @@ export const registerDistributorPayment = async (req, res) => {
       requestId,
       businessId,
       userId,
+      stack: error.stack,
+    });
+    res.status(500).json({
+      message: error.message,
+      requestId,
+    });
+  }
+};
+
+/**
+ * @desc    Obtener créditos optimizado (N+1 free)
+ * @route   GET /api/credits/optimized
+ * @access  Private/Admin
+ */
+export const getCredits = async (req, res) => {
+  const requestId = req.reqId;
+  const businessId = req.businessId;
+
+  try {
+    const {
+      status,
+      customerId,
+      branchId,
+      overdue,
+      page = 1,
+      limit = 50,
+    } = req.query;
+
+    const filter = { business: businessId };
+
+    if (status) filter.status = status;
+    if (customerId) filter.customer = customerId;
+    if (branchId) filter.branch = branchId;
+    if (overdue === "true") {
+      filter.dueDate = { $lt: new Date() };
+      filter.status = { $in: ["pending", "partial"] };
+    }
+
+    // Paso 1: Actualización Masiva (Bulk Update)
+    // Marca como 'overdue' todos los créditos vencidos del negocio de una sola vez
+    const now = new Date();
+    await Credit.updateMany(
+      {
+        business: businessId,
+        dueDate: { $lt: now },
+        status: { $in: ["pending", "partial"] },
+      },
+      {
+        $set: { status: "overdue" },
+        $push: {
+          statusHistory: {
+            status: "overdue",
+            changedAt: now,
+            note: "Marcado como vencido automáticamente (Optimizado)",
+          },
+        },
+      },
+    );
+
+    // Paso 2: Lectura Rápida (Lean Query)
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [credits, total] = await Promise.all([
+      Credit.find(filter)
+        .populate("customer", "name email phone")
+        .populate("branch", "name")
+        .populate("createdBy", "name")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean({ virtuals: true }),
+      Credit.countDocuments(filter),
+    ]);
+
+    // Paso 3: Retornar Respuesta
+    res.json({
+      success: true,
+      credits,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+      requestId,
+    });
+  } catch (error) {
+    logApiError({
+      message: "Error al obtener créditos (optimizado)",
+      module: "credit",
+      requestId,
+      businessId,
       stack: error.stack,
     });
     res.status(500).json({

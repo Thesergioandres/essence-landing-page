@@ -52,7 +52,7 @@ export const authLimiter = rateLimit({
  */
 export const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minuto
-  max: 100, // 100 requests por minuto
+  max: 1000, // 1000 requests por minuto (Aumentado para evitar bloqueos en dashboard)
   message: {
     message: "Demasiadas solicitudes. Intenta de nuevo en un momento.",
     code: "RATE_LIMIT_API",

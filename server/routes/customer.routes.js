@@ -32,7 +32,7 @@ router
   .put(updateCustomer)
   .delete(
     requirePermission({ module: "customers", action: "delete" }),
-    deleteCustomer
+    deleteCustomer,
   );
 
 router.post("/:id/points", adjustPoints);

@@ -1,17 +1,9 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { useBusiness } from "../context/BusinessContext";
 
 export default function BusinessSelector() {
-  const {
-    memberships,
-    businessId,
-    selectBusiness,
-    loading,
-    error,
-    hydrating,
-    refresh,
-  } = useBusiness();
-  const retriedRef = useRef(false);
+  const { memberships, businessId, selectBusiness, loading, error, hydrating } =
+    useBusiness();
 
   const hasBusinesses = memberships.length > 0;
 
@@ -21,14 +13,8 @@ export default function BusinessSelector() {
     return "Negocio";
   }, [loading, hydrating, error]);
 
-  // Si la lista llega vacía, intenta refrescar una sola vez si hay token
-  useEffect(() => {
-    if (hydrating || loading || hasBusinesses || retriedRef.current) return;
-    const token = localStorage.getItem("token");
-    if (!token) return;
-    retriedRef.current = true;
-    void refresh();
-  }, [hasBusinesses, loading, hydrating, refresh]);
+  // REMOVED: El BusinessContext ya maneja el refresh inicial.
+  // El useEffect anterior que llamaba refresh() causaba un loop infinito.
 
   return (
     <div className="mt-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-300">

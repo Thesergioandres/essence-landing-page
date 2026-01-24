@@ -55,15 +55,13 @@ const checkBusinessOwnerAccess = async (userId) => {
 
 // Proteger rutas - verificar JWT
 export const protect = async (req, res, next) => {
-  let token;
-
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
   ) {
     try {
       // Obtener token del header
-      token = req.headers.authorization.split(" ")[1];
+      const token = req.headers.authorization.split(" ")[1];
 
       // Verificar token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -169,7 +167,7 @@ export const protect = async (req, res, next) => {
       console.log(
         "✅ Usuario autenticado:",
         req.user.name,
-        `(${req.user.role})`
+        `(${req.user.role})`,
       );
 
       next();

@@ -2300,3 +2300,123 @@ export const confirmPayment = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Obtener ventas optimizado (lectura rápida)
+// @route   GET /api/sales/optimized
+// @access  Private/Admin
+export const getSalesOptimized = async (req, res) => {
+  const reqId = Date.now();
+  try {
+    const businessId = resolveBusinessId(req);
+    if (!businessId) {
+      return res.status(400).json({ message: "Falta x-business-id" });
+    }
+
+    const {
+      startDate,
+      endDate,
+      distributorId,
+      productId,
+      paymentStatus,
+      sortBy,
+      page = 1,
+      limit = 50,
+      allTime,
+    } = req.query;
+
+    console.log(
+      `[OPTIMIZED_DEBUG] BusinessId: ${businessId}, Query:`,
+      req.query,
+    );
+
+    const filter = { business: businessId };
+
+    if (req.query.branchId) {
+      filter.branch = new mongoose.Types.ObjectId(req.query.branchId);
+    }
+
+    // Filtros de fecha optimizados
+    const mustDefaultDateRange =
+      !startDate && !endDate && String(allTime) !== "true";
+
+    if (startDate || endDate || mustDefaultDateRange) {
+      filter.saleDate = {};
+      if (startDate) {
+        filter.saleDate.$gte = new Date(startDate);
+      } else if (mustDefaultDateRange) {
+        // Últimos 30 días si no se especifica nada
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        filter.saleDate.$gte = thirtyDaysAgo;
+      }
+      if (endDate) {
+        filter.saleDate.$lte = new Date(endDate);
+      }
+    }
+
+    console.log(
+      `[OPTIMIZED_DEBUG] Final Filter:`,
+      JSON.stringify(filter, null, 2),
+    );
+
+    if (distributorId) filter.distributor = distributorId;
+    if (productId) filter.product = productId;
+    if (paymentStatus) filter.paymentStatus = paymentStatus;
+
+    // Ordenamiento
+    let sortOption = { saleDate: -1 };
+    if (sortBy === "date-asc") {
+      sortOption = { saleDate: 1 };
+    } else if (sortBy === "distributor") {
+      sortOption = { "distributor.name": 1 };
+    }
+
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    // 🚀 OPTIMIZACIÓN REALIZADA
+    // 1. Proyección estricta (select)
+    // 2. Populate solo con campos necesarios
+    // 3. lean({ virtuals: true }) para evitar hidratación de documentos pero mantener getters
+    const tStart = Date.now();
+
+    const sales = await Sale.find(filter)
+      .select(
+        "saleId saleDate paymentStatus quantity salePrice totalProfit netProfit distributor product branch customer createdBy notes isCredit creditId",
+      )
+      .populate("product", "name image")
+      .populate("distributor", "name email")
+      .populate("branch", "name")
+      .populate("customer", "name") // Solo nombre del cliente
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limitNum)
+      .lean({ virtuals: true });
+
+    // También traemos el count para la paginación (optimizado con countDocuments)
+    const total = await Sale.countDocuments(filter);
+
+    const tEnd = Date.now();
+
+    console.log(
+      `[OPTIMIZED] Fetch sales: ${sales.length} items in ${tEnd - tStart}ms`,
+    );
+
+    res.json({
+      sales,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+      performance: {
+        timeMs: tEnd - tStart,
+        items: sales.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error in getSalesOptimized:", error);
+    res.status(500).json({ message: error.message });
+  }
+};

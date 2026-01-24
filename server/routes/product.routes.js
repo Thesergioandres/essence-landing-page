@@ -49,7 +49,7 @@ router.get(
   businessContext,
   requireFeature("products"),
   requirePermission({ module: "products", action: "read" }),
-  getDistributorCatalog
+  getDistributorCatalog,
 );
 
 // Inicializar costos promedio (debe ir ANTES de las rutas con parámetros)
@@ -59,7 +59,7 @@ router.post(
   businessContext,
   requireFeature("products"),
   requirePermission({ module: "products", action: "update" }),
-  initializeAverageCost
+  initializeAverageCost,
 );
 
 /**
@@ -158,7 +158,7 @@ router.get(
   businessContext,
   requireFeature("products"),
   requirePermission({ module: "products", action: "read" }),
-  getDistributorPrice
+  getDistributorPrice,
 );
 
 /**
@@ -215,7 +215,7 @@ router.post(
   requireFeature("products"),
   requirePermission({ module: "products", action: "create" }),
   upload.single("image"),
-  createProduct
+  createProduct,
 );
 
 /**
@@ -261,7 +261,7 @@ router.put(
   requireFeature("products"),
   requirePermission({ module: "products", action: "update" }),
   upload.single("image"),
-  updateProduct
+  updateProduct,
 );
 
 /**
@@ -291,7 +291,7 @@ router.delete(
   businessContext,
   requireFeature("products"),
   requirePermission({ module: "products", action: "delete" }),
-  deleteProduct
+  deleteProduct,
 );
 
 export default router;

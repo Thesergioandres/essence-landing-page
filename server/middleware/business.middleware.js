@@ -11,14 +11,28 @@ import {
 export const businessContext = async (req, res, next) => {
   try {
     const isTest = process.env.NODE_ENV === "test";
-    const businessId = req.headers["x-business-id"] || req.query.businessId;
+    let businessId = req.headers["x-business-id"] || req.query.businessId;
+
+    // Fallback: Si no hay ID explícito, intentar resolver por el usuario logueado (Auto-Select Default Business)
+    if (!businessId && req.user) {
+      const defaultMembership = await Membership.findOne({
+        user: req.user._id || req.user.id,
+        status: "active",
+      }).sort({ createdAt: 1 }); // Preferir el más antiguo/principal
+
+      if (defaultMembership) {
+        businessId = defaultMembership.business.toString();
+        // console.log(`ℹ️ Auto-resolving business context to: ${businessId}`);
+      }
+    }
+
     if (isTest && !businessId) {
       req.business = null;
       req.businessId = null;
       req.membership = null;
       return next();
     }
-    // Incluso super_admin debe indicar el negocio explícitamente
+    // Incluso super_admin debe indicar el negocio explícitamente (o resolverse automáticamente arriba)
     if (!businessId) {
       return res
         .status(400)
@@ -79,7 +93,7 @@ export const businessContext = async (req, res, next) => {
 
       const ownerUserId = primaryAdminMembership?.user || business.createdBy;
       const owner = await User.findById(ownerUserId).select(
-        "role status active subscriptionExpiresAt"
+        "role status active subscriptionExpiresAt",
       );
 
       const ownerExpired =
@@ -213,7 +227,7 @@ export const requirePermission = ({ module, action, branchResolver } = {}) => {
       membership.allowedBranches.length > 0
     ) {
       const hasAccess = membership.allowedBranches.some(
-        (b) => b?.toString() === branchId?.toString()
+        (b) => b?.toString() === branchId?.toString(),
       );
 
       if (!hasAccess) {

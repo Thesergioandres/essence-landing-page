@@ -63,6 +63,7 @@ const InventoryEntries = lazy(() => import("./pages/InventoryEntries"));
 const TeamManagement = lazy(() => import("./pages/TeamManagement"));
 const PaymentMethods = lazy(() => import("./pages/PaymentMethods"));
 const DeliveryMethods = lazy(() => import("./pages/DeliveryMethods"));
+const TestOptimization = lazy(() => import("./pages/TestOptimization"));
 
 // Distributor pages
 const DistributorDashboardLayout = lazy(
@@ -372,6 +373,14 @@ export default function App() {
             element={
               <BusinessGate>
                 <Customers />
+              </BusinessGate>
+            }
+          />
+          <Route
+            path="test-optimization"
+            element={
+              <BusinessGate requiredFeature="sales">
+                <TestOptimization />
               </BusinessGate>
             }
           />

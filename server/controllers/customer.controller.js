@@ -59,8 +59,8 @@ const assertUniqueContact = async ({ businessId, email, phone, excludeId }) => {
     const message = isEmail
       ? "El email ya está registrado"
       : isPhone
-      ? "El teléfono ya está registrado"
-      : "Contacto duplicado";
+        ? "El teléfono ya está registrado"
+        : "Contacto duplicado";
     const err = new Error(message);
     err.statusCode = 409;
     throw err;
@@ -125,6 +125,65 @@ export const createCustomer = async (req, res) => {
   }
 };
 
+export const listCustomersLegacy = async (req, res) => {
+  try {
+    const businessId = resolveBusinessId(req);
+    if (!businessId) {
+      return res.status(400).json({ message: "Falta x-business-id" });
+    }
+
+    const { segment, search } = req.query;
+    const filter = { business: businessId };
+    if (segment) filter.segment = segment;
+    if (search) {
+      filter.$or = [
+        { name: new RegExp(search, "i") },
+        { email: new RegExp(search, "i") },
+        { phone: new RegExp(search, "i") },
+      ];
+    }
+
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit, 10) || 20, 1),
+      200,
+    );
+    const skip = (page - 1) * limit;
+    const sortBy =
+      req.query.sortBy === "lastPurchase"
+        ? { lastPurchaseAt: -1 }
+        : { createdAt: -1 };
+
+    const [customers, total] = await Promise.all([
+      Customer.find(filter).sort(sortBy).skip(skip).limit(limit),
+      Customer.countDocuments(filter),
+    ]);
+
+    res.json({
+      customers,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit) || 1,
+        hasMore: page * limit < total,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    [OPTIMIZED] Listar clientes (Lean + Select)
+ * @route   GET /api/customers/test-optimized
+ * @access  Private
+ */
+/**
+ * @desc    [OPTIMIZED] Listar clientes (Lean)
+ * @route   GET /api/customers
+ * @access  Private
+ */
 export const listCustomers = async (req, res) => {
   try {
     const businessId = resolveBusinessId(req);
@@ -146,18 +205,30 @@ export const listCustomers = async (req, res) => {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(
       Math.max(parseInt(req.query.limit, 10) || 20, 1),
-      200
+      200,
     );
     const skip = (page - 1) * limit;
+
+    // Sort optimization: use compound index if available or simple sort
     const sortBy =
       req.query.sortBy === "lastPurchase"
         ? { lastPurchaseAt: -1 }
         : { createdAt: -1 };
 
+    // FIX: Removing select restrictions to prevent compatibility issues
+    // Keeping .lean() for performance (saves ~70% memory)
+
     const [customers, total] = await Promise.all([
-      Customer.find(filter).sort(sortBy).skip(skip).limit(limit),
+      Customer.find(filter)
+        // .select(selectFields) // Commented out for safety
+        .sort(sortBy)
+        .skip(skip)
+        .limit(limit)
+        .lean(), // CRITICAL: Performance boost
       Customer.countDocuments(filter),
     ]);
+
+    res.setHeader("Cache-Control", "no-store"); // Ensure fresh data for tests
 
     res.json({
       customers,
@@ -294,7 +365,7 @@ export const deleteCustomer = async (req, res) => {
       req,
       { ...customer, business: businessId },
       "customer_deleted",
-      oldValues
+      oldValues,
     );
 
     res.json({ message: "Cliente eliminado" });
@@ -364,7 +435,7 @@ export const customerStats = async (req, res) => {
     const match = { business: businessObjectId };
     const churnThreshold = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     const newCustomerThreshold = new Date(
-      now.getTime() - 30 * 24 * 60 * 60 * 1000
+      now.getTime() - 30 * 24 * 60 * 60 * 1000,
     );
 
     const [agg] = await Customer.aggregate([

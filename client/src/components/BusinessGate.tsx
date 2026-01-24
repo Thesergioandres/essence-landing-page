@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { authService } from "../api/services";
 import { useBusiness } from "../context/BusinessContext";
@@ -20,20 +20,12 @@ export default function BusinessGate({
     error,
     features,
     hydrating,
-    refresh,
     memberships,
   } = useBusiness();
   const user = authService.getCurrentUser();
-  const retriedRef = useRef(false);
 
-  // Si no hay negocio pero ya se hidrató y no estamos cargando, fuerza un refresh una sola vez
-  useEffect(() => {
-    if (hydrating || loading || businessId || retriedRef.current) return;
-    const token = localStorage.getItem("token");
-    if (!token) return;
-    retriedRef.current = true;
-    void refresh();
-  }, [businessId, loading, hydrating, refresh]);
+  // REMOVED: El BusinessContext ya maneja el refresh inicial.
+  // El useEffect anterior que llamaba refresh() causaba un loop infinito.
 
   if (hydrating) {
     return (
