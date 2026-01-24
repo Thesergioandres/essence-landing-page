@@ -560,6 +560,34 @@ export const businessAssistantService = {
     );
     return response.data;
   },
+
+  async getStrategicAnalysis(question?: string): Promise<{
+    success: boolean;
+    analysis: string;
+    context: any;
+  }> {
+    const response = await api.post<{
+      success: boolean;
+      analysis: string;
+      context: any;
+    }>("/business-assistant/analyze-strategic", { question });
+    return response.data;
+  },
+
+  async getLatestAnalysis(): Promise<{
+    success: boolean;
+    analysis: string;
+    lastUpdated: string;
+    type: string;
+  }> {
+    const response = await api.get<{
+      success: boolean;
+      analysis: string;
+      lastUpdated: string;
+      type: string;
+    }>("/business-assistant/latest");
+    return response.data;
+  },
 };
 
 export const productService = {

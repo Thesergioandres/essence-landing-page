@@ -1036,12 +1036,28 @@ export const getCreditMetrics = async (req, res) => {
       ]),
     ]);
 
+    // Calcular métricas de créditos ACTIVOS (pendientes + parciales + vencidos)
+    // Esto excluye pagados y cancelados del conteo principal en el dashboard
+    const activeStatuses = ["pending", "partial", "overdue"];
+    const activeStats = byStatusStats
+      .filter((s) => activeStatuses.includes(s._id))
+      .reduce(
+        (acc, s) => {
+          acc.count += s.count;
+          acc.amount += s.amount;
+          return acc;
+        },
+        { count: 0, amount: 0 },
+      );
+
     const metrics = {
-      total: totalStats[0] || {
-        totalCredits: 0,
-        totalOriginalAmount: 0,
-        totalRemainingAmount: 0,
-        totalPaidAmount: 0,
+      total: {
+        // Usar conteo y saldo de activos
+        totalCredits: activeStats.count,
+        totalRemainingAmount: activeStats.amount,
+        // Mantener históricos para cálculos de tasas
+        totalOriginalAmount: totalStats[0]?.totalOriginalAmount || 0,
+        totalPaidAmount: totalStats[0]?.totalPaidAmount || 0,
       },
       overdue: overdueStats[0] || { count: 0, amount: 0 },
       byStatus: byStatusStats.reduce((acc, s) => {

@@ -155,47 +155,62 @@ export const getDailySummary = async (req, res) => {
     const allowedUsers = await getBusinessUserIds(businessId, req.user);
     const isSuperAdmin = req.user?.role === "super_admin";
 
-    // Logs del día
-    const dailyLogs = await AuditLog.find({
+    // Filtro inicial para la agregación
+    const matchStage = {
       createdAt: { $gte: startOfDay, $lte: endOfDay },
-      business: businessId,
-      ...(isSuperAdmin || !allowedUsers.length
-        ? {}
-        : { user: { $in: allowedUsers } }),
-    });
+      business: businessObjectId,
+    };
 
-    // Resumen por acción
-    const actionSummary = dailyLogs.reduce((acc, log) => {
-      acc[log.action] = (acc[log.action] || 0) + 1;
-      return acc;
-    }, {});
+    if (!isSuperAdmin && allowedUsers.length > 0) {
+      matchStage.user = { $in: allowedUsers };
+    }
 
-    // Resumen por módulo
-    const moduleSummary = dailyLogs.reduce((acc, log) => {
-      acc[log.module] = (acc[log.module] || 0) + 1;
-      return acc;
-    }, {});
+    // 🚀 OPTIMIZACIÓN: Usar Aggregation con $facet para una sola consulta DB eficiente en lugar de fetch + reduce JS
+    const [auditResults] = await AuditLog.aggregate([
+      { $match: matchStage },
+      {
+        $facet: {
+          actionSummary: [
+            { $group: { _id: "$action", count: { $sum: 1 } } },
+            { $project: { k: "$_id", v: "$count", _id: 0 } },
+          ],
+          moduleSummary: [
+            { $group: { _id: "$module", count: { $sum: 1 } } },
+            { $project: { k: "$_id", v: "$count", _id: 0 } },
+          ],
+          topUsers: [
+            {
+              $group: {
+                _id: "$userEmail",
+                name: { $first: "$userName" },
+                email: { $first: "$userEmail" },
+                count: { $sum: 1 },
+              },
+            },
+            { $sort: { count: -1 } },
+            { $limit: 5 },
+            { $project: { _id: 0, name: 1, email: 1, count: 1 } },
+          ],
+          totalActions: [{ $count: "count" }],
+        },
+      },
+    ]);
 
-    // Usuarios más activos
-    const userActivity = dailyLogs.reduce((acc, log) => {
-      const key = log.userEmail;
-      if (!acc[key]) {
-        acc[key] = { name: log.userName, email: log.userEmail, count: 0 };
-      }
-      acc[key].count += 1;
-      return acc;
-    }, {});
+    // Transformar array de key-value a objetos para respuesta consistente
+    const transformArrayToObject = (arr) =>
+      arr.reduce((acc, curr) => ({ ...acc, [curr.k]: curr.v }), {});
 
-    const topUsers = Object.values(userActivity)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+    const actionSummary = transformArrayToObject(auditResults.actionSummary);
+    const moduleSummary = transformArrayToObject(auditResults.moduleSummary);
+    const topUsers = auditResults.topUsers;
+    const totalActions = auditResults.totalActions[0]?.count || 0;
 
-    // Ventas del día
+    // Ventas del día (Mantener lógica ligera existente, usar count y sum directo si fuera necesario, pero find es aceptable aquí por volumen)
     const dailySales = await Sale.find({
       saleDate: { $gte: startOfDay, $lte: endOfDay },
       paymentStatus: "confirmado",
       business: businessObjectId,
-    });
+    }).select("salePrice quantity totalProfit"); // Performance: Solo campos necesarios
 
     const salesSummary = dailySales.reduce(
       (acc, sale) => {
@@ -205,7 +220,7 @@ export const getDailySummary = async (req, res) => {
         acc.units += sale.quantity;
         return acc;
       },
-      { count: 0, revenue: 0, profit: 0, units: 0 }
+      { count: 0, revenue: 0, profit: 0, units: 0 },
     );
 
     // Stock al final del día
@@ -233,7 +248,7 @@ export const getDailySummary = async (req, res) => {
 
     res.json({
       date: targetDate.toISOString().split("T")[0],
-      totalActions: dailyLogs.length,
+      totalActions,
       actionSummary,
       moduleSummary,
       topUsers,
@@ -366,67 +381,83 @@ export const getAuditStats = async (req, res) => {
     if (!businessId) {
       return res.status(400).json({ message: "Falta x-business-id" });
     }
+    const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const allowedUsers = await getBusinessUserIds(businessId, req.user);
     const isSuperAdmin = req.user?.role === "super_admin";
 
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - parseInt(days));
 
-    const logs = await AuditLog.find({
+    const matchStage = {
       createdAt: { $gte: startDate },
-      business: businessId,
-      ...(isSuperAdmin || !allowedUsers.length
-        ? {}
-        : { user: { $in: allowedUsers } }),
-    });
+      business: businessObjectId,
+    };
 
-    // Total de acciones por tipo
-    const actionStats = logs.reduce((acc, log) => {
-      acc[log.action] = (acc[log.action] || 0) + 1;
-      return acc;
-    }, {});
+    if (!isSuperAdmin && allowedUsers.length > 0) {
+      matchStage.user = { $in: allowedUsers };
+    }
 
-    // Total de acciones por módulo
-    const moduleStats = logs.reduce((acc, log) => {
-      acc[log.module] = (acc[log.module] || 0) + 1;
-      return acc;
-    }, {});
+    // 🚀 OPTIMIZACIÓN: Usar Aggregation con $facet
+    const [auditStats] = await AuditLog.aggregate([
+      { $match: matchStage },
+      {
+        $facet: {
+          actionStats: [
+            { $group: { _id: "$action", count: { $sum: 1 } } },
+            { $project: { k: "$_id", v: "$count", _id: 0 } },
+          ],
+          moduleStats: [
+            { $group: { _id: "$module", count: { $sum: 1 } } },
+            { $project: { k: "$_id", v: "$count", _id: 0 } },
+          ],
+          severityStats: [
+            { $group: { _id: "$severity", count: { $sum: 1 } } },
+            { $project: { k: "$_id", v: "$count", _id: 0 } },
+          ],
+          dailyActivity: [
+            {
+              $group: {
+                // Formato YYYY-MM-DD directamente en mongo
+                _id: {
+                  $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+                },
+                count: { $sum: 1 },
+              },
+            },
+            { $project: { k: "$_id", v: "$count", _id: 0 } },
+          ],
+          topUsers: [
+            {
+              $group: {
+                _id: "$userEmail",
+                name: { $first: "$userName" },
+                email: { $first: "$userEmail" },
+                role: { $first: "$userRole" },
+                count: { $sum: 1 },
+              },
+            },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+            { $project: { _id: 0, name: 1, email: 1, role: 1, count: 1 } },
+          ],
+          totalActions: [{ $count: "count" }],
+        },
+      },
+    ]);
 
-    // Total de acciones por severidad
-    const severityStats = logs.reduce((acc, log) => {
-      acc[log.severity] = (acc[log.severity] || 0) + 1;
-      return acc;
-    }, {});
+    const transformArrayToObject = (arr) =>
+      arr.reduce((acc, curr) => ({ ...acc, [curr.k]: curr.v }), {});
 
-    // Actividad por día
-    const dailyActivity = logs.reduce((acc, log) => {
-      const day = log.createdAt.toISOString().split("T")[0];
-      acc[day] = (acc[day] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Usuarios más activos
-    const userActivity = logs.reduce((acc, log) => {
-      const key = log.userEmail;
-      if (!acc[key]) {
-        acc[key] = {
-          name: log.userName,
-          email: log.userEmail,
-          role: log.userRole,
-          count: 0,
-        };
-      }
-      acc[key].count += 1;
-      return acc;
-    }, {});
-
-    const topUsers = Object.values(userActivity)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
+    const actionStats = transformArrayToObject(auditStats.actionStats);
+    const moduleStats = transformArrayToObject(auditStats.moduleStats);
+    const severityStats = transformArrayToObject(auditStats.severityStats);
+    const dailyActivity = transformArrayToObject(auditStats.dailyActivity);
+    const topUsers = auditStats.topUsers;
+    const totalActions = auditStats.totalActions[0]?.count || 0;
 
     res.json({
       period: `${days} días`,
-      totalActions: logs.length,
+      totalActions,
       actionStats,
       moduleStats,
       severityStats,

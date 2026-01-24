@@ -2,10 +2,15 @@ import mongoose from "mongoose";
 import { getRedisClient } from "../config/redis.js";
 import { getBusinessAssistantQueue } from "../jobs/businessAssistant.queue.js";
 import { invalidateCache } from "../middleware/cache.middleware.js";
+import AnalysisLog from "../models/AnalysisLog.js";
 import BusinessAssistantConfig from "../models/BusinessAssistantConfig.js";
 import Category from "../models/Category.js";
+import Credit from "../models/Credit.js";
+import Expense from "../models/Expense.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
+import { aiService } from "../services/ai.service.js";
+import { logApiError, logApiInfo } from "../utils/logger.js";
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -64,8 +69,8 @@ const buildColombiaSaleDateFilter = (startDateStr, endDateStr) => {
         5,
         0,
         0,
-        0
-      )
+        0,
+      ),
     );
   }
 
@@ -79,8 +84,8 @@ const buildColombiaSaleDateFilter = (startDateStr, endDateStr) => {
         4,
         59,
         59,
-        999
-      )
+        999,
+      ),
     );
   }
 
@@ -177,12 +182,12 @@ const buildPriceSuggestion = ({
       ? Number(targetMarginPct)
       : null,
     minMarginAfterDiscountPct: Number.isFinite(
-      Number(minMarginAfterDiscountPct)
+      Number(minMarginAfterDiscountPct),
     )
       ? Number(minMarginAfterDiscountPct)
       : null,
     effectiveChangePct: round2(
-      safeDiv(clampedSuggested - current, current) * 100
+      safeDiv(clampedSuggested - current, current) * 100,
     ),
   };
 };
@@ -268,11 +273,11 @@ export const generateBusinessAssistantRecommendations = async ({
 
   const effectiveHorizonDays = parseNumber(
     horizonDays,
-    config.horizonDaysDefault || 90
+    config.horizonDaysDefault || 90,
   );
   const effectiveRecentDays = parseNumber(
     recentDays,
-    config.recentDaysDefault || 30
+    config.recentDaysDefault || 30,
   );
 
   const startDateStr = startDate || null;
@@ -494,7 +499,7 @@ export const generateBusinessAssistantRecommendations = async ({
   ]);
 
   const allProducts = await Product.find({ business: businessObjectId }).select(
-    "name category purchasePrice distributorPrice suggestedPrice clientPrice warehouseStock totalStock lowStockAlert"
+    "name category purchasePrice distributorPrice suggestedPrice clientPrice warehouseStock totalStock lowStockAlert",
   );
 
   const categoryIds = Array.from(
@@ -502,8 +507,8 @@ export const generateBusinessAssistantRecommendations = async ({
       allProducts
         .map((p) => p.category)
         .filter(Boolean)
-        .map((id) => String(id))
-    )
+        .map((id) => String(id)),
+    ),
   );
   const categories = categoryIds.length
     ? await Category.find({
@@ -512,7 +517,7 @@ export const generateBusinessAssistantRecommendations = async ({
       }).select("name")
     : [];
   const categoryNameById = new Map(
-    (categories || []).map((c) => [String(c._id), c.name])
+    (categories || []).map((c) => [String(c._id), c.name]),
   );
 
   const byProductId = new Map();
@@ -580,7 +585,7 @@ export const generateBusinessAssistantRecommendations = async ({
   const buyTargetDays = parseNumber(config.buyTargetDays, 30);
   const lowRotationUnitsThreshold = parseNumber(
     config.lowRotationUnitsThreshold,
-    1
+    1,
   );
   const highStockMultiplier = parseNumber(config.highStockMultiplier, 2);
   const highStockMinUnits = parseNumber(config.highStockMinUnits, 10);
@@ -588,11 +593,11 @@ export const generateBusinessAssistantRecommendations = async ({
   const trendDropThresholdPct = parseNumber(config.trendDropThresholdPct, -20);
   const trendGrowthThresholdPct = parseNumber(
     config.trendGrowthThresholdPct,
-    20
+    20,
   );
   const minUnitsForGrowthStrategy = parseNumber(
     config.minUnitsForGrowthStrategy,
-    10
+    10,
   );
 
   const marginLowThresholdPct = parseNumber(config.marginLowThresholdPct, 15);
@@ -600,16 +605,16 @@ export const generateBusinessAssistantRecommendations = async ({
   const targetMarginPct = parseNumber(config.targetMarginPct, 25);
   const minMarginAfterDiscountPct = parseNumber(
     config.minMarginAfterDiscountPct,
-    10
+    10,
   );
 
   const priceHighVsCategoryThresholdPct = parseNumber(
     config.priceHighVsCategoryThresholdPct,
-    10
+    10,
   );
   const priceLowVsCategoryThresholdPct = parseNumber(
     config.priceLowVsCategoryThresholdPct,
-    -10
+    -10,
   );
 
   const decreasePricePct = parseNumber(config.decreasePricePct, -5);
@@ -641,8 +646,8 @@ export const generateBusinessAssistantRecommendations = async ({
         prevUnits > 0
           ? safeDiv(recentUnits - prevUnits, prevUnits)
           : recentUnits > 0
-          ? 1
-          : 0;
+            ? 1
+            : 0;
 
       const categoryKey = p.category ? String(p.category) : "__no_category__";
       const categoryAvg = categoryAvgPrice.get(categoryKey) || 0;
@@ -665,7 +670,7 @@ export const generateBusinessAssistantRecommendations = async ({
         ? categoryNameById.get(String(p.category))
         : null;
       const inventoryValueCop = round2(
-        (Number(p.purchasePrice) || 0) * warehouseStock
+        (Number(p.purchasePrice) || 0) * warehouseStock,
       );
       const avgUnitProfitCop =
         recentUnits > 0 ? round2(safeDiv(recentProfit, recentUnits)) : 0;
@@ -683,8 +688,8 @@ export const generateBusinessAssistantRecommendations = async ({
 
           justifications.push(
             `Riesgo crítico de quiebre: stock bodega ${warehouseStock} y cobertura estimada ${round2(
-              daysCover
-            )} días.`
+              daysCover,
+            )} días.`,
           );
 
           actions.push({
@@ -698,7 +703,7 @@ export const generateBusinessAssistantRecommendations = async ({
               revenueCop: round2(
                 avgDailyUnits *
                   recentAvgPrice *
-                  Math.max(0, targetDays - daysCover)
+                  Math.max(0, targetDays - daysCover),
               ),
               inventoryValueCop,
             },
@@ -720,13 +725,13 @@ export const generateBusinessAssistantRecommendations = async ({
 
           justifications.push(
             `Alta rotación: ${round2(
-              avgDailyUnits
-            )} uds/día en últimos ${effectiveRecentDays} días.`
+              avgDailyUnits,
+            )} uds/día en últimos ${effectiveRecentDays} días.`,
           );
           justifications.push(
             `Cobertura estimada: ${round2(
-              daysCover
-            )} días con stock bodega actual (${warehouseStock}).`
+              daysCover,
+            )} días con stock bodega actual (${warehouseStock}).`,
           );
 
           actions.push({
@@ -743,7 +748,7 @@ export const generateBusinessAssistantRecommendations = async ({
                   ? round2(
                       Math.max(0, buyTargetDays - daysCover) *
                         avgDailyUnits *
-                        recentAvgPrice
+                        recentAvgPrice,
                     )
                   : 0,
               inventoryValueCop,
@@ -765,7 +770,7 @@ export const generateBusinessAssistantRecommendations = async ({
 
       if (lowRotation && highStock) {
         justifications.push(
-          `Baja rotación: ${recentUnits} uds en últimos ${effectiveRecentDays} días con stock alto (${warehouseStock}).`
+          `Baja rotación: ${recentUnits} uds en últimos ${effectiveRecentDays} días con stock alto (${warehouseStock}).`,
         );
 
         actions.push({
@@ -783,8 +788,8 @@ export const generateBusinessAssistantRecommendations = async ({
         ) {
           justifications.push(
             `Precio relativo alto vs productos similares (categoría): +${round2(
-              priceVsCategory * 100
-            )}%.`
+              priceVsCategory * 100,
+            )}%.`,
           );
           actions.push({
             action: "decrease_price",
@@ -827,8 +832,8 @@ export const generateBusinessAssistantRecommendations = async ({
         if (recentUnits === 0 && warehouseStock >= highStockMinUnits * 4) {
           justifications.push(
             `Stock inmovilizado estimado: ${inventoryValueCop.toLocaleString(
-              "es-CO"
-            )} COP (precio compra x stock bodega).`
+              "es-CO",
+            )} COP (precio compra x stock bodega).`,
           );
           actions.push({
             action: "clearance",
@@ -859,8 +864,8 @@ export const generateBusinessAssistantRecommendations = async ({
       ) {
         justifications.push(
           `Tendencia a la baja: ${round2(
-            unitsGrowth * 100
-          )}% vs periodo anterior (${effectiveRecentDays} días).`
+            unitsGrowth * 100,
+          )}% vs periodo anterior (${effectiveRecentDays} días).`,
         );
         actions.push({
           action: "run_promotion",
@@ -887,8 +892,8 @@ export const generateBusinessAssistantRecommendations = async ({
         ) {
           justifications.push(
             `Precio por encima de la categoría (+${round2(
-              priceVsCategory * 100
-            )}%) con demanda cayendo.`
+              priceVsCategory * 100,
+            )}%) con demanda cayendo.`,
           );
           actions.push({
             action: "decrease_price",
@@ -918,8 +923,8 @@ export const generateBusinessAssistantRecommendations = async ({
         if (recentMargin * 100 < 0) {
           justifications.push(
             `Margen reciente negativo: ${(recentMargin * 100).toFixed(
-              1
-            )}% (estás perdiendo por unidad en promedio).`
+              1,
+            )}% (estás perdiendo por unidad en promedio).`,
           );
           actions.push({
             action: "review_margin",
@@ -954,8 +959,8 @@ export const generateBusinessAssistantRecommendations = async ({
 
         justifications.push(
           `Margen reciente bajo: ${(recentMargin * 100).toFixed(
-            1
-          )}% en últimos ${effectiveRecentDays} días.`
+            1,
+          )}% en últimos ${effectiveRecentDays} días.`,
         );
         actions.push({
           action: "review_margin",
@@ -1001,13 +1006,13 @@ export const generateBusinessAssistantRecommendations = async ({
       ) {
         justifications.push(
           `Demanda creciente: +${round2(
-            unitsGrowth * 100
-          )}% vs periodo anterior.`
+            unitsGrowth * 100,
+          )}% vs periodo anterior.`,
         );
         justifications.push(
           `Precio relativo bajo vs categoría: ${round2(
-            priceVsCategory * 100
-          )}%.`
+            priceVsCategory * 100,
+          )}%.`,
         );
         actions.push({
           action: "increase_price",
@@ -1031,7 +1036,7 @@ export const generateBusinessAssistantRecommendations = async ({
       if (actions.length === 0) {
         if (recentUnits === 0) {
           justifications.push(
-            `Sin ventas confirmadas en la ventana analizada (${effectiveRecentDays} días).`
+            `Sin ventas confirmadas en la ventana analizada (${effectiveRecentDays} días).`,
           );
           if (warehouseStock > lowStockAlert) {
             actions.push({
@@ -1082,7 +1087,7 @@ export const generateBusinessAssistantRecommendations = async ({
       const primary = pickPrimaryAction(actions);
 
       const actionImpactScores = actions.map((a) =>
-        computeImpactScore(a.impact)
+        computeImpactScore(a.impact),
       );
       const impactScore = actionImpactScores.length
         ? Math.max(...actionImpactScores)
@@ -1203,7 +1208,7 @@ export const updateBusinessAssistantConfig = async (req, res) => {
     _configCache.delete(getConfigCacheKey(businessId));
 
     await invalidateCache(
-      `cache:businessAssistant:${getConfigCacheKey(businessId)}:*`
+      `cache:businessAssistant:${getConfigCacheKey(businessId)}:*`,
     );
 
     res.json(config);
@@ -1237,7 +1242,7 @@ export const createBusinessAssistantRecommendationsJob = async (req, res) => {
       { params, businessId: req.businessId },
       {
         jobId: undefined,
-      }
+      },
     );
 
     res.status(202).json({ jobId: job.id });
@@ -1315,5 +1320,253 @@ export const getBusinessAssistantRecommendations = async (req, res) => {
     res.json(payload);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// ... existing code ...
+
+// @desc    Análisis Estratégico con IA (Project CEO)
+// @route   POST /api/business-assistant/analyze-strategic
+// @access  Private/Admin
+export const getStrategicAnalysis = async (req, res) => {
+  const requestId = req.reqId || `req-${Date.now()}`;
+
+  try {
+    const { businessId } = req;
+    const { question } = req.body;
+
+    // Safety check for user
+    const userId = req.user ? req.user._id : null;
+    if (!userId) {
+      console.warn(
+        `WARNING: Missing userId in request. Auth middleware might be bypassed or failing.`,
+      );
+    }
+
+    // 1. DATA GATHERING HIGH-PERFORMANCE (Parallel Execution)
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [
+      salesMetrics,
+      expensesMetrics,
+      creditMetrics,
+      inventoryMetrics,
+      topProducts,
+    ] = await Promise.all([
+      // A. Ventas del Mes
+      Sale.aggregate([
+        {
+          $match: {
+            business: new mongoose.Types.ObjectId(businessId),
+            saleDate: { $gte: firstDayOfMonth },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: "$total" },
+            totalProfit: { $sum: "$profit" },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+
+      // B. Gastos del Mes
+      Expense.aggregate([
+        {
+          $match: {
+            business: new mongoose.Types.ObjectId(businessId),
+            date: { $gte: firstDayOfMonth },
+          },
+        },
+        { $group: { _id: null, totalExpenses: { $sum: "$amount" } } },
+      ]),
+
+      // C. Cartera (Fiados/Créditos)
+      Credit.aggregate([
+        {
+          $match: {
+            business: new mongoose.Types.ObjectId(businessId),
+            status: { $in: ["pending", "overdue"] },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalDebt: { $sum: "$amount" }, // Deuda total de clientes
+            totalPending: { $sum: { $subtract: ["$amount", "$paidAmount"] } }, // Saldo real pendiente
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+
+      // D. Inventario Global (Valorizado)
+      Product.aggregate([
+        { $match: { business: new mongoose.Types.ObjectId(businessId) } },
+        {
+          $project: {
+            stockValue: { $multiply: ["$purchasePrice", "$warehouseStock"] },
+            potentialRevenue: {
+              $multiply: ["$clientPrice", "$warehouseStock"],
+            },
+            stock: "$warehouseStock",
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalInventoryCost: { $sum: "$stockValue" },
+            totalInventoryRevenue: { $sum: "$potentialRevenue" },
+            totalItems: { $sum: "$stock" },
+          },
+        },
+      ]),
+
+      // E. Top 5 Productos (Para contexto específico)
+      Sale.aggregate([
+        {
+          $match: {
+            business: new mongoose.Types.ObjectId(businessId),
+            saleDate: { $gte: firstDayOfMonth },
+          },
+        },
+        {
+          $group: {
+            _id: "$productName",
+            sold: { $sum: "$quantity" },
+            revenue: { $sum: "$total" },
+          },
+        },
+        { $sort: { revenue: -1 } },
+        { $limit: 5 },
+      ]),
+    ]);
+
+    // 2. DATA MINIFICATION (Limpieza para la IA)
+    // Preparamos un objeto ligero para no saturar el contexto de la IA
+    const context = {
+      period: "Current Month",
+      financials: {
+        revenue: salesMetrics[0]?.totalRevenue || 0,
+        grossProfit: salesMetrics[0]?.totalProfit || 0,
+        expenses: expensesMetrics[0]?.totalExpenses || 0,
+        netIncome:
+          (salesMetrics[0]?.totalProfit || 0) -
+          (expensesMetrics[0]?.totalExpenses || 0),
+        margin: salesMetrics[0]?.totalRevenue
+          ? (
+              (salesMetrics[0].totalProfit / salesMetrics[0].totalRevenue) *
+              100
+            ).toFixed(1) + "%"
+          : "0%",
+      },
+      debt: {
+        pendingCollection: creditMetrics[0]?.totalPending || 0,
+        activeCredits: creditMetrics[0]?.count || 0,
+      },
+      inventory: {
+        costValue: inventoryMetrics[0]?.totalInventoryCost || 0,
+        salesValue: inventoryMetrics[0]?.totalInventoryRevenue || 0,
+        totalItems: inventoryMetrics[0]?.totalItems || 0,
+      },
+      topMovers: topProducts.map((p) => ({
+        n: p._id,
+        $: p.revenue,
+        q: p.sold,
+      })),
+    };
+
+    // 3. AI ANALYSIS (The Brain)
+    // Llamada única al servicio de IA
+    let analysis = null;
+    try {
+      analysis = await aiService.analyzeBusinessContext(context, question);
+    } catch (aiError) {
+      console.error("Error in AI Service:", aiError);
+      // Fallback message so the user doesn't get a crash
+      analysis =
+        "El Estratega Virtual no pudo generar el análisis en este momento. Por favor, intenta de nuevo más tarde.";
+    }
+
+    if (analysis) {
+      try {
+        await AnalysisLog.create({
+          business: businessId,
+          user: userId,
+          content: analysis,
+          type: question ? "query" : "daily",
+        });
+        console.log("AnalysisLog saved successfully.");
+      } catch (dbError) {
+        console.error("Error saving AnalysisLog:", dbError);
+        // Non-blocking error: don't fail the request if logging fails
+      }
+    } else {
+      console.warn("No analysis generated from AI Service.");
+    }
+
+    logApiInfo({
+      message: "project_ceo_analysis_saved",
+      module: "businessAssistant",
+      requestId,
+      businessId,
+    });
+
+    res.json({
+      success: true,
+      analysis: analysis || "No se pudo generar el análisis.",
+      requestId,
+    });
+  } catch (error) {
+    console.error("getStrategicAnalysis error:", error);
+    res.status(500).json({
+      message: "Error generando análisis estratégico",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Obtener el último análisis generado (Memoria del CEO)
+ * @route   GET /api/business-assistant/latest
+ * @access  Private
+ */
+export const getLatestAnalysis = async (req, res) => {
+  const requestId = req.reqId;
+  const businessId = req.businessId;
+
+  try {
+    const latestLog = await AnalysisLog.findOne({ business: businessId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!latestLog) {
+      return res.status(404).json({
+        success: false,
+        message: "No hay análisis previos.",
+        requestId,
+      });
+    }
+
+    res.json({
+      success: true,
+      analysis: latestLog.content,
+      lastUpdated: latestLog.createdAt,
+      type: latestLog.type,
+      requestId,
+    });
+  } catch (error) {
+    logApiError({
+      message: "Error retrieving latest analysis",
+      module: "businessAssistant",
+      requestId,
+      businessId,
+      stack: error.stack,
+    });
+    res.status(500).json({
+      message: error.message,
+      requestId,
+    });
   }
 };

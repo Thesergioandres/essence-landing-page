@@ -169,7 +169,7 @@ const auditLogSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Índices para búsquedas eficientes
@@ -179,6 +179,7 @@ auditLogSchema.index({ module: 1, createdAt: -1 });
 auditLogSchema.index({ entityType: 1, entityId: 1 });
 auditLogSchema.index({ createdAt: -1 });
 auditLogSchema.index({ business: 1, createdAt: -1 });
+auditLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 1296000 }); // TTL 15 days
 
 const AuditLog = mongoose.model("AuditLog", auditLogSchema);
 

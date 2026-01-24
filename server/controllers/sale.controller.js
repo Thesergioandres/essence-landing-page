@@ -870,6 +870,11 @@ export const registerAdminSale = async (req, res) => {
               quantity: Number(quantity),
               unitPrice: Number(salePrice),
               subtotal: totalAmount,
+              cost: Number(product.averageCost || product.purchasePrice || 0),
+              image:
+                typeof product.image === "string"
+                  ? product.image
+                  : product.image?.secure_url || null,
             },
           ],
           status:
@@ -1442,6 +1447,11 @@ export const registerSale = async (req, res) => {
               quantity: Number(quantity),
               unitPrice: Number(salePrice),
               subtotal: totalAmount,
+              cost: Number(product.averageCost || product.purchasePrice || 0),
+              image:
+                typeof product.image === "string"
+                  ? product.image
+                  : product.image?.secure_url || null,
             },
           ],
           status:

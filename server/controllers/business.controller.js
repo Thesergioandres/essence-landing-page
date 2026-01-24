@@ -357,6 +357,26 @@ export const listMembers = async (req, res) => {
 
 export const getMyMemberships = async (req, res) => {
   try {
+    // 👁️ OMNISCIENCE: God sees all businesses as if they were their own
+    if (req.user?.role === "god") {
+      const businesses = await Business.find()
+        .select(
+          "name description config status contactEmail contactPhone contactWhatsapp contactLocation metadata logoUrl logoPublicId",
+        )
+        .sort({ createdAt: -1 })
+        .lean();
+
+      const memberships = businesses.map((b) => ({
+        _id: `god_${b._id}`,
+        business: b,
+        user: req.user.id,
+        role: "god",
+        status: "active",
+      }));
+
+      return res.json({ memberships });
+    }
+
     const memberships = await Membership.find({
       user: req.user.id,
       status: "active",

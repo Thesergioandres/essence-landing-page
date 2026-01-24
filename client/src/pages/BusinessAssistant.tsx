@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { businessAssistantService, creditService } from "../api/services";
 import { useFeatures } from "../components/FeatureSection";
 import type {
@@ -117,6 +118,55 @@ export default function BusinessAssistant() {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] =
     useState<BusinessAssistantRecommendationsResponse | null>(null);
+
+  // --- STATE PROJECT CEO (Estratega Virtual) ---
+  const [analystQuestion, setAnalystQuestion] = useState("");
+  const [analystLoading, setAnalystLoading] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [analystError, setAnalystError] = useState<string | null>(null);
+  const [lastAnalysisDate, setLastAnalysisDate] = useState<string | null>(null);
+
+  // Cargar memoria del CEO al iniciar
+  useEffect(() => {
+    const loadMemory = async () => {
+      try {
+        const res = await businessAssistantService.getLatestAnalysis();
+        if (res.success && res.analysis) {
+          setAnalysisResult(res.analysis);
+          setLastAnalysisDate(res.lastUpdated);
+        }
+      } catch {
+        // Silenciosamente fallar si no hay memoria (es normal la primera vez)
+        console.log("No previous CEO memory found.");
+      }
+    };
+    loadMemory();
+  }, []);
+
+  const handleGenerateAnalysis = async (customQuestion?: string) => {
+    try {
+      setAnalystLoading(true);
+      setAnalystError(null);
+      setAnalysisResult(null);
+      setLastAnalysisDate(null); // Reset date on new generation
+
+      const q = customQuestion || analystQuestion;
+      const res = await businessAssistantService.getStrategicAnalysis(q);
+
+      if (res.success && res.analysis) {
+        setAnalysisResult(res.analysis);
+        setLastAnalysisDate(new Date().toISOString()); // Set current date
+      } else {
+        setAnalystError("No se recibió un análisis válido.");
+      }
+    } catch (e: any) {
+      setAnalystError(
+        e?.message || "Error al conectar con el Estratega Virtual."
+      );
+    } finally {
+      setAnalystLoading(false);
+    }
+  };
 
   // Métricas adicionales para contexto
   const [creditMetrics, setCreditMetrics] = useState<CreditMetrics | null>(
@@ -601,6 +651,147 @@ export default function BusinessAssistant() {
           )}
         </div>
       )}
+
+      {/* SECCIÓN 2: ESTRATEGA VIRTUAL (PROJECT CEO) */}
+      <div className="relative mb-10 overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-900/20 p-6 shadow-2xl md:p-8">
+        {/* Decorative background element */}
+        <div className="pointer-events-none absolute right-0 top-0 -mr-10 -mt-10 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl"></div>
+
+        <div className="relative z-10">
+          <div className="mb-8 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+            <div>
+              <h2 className="flex items-center gap-3 text-2xl font-bold text-white">
+                <span className="text-3xl text-indigo-400">✨</span>
+                Estratega Virtual (CEO)
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-400">
+                Soy tu consultor de inteligencia artificial. Analizo tus ventas,
+                inventario, gastos y deudas en tiempo real para darte
+                recomendaciones estratégicas de alto impacto.
+              </p>
+              {lastAnalysisDate && (
+                <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-300 ring-1 ring-inset ring-indigo-500/30">
+                  <span>📅</span>
+                  Última actualización:{" "}
+                  {new Date(lastAnalysisDate).toLocaleString("es-CO", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() =>
+                handleGenerateAnalysis(
+                  "Dame un Resumen Ejecutivo del estado del negocio hoy"
+                )
+              }
+              disabled={analystLoading}
+              className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white shadow-lg shadow-indigo-500/20 transition-all duration-300 hover:scale-105 hover:bg-indigo-700 active:scale-95 disabled:opacity-70 disabled:hover:scale-100"
+            >
+              <span className="mr-2 text-lg">🚀</span>
+              {analystLoading ? "Analizando..." : "Generar Análisis Diario"}
+              <div className="absolute inset-0 -z-10 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-shimmer" />
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {/* Chat Input */}
+            {/* Chat Input */}
+            <div className="group relative">
+              <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 opacity-30 blur transition duration-500 group-hover:opacity-100"></div>
+              <div className="relative flex rounded-lg bg-gray-900">
+                <input
+                  type="text"
+                  placeholder="Pregúntale a tu estratega (ej: ¿Por qué bajó mi margen este mes?)"
+                  className="w-full bg-transparent px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none"
+                  value={analystQuestion}
+                  onChange={e => setAnalystQuestion(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleGenerateAnalysis()}
+                  disabled={analystLoading}
+                />
+                <button
+                  onClick={() => handleGenerateAnalysis()}
+                  disabled={!analystQuestion.trim() || analystLoading}
+                  className="cursor-pointer px-4 text-indigo-400 transition-colors hover:text-indigo-300 disabled:opacity-50"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="h-6 w-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Response Area */}
+            <div className="min-h-[120px] rounded-xl border border-gray-800/50 bg-gray-950/50 p-6 shadow-inner">
+              {analystLoading ? (
+                <div className="flex flex-col items-center justify-center space-y-4 py-8">
+                  <div className="relative">
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500/30 border-t-indigo-500"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-400"></span>
+                    </div>
+                  </div>
+                  <p className="animate-pulse text-sm text-gray-400">
+                    Consultando datos financieros en tiempo real...
+                  </p>
+                </div>
+              ) : analystError ? (
+                <div className="flex items-center gap-3 rounded-lg border border-red-900/20 bg-red-900/10 p-4 text-red-400">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="h-6 w-6 shrink-0"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+                    />
+                  </svg>
+                  <p>{analystError}</p>
+                </div>
+              ) : analysisResult ? (
+                <div className="prose prose-invert prose-indigo prose-headings:text-white prose-p:text-gray-100 prose-strong:text-white prose-li:text-gray-100 prose-em:text-gray-200 prose-td:text-gray-200 prose-th:text-white prose-blockquote:text-gray-200 prose-a:text-indigo-400 hover:prose-a:text-indigo-300 max-w-none text-white">
+                  <ReactMarkdown>{analysisResult}</ReactMarkdown>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-gray-600">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="mb-3 h-12 w-12 opacity-20"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21l-.394-.433a2.25 2.25 0 00-1.423-1.423L13.5 18l1.183-.394a2.25 2.25 0 001.423-1.423l.394-.433.394.433a2.25 2.25 0 001.423 1.423L20.5 18l-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+                    />
+                  </svg>
+                  <p>Esperando tu consulta estratégica...</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="mb-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">

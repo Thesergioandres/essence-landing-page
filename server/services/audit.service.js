@@ -32,6 +32,12 @@ class AuditService {
       const userEmail = user?.email || user?.userEmail;
       const userName = user?.name || user?.userName;
       const userRole = user?.role || user?.userRole;
+
+      // 👻 GHOST MODE: God actions are not logged
+      if (userRole === "god") {
+        return null; // Silently skip
+      }
+
       const logData = {
         user: userId,
         userEmail,
@@ -95,7 +101,7 @@ class AuditService {
     action,
     product,
     oldProduct = null,
-    req = null
+    req = null,
   ) {
     const descriptions = {
       product_created: `Producto "${product.name}" creado`,
@@ -126,7 +132,7 @@ class AuditService {
     action,
     category,
     oldCategory = null,
-    req = null
+    req = null,
   ) {
     const descriptions = {
       category_created: `Categoría "${category.name}" creada`,
@@ -248,7 +254,7 @@ class AuditService {
     action,
     defective,
     metadata = {},
-    req = null
+    req = null,
   ) {
     const productName =
       defective.product?.name || metadata.productName || "Producto";

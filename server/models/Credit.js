@@ -85,6 +85,8 @@ const creditSchema = new mongoose.Schema(
         quantity: Number,
         unitPrice: Number,
         subtotal: Number,
+        cost: Number,
+        image: String,
       },
     ],
     // Fecha del último pago
@@ -111,7 +113,7 @@ const creditSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Índices para búsquedas eficientes
