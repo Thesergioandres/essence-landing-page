@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { authService } from "../api/services";
 import { useBusiness } from "../context/BusinessContext";
+import { authService } from "../features/auth/services";
 import BusinessSelector from "./BusinessSelector";
 
 interface BusinessGateProps {

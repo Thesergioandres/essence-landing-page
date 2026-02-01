@@ -1,6 +1,6 @@
 import { Worker } from "bullmq";
 import { getRedisClient } from "../config/redis.js";
-import { generateBusinessAssistantRecommendations } from "../controllers/businessAssistant.controller.js";
+import { BusinessAssistantRepository } from "../src/infrastructure/database/repositories/BusinessAssistantRepository.js";
 import {
   logWorkerError,
   logWorkerJobFinished,
@@ -8,6 +8,7 @@ import {
 } from "../utils/logger.js";
 
 let worker;
+const repository = new BusinessAssistantRepository();
 
 const getConnection = () => {
   if (!process.env.REDIS_URL) return null;
@@ -32,8 +33,7 @@ export const startBusinessAssistantWorker = () => {
       });
 
       try {
-        const result = await generateBusinessAssistantRecommendations({
-          businessId,
+        const result = await repository.generateRecommendations(businessId, {
           ...params,
           redis: getRedisClient(),
           bypassCache: true,
@@ -58,7 +58,7 @@ export const startBusinessAssistantWorker = () => {
         throw error;
       }
     },
-    { connection }
+    { connection },
   );
 
   worker.on("failed", (job, err) => {

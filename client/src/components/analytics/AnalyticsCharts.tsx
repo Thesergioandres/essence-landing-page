@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { analyticsService } from "../../api/services";
+import { analyticsService } from "../../features/analytics/services";
 import type {
   DistributorProfit,
   ProductProfit,

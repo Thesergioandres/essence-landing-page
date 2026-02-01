@@ -1,7 +1,7 @@
 import { Check, Loader2, Plus, Search, User, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { customerService } from "../api/services";
+import { customerService } from "../features/customers/services";
 
 interface Customer {
   _id: string;

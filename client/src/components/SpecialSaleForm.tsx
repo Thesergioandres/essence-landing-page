@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  distributorService,
-  productService,
-  specialSaleService,
-} from "../api/services";
+import { distributorService } from "../features/distributors/services";
+import { productService } from "../features/inventory/services";
+import { specialSaleService } from "../features/sales/services";
 import type { Product, User } from "../types";
 
 interface Distribution {

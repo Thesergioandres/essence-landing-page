@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { advancedAnalyticsService } from "../../api/services";
+import { advancedAnalyticsService } from "../../features/analytics/services";
 
 interface CategoryDistributionChartProps {
   startDate?: string;

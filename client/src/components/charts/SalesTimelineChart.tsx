@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { advancedAnalyticsService } from "../../api/services";
+import { advancedAnalyticsService } from "../../features/analytics/services";
 
 interface SalesTimelineChartProps {
   period: "day" | "week" | "month";

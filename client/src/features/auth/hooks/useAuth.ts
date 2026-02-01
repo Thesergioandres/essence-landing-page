@@ -17,6 +17,11 @@ export const useAuth = () => {
     try {
       const response = await authService.login(credentials);
 
+      // 🔑 POLYFILL: Map memberships to legacy business field for backward compatibility
+      const memberships = response.memberships || [];
+      const primaryBusiness = memberships[0]?.business;
+      const businessId = primaryBusiness?._id || response.business;
+
       // Save Session
       localStorage.setItem("token", response.token);
       localStorage.setItem(
@@ -26,10 +31,18 @@ export const useAuth = () => {
           name: response.name,
           email: response.email,
           role: response.role,
-          business: response.business,
+          status: response.status,
+          business: businessId, // Legacy compatibility
+          memberships, // New V2 data
         })
       );
-      localStorage.setItem("businessId", response.business);
+
+      if (businessId) {
+        localStorage.setItem("businessId", businessId);
+      }
+
+      // 🔔 Notify BusinessContext that auth changed
+      window.dispatchEvent(new Event("auth-changed"));
 
       // Redirect Logic
       if (response.role === "distribuidor") {
@@ -55,11 +68,25 @@ export const useAuth = () => {
     setError(null);
     try {
       const response = await authService.register(credentials);
-      // Auto Login logic could go here or redirect to login
-      // For now, let's auto-login as per typical simplified flow
+
+      // 🔑 POLYFILL: Map memberships to legacy business field
+      const memberships = response.memberships || [];
+      const primaryBusiness = memberships[0]?.business;
+      const businessId = primaryBusiness?._id || response.business;
+
       localStorage.setItem("token", response.token);
-      localStorage.setItem("user", JSON.stringify(response));
-      localStorage.setItem("businessId", response.business);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...response,
+          business: businessId,
+          memberships,
+        })
+      );
+
+      if (businessId) {
+        localStorage.setItem("businessId", businessId);
+      }
 
       navigate("/"); // Default redirect
       return response;

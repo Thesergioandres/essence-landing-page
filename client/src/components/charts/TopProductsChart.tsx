@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { advancedAnalyticsService } from "../../api/services";
+import { advancedAnalyticsService } from "../../features/analytics/services";
 
 interface TopProductsChartProps {
   limit?: number;

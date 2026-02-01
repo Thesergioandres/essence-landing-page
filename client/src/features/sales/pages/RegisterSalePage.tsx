@@ -30,7 +30,7 @@ export default function RegisterSalePage() {
     const product = products.find(p => p._id === selectedProductId);
     if (!product) return;
 
-    addItem(product, quantity, product.clientPrice); // Use clientPrice as default sale price
+    addItem(product, quantity, product.clientPrice ?? 0); // Use clientPrice as default sale price
     setSelectedProductId("");
     setQuantity(1);
   };

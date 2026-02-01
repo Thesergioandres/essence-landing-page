@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { useBusiness } from "../../context/BusinessContext";
+import { analyticsService } from "../../features/analytics/services";
 import {
-  analyticsService,
-  creditService,
-  defectiveProductService,
   expenseService,
   profitHistoryService,
-} from "../../api/services";
-import { useBusiness } from "../../context/BusinessContext";
+} from "../../features/common/services";
+import { creditService } from "../../features/credits/services";
+import { defectiveProductService } from "../../features/sales/services";
 import type {
   CreditMetrics,
   Expense,

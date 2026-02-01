@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { businessService } from "../api/services";
+import { businessService } from "../features/business/services";
 import type { Business, BusinessFeatures, Membership } from "../types";
 
 interface BusinessContextValue {
@@ -45,11 +45,31 @@ const defaultFeatures: BusinessFeatures = {
   defectiveProducts: true,
 };
 
+/**
+ * Read memberships from localStorage user object (set by login)
+ * This prevents the "amnesia" bug where memberships are empty until API responds
+ */
+function getInitialMemberships(): Membership[] {
+  try {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      return user.memberships || [];
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return [];
+}
+
 export function BusinessProvider({ children }: { children: ReactNode }) {
   const [businessId, setBusinessId] = useState<string | null>(
     localStorage.getItem("businessId")
   );
-  const [memberships, setMemberships] = useState<Membership[]>([]);
+  // 🔑 FIX: Initialize memberships from localStorage to prevent redirect flash
+  const [memberships, setMemberships] = useState<Membership[]>(
+    getInitialMemberships
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);

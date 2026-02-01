@@ -200,6 +200,66 @@ export const protect = async (req, res, next) => {
   }
 };
 
+/**
+ * Middleware de protección que permite usuarios con status "pending".
+ * Útil para endpoints como /profile donde el frontend necesita
+ * sincronizar el estado actualizado del usuario.
+ */
+export const protectAllowPending = async (req, res, next) => {
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    try {
+      const token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decoded.id || decoded.userId;
+
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ message: "Token inválido: falta ID de usuario" });
+      }
+
+      const user = await User.findById(userId).select("-password");
+
+      if (!user) {
+        return res.status(401).json({ message: "Usuario no encontrado" });
+      }
+
+      // Agregar información del usuario a req.user (sin bloquear por status)
+      req.user = {
+        userId: user._id.toString(),
+        id: user._id.toString(),
+        _id: user._id,
+        role: user.role,
+        name: user.name,
+        email: user.email,
+        active: user.active,
+        status: user.status,
+        subscriptionExpiresAt: user.subscriptionExpiresAt,
+      };
+
+      // Si es god, siempre activo
+      if (user.role === "god") {
+        req.user.status = "active";
+      }
+
+      next();
+    } catch (error) {
+      logAuthError({
+        message: "Token inválido (protectAllowPending)",
+        module: "auth",
+        requestId: req.reqId,
+        stack: error.stack,
+      });
+      res.status(401).json({ message: "No autorizado, token inválido" });
+    }
+  } else {
+    res.status(401).json({ message: "No autorizado, sin token" });
+  }
+};
+
 // Verificar si es admin
 export const admin = (req, res, next) => {
   const hasAdminUserRole =

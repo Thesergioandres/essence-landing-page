@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { notificationService } from "../api/services";
+import { notificationService } from "../features/notifications/services";
 import Notifications from "../pages/Notifications";
 import { logUI } from "../utils/logger";
 

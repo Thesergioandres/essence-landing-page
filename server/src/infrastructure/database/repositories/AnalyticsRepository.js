@@ -34,14 +34,15 @@ export class AnalyticsRepository {
         $match: {
           business: new mongoose.Types.ObjectId(businessId),
           saleDate: { $gte: startDate, $lte: endDate },
-          status: { $ne: "cancelled" }, // Exclude cancelled
+          // Note: Sale model uses paymentStatus not status. Remove cancelled filter for now.
+          // If you need to filter cancelled sales, add a 'cancelled' field to the schema.
         },
       },
       {
         $group: {
           _id: null,
           totalRevenue: { $sum: "$salePrice" },
-          totalProfit: { $sum: "$netProfit" }, // Trusting the new field!
+          totalProfit: { $sum: { $ifNull: ["$netProfit", "$totalProfit"] } }, // Fallback to totalProfit if netProfit is missing
           totalSales: { $sum: 1 },
           productsSold: { $sum: "$quantity" },
         },
@@ -68,14 +69,13 @@ export class AnalyticsRepository {
         $match: {
           business: new mongoose.Types.ObjectId(businessId),
           saleDate: { $gte: startDate, $lte: endDate },
-          status: { $ne: "cancelled" },
         },
       },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } },
           revenue: { $sum: "$salePrice" },
-          profit: { $sum: "$netProfit" },
+          profit: { $sum: { $ifNull: ["$netProfit", "$totalProfit"] } },
         },
       },
       { $sort: { _id: 1 } },

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
-import { authService } from "../api/services";
+import { authService } from "../features/auth/services";
 import type { Membership, User } from "../types";
 
 interface SessionState {
@@ -10,9 +10,11 @@ interface SessionState {
 }
 
 export function useSession() {
+  // Inicializar loading: true si hay token, para esperar sincronización con servidor
+  const hasToken = !!localStorage.getItem("token");
   const [state, setState] = useState<SessionState>({
     user: authService.getCurrentUser(),
-    loading: false,
+    loading: hasToken, // Esperar sincronización si hay token
     error: null,
   });
 

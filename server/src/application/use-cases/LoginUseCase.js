@@ -11,11 +11,7 @@ export class LoginUseCase {
       throw new Error("Please provide an email and password");
     }
 
-    // 1. Find User (Need password for check)
-    // Using findByEmailWithMethods if we rely on schema or just plain object if we do manual compare.
-    // Let's use the object + AuthService for purity.
-    // However, Mongoose 'select("+password")' is needed.
-    // The query MUST return the hash.
+    // 1. Find User (Need password for check + memberships)
     const user = await this.userRepository.findByEmailWithMethods(email);
 
     if (!user) {
@@ -23,18 +19,21 @@ export class LoginUseCase {
     }
 
     // 2. Validate Password
-    // Check if use matchPassword method typically found in Mongoose schemas
-    // Or use AuthService.
     const isMatch = await AuthService.validatePassword(password, user.password);
 
     if (!isMatch) {
       throw new Error("Invalid credentials");
     }
 
-    // 3. Generate Token
-    const token = AuthService.generateToken(user._id, user.role, user.business);
+    // 3. Get first active business from memberships (for token)
+    const memberships = user._doc?.memberships || user.memberships || [];
+    const primaryMembership = memberships[0];
+    const businessId = primaryMembership?.business?._id || null;
 
-    // 4. Return result
+    // 4. Generate Token
+    const token = AuthService.generateToken(user._id, user.role, businessId);
+
+    // 5. Return result with memberships for frontend
     return {
       _id: user._id,
       name: user.name,
@@ -43,7 +42,7 @@ export class LoginUseCase {
       status: user.status,
       active: user.active,
       subscriptionExpiresAt: user.subscriptionExpiresAt,
-      business: user.business,
+      memberships, // 🔑 Frontend needs this to know user has businesses
       token,
     };
   }

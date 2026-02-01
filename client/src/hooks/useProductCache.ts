@@ -3,7 +3,10 @@
  * Optimiza la carga de productos evitando llamadas repetidas a la API
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { categoryService, productService } from "../api/services";
+import {
+  categoryService,
+  productService,
+} from "../features/inventory/services";
 
 interface Product {
   _id: string;

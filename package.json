@@ -10,7 +10,7 @@
     "sync:v2": "cd server && npm run dev:sync-v2",
     "install-all": "npm install && cd client && npm install && cd ../server && npm install",
     "build": "npm run validate:backend && cd client && npm run build",
-    "validate:backend": "node --check server/server.js && node --check server/controllers/analytics.controller.js",
+    "validate:backend": "node --check server/server.js",
     "test": "npm run validate:backend && cd client && npm run build"
   },
   "keywords": [

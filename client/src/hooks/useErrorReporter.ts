@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { issueService, uploadService } from "../api/services";
+import { issueService, uploadService } from "../features/common/services";
 import { getConsoleBuffer } from "../utils/consoleBuffer";
 
 const MAX_LOG_BYTES = 5 * 1024 * 1024; // 5 MB

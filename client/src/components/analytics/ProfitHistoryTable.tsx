@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { profitHistoryService } from "../../api/services";
+import { profitHistoryService } from "../../features/common/services";
 import type {
   ProfitHistoryAdminDistributor,
   ProfitHistoryAdminEntry,

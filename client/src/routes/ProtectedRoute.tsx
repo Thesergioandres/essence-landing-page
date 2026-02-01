@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { authService } from "../api/services.ts";
+import { authService } from "../features/auth/services";
 import { useSession } from "../hooks/useSession";
 
 interface ProtectedRouteProps {

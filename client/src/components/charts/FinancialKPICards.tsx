@@ -8,7 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { advancedAnalyticsService } from "../../api/services";
+import { advancedAnalyticsService } from "../../features/analytics/services";
 
 interface KPI {
   id: string;

@@ -6,7 +6,7 @@ vi.mock("../api/axios", () => ({
   default: { get: vi.fn() },
 }));
 
-vi.mock("../api/services", () => ({
+vi.mock("../features/auth/services", () => ({
   authService: {
     getCurrentUser: vi.fn(),
     getProfile: vi.fn(),
@@ -16,7 +16,8 @@ vi.mock("../api/services", () => ({
 const mockedApi = (await import("../api/axios")).default as unknown as {
   get: ReturnType<typeof vi.fn>;
 };
-const mockedAuth = (await import("../api/services")).authService as unknown as {
+const mockedAuth = (await import("../features/auth/services"))
+  .authService as unknown as {
   getCurrentUser: ReturnType<typeof vi.fn>;
   getProfile: ReturnType<typeof vi.fn>;
 };

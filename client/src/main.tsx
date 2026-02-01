@@ -1,9 +1,9 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
-import ErrorBoundary from "./components/ErrorBoundary";
 import { BusinessProvider } from "./context/BusinessContext";
 import "./index.css";
+import { ErrorBoundary } from "./shared/components/ui";
 import { enableConsoleBuffer } from "./utils/consoleBuffer";
 
 import { registerSW } from "virtual:pwa-register";

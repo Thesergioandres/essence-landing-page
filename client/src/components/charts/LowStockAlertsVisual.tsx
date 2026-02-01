@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { AlertCircle, AlertTriangle, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { advancedAnalyticsService } from "../../api/services";
+import { advancedAnalyticsService } from "../../features/analytics/services";
 
 export const LowStockAlertsVisual: React.FC<{ reloadKey?: number }> = ({
   reloadKey = 0,

@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Navigate } from "react-router-dom";
-import { authService } from "../api/services.ts";
+import { authService } from "../features/auth/services";
 
 interface RoleRouteProps {
   children: ReactElement;

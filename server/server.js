@@ -11,8 +11,6 @@ import { startDebtNotificationWorker } from "./jobs/debtNotification.worker.js";
 import { errorHandler } from "./middleware/errorHandler.middleware.js";
 import {
   apiLimiter,
-  authLimiter,
-  registerLimiter,
   uploadLimiter,
 } from "./middleware/rateLimit.middleware.js";
 import {
@@ -22,7 +20,9 @@ import {
 import { requestLogger } from "./middleware/requestLogger.middleware.js";
 import { connectDB } from "./src/infrastructure/database/connection.js";
 
-// Importar rutas
+// ============================================================================
+// 🛡️ MIDDLEWARE IMPORTS
+// ============================================================================
 import {
   databaseOperationLogger,
   productionWriteGuard,
@@ -33,46 +33,56 @@ import {
   securityHeaders,
   suspiciousRequestDetector,
 } from "./middleware/security.middleware.js";
-import advancedAnalyticsRoutes from "./routes/advancedAnalytics.routes.js";
-import analyticsRoutes from "./routes/analytics.routes.js";
-import auditRoutes from "./routes/audit.routes.js";
-import authRoutes from "./routes/auth.routes.js";
-import branchRoutes from "./routes/branch.routes.js";
-import branchTransferRoutes from "./routes/branchTransfer.routes.js";
-import businessRoutes from "./routes/business.routes.js";
-import businessAssistantRoutes from "./routes/businessAssistant.routes.js";
-import categoryRoutes from "./routes/category.routes.js";
-import creditRoutes from "./routes/credit.routes.js";
-import customerRoutes from "./routes/customer.routes.js";
-import customerPointsRoutes from "./routes/customerPoints.routes.js";
-import defectiveProductRoutes from "./routes/defectiveProduct.routes.js";
-import deliveryMethodRoutes from "./routes/deliveryMethod.routes.js";
-import distributorRoutes from "./routes/distributor.routes.js";
-import expenseRoutes from "./routes/expense.routes.js";
-import gamificationRoutes from "./routes/gamification.routes.js";
-import inventoryRoutes from "./routes/inventory.routes.js";
-import issueRoutes from "./routes/issue.routes.js";
-import notificationRoutes from "./routes/notification.routes.js";
-import paymentMethodRoutes from "./routes/paymentMethod.routes.js";
 
-import productRoutes from "./routes/product.routes.js";
-import profitHistoryRoutes from "./routes/profitHistory.routes.js";
-import promotionRoutes from "./routes/promotion.routes.js";
-import providerRoutes from "./routes/provider.routes.js";
+// ============================================================================
+// 🟢 V2 CORE MODULES (Hexagonal Architecture)
+// These routes use the new Domain → Application → Infrastructure pattern
+// ============================================================================
 import analyticsRoutesV2 from "./src/infrastructure/http/routes/analytics.routes.v2.js";
 import authRoutesV2 from "./src/infrastructure/http/routes/auth.routes.v2.js";
+import branchRoutesV2 from "./src/infrastructure/http/routes/branch.routes.v2.js";
+import businessRoutesV2 from "./src/infrastructure/http/routes/business.routes.v2.js";
+import businessAssistantRoutesV2 from "./src/infrastructure/http/routes/businessAssistant.routes.v2.js";
+import categoryRoutesV2 from "./src/infrastructure/http/routes/category.routes.v2.js";
+import creditRoutesV2 from "./src/infrastructure/http/routes/credit.routes.v2.js";
+import customerRoutesV2 from "./src/infrastructure/http/routes/customer.routes.v2.js";
+import distributorRoutesV2 from "./src/infrastructure/http/routes/distributor.routes.v2.js";
+import expenseRoutesV2 from "./src/infrastructure/http/routes/expense.routes.v2.js";
+import gamificationRoutesV2 from "./src/infrastructure/http/routes/gamification.routes.v2.js";
+import inventoryRoutesV2 from "./src/infrastructure/http/routes/inventory.routes.v2.js";
 import productRoutesV2 from "./src/infrastructure/http/routes/product.routes.v2.js";
+import providerRoutesV2 from "./src/infrastructure/http/routes/provider.routes.v2.js";
 import saleRoutesV2 from "./src/infrastructure/http/routes/sales.routes.v2.js";
-// import purchaseOrderRoutes from "./routes/purchaseOrder.routes.js"; // ⚠️ Archivo no existe
-import pushSubscriptionRoutes from "./routes/pushSubscription.routes.js";
-import saleRoutes from "./routes/sale.routes.js";
+import stockRoutesV2 from "./src/infrastructure/http/routes/stock.routes.v2.js";
+import userRoutesV2 from "./src/infrastructure/http/routes/user.routes.v2.js";
 
-// import saleOrderRoutes from "./routes/saleOrder.routes.js"; // ⚠️ Archivo no existe
-import segmentRoutes from "./routes/segment.routes.js";
-import specialSaleRoutes from "./routes/specialSale.routes.js";
-import stockRoutes from "./routes/stock.routes.js";
-import uploadRoutes from "./routes/upload.routes.js";
-import userRoutes from "./routes/user.routes.js";
+// ============================================================================
+// � V2 BATCH 3 - UTILITIES & REPORTS (Hexagonal Architecture)
+// ============================================================================
+import advancedAnalyticsRoutesV2 from "./src/infrastructure/http/routes/advancedAnalytics.routes.v2.js";
+import auditRoutesV2 from "./src/infrastructure/http/routes/audit.routes.v2.js";
+import branchTransferRoutesV2 from "./src/infrastructure/http/routes/branchTransfer.routes.v2.js";
+import defectiveProductRoutesV2 from "./src/infrastructure/http/routes/defectiveProduct.routes.v2.js";
+import issueRoutesV2 from "./src/infrastructure/http/routes/issue.routes.v2.js";
+import notificationRoutesV2 from "./src/infrastructure/http/routes/notification.routes.v2.js";
+import promotionRoutesV2 from "./src/infrastructure/http/routes/promotion.routes.v2.js";
+import specialSaleRoutesV2 from "./src/infrastructure/http/routes/specialSale.routes.v2.js";
+
+// ============================================================================
+// 🟢 V2 BATCH 4 - UTILITIES & CONFIG (Hexagonal Architecture)
+// ============================================================================
+import customerPointsRoutesV2 from "./src/infrastructure/http/routes/customerPoints.routes.v2.js";
+import deliveryMethodRoutesV2 from "./src/infrastructure/http/routes/deliveryMethod.routes.v2.js";
+import paymentMethodRoutesV2 from "./src/infrastructure/http/routes/paymentMethod.routes.v2.js";
+import profitHistoryRoutesV2 from "./src/infrastructure/http/routes/profitHistory.routes.v2.js";
+import pushSubscriptionRoutesV2 from "./src/infrastructure/http/routes/pushSubscription.routes.v2.js";
+import segmentRoutesV2 from "./src/infrastructure/http/routes/segment.routes.v2.js";
+
+// ============================================================================
+// � V2 BATCH 5 - FINAL BOSS (Hexagonal Architecture - 100% Migration)
+// ============================================================================
+import godRoutesV2 from "./src/infrastructure/http/routes/god.routes.v2.js";
+import uploadRoutesV2 from "./src/infrastructure/http/routes/upload.routes.v2.js";
 
 // Configuración
 dotenv.config();
@@ -93,8 +103,8 @@ await connectDB();
 initRedis();
 
 // 🔄 Sincronizar inventario al inicio (Single Source of Truth)
-import { syncAllProductStocks } from "./controllers/stock.controller.js";
-syncAllProductStocks().catch(console.error);
+// import { syncAllProductStocks } from "./controllers/stock.controller.js";
+// syncAllProductStocks().catch(console.error);
 
 // 🛡️ Validar seguridad de base de datos antes de continuar
 if (process.env.NODE_ENV === "development") {
@@ -232,49 +242,59 @@ app.get("/api-docs.json", (_req, res) => {
 // Aplicar rate limiting global a la API (excepto auth que tiene su propio limiter)
 app.use("/api", apiLimiter);
 
-// Rutas de autenticación con rate limiting específico
-app.use("/api/auth/login", authLimiter);
-app.use("/api/auth/register", registerLimiter);
-app.use("/api/auth", authRoutes);
-
-app.use("/api/business", businessRoutes);
-app.use("/api/business-assistant", businessAssistantRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/inventory", inventoryRoutes);
-app.use("/api/branches", branchRoutes);
-app.use("/api/branch-transfers", branchTransferRoutes);
-app.use("/api/upload", uploadLimiter, uploadRoutes);
-app.use("/api/distributors", distributorRoutes);
-app.use("/api/stock", stockRoutes);
-app.use("/api/sales", saleRoutes);
-app.use("/api/v2/sales", saleRoutesV2);
-app.use("/api/v2/products", productRoutesV2);
+// ============================================================================
+//  V2 ROUTES (Hexagonal Architecture - Production Ready)
+// ============================================================================
 app.use("/api/v2/auth", authRoutesV2);
+app.use("/api/v2/branches", branchRoutesV2);
+app.use("/api/v2/business", businessRoutesV2);
+app.use("/api/v2/business-assistant", businessAssistantRoutesV2);
+app.use("/api/v2/categories", categoryRoutesV2);
+app.use("/api/v2/credits", creditRoutesV2);
+app.use("/api/v2/customers", customerRoutesV2);
+app.use("/api/v2/distributors", distributorRoutesV2);
+app.use("/api/v2/expenses", expenseRoutesV2);
+app.use("/api/v2/gamification", gamificationRoutesV2);
+app.use("/api/v2/inventory", inventoryRoutesV2);
+app.use("/api/v2/products", productRoutesV2);
+app.use("/api/v2/providers", providerRoutesV2);
+app.use("/api/v2/sales", saleRoutesV2);
+app.use("/api/v2/stock", stockRoutesV2);
 app.use("/api/v2/analytics", analyticsRoutesV2);
+app.use("/api/v2/users", userRoutesV2);
 
-// app.use("/api/sale-orders", saleOrderRoutes); // ⚠️ Archivo no existe
-// app.use("/api/purchase-orders", purchaseOrderRoutes); // ⚠️ Archivo no existe
-app.use("/api/special-sales", specialSaleRoutes);
-app.use("/api/defective-products", defectiveProductRoutes);
-app.use("/api/analytics", analyticsRoutes);
-app.use("/api/advanced-analytics", advancedAnalyticsRoutes);
-app.use("/api/audit", auditRoutes);
-app.use("/api/gamification", gamificationRoutes);
-app.use("/api/profit-history", profitHistoryRoutes);
-app.use("/api/expenses", expenseRoutes);
-app.use("/api/issues", issueRoutes);
-app.use("/api/promotions", promotionRoutes);
-app.use("/api/providers", providerRoutes);
-app.use("/api/customers", customerRoutes);
-app.use("/api/segments", segmentRoutes);
-app.use("/api/credits", creditRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/payment-methods", paymentMethodRoutes);
-app.use("/api/delivery-methods", deliveryMethodRoutes);
-app.use("/api/push", pushSubscriptionRoutes);
-app.use("/api", customerPointsRoutes);
+// ============================================================================
+// � V2 BATCH 3 - UTILITIES & REPORTS
+// ============================================================================
+app.use("/api/v2/advanced-analytics", advancedAnalyticsRoutesV2);
+app.use("/api/v2/audit", auditRoutesV2);
+app.use("/api/v2/branch-transfers", branchTransferRoutesV2);
+app.use("/api/v2/defective-products", defectiveProductRoutesV2);
+app.use("/api/v2/issues", issueRoutesV2);
+app.use("/api/v2/notifications", notificationRoutesV2);
+app.use("/api/v2/promotions", promotionRoutesV2);
+app.use("/api/v2/special-sales", specialSaleRoutesV2);
+
+// ============================================================================
+// 🟢 V2 BATCH 4 - UTILITIES & CONFIG
+// ============================================================================
+app.use("/api/v2", customerPointsRoutesV2);
+app.use("/api/v2/delivery-methods", deliveryMethodRoutesV2);
+app.use("/api/v2/payment-methods", paymentMethodRoutesV2);
+app.use("/api/v2/profit-history", profitHistoryRoutesV2);
+app.use("/api/v2/push", pushSubscriptionRoutesV2);
+app.use("/api/v2/segments", segmentRoutesV2);
+
+// ============================================================================
+// 🎯 V2 BATCH 5 - FINAL BOSS (100% Hexagonal Architecture Achieved)
+// ============================================================================
+app.use("/api/v2/god", godRoutesV2);
+app.use("/api/v2/upload", uploadLimiter, uploadRoutesV2);
+
+// ============================================================================
+// 🎉 MIGRATION COMPLETE - All modules now use Hexagonal Architecture
+// Legacy server/controllers and server/routes folders have been eliminated
+// ============================================================================
 
 // Manejo global de errores
 app.use(errorHandler);

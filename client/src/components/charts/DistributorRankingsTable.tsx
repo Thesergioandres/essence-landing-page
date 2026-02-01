@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Award, Medal, TrendingUp, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { advancedAnalyticsService } from "../../api/services";
+import { advancedAnalyticsService } from "../../features/analytics/services";
 
 interface DistributorRankingsTableProps {
   startDate?: string;

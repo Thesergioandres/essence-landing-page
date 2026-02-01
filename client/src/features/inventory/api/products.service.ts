@@ -7,8 +7,10 @@ import type {
 
 export const productsService = {
   getProducts: async () => {
-    const response = await httpClient.get<Product[]>("/v2/products");
-    return response.data;
+    const response = await httpClient.get<{ products: Product[] }>(
+      "/v2/products"
+    );
+    return response.data.products || [];
   },
 
   getProductById: async (id: string) => {

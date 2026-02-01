@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { defectiveProductService } from "../api/services";
+import { defectiveProductService } from "../features/sales/services";
 import type { DefectiveProduct, Sale } from "../types";
 
 interface SaleDetailModalProps {

@@ -6,6 +6,28 @@ import { ProductRepository } from "../../database/repositories/ProductRepository
 const productRepository = new ProductRepository();
 
 /**
+ * Get All Products for Business
+ */
+export const getAllProducts = async (req, res, next) => {
+  try {
+    const businessId = req.headers["x-business-id"] || req.businessId;
+    if (!businessId) {
+      return res.status(400).json({ message: "Business ID required" });
+    }
+
+    const filter = {};
+    if (req.query.category) filter.category = req.query.category;
+    if (req.query.active !== undefined)
+      filter.isActive = req.query.active === "true";
+
+    const products = await productRepository.findAll(businessId, filter);
+    res.json({ products });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Get Product by ID
  */
 export const getProductById = async (req, res, next) => {

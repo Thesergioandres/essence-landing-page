@@ -7,13 +7,17 @@ import {
 } from "../../../../middleware/business.middleware.js";
 import {
   createProduct,
+  getAllProducts,
   getProductById,
   updateStock,
 } from "../controllers/ProductController.js";
 
 const router = express.Router();
 
-// Public/Protected Read (depending on policy, assuming protected for now)
+// Get all products for business
+router.get("/", protect, businessContext, getAllProducts);
+
+// Get single product by ID
 router.get("/:id", protect, businessContext, getProductById);
 
 // Create Product
