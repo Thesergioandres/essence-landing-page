@@ -42,10 +42,11 @@ const expenseSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 expenseSchema.index({ expenseDate: -1 });
 expenseSchema.index({ type: 1, expenseDate: -1 });
 
-export default mongoose.model("Expense", expenseSchema);
+export default mongoose.models.Expense ||
+  mongoose.model("Expense", expenseSchema);

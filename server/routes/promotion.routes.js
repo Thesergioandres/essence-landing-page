@@ -1,6 +1,7 @@
 import express from "express";
 import {
   checkPromotionStock,
+  createFromAI,
   createPromotion,
   deletePromotion,
   evaluatePromotionHandler,
@@ -26,57 +27,64 @@ router.use(protect, businessContext, requireFeature("promotions"));
 router.get(
   "/metrics",
   requirePermission({ module: "promotions", action: "read" }),
-  getPromotionMetrics
+  getPromotionMetrics,
 );
 
 router.get(
   "/catalog",
   requirePermission({ module: "promotions", action: "read" }),
-  getCatalogPromotions
+  getCatalogPromotions,
+);
+
+// AI-powered promotion creation
+router.post(
+  "/create-from-ai",
+  requirePermission({ module: "promotions", action: "create" }),
+  createFromAI,
 );
 
 router
   .route("/")
   .post(
     requirePermission({ module: "promotions", action: "create" }),
-    createPromotion
+    createPromotion,
   )
   .get(
     requirePermission({ module: "promotions", action: "read" }),
-    listPromotions
+    listPromotions,
   );
 
 router
   .route("/:id")
   .get(
     requirePermission({ module: "promotions", action: "read" }),
-    getPromotionById
+    getPromotionById,
   )
   .put(
     requirePermission({ module: "promotions", action: "update" }),
-    updatePromotion
+    updatePromotion,
   )
   .delete(
     requirePermission({ module: "promotions", action: "delete" }),
-    deletePromotion
+    deletePromotion,
   );
 
 router.post(
   "/:id/evaluate",
   requirePermission({ module: "promotions", action: "read" }),
-  evaluatePromotionHandler
+  evaluatePromotionHandler,
 );
 
 router.get(
   "/:id/check-stock",
   requirePermission({ module: "promotions", action: "read" }),
-  checkPromotionStock
+  checkPromotionStock,
 );
 
 router.patch(
   "/:id/toggle-status",
   requirePermission({ module: "promotions", action: "update" }),
-  togglePromotionStatus
+  togglePromotionStatus,
 );
 
 export default router;

@@ -58,6 +58,8 @@ api.interceptors.request.use(
       url.startsWith("/auth") ||
       url.startsWith("/business/me/memberships") ||
       url.startsWith("/upload") ||
+      url.startsWith("/users/god") ||
+      url.startsWith("/issues") ||
       (config.method === "post" && url === "/business");
 
     if (token) {

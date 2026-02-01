@@ -116,7 +116,13 @@ export default function EditProduct() {
     // Auto-calcular suggestedPrice cuando cambia purchasePrice
     if (name === "purchasePrice") {
       const purchasePrice = Number(value) || 0;
-      const suggestedPrice = Math.round(purchasePrice * 1.3);
+      // USAR REGLA DE COSTO PROMEDIO: Si existe costo promedio, úsalo como base. Si no, usa el precio base editado.
+      const costBasis =
+        product?.averageCost && product.averageCost > 0
+          ? product.averageCost
+          : purchasePrice;
+
+      const suggestedPrice = Math.round(costBasis * 1.3);
       setFormData(current =>
         current
           ? {
@@ -348,7 +354,7 @@ export default function EditProduct() {
                     className="w-full rounded-lg border border-green-500 bg-green-900/20 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                   <p className="mt-1 text-xs text-green-600">
-                    Auto-calculado: Compra × 1.3
+                    Auto-calculado: Costo Base (Promedio/Compra) × 1.3
                   </p>
                 </div>
 
@@ -389,20 +395,70 @@ export default function EditProduct() {
                 </div>
 
                 <div className="rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-3">
-                  <p className="mb-1 text-xs text-gray-400">
-                    Resumen de rentabilidad
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    📊 Mi Rentabilidad (ROI)
+                    {product?.averageCost && product.averageCost > 0 && (
+                      <span className="ml-1 font-normal lowercase text-blue-400"></span>
+                    )}
                   </p>
-                  <div className="space-y-1 text-xs">
-                    <p className="text-green-400">
-                      Ganancia Admin: $
-                      {Number(formData.distributorPrice || 0) -
-                        Number(formData.purchasePrice || 0)}
-                    </p>
-                    <p className="text-yellow-400">
-                      Ganancia Distribuidor: $
-                      {Number(formData.clientPrice || 0) -
-                        Number(formData.distributorPrice || 0)}
-                    </p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {/* B2B: Selling to Distributor */}
+                    <div>
+                      <p className="text-[10px] uppercase text-gray-500">
+                        Venta a Distribuidor (B2B)
+                      </p>
+                      {(() => {
+                        const cost =
+                          (product?.averageCost && product.averageCost > 0
+                            ? product.averageCost
+                            : Number(formData.purchasePrice)) || 0;
+                        const price = Number(formData.distributorPrice) || 0;
+                        const profit = price - cost;
+                        const roi =
+                          cost > 0 ? Math.round((profit / cost) * 100) : 0;
+                        const isPositive = profit > 0;
+
+                        return (
+                          <p
+                            className={`text-sm font-bold ${isPositive ? "text-blue-400" : "text-red-400"}`}
+                          >
+                            ${new Intl.NumberFormat("es-CO").format(profit)}{" "}
+                            <span className="text-xs font-normal opacity-80">
+                              ({roi}%)
+                            </span>
+                          </p>
+                        );
+                      })()}
+                    </div>
+
+                    {/* B2C: Selling to Client Directly */}
+                    <div>
+                      <p className="text-[10px] uppercase text-gray-500">
+                        Venta a Cliente (Directa)
+                      </p>
+                      {(() => {
+                        const cost =
+                          (product?.averageCost && product.averageCost > 0
+                            ? product.averageCost
+                            : Number(formData.purchasePrice)) || 0;
+                        const price = Number(formData.clientPrice) || 0;
+                        const profit = price - cost;
+                        const roi =
+                          cost > 0 ? Math.round((profit / cost) * 100) : 0;
+                        const isPositive = profit > 0;
+
+                        return (
+                          <p
+                            className={`text-sm font-bold ${isPositive ? "text-purple-400" : "text-red-400"}`}
+                          >
+                            ${new Intl.NumberFormat("es-CO").format(profit)}{" "}
+                            <span className="text-xs font-normal opacity-80">
+                              ({roi}%)
+                            </span>
+                          </p>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
               </div>

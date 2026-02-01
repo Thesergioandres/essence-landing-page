@@ -56,6 +56,8 @@ export default function Sales() {
   });
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
+  const [showAllSales, setShowAllSales] = useState(false);
+  const [isLoadingAll, setIsLoadingAll] = useState(false);
 
   const handleExport = async (type: "excel" | "pdf") => {
     if (sales.length === 0) return;
@@ -71,7 +73,9 @@ export default function Sales() {
             : "") ||
           (typeof sale.createdBy === "object" ? sale.createdBy?.name : "Admin");
         const productName =
-          typeof sale.product === "object" ? sale.product?.name : "N/A";
+          typeof sale.product === "object"
+            ? sale.product?.name || sale.productName || "Producto Eliminado"
+            : sale.productName || "Producto Eliminado";
         const customerName = sale.customerName || "-";
 
         return {
@@ -129,9 +133,11 @@ export default function Sales() {
     currentUser?.role === "god";
 
   useEffect(() => {
-    loadSales();
+    if (!showAllSales) {
+      loadSales();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, filter, sortBy, dateFilters, branchId]);
+  }, [pagination.page, filter, sortBy, dateFilters, branchId, showAllSales]);
 
   useEffect(() => {
     const fetchBranches = async () => {
@@ -188,6 +194,44 @@ export default function Sales() {
       console.error("Error al cargar ventas:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handler para mostrar TODAS las ventas de la app
+  const handleShowAllSales = async () => {
+    try {
+      setIsLoadingAll(true);
+      setShowAllSales(true);
+      // Limpiar filtros
+      setBranchId("");
+      setFilter("all");
+      setDateFilters({ startDate: "", endDate: "" });
+
+      // Obtener todas las ventas con límite muy alto
+      const response = await saleService.getAllSales({
+        limit: 10000, // Límite alto para obtener todas
+        sortBy: "date-desc",
+      });
+
+      const normalized = {
+        sales: (response?.sales || response) as Sale[],
+        pagination: response?.pagination,
+        stats: response?.stats,
+      };
+
+      setSales(normalized.sales || []);
+      if (normalized.stats) setStatsData(normalized.stats);
+      if (normalized.pagination) {
+        setPagination({
+          ...normalized.pagination,
+          page: 1, // Reset a primera página
+        });
+      }
+    } catch (error) {
+      console.error("Error al cargar todas las ventas:", error);
+      alert("Error al cargar todas las ventas");
+    } finally {
+      setIsLoadingAll(false);
     }
   };
 
@@ -493,6 +537,19 @@ export default function Sales() {
               <FileText className="h-4 w-4" />
             )}
             <span className="hidden sm:inline">PDF</span>
+          </button>
+          <button
+            onClick={handleShowAllSales}
+            disabled={isLoadingAll || loading}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              showAllSales
+                ? "border border-purple-500 bg-purple-600 text-white"
+                : "border border-purple-600/50 bg-purple-900/20 text-purple-400 hover:bg-purple-900/40"
+            } disabled:opacity-50`}
+          >
+            {isLoadingAll ? <LoadingSpinner size="sm" /> : <span>📊</span>}
+            <span className="hidden sm:inline">Todas las ventas</span>
+            <span className="sm:hidden">Todo</span>
           </button>
         </div>
       </div>
@@ -909,8 +966,11 @@ export default function Sales() {
                                   )}
                                 <span className="text-sm text-gray-200">
                                   {typeof firstSale.product === "object"
-                                    ? firstSale.product?.name
-                                    : "N/A"}
+                                    ? firstSale.product?.name ||
+                                      firstSale.productName ||
+                                      "Producto Eliminado"
+                                    : firstSale.productName ||
+                                      "Producto Eliminado"}
                                 </span>
                               </div>
                             )}
@@ -1100,7 +1160,9 @@ export default function Sales() {
                                       />
                                     )}
                                     <span className="text-sm text-gray-300">
-                                      {product?.name || "N/A"}
+                                      {product?.name ||
+                                        sale.productName ||
+                                        "Producto Eliminado"}
                                     </span>
                                   </div>
                                 </td>
@@ -1178,7 +1240,7 @@ export default function Sales() {
               <div className="mt-4 flex flex-col items-center justify-between gap-4 border-t border-gray-700 bg-gray-900/30 px-6 py-4 sm:flex-row">
                 <div className="text-sm text-gray-300">
                   Página {pagination.page} de {pagination.pages} • Total:{" "}
-                  {pagination.total} ventas
+                  {stats.total} pedidos
                 </div>
                 <div className="flex gap-2">
                   <button

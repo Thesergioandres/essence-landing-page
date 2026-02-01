@@ -17,9 +17,10 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { branchService, promotionService } from "../api/services";
 import ProductSelector from "../components/ProductSelector";
+import { invalidateProductCache } from "../hooks/useProductCache";
 import type {
   Branch,
   Product,
@@ -102,6 +103,7 @@ interface ProductSelectorProduct {
   purchasePrice?: number;
   suggestedPrice?: number;
   clientPrice?: number;
+  distributorPrice?: number;
   image?: { url: string };
 }
 
@@ -110,32 +112,17 @@ interface ComboItemForm {
   productName: string;
   productImage?: string;
   productPrice: number;
+  purchasePrice: number;
+  distributorPrice: number;
   quantity: number;
   unitPrice: number;
 }
 
 export default function Promotions() {
-  // Módulo en desarrollo - mostrar mensaje
-  const isUnderDevelopment = true;
+  // Módulo activo
+  // const isUnderDevelopment = false;
 
-  if (isUnderDevelopment) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center">
-        <div className="rounded-xl border border-purple-700/50 bg-purple-900/30 p-8 text-center">
-          <div className="mb-4 text-6xl">🚧</div>
-          <h1 className="mb-2 text-2xl font-bold text-purple-300">
-            Módulo en Desarrollo
-          </h1>
-          <p className="text-gray-400">
-            El módulo de Promociones está siendo mejorado.
-          </p>
-          <p className="mt-2 text-sm text-gray-500">
-            Estará disponible próximamente con nuevas funcionalidades.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // (Removed development warning block)
 
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [stats, setStats] = useState<PromotionStats | null>(null);
@@ -159,6 +146,7 @@ export default function Promotions() {
     type: "bundle" as PromotionType,
     status: "active" as PromotionStatus,
     promotionPrice: 0,
+    distributorPrice: 0,
     startDate: "",
     endDate: "",
     branches: [] as string[],
@@ -173,6 +161,8 @@ export default function Promotions() {
   const [comboItems, setComboItems] = useState<ComboItemForm[]>([]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [generatingCollage, setGeneratingCollage] = useState(false);
+  const manualImageRef = useRef(false); // Track if user manually uploaded an image
 
   const loadData = useCallback(async () => {
     try {
@@ -236,10 +226,142 @@ export default function Promotions() {
         const base64 = reader.result as string;
         setImageBase64(base64);
         setImagePreview(base64);
+        manualImageRef.current = true; // Mark as manually uploaded
       };
       reader.readAsDataURL(file);
     }
   };
+
+  // 🎨 Canvas-based Product Collage Generator
+  const generateProductCollage = useCallback(
+    async (imageUrls: string[]): Promise<string | null> => {
+      if (imageUrls.length === 0) return null;
+
+      const CANVAS_SIZE = 600;
+      const canvas = document.createElement("canvas");
+      canvas.width = CANVAS_SIZE;
+      canvas.height = CANVAS_SIZE;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      gradient.addColorStop(0, "#1a1a2e");
+      gradient.addColorStop(1, "#16213e");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+      // Load images with error handling
+      const loadImage = (url: string): Promise<HTMLImageElement | null> => {
+        return new Promise(resolve => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = url;
+        });
+      };
+
+      const images = (await Promise.all(imageUrls.map(loadImage))).filter(
+        (img): img is HTMLImageElement => img !== null
+      );
+
+      if (images.length === 0) return null;
+
+      // Calculate grid layout
+      const count = images.length;
+      const cols = count === 1 ? 1 : count <= 4 ? 2 : 3;
+      const rows = Math.ceil(count / cols);
+      const cellWidth = CANVAS_SIZE / cols;
+      const cellHeight = CANVAS_SIZE / rows;
+      const padding = 8;
+
+      // Draw images with "contain" fit
+      images.forEach((img, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = col * cellWidth + padding;
+        const y = row * cellHeight + padding;
+        const maxW = cellWidth - padding * 2;
+        const maxH = cellHeight - padding * 2;
+
+        // Calculate scale to fit (contain)
+        const scale = Math.min(maxW / img.width, maxH / img.height);
+        const drawW = img.width * scale;
+        const drawH = img.height * scale;
+        const drawX = x + (maxW - drawW) / 2;
+        const drawY = y + (maxH - drawH) / 2;
+
+        // Draw rounded rect background
+        ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.beginPath();
+        ctx.roundRect(x, y, maxW, maxH, 12);
+        ctx.fill();
+
+        // Clip and draw image
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(drawX, drawY, drawW, drawH, 8);
+        ctx.clip();
+        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+        ctx.restore();
+      });
+
+      // Add combo badge
+      ctx.fillStyle = "rgba(168, 85, 247, 0.9)";
+      ctx.beginPath();
+      ctx.roundRect(CANVAS_SIZE - 120, 12, 108, 32, 16);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 14px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(`${count} productos`, CANVAS_SIZE - 66, 34);
+
+      return canvas.toDataURL("image/jpeg", 0.85);
+    },
+    []
+  );
+
+  // 🔄 Auto-generate collage when comboItems change
+  // 🔄 Auto-generate collage when comboItems change
+  useEffect(() => {
+    const generateCollage = async () => {
+      // Only auto-generate for bundle/combo types
+      if (formData.type !== "bundle" && formData.type !== "combo") return;
+
+      // Skip if user manually uploaded an image
+      if (manualImageRef.current) return;
+
+      // Get image URLs from combo items
+      const imageUrls = comboItems
+        .map(item => item.productImage)
+        .filter((url): url is string => !!url);
+
+      if (imageUrls.length === 0) {
+        // Clear auto-generated image if no products
+        if (!manualImageRef.current) {
+          setImagePreview(null);
+          setImageBase64(null);
+        }
+        return;
+      }
+
+      setGeneratingCollage(true);
+      try {
+        const collageBase64 = await generateProductCollage(imageUrls);
+        if (collageBase64 && !manualImageRef.current) {
+          setImagePreview(collageBase64);
+          setImageBase64(collageBase64);
+        }
+      } catch (err) {
+        console.error("Error generating collage:", err);
+      } finally {
+        setGeneratingCollage(false);
+      }
+    };
+
+    void generateCollage();
+  }, [comboItems, formData.type, generateProductCollage]);
 
   const handleProductSelect = useCallback(
     (productId: string, product?: ProductSelectorProduct) => {
@@ -249,6 +371,9 @@ export default function Promotions() {
         return;
       }
       const price = product.clientPrice ?? product.suggestedPrice ?? 0;
+      const cost = product.purchasePrice ?? 0;
+      const distPrice = product.distributorPrice ?? price;
+
       setComboItems(prev => [
         ...prev,
         {
@@ -256,6 +381,8 @@ export default function Promotions() {
           productName: product.name,
           productImage: product.image?.url,
           productPrice: price,
+          purchasePrice: cost,
+          distributorPrice: distPrice,
           quantity: 1,
           unitPrice: price,
         },
@@ -305,6 +432,7 @@ export default function Promotions() {
       type: "bundle",
       status: "active",
       promotionPrice: 0,
+      distributorPrice: 0,
       startDate: "",
       endDate: "",
       branches: [],
@@ -318,6 +446,7 @@ export default function Promotions() {
     setImagePreview(null);
     setImageBase64(null);
     setEditingPromo(null);
+    manualImageRef.current = false; // Reset manual upload flag
   };
 
   const openCreateModal = () => {
@@ -326,6 +455,12 @@ export default function Promotions() {
   };
 
   const openEditModal = (promo: Promotion) => {
+    console.log(
+      "Opening edit modal for:",
+      promo.name,
+      "DistPrice:",
+      promo.distributorPrice
+    );
     setEditingPromo(promo);
     setFormData({
       name: promo.name,
@@ -333,6 +468,7 @@ export default function Promotions() {
       type: promo.type,
       status: promo.status,
       promotionPrice: promo.promotionPrice || 0,
+      distributorPrice: promo.distributorPrice || 0,
       startDate: promo.startDate ? promo.startDate.split("T")[0] : "",
       endDate: promo.endDate ? promo.endDate.split("T")[0] : "",
       branches: (promo.branches || []).map(b =>
@@ -352,6 +488,9 @@ export default function Promotions() {
           productName: product?.name || "Producto",
           productImage: product?.image?.url,
           productPrice: product?.clientPrice || product?.suggestedPrice || 0,
+          purchasePrice: product?.purchasePrice || 0,
+          distributorPrice:
+            product?.distributorPrice || product?.clientPrice || 0,
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice || 0,
         };
@@ -359,6 +498,7 @@ export default function Promotions() {
     );
     setImagePreview(promo.image?.url || null);
     setImageBase64(null);
+    manualImageRef.current = !!promo.image?.url; // Preserve existing image
     setShowModal(true);
   };
 
@@ -385,6 +525,7 @@ export default function Promotions() {
         type: formData.type,
         status: formData.status,
         promotionPrice: formData.promotionPrice,
+        distributorPrice: formData.distributorPrice,
         startDate: formData.startDate || undefined,
         endDate: formData.endDate || undefined,
         branches:
@@ -421,6 +562,9 @@ export default function Promotions() {
         setSuccess("Promoción creada correctamente");
       }
 
+      // Invalidate product cache to reflect changes in ProductSelector/Catalog
+      invalidateProductCache();
+
       setShowModal(false);
       resetForm();
       void loadData();
@@ -451,6 +595,11 @@ export default function Promotions() {
     if (!confirm("¿Estás seguro de archivar esta promoción?")) return;
     try {
       await promotionService.delete(id);
+
+      // Invalidate product cache
+      invalidateProductCache();
+
+      setPromotions(prev => prev.filter(p => p._id !== id));
       setSuccess("Promoción archivada");
       void loadData();
     } catch (err) {
@@ -773,7 +922,7 @@ export default function Promotions() {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-10">
-          <div className="w-full max-w-3xl rounded-xl border border-gray-700 bg-gray-900 shadow-xl">
+          <div className="w-full max-w-7xl rounded-xl border border-gray-700 bg-gray-900 shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-700 p-4">
               <h2 className="text-xl font-semibold text-white">
                 {editingPromo ? "Editar Promoción" : "Nueva Promoción"}
@@ -876,6 +1025,12 @@ export default function Promotions() {
                   <div>
                     <label className="mb-1 block text-sm font-medium text-gray-300">
                       Imagen
+                      {generatingCollage && (
+                        <span className="ml-2 inline-flex items-center gap-1 text-xs text-purple-400">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Generando collage...
+                        </span>
+                      )}
                     </label>
                     {imagePreview ? (
                       <div className="relative">
@@ -884,11 +1039,17 @@ export default function Promotions() {
                           alt="Preview"
                           className="h-32 w-full rounded-lg object-cover"
                         />
+                        {generatingCollage && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50">
+                            <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+                          </div>
+                        )}
                         <button
                           type="button"
                           onClick={() => {
                             setImagePreview(null);
                             setImageBase64(null);
+                            manualImageRef.current = true; // Prevent auto-generation unless user resets
                           }}
                           className="absolute right-2 top-2 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
                         >
@@ -896,7 +1057,17 @@ export default function Promotions() {
                         </button>
                       </div>
                     ) : (
-                      <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-600 p-6 transition hover:border-purple-500">
+                      <label className="relative flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-600 p-6 transition hover:border-purple-500">
+                        {generatingCollage && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-800">
+                            <div className="text-center">
+                              <Loader2 className="mx-auto h-8 w-8 animate-spin text-purple-400" />
+                              <p className="mt-2 text-xs text-gray-400">
+                                Generando collage...
+                              </p>
+                            </div>
+                          </div>
+                        )}
                         <input
                           type="file"
                           accept="image/*"
@@ -1053,6 +1224,7 @@ export default function Promotions() {
                       placeholder="Buscar producto para agregar..."
                       showStock={true}
                       excludeProductIds={comboItems.map(item => item.product)}
+                      excludePromotions={true}
                     />
                   </div>
 
@@ -1115,45 +1287,252 @@ export default function Promotions() {
                     )}
                   </div>
 
-                  {/* Price Summary */}
+                  {/* Price Summary & Financial Breakdown */}
                   {comboItems.length > 0 && (
-                    <div className="rounded-lg border border-purple-700/50 bg-purple-900/20 p-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">Precio original:</span>
-                        <span className="font-medium text-gray-300">
-                          {formatCurrency(calculateOriginalPrice())}
-                        </span>
-                      </div>
-                      <div className="mt-3">
-                        <label className="mb-1 block text-sm font-medium text-purple-300">
-                          Precio de la promoción *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="100"
-                          value={
-                            formData.promotionPrice === 0
-                              ? ""
-                              : formData.promotionPrice
-                          }
-                          onChange={e =>
-                            setFormData({
-                              ...formData,
-                              promotionPrice: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                          onBlur={e => {
-                            if (e.target.value === "") {
-                              setFormData({ ...formData, promotionPrice: 0 });
+                    <div className="space-y-4">
+                      {/* Original Price & Promo Price */}
+                      <div className="rounded-lg border border-purple-700/50 bg-purple-900/20 p-4">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-400">
+                            Precio original:
+                          </span>
+                          <span className="font-medium text-gray-300">
+                            {formatCurrency(calculateOriginalPrice())}
+                          </span>
+                        </div>
+                        <div className="mt-3">
+                          <label className="mb-1 block text-sm font-medium text-purple-300">
+                            Precio de la promoción *
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="100"
+                            value={
+                              formData.promotionPrice === 0
+                                ? ""
+                                : formData.promotionPrice
                             }
-                          }}
-                          className="w-full rounded-lg border border-purple-700/50 bg-purple-900/30 px-4 py-2 text-xl font-bold text-purple-300 focus:border-purple-500 focus:outline-none"
-                          required
-                        />
+                            onChange={e =>
+                              setFormData({
+                                ...formData,
+                                promotionPrice: parseFloat(e.target.value) || 0,
+                              })
+                            }
+                            onBlur={e => {
+                              if (e.target.value === "") {
+                                setFormData({ ...formData, promotionPrice: 0 });
+                              }
+                            }}
+                            className="w-full rounded-lg border border-purple-700/50 bg-purple-900/30 px-4 py-2 text-xl font-bold text-purple-300 focus:border-purple-500 focus:outline-none"
+                            required
+                          />
+                        </div>
                       </div>
+
+                      {/* 📊 INGENERÍA DE PRECIOS - Responsive Grid */}
+                      {formData.promotionPrice > 0 &&
+                        (() => {
+                          // Calculate financial metrics
+                          const totalCost = comboItems.reduce(
+                            (sum, item) =>
+                              sum + (item.purchasePrice || 0) * item.quantity,
+                            0
+                          );
+                          const totalPublicNormal = calculateOriginalPrice();
+                          const adminProfit =
+                            formData.promotionPrice - totalCost;
+                          // CHANGE: Markup (ROI) = (Profit / Cost) * 100
+                          const adminMargin =
+                            totalCost > 0
+                              ? Math.round((adminProfit / totalCost) * 100)
+                              : 0;
+                          const distributorProfit =
+                            formData.promotionPrice - formData.distributorPrice;
+                          const customerSavings =
+                            totalPublicNormal - formData.promotionPrice;
+                          const adminProfitB2B =
+                            formData.distributorPrice - totalCost;
+                          // CHANGE: Markup (ROI) = (Profit / Cost) * 100
+                          const adminMarginB2B =
+                            totalCost > 0
+                              ? Math.round((adminProfitB2B / totalCost) * 100)
+                              : 0;
+
+                          const belowCostAlert =
+                            formData.distributorPrice > 0 &&
+                            formData.distributorPrice < totalCost;
+
+                          return (
+                            <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-3 sm:p-4">
+                              <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold text-gray-300 sm:text-sm">
+                                📊 Ingeniería de Precios
+                              </h4>
+
+                              {/* Alert if distributor price below cost */}
+                              {belowCostAlert && (
+                                <div className="mb-3 rounded-lg border border-red-500/50 bg-red-900/30 p-2 text-xs text-red-400 sm:text-sm">
+                                  ⚠️ Precio distribuidor por debajo del costo
+                                </div>
+                              )}
+
+                              {/* Responsive Grid: 1 col mobile, 2 col tablet, 3 col desktop */}
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {/* Column 1: Admin Costs */}
+                                <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-purple-400 sm:text-xs">
+                                    💼 Mi Estructura
+                                  </p>
+                                  <div className="space-y-3">
+                                    <div>
+                                      <span className="block text-[10px] uppercase text-gray-500">
+                                        Costo
+                                      </span>
+                                      <span className="block truncate text-lg font-semibold text-gray-300">
+                                        {formatCurrency(totalCost)}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="block text-[10px] uppercase text-gray-500">
+                                        Ganancia
+                                      </span>
+                                      <span
+                                        className={`block truncate text-lg font-bold ${adminProfit >= 0 ? "text-green-400" : "text-red-400"}`}
+                                      >
+                                        {formatCurrency(adminProfit)}
+                                        <span className="ml-1 text-xs font-normal opacity-75">
+                                          ({adminMargin}% ROI)
+                                        </span>
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Column 2: Distributor (B2B) */}
+                                <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-blue-400 sm:text-xs">
+                                    🏷️ Distribuidor
+                                  </p>
+                                  <div className="space-y-3">
+                                    <div>
+                                      <span className="mb-1 block text-[10px] uppercase text-gray-500">
+                                        Precio B2B
+                                      </span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="100"
+                                        value={formData.distributorPrice || ""}
+                                        onChange={e =>
+                                          setFormData({
+                                            ...formData,
+                                            distributorPrice:
+                                              parseFloat(e.target.value) || 0,
+                                          })
+                                        }
+                                        className="w-full rounded border border-gray-600 bg-gray-800 px-2 py-1.5 text-base font-semibold text-white focus:border-purple-500 focus:outline-none"
+                                        placeholder="$0"
+                                      />
+                                      <div className="mt-1 text-right">
+                                        <span className="text-[10px] text-gray-400">
+                                          Precio actual que te paga el
+                                          distribuidor:{" "}
+                                          {formatCurrency(
+                                            comboItems.reduce(
+                                              (sum, item) =>
+                                                sum +
+                                                (item.distributorPrice || 0) *
+                                                  item.quantity,
+                                              0
+                                            )
+                                          )}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    {formData.distributorPrice > 0 && (
+                                      <div>
+                                        <span className="block text-[10px] uppercase text-gray-500">
+                                          Ganancia Dist.
+                                        </span>
+                                        <span
+                                          className={`block truncate text-lg font-semibold ${distributorProfit >= 0 ? "text-blue-400" : "text-red-400"}`}
+                                        >
+                                          {formatCurrency(distributorProfit)}
+                                          {formData.distributorPrice > 0 && (
+                                            <span className="ml-1 text-xs font-normal opacity-75">
+                                              (
+                                              {Math.round(
+                                                (distributorProfit /
+                                                  formData.distributorPrice) *
+                                                  100
+                                              )}
+                                              % ROI)
+                                            </span>
+                                          )}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {formData.distributorPrice > 0 && (
+                                      <>
+                                        <div className="my-1 border-t border-gray-700"></div>
+                                        <div>
+                                          <span className="block text-[10px] uppercase text-gray-500">
+                                            Mi Ganancia B2B
+                                          </span>
+                                          <span
+                                            className={`block truncate text-lg font-semibold ${
+                                              adminProfitB2B <= 0
+                                                ? "text-red-500"
+                                                : adminMarginB2B < 10
+                                                  ? "text-yellow-500"
+                                                  : "text-green-500"
+                                            }`}
+                                          >
+                                            {formatCurrency(adminProfitB2B)}{" "}
+                                            <span className="text-xs">
+                                              ({adminMarginB2B}% ROI)
+                                            </span>
+                                          </span>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Column 3: Customer Savings */}
+                                <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 p-3 sm:col-span-2 lg:col-span-1">
+                                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-green-400 sm:text-xs">
+                                    🎁 Cliente Final
+                                  </p>
+                                  <div className="space-y-3">
+                                    <div>
+                                      <span className="block text-[10px] uppercase text-gray-500">
+                                        Precio Normal
+                                      </span>
+                                      <span className="block truncate text-lg font-semibold text-gray-400 line-through">
+                                        {formatCurrency(totalPublicNormal)}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="block text-[10px] uppercase text-gray-500">
+                                        Ahorra
+                                      </span>
+                                      <span
+                                        className={`block truncate text-lg font-bold ${customerSavings > 0 ? "text-green-400" : "text-yellow-400"}`}
+                                      >
+                                        {formatCurrency(customerSavings)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                      {/* Old savings display - kept for backwards compatibility */}
                       {calculateSavings() > 0 && (
-                        <div className="mt-3 flex items-center justify-between rounded-lg bg-green-900/30 p-2">
+                        <div className="flex items-center justify-between rounded-lg border border-green-500/30 bg-green-900/30 p-2">
                           <span className="text-sm text-green-400">
                             💰 Ahorro para el cliente:
                           </span>

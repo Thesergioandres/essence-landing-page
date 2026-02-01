@@ -22,7 +22,7 @@ const generateRefreshToken = () => {
 const saveRefreshToken = async (userId, token, req) => {
   const refreshTokenDays = parseInt(process.env.JWT_REFRESH_DAYS || "7", 10);
   const expiresAt = new Date(
-    Date.now() + refreshTokenDays * 24 * 60 * 60 * 1000
+    Date.now() + refreshTokenDays * 24 * 60 * 60 * 1000,
   );
 
   await RefreshToken.create({
@@ -120,7 +120,7 @@ export const login = async (req, res) => {
       const refreshData = await saveRefreshToken(
         user._id,
         refreshTokenValue,
-        req
+        req,
       );
 
       logApiInfo({
@@ -337,7 +337,7 @@ export const refreshAccessToken = async (req, res) => {
     const newRefreshData = await saveRefreshToken(
       user._id,
       newRefreshTokenValue,
-      req
+      req,
     );
 
     logApiInfo({
@@ -386,7 +386,7 @@ export const logout = async (req, res) => {
         {
           revokedAt: new Date(),
           revokedByIp: req.ip || req.connection?.remoteAddress,
-        }
+        },
       );
     }
 
@@ -394,7 +394,7 @@ export const logout = async (req, res) => {
     if (req.body.revokeAll && req.user?.id) {
       await RefreshToken.revokeAllForUser(
         req.user.id,
-        req.ip || req.connection?.remoteAddress
+        req.ip || req.connection?.remoteAddress,
       );
     }
 

@@ -2,6 +2,7 @@ import {
   deleteFromCloudinary,
   uploadToCloudinary,
 } from "../config/cloudinary.js";
+import { invalidateCache } from "../middleware/cache.middleware.js";
 import AuditLog from "../models/AuditLog.js";
 import Product from "../models/Product.js";
 import Promotion from "../models/Promotion.js";
@@ -54,7 +55,7 @@ export const evaluatePromotion = (promotion, payload) => {
 
   if (promotion.branches?.length && branchId) {
     const allowed = promotion.branches.some(
-      (b) => b?.toString() === branchId?.toString()
+      (b) => b?.toString() === branchId?.toString(),
     );
     if (!allowed) {
       return { applicable: false, discountAmount: 0, reason: "branch_blocked" };
@@ -71,7 +72,7 @@ export const evaluatePromotion = (promotion, payload) => {
     }
 
     const allowed = promotion.customers.some(
-      (c) => c?.toString() === customerId?.toString()
+      (c) => c?.toString() === customerId?.toString(),
     );
     if (!allowed) {
       return {
@@ -94,7 +95,7 @@ export const evaluatePromotion = (promotion, payload) => {
 
   const subtotal = items.reduce(
     (sum, i) => sum + Number(i.price || 0) * Number(i.quantity || 0),
-    0
+    0,
   );
   const totalQty = items.reduce((sum, i) => sum + Number(i.quantity || 0), 0);
 
@@ -122,7 +123,7 @@ export const evaluatePromotion = (promotion, payload) => {
       ...promotion.buyItems.map((rule) => {
         const qty = getCartQuantity(items, rule.product);
         return Math.floor(qty / Number(rule.quantity || 1));
-      })
+      }),
     );
 
     if (!times || times < 1) {
@@ -158,7 +159,7 @@ export const evaluatePromotion = (promotion, payload) => {
       ...promotion.comboItems.map((rule) => {
         const qty = getCartQuantity(items, rule.product);
         return Math.floor(qty / Number(rule.quantity || 1));
-      })
+      }),
     );
 
     if (!times || times < 1) {
@@ -256,11 +257,9 @@ export const createPromotion = async (req, res) => {
       (payload.type === "bundle" || payload.type === "combo") &&
       (!payload.comboItems || payload.comboItems.length === 0)
     ) {
-      return res
-        .status(400)
-        .json({
-          message: "Los bundles y combos deben tener al menos un producto",
-        });
+      return res.status(400).json({
+        message: "Los bundles y combos deben tener al menos un producto",
+      });
     }
 
     // Subir imagen si viene en base64
@@ -303,7 +302,100 @@ export const createPromotion = async (req, res) => {
 
     await recordAudit(req, promotion, "promotion_created");
 
+    // Cache invalidation
+    await invalidateCache("products");
+
     res.status(201).json({ promotion });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Create promotion from AI suggestion (Business Assistant)
+// @route   POST /api/promotions/create-from-ai
+// @access  Private/Admin
+export const createFromAI = async (req, res) => {
+  try {
+    const businessId = resolveBusinessId(req);
+    if (!businessId) {
+      return res.status(400).json({ message: "Falta x-business-id" });
+    }
+
+    const { name, items, price, justification } = req.body;
+
+    if (!name || !items || !items.length || !price) {
+      return res.status(400).json({
+        message: "Campos obligatorios: name, items (array), price",
+      });
+    }
+
+    // Fetch product details and build comboItems
+    const comboItems = [];
+    let totalPublicBase = 0;
+    let totalDistBase = 0;
+    let totalCostBase = 0;
+
+    for (const item of items) {
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        return res.status(400).json({
+          message: `Producto no encontrado: ${item.productId}`,
+        });
+      }
+
+      const qty = item.qty || item.quantity || 1;
+      const publicPrice = product.clientPrice || product.suggestedPrice || 0;
+      const distPrice = product.distributorPrice || publicPrice;
+      const costPrice = product.purchasePrice || 0;
+
+      totalPublicBase += publicPrice * qty;
+      totalDistBase += distPrice * qty;
+      totalCostBase += costPrice * qty;
+
+      comboItems.push({
+        product: product._id,
+        quantity: qty,
+        unitPrice: publicPrice,
+      });
+    }
+
+    // Calculate proportional distributor price
+    let calculatedDistPrice = 0;
+    if (totalPublicBase > 0) {
+      const discountFactor = price / totalPublicBase;
+      calculatedDistPrice = totalDistBase * discountFactor;
+    }
+
+    // STOP-LOSS: ensure minimum margin over cost
+    if (calculatedDistPrice < totalCostBase) {
+      calculatedDistPrice = totalCostBase * 1.05; // Minimum 5% margin
+    }
+
+    // Round to 2 decimals
+    calculatedDistPrice = Math.round(calculatedDistPrice * 100) / 100;
+
+    const promotion = await Promotion.create({
+      business: businessId,
+      name,
+      description: justification || `Promoción generada por IA`,
+      type: "bundle",
+      status: "active",
+      comboItems,
+      promotionPrice: price,
+      distributorPrice: calculatedDistPrice,
+      originalPrice: totalPublicBase,
+      showInCatalog: true,
+      createdBy: req.user?._id,
+      updatedBy: req.user?._id,
+    });
+
+    await recordAudit(req, promotion, "promotion_created_from_ai");
+
+    res.status(201).json({
+      success: true,
+      promotion,
+      message: `Promoción "${name}" creada y activa en catálogo`,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -318,7 +410,14 @@ export const listPromotions = async (req, res) => {
 
     const { status, type, showInCatalog } = req.query;
     const filter = { business: businessId };
-    if (status) filter.status = status;
+
+    // Si no se especifica estado, excluir archivadas por defecto
+    if (status) {
+      filter.status = status;
+    } else {
+      filter.status = { $ne: "archived" };
+    }
+
     if (type) filter.type = type;
     if (showInCatalog === "true") filter.showInCatalog = true;
 
@@ -326,7 +425,7 @@ export const listPromotions = async (req, res) => {
       .populate("branches", "name")
       .populate(
         "comboItems.product",
-        "name image totalStock clientPrice suggestedPrice"
+        "name image totalStock clientPrice suggestedPrice purchasePrice distributorPrice",
       )
       .populate("buyItems.product", "name image totalStock")
       .populate("rewardItems.product", "name image")
@@ -343,11 +442,11 @@ export const listPromotions = async (req, res) => {
       archived: promotions.filter((p) => p.status === "archived").length,
       totalRevenue: promotions.reduce(
         (sum, p) => sum + (p.totalRevenue || 0),
-        0
+        0,
       ),
       totalUnitsSold: promotions.reduce(
         (sum, p) => sum + (p.totalUnitsSold || 0),
-        0
+        0,
       ),
     };
 
@@ -371,7 +470,7 @@ export const getPromotionById = async (req, res) => {
       .populate("branches", "name")
       .populate(
         "comboItems.product",
-        "name image totalStock clientPrice suggestedPrice purchasePrice"
+        "name image totalStock clientPrice suggestedPrice purchasePrice",
       )
       .populate("buyItems.product", "name image totalStock")
       .populate("rewardItems.product", "name image")
@@ -445,6 +544,7 @@ export const updatePromotion = async (req, res) => {
       "volumeRule",
       "financialImpact",
       "promotionPrice",
+      "distributorPrice", // FIX: Allow manual override
       "originalPrice",
       "totalStock",
       "usageLimit",
@@ -479,20 +579,35 @@ export const updatePromotion = async (req, res) => {
       promotion.originalPrice = originalPrice;
     }
 
+    // FORCE SET DISTRIBUTOR PRICE IF PROVIDED (Bypass strict check if needed, but array check is safe)
+    if (req.body.distributorPrice !== undefined) {
+      promotion.distributorPrice = Number(req.body.distributorPrice);
+      console.log(
+        `[UPDATE PROMO] Setting distributorPrice to: ${promotion.distributorPrice}`,
+      );
+    }
+
     promotion.updatedBy = req.user?._id;
-    await promotion.save();
+    const savedPromo = await promotion.save();
+    console.log(
+      `[UPDATE PROMO] Saved distributorPrice: ${savedPromo.distributorPrice}`,
+    );
 
     await recordAudit(req, promotion, "promotion_updated", oldValues);
 
     // Repoblar para la respuesta
     await promotion.populate(
       "comboItems.product",
-      "name image totalStock clientPrice suggestedPrice"
+      "name image totalStock clientPrice suggestedPrice purchasePrice distributorPrice",
     );
     await promotion.populate("branches", "name");
 
+    // Cache invalidation
+    await invalidateCache("products");
+
     res.json({ promotion });
   } catch (error) {
+    console.error("Error updating promotion:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -518,6 +633,9 @@ export const deletePromotion = async (req, res) => {
     promotion.status = "archived";
     promotion.updatedBy = req.user?._id;
     await promotion.save();
+
+    // Cache invalidation
+    await invalidateCache("products");
 
     await recordAudit(req, promotion, "promotion_deleted", oldValues);
 
@@ -663,14 +781,14 @@ export const getPromotionMetrics = async (req, res) => {
     // Estadísticas generales
     const totalRevenue = promotions.reduce(
       (sum, p) => sum + (p.totalRevenue || 0),
-      0
+      0,
     );
     const totalUnitsSold = promotions.reduce(
       (sum, p) => sum + (p.totalUnitsSold || 0),
-      0
+      0,
     );
     const activePromotions = promotions.filter(
-      (p) => p.status === "active"
+      (p) => p.status === "active",
     ).length;
 
     // Calcular ahorro total generado para clientes
@@ -766,7 +884,10 @@ export const getCatalogPromotions = async (req, res) => {
       $or: [{ startDate: null }, { startDate: { $lte: now } }],
       $and: [{ $or: [{ endDate: null }, { endDate: { $gte: now } }] }],
     })
-      .populate("comboItems.product", "name image clientPrice suggestedPrice")
+      .populate(
+        "comboItems.product",
+        "name image clientPrice suggestedPrice purchasePrice distributorPrice",
+      )
       .sort({ displayOrder: 1 })
       .lean();
 
@@ -778,7 +899,7 @@ export const getCatalogPromotions = async (req, res) => {
         p.originalPrice > 0
           ? Math.round(
               ((p.originalPrice - (p.promotionPrice || 0)) / p.originalPrice) *
-                100
+                100,
             )
           : 0,
     }));

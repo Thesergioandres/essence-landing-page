@@ -735,6 +735,20 @@ export const productService = {
     const response = await api.post("/products/initialize-average-cost");
     return response.data;
   },
+
+  async getBuyableCatalog(): Promise<{ message: string; data: any[] }> {
+    const response = await api.get("/distributors/catalog/buyable");
+    return response.data;
+  },
+
+  async createDistributorOrder(data: {
+    items: Array<{ id: string; quantity: number; isPromotion: boolean }>;
+    paymentMethodId?: string;
+    paymentProof?: string;
+  }): Promise<{ message: string; summary: any }> {
+    const response = await api.post("/distributors/orders", data);
+    return response.data;
+  },
 };
 
 export const uploadService = {
@@ -963,10 +977,59 @@ export const stockService = {
   async getDistributorStock(
     distributorId: string
   ): Promise<DistributorStock[]> {
-    const response = await api.get<DistributorStock[]>(
-      `/stock/distributor/${distributorId}`
-    );
-    return response.data;
+    const response = await api.get(`/stock/distributor/${distributorId}`);
+
+    let data: any[] = [];
+
+    // 1. Unwrap response
+    if (Array.isArray(response.data)) {
+      data = response.data;
+    } else {
+      const payload = response.data as any;
+      if (payload && Array.isArray(payload.data)) {
+        data = payload.data;
+      } else if (payload && Array.isArray(payload.stock)) {
+        data = payload.stock;
+      }
+    }
+
+    if (!data.length) return [];
+
+    // 2. Adapt Flattened Structure if needed
+    // The user suspects the backend returns a flattened array (Product properties at top level)
+    // instead of { product: {...}, quantity: 10 }.
+    // We detect this by checking if the item has 'name'/ 'price' at top level AND NO 'product' object.
+    return data.map((item: any) => {
+      // Case A: Item is already valid DistributorStock (has product object)
+      if (
+        item.product &&
+        typeof item.product === "object" &&
+        item.quantity !== undefined
+      ) {
+        return item as DistributorStock;
+      }
+
+      // Case B: Item is Flattened (Catalog style)
+      // e.g. { _id: "...", name: "...", distributorStock: 10, ... }
+      if (
+        item.name &&
+        (item.distributorStock !== undefined || item.totalStock !== undefined)
+      ) {
+        return {
+          _id: item._id || "generated-id",
+          distributor: distributorId, // Placeholder
+          product: item, // Nest the entire flat item as the product
+          quantity: item.distributorStock ?? item.totalStock ?? 0,
+          lowStockAlert: item.lowStockAlert || 5,
+          isLowStock: item.isLowStock,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        } as DistributorStock;
+      }
+
+      // Case C: Fallback / Unknown - return as is and hope for the best
+      return item as DistributorStock;
+    });
   },
 
   async getAllStock(): Promise<DistributorStock[]> {
@@ -1077,6 +1140,32 @@ export const stockService = {
     message?: string;
   }> {
     const response = await api.get("/stock/my-allowed-branches");
+    return response.data;
+  },
+  async getGlobalInventory(): Promise<{
+    success: boolean;
+    inventory: any[];
+  }> {
+    const response = await api.get("/stock/global");
+    return {
+      success: true,
+      inventory: Array.isArray(response.data.inventory)
+        ? response.data.inventory
+        : [],
+    };
+  },
+
+  async reconcileStock(
+    productId: string
+  ): Promise<{ success: boolean; message?: string }> {
+    const response = await api.post("/stock/reconcile", { productId });
+    return response.data;
+  },
+
+  async syncProductStock(
+    productId: string
+  ): Promise<{ success: boolean; message?: string; newTotal: number }> {
+    const response = await api.post("/stock/sync", { productId });
     return response.data;
   },
 };
@@ -1319,6 +1408,20 @@ export const saleService = {
 
 // ==================== DEFECTIVE PRODUCT SERVICE ====================
 export const defectiveProductService = {
+  async getGlobalInventory(): Promise<{
+    success: boolean;
+    inventory: Array<{
+      product: Product;
+      warehouse: number;
+      branches: number;
+      distributors: number;
+      total: number;
+    }>;
+  }> {
+    const response = await api.get("/stock/global");
+    return response.data;
+  },
+
   async report(data: {
     productId: string;
     quantity: number;
@@ -1489,9 +1592,13 @@ export const defectiveProductService = {
 
 // ==================== ANALYTICS SERVICE ====================
 export const analyticsService = {
-  async getMonthlyProfit(): Promise<MonthlyProfitData> {
+  async getMonthlyProfit(filters?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<MonthlyProfitData> {
     const response = await api.get<MonthlyProfitData>(
-      "/analytics/monthly-profit"
+      "/analytics/monthly-profit",
+      { params: filters }
     );
     return response.data;
   },
@@ -2651,6 +2758,20 @@ export const promotionService = {
     };
   }> {
     const response = await api.post(`/promotions/${id}/evaluate`, payload);
+    return response.data;
+  },
+
+  async createFromAI(payload: {
+    name: string;
+    items: Array<{ productId: string; qty: number }>;
+    price: number;
+    justification?: string;
+  }): Promise<{
+    success: boolean;
+    promotion: Promotion;
+    message: string;
+  }> {
+    const response = await api.post("/promotions/create-from-ai", payload);
     return response.data;
   },
 };

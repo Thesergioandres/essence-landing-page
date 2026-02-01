@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import InventoryEntry from "./models/InventoryEntry.js";
-import Sale from "./models/Sale.js";
+import Sale from "./src/infrastructure/database/models/Sale.js";
 
 // Script de migración para agrupar ventas y recepciones antiguas
 
@@ -24,7 +24,7 @@ async function migrateSales() {
     }).sort({ saleDate: 1, createdAt: 1 });
 
     console.log(
-      `   Encontradas ${salesWithoutGroup.length} ventas sin agrupar`
+      `   Encontradas ${salesWithoutGroup.length} ventas sin agrupar`,
     );
 
     if (salesWithoutGroup.length === 0) {
@@ -59,7 +59,7 @@ async function migrateSales() {
         // Buscar si hay ventas recientes (< 2 minutos) en este grupo
         const recentSale = group.find((s) => {
           const timeDiff = Math.abs(
-            createdTime - new Date(s.createdAt).getTime()
+            createdTime - new Date(s.createdAt).getTime(),
           );
           return timeDiff < 120000; // 2 minutos
         });
@@ -90,15 +90,15 @@ async function migrateSales() {
             for (const sale of item.subgroup) {
               await Sale.updateOne(
                 { _id: sale._id },
-                { $set: { saleGroupId: groupId } }
+                { $set: { saleGroupId: groupId } },
               );
               totalUpdated++;
             }
 
             console.log(
               `   📦 Grupo creado: ${item.subgroup.length} ventas (${new Date(
-                item.subgroup[0].saleDate
-              ).toLocaleDateString()})`
+                item.subgroup[0].saleDate,
+              ).toLocaleDateString()})`,
             );
           } else {
             // Venta individual, no necesita grupo
@@ -108,7 +108,7 @@ async function migrateSales() {
       }
 
       console.log(
-        `   ✅ Migración completada: ${totalGroups} grupos creados, ${totalUpdated} ventas actualizadas\n`
+        `   ✅ Migración completada: ${totalGroups} grupos creados, ${totalUpdated} ventas actualizadas\n`,
       );
     }
 
@@ -120,7 +120,7 @@ async function migrateSales() {
     }).sort({ createdAt: 1 });
 
     console.log(
-      `   Encontradas ${entriesWithoutGroup.length} entradas sin agrupar`
+      `   Encontradas ${entriesWithoutGroup.length} entradas sin agrupar`,
     );
 
     if (entriesWithoutGroup.length === 0) {
@@ -153,7 +153,7 @@ async function migrateSales() {
         // Buscar entradas recientes (< 5 minutos)
         const recentEntry = group.find((e) => {
           const timeDiff = Math.abs(
-            createdTime - new Date(e.createdAt).getTime()
+            createdTime - new Date(e.createdAt).getTime(),
           );
           return timeDiff < 300000; // 5 minutos
         });
@@ -180,22 +180,22 @@ async function migrateSales() {
             for (const entry of item.subgroup) {
               await InventoryEntry.updateOne(
                 { _id: entry._id },
-                { $set: { purchaseGroupId: groupId } }
+                { $set: { purchaseGroupId: groupId } },
               );
               totalEntriesUpdated++;
             }
 
             console.log(
               `   📦 Grupo creado: ${item.subgroup.length} entradas (${new Date(
-                item.subgroup[0].createdAt
-              ).toLocaleDateString()})`
+                item.subgroup[0].createdAt,
+              ).toLocaleDateString()})`,
             );
           }
         }
       }
 
       console.log(
-        `   ✅ Migración completada: ${totalEntryGroups} grupos creados, ${totalEntriesUpdated} entradas actualizadas\n`
+        `   ✅ Migración completada: ${totalEntryGroups} grupos creados, ${totalEntriesUpdated} entradas actualizadas\n`,
       );
     }
 

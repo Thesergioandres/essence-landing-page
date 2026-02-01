@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import Credit from "../models/Credit.js";
 import DistributorStats from "../models/DistributorStats.js";
 import GamificationConfig from "../models/GamificationConfig.js";
 import Membership from "../models/Membership.js";
@@ -461,7 +460,7 @@ export const getRanking = async (req, res) => {
           currentLevel: stats?.currentLevel || "beginner",
           periodWins: stats?.periodWins || 0,
         };
-      })
+      }),
     );
 
     res.json({

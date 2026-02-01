@@ -1,5 +1,7 @@
 import express from "express";
 import {
+  downloadAuditReport,
+  downloadFullReport,
   getAnalyticsDashboard,
   getAverages,
   getCombinedSummary,
@@ -11,7 +13,7 @@ import {
   getProfitByDistributor,
   getProfitByProduct,
   getSalesTimeline,
-} from "../controllers/analytics.controller.js";
+} from "../controllers/advancedAnalytics.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 import {
   businessContext,
@@ -33,7 +35,7 @@ router.use(
   protect,
   businessContext,
   requireFeature("analytics"),
-  requirePermission({ module: "analytics", action: "read" })
+  requirePermission({ module: "analytics", action: "read" }),
 );
 
 router.get("/monthly-profit", cacheIfEnabled, getMonthlyProfit);
@@ -49,7 +51,11 @@ router.get("/estimated-profit", cacheIfEnabled, getEstimatedProfit);
 router.get(
   "/estimated-profit/distributor/:distributorId",
   cacheIfEnabled,
-  getDistributorEstimatedProfit
+  getDistributorEstimatedProfit,
 );
+
+// Rutas de exportación (sin caché)
+router.get("/export/full", downloadFullReport);
+router.get("/export/audit", downloadAuditReport);
 
 export default router;

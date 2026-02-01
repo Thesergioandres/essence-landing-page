@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
-import Sale from "./models/Sale.js";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
+import Sale from "./src/infrastructure/database/models/Sale.js";
 
 dotenv.config();
 
@@ -37,12 +37,16 @@ const populateDistributorPercentages = async () => {
         await sale.save();
         updatedCount++;
 
-        const rankBadge = 
-          newPercentage === 0 ? "👑 Admin" :
-          newPercentage === 25 ? "🥇 1º (25%)" :
-          newPercentage === 23 ? "🥈 2º (23%)" :
-          newPercentage === 21 ? "🥉 3º (21%)" :
-          "📊 Normal (20%)";
+        const rankBadge =
+          newPercentage === 0
+            ? "👑 Admin"
+            : newPercentage === 25
+              ? "🥇 1º (25%)"
+              : newPercentage === 23
+                ? "🥈 2º (23%)"
+                : newPercentage === 21
+                  ? "🥉 3º (21%)"
+                  : "📊 Normal (20%)";
 
         console.log(`✅ Venta ${sale.saleId || sale._id}: ${rankBadge}`);
       }
@@ -73,13 +77,18 @@ const populateDistributorPercentages = async () => {
     rankDistribution.forEach((rank) => {
       const percentage = rank._id;
       const label =
-        percentage === 0 ? "👑 Admin (0%)" :
-        percentage === 25 ? "🥇 1º Lugar (25%)" :
-        percentage === 23 ? "🥈 2º Lugar (23%)" :
-        percentage === 21 ? "🥉 3º Lugar (21%)" :
-        percentage === 20 ? "📊 Normal (20%)" :
-        `❓ Otro (${percentage}%)`;
-      
+        percentage === 0
+          ? "👑 Admin (0%)"
+          : percentage === 25
+            ? "🥇 1º Lugar (25%)"
+            : percentage === 23
+              ? "🥈 2º Lugar (23%)"
+              : percentage === 21
+                ? "🥉 3º Lugar (21%)"
+                : percentage === 20
+                  ? "📊 Normal (20%)"
+                  : `❓ Otro (${percentage}%)`;
+
       console.log(`${label}: ${rank.count} ventas`);
     });
     console.log("=".repeat(60));

@@ -110,4 +110,5 @@ defectiveProductSchema.index({ business: 1, status: 1 });
 defectiveProductSchema.index({ distributor: 1, status: 1 });
 defectiveProductSchema.index({ product: 1, reportDate: -1 });
 
-export default mongoose.model("DefectiveProduct", defectiveProductSchema);
+export default mongoose.models.DefectiveProduct ||
+  mongoose.model("DefectiveProduct", defectiveProductSchema);

@@ -19,7 +19,9 @@ const seedProducts = async () => {
 
     // Dynamic imports to avoid schema issues
     const User = (await import("../models/User.js")).default;
-    const Product = (await import("../models/Product.js")).default;
+    const Product = (
+      await import("../src/infrastructure/database/models/Product.js")
+    ).default;
     const Business = (await import("../models/Business.js")).default;
     const DistributorStock = (await import("../models/DistributorStock.js"))
       .default;

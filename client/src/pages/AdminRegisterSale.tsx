@@ -27,6 +27,7 @@ interface SaleItem {
   salePrice: number;
   costBasis: number; // Costo promedio ponderado (averageCost) o purchasePrice como fallback
   clientPrice: number;
+  isPromotion?: boolean; // ⭐ Flag para identificar combos/promociones
 }
 
 interface AdditionalCost {
@@ -86,6 +87,10 @@ export default function AdminRegisterSale() {
   const [pointsToRedeem, setPointsToRedeem] = useState<number>(0);
   const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
   const [additionalCosts, setAdditionalCosts] = useState<AdditionalCost[]>([]);
+  // ⭐ Selector de Lista de Precios (UI oculta - siempre precio público)
+
+  const [priceList] = useState<"client" | "distributor">("client");
+
   // ⭐ Estado para productos en garantía
   const [warrantyItems, setWarrantyItems] = useState<WarrantyItem[]>([]);
   const [warrantyProductId, setWarrantyProductId] = useState<string>("");
@@ -123,7 +128,8 @@ export default function AdminRegisterSale() {
     async (branchId: string) => {
       if (!branchId) {
         setBranchStock([]);
-        setFilteredProducts([]);
+        // Sin sede seleccionada, mostrar todos los productos y promos
+        setFilteredProducts(products);
         setIsWarehouseSelected(false);
         return;
       }
@@ -132,37 +138,43 @@ export default function AdminRegisterSale() {
       const isWarehouse = selectedBranch?.isWarehouse ?? false;
       setIsWarehouseSelected(isWarehouse);
 
-      // Si es bodega, filtrar por warehouseStock > 0
+      // Si es bodega, mostrar todos ordenados (promos primero, luego por stock)
       if (isWarehouse) {
         setBranchStock([]);
-        const productsWithStock = products.filter(
-          p => (p.warehouseStock || 0) > 0
-        );
-        setFilteredProducts(productsWithStock);
+        const sortedProducts = [...products].sort((a, b) => {
+          const aIsPromo = (a as any).isPromotion ? 1 : 0;
+          const bIsPromo = (b as any).isPromotion ? 1 : 0;
+          if (bIsPromo !== aIsPromo) return bIsPromo - aIsPromo;
+          return (b.warehouseStock || 0) - (a.warehouseStock || 0);
+        });
+        setFilteredProducts(sortedProducts);
         return;
       }
 
-      // Si es sede normal, cargar BranchStock y filtrar productos
+      // Si es sede normal, cargar BranchStock y mostrar TODOS ordenados
       try {
         const stock = await stockService.getBranchStock(branchId);
         setBranchStock(stock);
 
-        // Filtrar solo productos que tienen stock en esta sede
-        const productIdsWithStock = new Set(
-          stock
-            .filter(s => s.quantity > 0)
-            .map(s =>
-              typeof s.product === "string" ? s.product : s.product?._id
-            )
+        const stockMap = new Map(
+          stock.map(s => [
+            typeof s.product === "string" ? s.product : s.product?._id,
+            s.quantity || 0,
+          ])
         );
-        const productsWithStock = products.filter(p =>
-          productIdsWithStock.has(p._id)
-        );
-        setFilteredProducts(productsWithStock);
+
+        // Ordenar: promos primero, luego por stock disponible
+        const sortedProducts = [...products].sort((a, b) => {
+          const aIsPromo = (a as any).isPromotion ? 1 : 0;
+          const bIsPromo = (b as any).isPromotion ? 1 : 0;
+          if (bIsPromo !== aIsPromo) return bIsPromo - aIsPromo;
+          return (stockMap.get(b._id) || 0) - (stockMap.get(a._id) || 0);
+        });
+        setFilteredProducts(sortedProducts);
       } catch (err) {
         console.error("Error cargando stock de sede:", err);
         setBranchStock([]);
-        setFilteredProducts([]);
+        setFilteredProducts(products);
       }
     },
     [branches, products]
@@ -193,18 +205,7 @@ export default function AdminRegisterSale() {
     }
   }, [branches, formData.branchId]);
 
-  useEffect(() => {
-    if (!businessId || businessHydrating || businessLoading) return;
-    void Promise.all([
-      loadProducts(),
-      loadBranches(),
-      loadCustomers(),
-      loadPaymentMethods(),
-      loadDeliveryMethods(),
-    ]);
-  }, [businessId, businessHydrating, businessLoading]);
-
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       if (!businessId) return;
       const response = await productService.getAll();
@@ -214,9 +215,9 @@ export default function AdminRegisterSale() {
         "No se pudo cargar los productos. Verifica el negocio seleccionado."
       );
     }
-  };
+  }, [businessId]);
 
-  const loadBranches = async () => {
+  const loadBranches = useCallback(async () => {
     try {
       if (!businessId) return;
       const response = await branchService.list();
@@ -226,9 +227,9 @@ export default function AdminRegisterSale() {
         "No se pudieron cargar las sedes. Verifica el negocio seleccionado."
       );
     }
-  };
+  }, [businessId]);
 
-  const loadCustomers = async () => {
+  const loadCustomers = useCallback(async () => {
     try {
       if (!businessId) return;
       const { data } = await api.get<{ customers: Customer[] }>("/customers");
@@ -236,29 +237,31 @@ export default function AdminRegisterSale() {
     } catch (error) {
       console.error("No se pudieron cargar los clientes", error);
     }
-  };
+  }, [businessId]);
 
-  const loadPaymentMethods = async () => {
+  const loadPaymentMethods = useCallback(async () => {
     try {
       if (!businessId) return;
       const { paymentMethods: methods } = await paymentMethodService.getAll();
       const activeMethods = methods.filter(m => m.isActive);
       setPaymentMethods(activeMethods);
-
-      // Seleccionar el primer método por defecto (usualmente Efectivo)
-      if (activeMethods.length > 0 && !formData.paymentMethodId) {
-        const defaultMethod =
-          activeMethods.find(m => m.code === "cash") || activeMethods[0];
-        setFormData(prev => ({
-          ...prev,
-          paymentMethodId: defaultMethod._id,
-        }));
-        setSelectedPaymentMethod(defaultMethod);
-      }
     } catch (error) {
       console.error("No se pudieron cargar los métodos de pago", error);
     }
-  };
+  }, [businessId]);
+
+  // Efecto para seleccionar método de pago por defecto
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !formData.paymentMethodId) {
+      const defaultMethod =
+        paymentMethods.find(m => m.code === "cash") || paymentMethods[0];
+      setFormData(prev => ({
+        ...prev,
+        paymentMethodId: defaultMethod._id,
+      }));
+      setSelectedPaymentMethod(defaultMethod);
+    }
+  }, [paymentMethods, formData.paymentMethodId]);
 
   const handlePaymentMethodChange = (methodId: string) => {
     const method = paymentMethods.find(m => m._id === methodId);
@@ -273,7 +276,7 @@ export default function AdminRegisterSale() {
     }));
   };
 
-  const loadDeliveryMethods = async () => {
+  const loadDeliveryMethods = useCallback(async () => {
     try {
       if (!businessId) return;
       const { deliveryMethods: methods } = await deliveryMethodService.getAll();
@@ -284,7 +287,7 @@ export default function AdminRegisterSale() {
     } catch {
       console.error("No se pudieron cargar los métodos de entrega");
     }
-  };
+  }, [businessId]);
 
   const handleDeliveryMethodChange = (methodId: string) => {
     const method = deliveryMethods.find(m => m._id === methodId);
@@ -297,6 +300,26 @@ export default function AdminRegisterSale() {
       ...(method && !method.requiresAddress ? { deliveryAddress: "" } : {}),
     }));
   };
+
+  useEffect(() => {
+    if (!businessId || businessHydrating || businessLoading) return;
+    void Promise.all([
+      loadProducts(),
+      loadBranches(),
+      loadCustomers(),
+      loadPaymentMethods(),
+      loadDeliveryMethods(),
+    ]);
+  }, [
+    businessId,
+    businessHydrating,
+    businessLoading,
+    loadProducts,
+    loadBranches,
+    loadCustomers,
+    loadPaymentMethods,
+    loadDeliveryMethods,
+  ]);
 
   // Tipo simplificado para compatibilidad con CustomerSelector
   type CustomerBasic = {
@@ -354,11 +377,18 @@ export default function AdminRegisterSale() {
   const handleProductChange = (productId: string) => {
     const product = products.find(p => p._id === productId);
     setSelectedProduct(product || null);
+
+    // Determinar precio según lista seleccionada
+    let price = product?.clientPrice || 0;
+    if (product && priceList === "distributor") {
+      price = product.distributorPrice || product.clientPrice || 0;
+    }
+
     setFormData(prev => ({
       ...prev,
       productId,
       quantity: 1,
-      salePrice: product?.clientPrice || 0,
+      salePrice: price,
     }));
     setError("");
   };
@@ -416,6 +446,7 @@ export default function AdminRegisterSale() {
       salePrice: price,
       costBasis: selectedProduct.averageCost || selectedProduct.purchasePrice,
       clientPrice: selectedProduct.clientPrice || 0,
+      isPromotion: selectedProduct.isPromotion, // ⭐ Guardar flag
     };
 
     setSaleItems(prev => [...prev, newItem]);
@@ -826,7 +857,7 @@ export default function AdminRegisterSale() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 overflow-visible lg:grid-cols-3">
           {/* Panel izquierdo: Inventario de la sede */}
           <div className="lg:col-span-1">
             <div className="sticky top-4 rounded-xl border border-gray-700 bg-gray-800/50 p-4">
@@ -916,7 +947,7 @@ export default function AdminRegisterSale() {
           </div>
 
           {/* Panel central: Formulario para agregar productos */}
-          <div className="space-y-6 lg:col-span-1">
+          <div className="space-y-6 overflow-visible lg:col-span-1">
             <form
               onSubmit={e => {
                 e.preventDefault();
@@ -924,10 +955,44 @@ export default function AdminRegisterSale() {
               }}
               className="space-y-6"
             >
-              <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+              <div className="overflow-visible rounded-xl border border-gray-700 bg-gray-800/50 p-6">
                 <h2 className="mb-4 text-lg font-semibold text-white">
                   Agregar Producto
                 </h2>
+
+                {/* Selector de Lista de Precios - OCULTO: Admin vende a precio público */}
+                {/* 
+                <div className="mb-4 flex items-center gap-4 rounded-lg bg-gray-900/40 p-3">
+                  <span className="text-sm font-medium text-gray-300">
+                    Lista de Precios:
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPriceList("client")}
+                      className={`rounded px-3 py-1 text-sm font-medium transition ${
+                        priceList === "client"
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-700 text-gray-400 hover:bg-gray-600"
+                      }`}
+                    >
+                      Público
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPriceList("distributor")}
+                      className={`rounded px-3 py-1 text-sm font-medium transition ${
+                        priceList === "distributor"
+                          ? "bg-purple-600 text-white"
+                          : "bg-gray-700 text-gray-400 hover:bg-gray-600"
+                      }`}
+                    >
+                      Distribuidor
+                    </button>
+                  </div>
+                </div>
+                */}
+
                 <div className="space-y-4">
                   <div>
                     <label
@@ -938,7 +1003,7 @@ export default function AdminRegisterSale() {
                     </label>
                     <ProductSelector
                       value={formData.productId}
-                      onChange={(productId, _product) => {
+                      onChange={productId => {
                         handleProductChange(productId);
                       }}
                       placeholder="Buscar producto..."
@@ -1040,6 +1105,11 @@ export default function AdminRegisterSale() {
                       <div className="mb-2 flex items-start justify-between">
                         <h3 className="font-semibold text-white">
                           {item.productName}
+                          {item.isPromotion && (
+                            <span className="ml-2 rounded border border-purple-500/30 bg-purple-600/20 px-2 py-0.5 text-xs font-bold text-purple-400">
+                              Combo 🎁
+                            </span>
+                          )}
                         </h3>
                         <button
                           onClick={() => handleRemoveItem(item.id)}

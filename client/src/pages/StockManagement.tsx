@@ -95,7 +95,7 @@ const StockManagement = () => {
         alertsResult,
         branchesResult,
       ] = await Promise.allSettled([
-        productService.getAll(),
+        productService.getAll({ limit: 1000, excludePromotions: true }),
         distributorService.getAll(),
         stockService.getAlerts(),
         branchService.list(),
@@ -173,8 +173,11 @@ const StockManagement = () => {
 
       if (isWarehouse) {
         // Para bodega, usar el warehouseStock de los productos
-        const productsData = await productService.getAll();
-        const productsList = productsData.data || productsData;
+        const response = await productService.getAll({
+          limit: 1000,
+          excludePromotions: true,
+        });
+        const productsList = response.data || response;
         console.log("[DEBUG] Total productos:", productsList.length);
         const warehouseStock = productsList
           .filter((p: Product) => (p.warehouseStock || 0) > 0)
@@ -665,41 +668,59 @@ const StockManagement = () => {
                   </div>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {distributorStock.map(stock => {
-                      const product =
-                        typeof stock.product === "object"
-                          ? stock.product
-                          : null;
-                      return (
-                        <div
-                          key={stock._id}
-                          className="rounded-lg border border-blue-500/20 bg-blue-950/30 p-4"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-white">
-                                {product?.name || "Producto desconocido"}
-                              </h3>
-                              <p className="mt-1 text-xs text-gray-400">
-                                {formatCurrency(product?.distributorPrice || 0)}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p
-                                className={`text-lg font-bold ${
-                                  stock.quantity <= 5
-                                    ? "text-red-400"
-                                    : "text-green-400"
-                                }`}
-                              >
-                                {stock.quantity}
-                              </p>
-                              <p className="text-xs text-gray-400">unidades</p>
+                    {distributorStock
+                      .filter(stock => {
+                        const product =
+                          typeof stock.product === "object"
+                            ? stock.product
+                            : null;
+                        if (!product) return false;
+                        // FILTER: Hide Promotions/Combos from Stock View
+                        return (
+                          !product.isPromotion &&
+                          (product as any).type !== "promotion" &&
+                          !product.name.toLowerCase().includes("combo") // Safety Extra Check
+                        );
+                      })
+                      .map(stock => {
+                        const product =
+                          typeof stock.product === "object"
+                            ? stock.product
+                            : null;
+                        return (
+                          <div
+                            key={stock._id}
+                            className="rounded-lg border border-blue-500/20 bg-blue-950/30 p-4"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-white">
+                                  {product?.name || "Producto desconocido"}
+                                </h3>
+                                <p className="mt-1 text-xs text-gray-400">
+                                  {formatCurrency(
+                                    product?.distributorPrice || 0
+                                  )}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p
+                                  className={`text-lg font-bold ${
+                                    stock.quantity <= 5
+                                      ? "text-red-400"
+                                      : "text-green-400"
+                                  }`}
+                                >
+                                  {stock.quantity}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  unidades
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 )}
               </div>
@@ -730,6 +751,7 @@ const StockManagement = () => {
                       placeholder="Buscar y seleccionar producto..."
                       showStock={true}
                       excludeProductIds={items.map(item => item.productId)}
+                      products={products}
                     />
                   )}
                 </div>

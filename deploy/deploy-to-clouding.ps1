@@ -26,14 +26,4 @@ ssh $remoteHost "cd '$remoteDir' && docker compose pull || true && docker compos
 
 Write-Output "Despliegue completado."
 
-frontend:
-    image: nginx:alpine
-    container_name: essence-frontend
-    restart: unless-stopped
-    depends_on:
-      - mongo
-    ports:
-      - "80:80"
-    volumes:
-      - ./client/dist:/usr/share/nginx/html:ro
-      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+

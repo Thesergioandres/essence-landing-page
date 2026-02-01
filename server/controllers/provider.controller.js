@@ -62,7 +62,7 @@ export const updateProvider = async (req, res) => {
     const provider = await Provider.findOneAndUpdate(
       { _id: req.params.id, business: businessId },
       req.body,
-      { new: true }
+      { new: true },
     );
 
     if (!provider) {

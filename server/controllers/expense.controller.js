@@ -1,5 +1,7 @@
 import { invalidateCache } from "../middleware/cache.middleware.js";
+import DefectiveProduct from "../models/DefectiveProduct.js";
 import Expense from "../models/Expense.js";
+import Sale from "../models/Sale.js";
 
 const resolveBusinessId = (req) =>
   req.businessId ||
@@ -70,7 +72,23 @@ export const getExpenses = async (req, res) => {
 
     const { startDate, endDate, type, category } = req.query;
 
-    const filter = businessId ? { business: businessId } : {};
+    // NUCLEAR FIX: Exclude specific technical categories from DB fetch
+    // "Costo de Venta" (Shipping/Extra Costs) - Handled in Sales Logic
+    // "Pérdida - Defectuoso" (Defects) - Handled in Defective Logic
+    // "Publicidad" and others MUST remain.
+    // NUCLEAR FIX: Include ALL categories as requested by user
+    // "Costo de Venta" (Shipping) - Previously excluded, now INCLUDED
+    const excludedCategories = []; // Allow everything
+    const baseFilter = {
+      // No exclude filter
+    };
+
+    const filter = businessId
+      ? { business: businessId, ...baseFilter }
+      : { ...baseFilter };
+
+    const saleFilter = businessId ? { business: businessId } : {};
+    const defectiveFilter = businessId ? { business: businessId } : {};
 
     const resolvedType =
       (typeof type === "string" && type.trim()) ||
@@ -78,22 +96,161 @@ export const getExpenses = async (req, res) => {
       "";
 
     if (resolvedType) {
-      // Compatibilidad: en datos antiguos puede estar como `category`
       filter.$or = [{ type: resolvedType }, { category: resolvedType }];
     }
 
     if (startDate || endDate) {
-      filter.expenseDate = {};
-      if (startDate) filter.expenseDate.$gte = new Date(startDate);
-      if (endDate) filter.expenseDate.$lte = new Date(endDate);
+      const start = startDate ? new Date(startDate) : new Date(0);
+      const end = endDate ? new Date(endDate) : new Date();
+
+      // TIMEZONE FIX: Expenses are stored in UTC. Colombia is UTC-5.
+      // End of "Jan 27" local time is "Jan 28 04:59:59 UTC".
+      // We extend the window to capture these late-day expenses.
+      if (endDate) {
+        end.setUTCHours(28, 59, 59, 999); // 23h + 5h = 28h (spills to next day 04:59)
+      } else {
+        end.setHours(23, 59, 59, 999);
+      }
+
+      filter.expenseDate = { $gte: start, $lte: end };
+      saleFilter.saleDate = { $gte: start, $lte: end };
+      defectiveFilter.reportDate = { $gte: start, $lte: end };
     }
 
-    const expenses = await Expense.find(filter)
+    // 1. Fetch Standard Expenses
+    const expensePromise = Expense.find(filter)
       .populate("createdBy", "name email")
-      .sort({ expenseDate: -1, createdAt: -1 })
       .lean();
 
-    res.json({ expenses });
+    // 2. Fetch Sales with additional costs
+    let fetchSales = true;
+    let fetchDefective = true;
+
+    if (
+      resolvedType &&
+      ![
+        "Costo de Venta",
+        "Descuento",
+        "Envío",
+        "Pérdida - Defectuoso",
+      ].includes(resolvedType)
+    ) {
+      fetchSales = false;
+      fetchDefective = false;
+    }
+
+    // NUCLEAR FIX: Do NOT exclude "Costo de Venta" globally
+    // if (resolvedType === "Costo de Venta") {
+    //   fetchSales = false;
+    // }
+
+    const salePromise = fetchSales
+      ? Sale.find({
+          ...saleFilter,
+          $or: [
+            { totalAdditionalCosts: { $gt: 0 } },
+            { totalShippingCosts: { $gt: 0 } },
+            { totalDiscounts: { $gt: 0 } },
+          ],
+        })
+          .select(
+            "saleDate createdAt totalAdditionalCosts totalShippingCosts totalDiscounts code",
+          )
+          .lean()
+      : Promise.resolve([]);
+
+    // 3. Fetch Defective Product Losses
+    const defectivePromise = fetchDefective
+      ? DefectiveProduct.find({
+          ...defectiveFilter,
+          status: { $regex: /^confirmado$/i },
+          // lossAmount: { $gt: 0 }, // Comentado por si acaso es 0 o null y queremos verlo debuggeando
+        })
+          .select("reportDate createdAt lossAmount product status")
+          .populate("product", "name")
+          .lean()
+      : Promise.resolve([]);
+
+    const [expenses, sales, defectives] = await Promise.all([
+      expensePromise,
+      salePromise,
+      defectivePromise,
+    ]);
+
+    // Map Sales to Virtual Expenses
+    const saleExpenses = [];
+    sales.forEach((sale) => {
+      // Usamos saleDate como preferida, pero fallback a createdAt si es nula/inválida
+      // Nota: saleDate suele ser string ISO o Date en DB.
+      const date = sale.saleDate || sale.createdAt;
+
+      // NUCLEAR FIX: "Costo de Venta" (Additional Costs) are double counted in Net Profit.
+      // We explicitly skip creating them as virtual expenses.
+      if (
+        sale.totalAdditionalCosts > 0 &&
+        (!resolvedType || resolvedType === "Costo Adicional Envío")
+      ) {
+        saleExpenses.push({
+          _id: `sale-cost-${sale._id}`,
+          type: "Costo Adicional Envío",
+          amount: sale.totalAdditionalCosts,
+          description: `Costos adiccionales - Venta #${sale.code}`,
+          expenseDate: date,
+          isVirtual: true,
+        });
+      }
+      if (
+        sale.totalShippingCosts > 0 &&
+        (!resolvedType || resolvedType === "Envío")
+      ) {
+        saleExpenses.push({
+          _id: `sale-ship-${sale._id}`,
+          type: "Envío",
+          amount: sale.totalShippingCosts,
+          description: `Envío - Venta #${sale.code}`,
+          expenseDate: date,
+          isVirtual: true,
+        });
+      }
+      if (
+        sale.totalDiscounts > 0 &&
+        (!resolvedType || resolvedType === "Descuento")
+      ) {
+        saleExpenses.push({
+          _id: `sale-disc-${sale._id}`,
+          type: "Descuento",
+          amount: sale.totalDiscounts,
+          description: `Descuento aplicado - Venta #${sale.code}`,
+          expenseDate: date,
+          isVirtual: true,
+        });
+      }
+    });
+
+    // Map Defectives to Virtual Expenses
+    const defectiveExpenses = defectives.map((def) => ({
+      _id: `def-${def._id}`,
+      type: "Pérdida - Defectuoso",
+      amount: def.lossAmount,
+      description: `Pérdida por defecto - ${def.product?.name || "Producto"}`,
+      expenseDate: def.reportDate || def.createdAt,
+      isVirtual: true,
+    }));
+
+    // Merge and Sort
+    let finalVirtualExpenses = [...saleExpenses, ...defectiveExpenses];
+    if (resolvedType) {
+      finalVirtualExpenses = finalVirtualExpenses.filter(
+        (e) => e.type === resolvedType,
+      );
+    }
+
+    const finalExpenses = [...expenses, ...finalVirtualExpenses];
+    finalExpenses.sort(
+      (a, b) => new Date(b.expenseDate) - new Date(a.expenseDate),
+    );
+
+    res.json({ expenses: finalExpenses });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -181,7 +338,7 @@ export const updateExpense = async (req, res) => {
       update,
       {
         new: true,
-      }
+      },
     )
       .populate("createdBy", "name email")
       .lean();

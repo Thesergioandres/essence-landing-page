@@ -45,31 +45,36 @@ const validateBranch = async (businessId, branchId) => {
   return branch;
 };
 
-export const createBranchTransfer = async (req, res) => {
+const internalCreateBranchTransfer = async (
+  req,
+  res,
+  useTransaction = true,
+) => {
+  const session = useTransaction ? await mongoose.startSession() : null;
+  let transactionStarted = false;
+
   try {
     const businessId = resolveBusinessId(req);
-    if (!businessId) {
-      return res.status(400).json({ message: "Falta x-business-id" });
-    }
-
     const { originBranchId, targetBranchId, items, notes } = req.body;
 
-    if (!originBranchId || !targetBranchId) {
-      return res
-        .status(400)
-        .json({ message: "Origen y destino son obligatorios" });
+    if (useTransaction) {
+      try {
+        session.startTransaction();
+        transactionStarted = true;
+      } catch (e) {
+        transactionStarted = false;
+      }
     }
-    if (!Array.isArray(items) || items.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Debes enviar items a transferir" });
-    }
+
+    const opt = transactionStarted ? { session } : {};
 
     const warehouseBranch = await ensureWarehouseBranch(businessId);
     const originRequestedWarehouse = originBranchId === WAREHOUSE_KEY;
     const targetRequestedWarehouse = targetBranchId === WAREHOUSE_KEY;
 
     if (originRequestedWarehouse && targetRequestedWarehouse) {
+      if (transactionStarted) await session.abortTransaction();
+      if (session) session.endSession();
       return res
         .status(400)
         .json({ message: "No puedes transferir de bodega a bodega" });
@@ -78,6 +83,7 @@ export const createBranchTransfer = async (req, res) => {
     const origin = originRequestedWarehouse
       ? warehouseBranch
       : await validateBranch(businessId, originBranchId);
+
     const target = targetRequestedWarehouse
       ? warehouseBranch
       : await validateBranch(businessId, targetBranchId);
@@ -85,152 +91,124 @@ export const createBranchTransfer = async (req, res) => {
     const originIsWarehouse = originRequestedWarehouse || origin?.isWarehouse;
     const targetIsWarehouse = targetRequestedWarehouse || target?.isWarehouse;
 
-    if (originIsWarehouse && targetIsWarehouse) {
-      return res
-        .status(400)
-        .json({ message: "No puedes transferir de bodega a bodega" });
-    }
+    const [transfer] = await BranchTransfer.create(
+      [
+        {
+          business: businessId,
+          originBranch: origin._id,
+          targetBranch: target._id,
+          items,
+          notes,
+          requestedBy: req.user?.id,
+          status: "completed",
+        },
+      ],
+      opt,
+    );
 
     const productCache = new Map();
-    const getProduct = async (productId) => {
-      if (productCache.has(productId)) return productCache.get(productId);
-      const product = await Product.findOne({
-        _id: productId,
-        business: businessId,
-      });
-      productCache.set(productId, product);
-      return product;
-    };
-
-    // Validar stock disponible en origen
     for (const item of items) {
-      const product = await getProduct(item.product);
+      let product = productCache.get(item.product);
       if (!product) {
-        return res.status(404).json({ message: "Producto no encontrado" });
+        const query = Product.findOne({
+          _id: item.product,
+          business: businessId,
+        });
+        if (transactionStarted) query.session(session);
+        product = await query;
+        productCache.set(item.product, product);
       }
+
+      if (!product) throw new Error(`Producto no encontrado: ${item.product}`);
 
       if (originIsWarehouse) {
-        const available = product?.warehouseStock || 0;
-        if (available < item.quantity) {
-          return res.status(400).json({
-            message: `Stock insuficiente en bodega para ${
-              product.name || item.product
-            }`,
-            available,
-          });
-        }
+        const updateResult = await Product.findOneAndUpdate(
+          {
+            _id: item.product,
+            business: businessId,
+            warehouseStock: { $gte: item.quantity },
+          },
+          { $inc: { warehouseStock: -item.quantity } },
+          { ...opt, new: true },
+        );
+        if (!updateResult)
+          throw new Error(`Stock insuficiente en bodega para ${product.name}`);
       } else {
-        const stock = await BranchStock.findOne({
-          business: businessId,
-          branch: origin._id,
-          product: item.product,
-        });
-        const available = stock?.quantity || 0;
-        if (available < item.quantity) {
-          return res.status(400).json({
-            message: `Stock insuficiente en ${origin.name} para producto ${
-              product.name || item.product
-            }`,
-            available,
-          });
-        }
+        const updateResult = await BranchStock.findOneAndUpdate(
+          {
+            business: businessId,
+            branch: origin._id,
+            product: item.product,
+            quantity: { $gte: item.quantity },
+          },
+          { $inc: { quantity: -item.quantity } },
+          { ...opt, new: true },
+        );
+        if (!updateResult)
+          throw new Error(
+            `Stock insuficiente en ${origin.name} para ${product.name}`,
+          );
+      }
+
+      if (targetIsWarehouse) {
+        await Product.findOneAndUpdate(
+          { _id: item.product, business: businessId },
+          { $inc: { warehouseStock: item.quantity } },
+          { ...opt, new: true, upsert: false },
+        );
+      } else {
+        await BranchStock.findOneAndUpdate(
+          { business: businessId, branch: target._id, product: item.product },
+          { $inc: { quantity: item.quantity } },
+          { ...opt, upsert: true, new: true, setDefaultsOnInsert: true },
+        );
       }
     }
 
-    const transfer = await BranchTransfer.create({
-      business: businessId,
-      originBranch: origin._id,
-      targetBranch: target._id,
-      items,
-      notes,
-      requestedBy: req.user?.id,
-    });
+    if (transactionStarted) await session.commitTransaction();
+    if (session) session.endSession();
 
-    // 🔒 Usar transacción para garantizar atomicidad
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      // Aplicar movimientos dentro de la transacción
-      for (const item of items) {
-        const product = await getProduct(item.product);
-
-        if (originIsWarehouse) {
-          // Validar y descontar atómicamente con la sesión
-          const updateResult = await Product.findOneAndUpdate(
-            {
-              _id: item.product,
-              business: businessId,
-              warehouseStock: { $gte: item.quantity },
-            },
-            { $inc: { warehouseStock: -item.quantity } },
-            { session, new: true }
-          );
-          if (!updateResult) {
-            throw new Error(
-              `Stock insuficiente en bodega para ${
-                product?.name || item.product
-              }`
-            );
-          }
-        } else {
-          const updateResult = await BranchStock.findOneAndUpdate(
-            {
-              business: businessId,
-              branch: origin._id,
-              product: item.product,
-              quantity: { $gte: item.quantity },
-            },
-            { $inc: { quantity: -item.quantity } },
-            { session, new: true }
-          );
-          if (!updateResult) {
-            throw new Error(
-              `Stock insuficiente en ${origin.name} para producto ${
-                product?.name || item.product
-              }`
-            );
-          }
-        }
-
-        if (targetIsWarehouse) {
-          await Product.findOneAndUpdate(
-            { _id: item.product, business: businessId },
-            { $inc: { warehouseStock: item.quantity } },
-            { session, new: true, upsert: false }
-          );
-        } else {
-          await BranchStock.findOneAndUpdate(
-            { business: businessId, branch: target._id, product: item.product },
-            { $inc: { quantity: item.quantity } },
-            { session, upsert: true, new: true, setDefaultsOnInsert: true }
-          );
-        }
-      }
-
-      transfer.status = "completed";
-      transfer.approvedBy = req.user?.id;
-      await transfer.save({ session });
-
-      await session.commitTransaction();
-      session.endSession();
-
-      res.status(201).json({ transfer });
-    } catch (txError) {
-      await session.abortTransaction();
-      session.endSession();
-
-      // Eliminar el transfer si falló la transacción
-      await BranchTransfer.findByIdAndDelete(transfer._id);
-
-      throw txError;
-    }
+    return res
+      .status(201)
+      .json({ message: "Transferencia completada correctamente", transfer });
   } catch (error) {
-    console.error("createBranchTransfer error", error);
-    const status = error?.statusCode || 500;
-    res
-      .status(status)
-      .json({ message: error?.message || "No se pudo crear la transferencia" });
+    if (transactionStarted && session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    if (session) session.endSession();
+
+    if (
+      useTransaction &&
+      error.message.includes("replica set member or mongos")
+    ) {
+      console.warn(
+        "[DB] Transactions not supported. Fallback to non-transactional.",
+      );
+      return internalCreateBranchTransfer(req, res, false);
+    }
+    throw error;
+  }
+};
+
+export const createBranchTransfer = async (req, res) => {
+  try {
+    console.log(
+      "[DEBUG] createBranchTransfer body:",
+      JSON.stringify(req.body, null, 2),
+    );
+    await internalCreateBranchTransfer(req, res, true);
+  } catch (error) {
+    console.error("createBranchTransfer error:", error);
+    const status =
+      error.name === "CastError"
+        ? 400
+        : error.statusCode || error.status || 500;
+    res.status(status).json({
+      message: error?.message || "No se pudo realizar la transferencia",
+      debugError: error?.message,
+      debugStack:
+        process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
   }
 };
 

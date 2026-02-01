@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import DefectiveProduct from "../models/DefectiveProduct.js";
+import Expense from "../models/Expense.js";
 import ProfitHistory from "../models/ProfitHistory.js";
 import Sale from "../models/Sale.js";
 import SpecialSale from "../models/SpecialSale.js";
@@ -678,7 +680,7 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
 
     const sales = await Sale.find(saleFilter)
       .select(
-        "saleId saleDate saleGroupId distributor product quantity salePrice adminProfit distributorProfit totalProfit netProfit totalAdditionalCosts shippingCost discount paymentStatus",
+        "saleId saleDate saleGroupId distributor product quantity salePrice purchasePrice averageCostAtSale adminProfit distributorProfit totalProfit netProfit totalAdditionalCosts shippingCost discount paymentStatus",
       )
       .populate("product", "name")
       .populate("distributor", "name email role")
@@ -702,30 +704,91 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
       .limit(safeLimit)
       .lean();
 
+    // FETCH EXPENSES (Absolute Sum)
+    const expenseFilter = {
+      ...(businessId
+        ? { business: new mongoose.Types.ObjectId(businessId) }
+        : {}),
+      ...(saleDateRange ? { expenseDate: saleDateRange } : {}),
+    };
+    // Exclude "Costo de Venta" to avoid double counting if they exist as expenses
+    expenseFilter.category = { $ne: "Costo de Venta" };
+
+    const expenses = await Expense.find(expenseFilter).lean();
+
+    // FETCH DEFECTIVE PRODUCTS (Absolute Sum)
+    const defectFilter = {
+      ...(businessId
+        ? { business: new mongoose.Types.ObjectId(businessId) }
+        : {}),
+      ...(saleDateRange ? { reportDate: saleDateRange } : {}),
+    };
+    const defects = await DefectiveProduct.find(defectFilter).lean();
+
+    // 1. CALCULATE GROSS PROFIT (PURE SALES MARGIN) & COMMISSIONS
+    let grossProfit = 0;
+    let totalCommissions = 0;
+    let totalSalesValue = 0;
+    let totalAdditionalFromSales = 0;
+    let totalDiscountsFromSales = 0;
+
     const entries = sales.map((sale) => {
+      // 1. ROBUST VARIABLE MAPPING
+      // Ensure we catch the data even if variable names drift or are missing
+      const quantity = sale.quantity || 1;
+      const unitPrice = sale.salePrice || sale.totalPrice || 0;
+      // Fallback to purchasePrice (costo unitario), then averageCost, then productCost
+      const unitCost =
+        sale.purchasePrice || sale.averageCostAtSale || sale.productCost || 0;
+
+      const revenue = unitPrice * quantity;
+      const costOfGoods = unitCost * quantity;
+
+      const shipping =
+        Number(sale.shippingCost) ||
+        Number(sale.shippingPrice) ||
+        Number(sale.shipping) ||
+        Number(sale.deliveryCost) ||
+        Number(sale.additionalCost) ||
+        Number(sale.delivery) ||
+        Number(sale.deliveryFee) ||
+        Number(sale.costoEnvio) ||
+        Number(sale.domicilio) ||
+        Number(sale.transport) ||
+        0;
+      const discount = sale.discount || 0;
+      const additional = sale.totalAdditionalCosts || 0;
+      const distributorProfit = sale.distributorProfit || sale.commission || 0;
+      const adminProfit = sale.adminProfit || 0;
+
+      const totalDeductions = shipping + discount + additional;
+
+      // 2. STRICT GROSS CALCULATION
+      // Formula: Revenue - COGS - Shipping (User requested: SaleTotal - Cost - Shipping)
+      // We calculate this explicitly instead of relying on stored 'totalProfit' which might be confusingly named or calculated.
+      let strictGross = 0;
+      // If we have valid unit price and cost, use explicit calculation
+      if (unitPrice > 0 || unitCost > 0) {
+        strictGross = revenue - costOfGoods - shipping;
+      } else {
+        // Fallback to stored totalProfit if available (minus shipping cost)
+        // totalProfit in DB usually means (Revenue - Costs), but might NOT include shipping deduction.
+        // To be safe and strict, we subtract shipping.
+        strictGross = (sale.totalProfit || 0) - shipping;
+      }
+
+      // Accumulate for Summary
+      grossProfit += strictGross;
+      totalCommissions += distributorProfit;
+      totalSalesValue += revenue;
+      totalAdditionalFromSales += additional;
+      totalDiscountsFromSales += discount;
+
       const distributor = sale.distributor;
       const distributorIdValue = distributor?._id?.toString() || null;
 
-      const adminProfit = sale.adminProfit || 0;
-      const distributorProfit = sale.distributorProfit || 0;
-      const totalProfit =
-        sale.totalProfit ?? adminProfit + (distributorProfit ?? 0);
-
-      // Calcular deducciones totales y netProfit
-      const totalDeductions =
-        (sale.totalAdditionalCosts || 0) +
-        (sale.shippingCost || 0) +
-        (sale.discount || 0);
-      const netProfit = sale.netProfit ?? totalProfit - totalDeductions;
-      // salesValue = precio de venta * cantidad
-      // Fallback: si salePrice no existe o es 0, estimamos desde totalProfit (asumiendo ~30% de margen)
-      const rawSalesValue = (sale.salePrice || 0) * (sale.quantity || 1);
-      const salesValue =
-        rawSalesValue > 0
-          ? rawSalesValue
-          : totalProfit > 0
-            ? totalProfit / 0.3
-            : 0;
+      // Ensure totalProfit is reflected correctly even if we recalculated
+      const displayTotalProfit = revenue - costOfGoods || sale.totalProfit || 0;
 
       return {
         id: sale._id.toString(),
@@ -740,28 +803,29 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
         type: distributorIdValue ? "venta_distribuidor" : "venta_admin",
         adminProfit,
         distributorProfit,
-        totalProfit,
-        netProfit,
+        totalProfit: displayTotalProfit,
+        netProfit: strictGross - distributorProfit - additional - discount, // Corrected Net Profit
         totalDeductions,
-        salesValue,
+        salesValue: revenue,
         quantity: sale.quantity,
         productName: sale.product?.name || "",
         paymentStatus: sale.paymentStatus,
       };
     });
 
-    // Agregar entradas de ventas especiales desglosadas por distribución
+    // Special Sales add to Gross & Commissions
     specialSales.forEach((sale) => {
-      const saleId = sale.saleId || sale._id.toString();
-      const productName = sale.product?.name || "";
-
       sale.distribution.forEach((dist, idx) => {
         const isAdmin = dist.name?.toLowerCase() === "admin";
         if (distributorId === "admin" && !isAdmin) return;
+
         const amount = dist.amount || 0;
+        grossProfit += amount; // Special sales are pure profit/margin
+        if (!isAdmin) totalCommissions += amount;
+
         entries.push({
           id: `${sale._id.toString()}-${idx}`,
-          saleId,
+          saleId: sale.saleId || sale._id.toString(),
           date: sale.saleDate,
           source: "special",
           distributorId: isAdmin ? null : null,
@@ -771,11 +835,11 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
           adminProfit: isAdmin ? amount : 0,
           distributorProfit: !isAdmin ? amount : 0,
           totalProfit: amount,
-          netProfit: amount, // Ventas especiales no tienen deducciones
+          netProfit: amount,
           totalDeductions: 0,
-          salesValue: amount, // En ventas especiales, salesValue = amount distribuido
+          salesValue: amount,
           quantity: sale.quantity,
-          productName,
+          productName: sale.product?.name || "",
           eventName: sale.eventName,
           paymentStatus: undefined,
         });
@@ -788,27 +852,43 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
       uniqueOrderIds.add(entry.saleGroupId || entry.id);
     });
 
-    const summary = entries.reduce(
-      (acc, entry) => {
-        acc.totalProfit += entry.totalProfit;
-        acc.netProfit += entry.netProfit || entry.totalProfit;
-        acc.totalDeductions += entry.totalDeductions || 0;
-        acc.salesValue += entry.salesValue || 0;
-        acc.adminProfit += entry.adminProfit;
-        acc.distributorProfit += entry.distributorProfit;
-        acc.count += 1;
-        return acc;
-      },
-      {
-        totalProfit: 0,
-        netProfit: 0,
-        totalDeductions: 0,
-        salesValue: 0,
-        adminProfit: 0,
-        distributorProfit: 0,
-        count: 0,
-      },
+    // 2. CALCULATE ABSOLUTE DEDUCTIONS
+    const totalExpenses = expenses.reduce(
+      (sum, exp) => sum + (Number(exp.amount) || 0),
+      0,
     );
+    const totalDefects = defects.reduce(
+      (sum, def) => sum + (Number(def.lossAmount || def.cost || 0) || 0),
+      0,
+    );
+
+    // 3. CALCULATE NET PROFIT
+    // Formula: Gross - Expenses - Defects - Commissions - Sales Additional Costs - Sales Discounts
+    const netProfit =
+      grossProfit -
+      totalExpenses -
+      totalDefects -
+      totalCommissions -
+      totalAdditionalFromSales -
+      totalDiscountsFromSales;
+
+    // 4. SANITIZE OUTPUT
+    const summary = {
+      grossProfit: Math.round(grossProfit),
+      netProfit: Math.round(netProfit),
+      totalExpenses: Math.round(totalExpenses),
+      totalDefects: Math.round(totalDefects),
+      distributorCommissions: Math.round(totalCommissions),
+
+      // Legacy/Compatible fields
+      totalProfit: Math.round(grossProfit), // Mapping Gross to Total for compat if needed
+      totalDeductions: 0, // Handled upstream
+      salesValue: Math.round(totalSalesValue),
+      adminProfit: Math.round(netProfit), // Admin Net
+      distributorProfit: Math.round(totalCommissions),
+      count: entries.length,
+      totalAdditionalSalesCosts: Math.round(totalAdditionalFromSales),
+    };
 
     // Agregar conteo de órdenes únicas
     summary.ordersCount = uniqueOrderIds.size;
@@ -820,10 +900,14 @@ export const getAdminProfitHistoryOverview = async (req, res) => {
     const distributorMap = new Map();
 
     entries.forEach((entry) => {
-      const key = entry.distributorId || entry.distributorName || "admin";
+      // FIX: Agrupar ventas admin bajo la key "admin" explícitamente
+      const key = entry.distributorId ? entry.distributorId : "admin";
+
       const current = distributorMap.get(key) || {
-        id: entry.distributorId || entry.distributorName || "admin",
-        name: entry.distributorName || "Ventas administradas",
+        id: key, // "admin" o el ID del distribuidor
+        name: entry.distributorId
+          ? entry.distributorName
+          : "Ventas administradas",
         email: entry.distributorEmail,
         totalProfit: 0,
         adminProfit: 0,

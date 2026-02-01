@@ -22,7 +22,7 @@ const featureFlagsSchema = new mongoose.Schema(
     customers: { type: Boolean, default: true },
     defectiveProducts: { type: Boolean, default: true },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const businessSchema = new mongoose.Schema(
@@ -82,11 +82,12 @@ const businessSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 businessSchema.index({ createdBy: 1, status: 1 });
 
-const Business = mongoose.model("Business", businessSchema);
+const Business =
+  mongoose.models.Business || mongoose.model("Business", businessSchema);
 
 export default Business;

@@ -5,6 +5,7 @@ import {
   deleteProduct,
   getDistributorCatalog,
   getDistributorPrice,
+  getGlobalInventory,
   getProduct,
   getProducts,
   initializeAverageCost,
@@ -61,6 +62,37 @@ router.post(
   requirePermission({ module: "products", action: "update" }),
   initializeAverageCost,
 );
+
+// -------------------------------------------------------------------------
+// REQ 1: GLOBAL INVENTORY DASHBOARD ("God Mode")
+// -------------------------------------------------------------------------
+router.get(
+  "/global-inventory",
+  protect,
+  businessContext,
+  requireFeature("products"),
+  // Allow god, super_admin, and admin
+  // requirePermission usually checks perms like 'read' on 'products'.
+  // We can enforce role check inside controller or here if middleware supports it.
+  // business.middleware usually handles roles via permissions.
+  // Assuming 'read' on 'products' is enough but we want to be strict?
+  // User req: "aclaro que es para los que tenga rol, god, super admin y admin"
+  // Let's implement middleware-level role check if possible or just rely on 'read' which usually Admin has.
+  // But wait, regular users might have read perms? No, usually public reads are separate.
+  // Let's trust requirePermission({ module: "products", action: "read" }) + auth check inside controller if specific roles needed?
+  // Better: add a middleware inline to check role.
+  (req, res, next) => {
+    const allowedRoles = ["god", "super_admin", "admin"];
+    if (!allowedRoles.includes(req.user.role)) {
+      return res
+        .status(403)
+        .json({ message: "Acceso denegado (Rol requerido)" });
+    }
+    next();
+  },
+  getGlobalInventory,
+);
+// -------------------------------------------------------------------------
 
 /**
  * @swagger

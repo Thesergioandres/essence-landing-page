@@ -896,14 +896,16 @@ export default function DefectiveProductsManagement() {
                             </option>
                           );
                         })
-                    : products.map(product => (
-                        <option key={product._id} value={product._id}>
-                          {product.name} | Stock bodega:{" "}
-                          {product.warehouseStock} | Compra: $
-                          {product.purchasePrice} | Cliente: $
-                          {product.clientPrice || 0}
-                        </option>
-                      ))}
+                    : products
+                        .filter(p => !p.isPromotion)
+                        .map(product => (
+                          <option key={product._id} value={product._id}>
+                            {product.name} | Stock bodega:{" "}
+                            {product.warehouseStock} | Compra: $
+                            {product.purchasePrice} | Cliente: $
+                            {product.clientPrice || 0}
+                          </option>
+                        ))}
                 </select>
               </div>
 

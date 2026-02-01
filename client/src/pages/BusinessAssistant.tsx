@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { businessAssistantService, creditService } from "../api/services";
+import {
+  businessAssistantService,
+  creditService,
+  promotionService,
+} from "../api/services";
 import { useFeatures } from "../components/FeatureSection";
 import type {
   BusinessAssistantConfig,
@@ -126,6 +130,57 @@ export default function BusinessAssistant() {
   const [analystError, setAnalystError] = useState<string | null>(null);
   const [lastAnalysisDate, setLastAnalysisDate] = useState<string | null>(null);
 
+  // Filtro ABC
+  const [abcFilter, setAbcFilter] = useState<"ALL" | "A" | "B" | "C">("ALL");
+
+  // Estado para creación de promos desde AI
+  const [creatingPromoIdx, setCreatingPromoIdx] = useState<number | null>(null);
+  const [promoSuccessMsg, setPromoSuccessMsg] = useState<string | null>(null);
+
+  // Handler para crear promo desde sugerencia AI
+  const handleCreatePromoFromAI = async (
+    promo: { title: string; description: string; products: string[] },
+    idx: number
+  ) => {
+    try {
+      setCreatingPromoIdx(idx);
+      setPromoSuccessMsg(null);
+
+      // Obtener precios de los productos del backend (ya están en recommendations)
+      const productPrices: { id: string; price: number }[] = [];
+      for (const productId of promo.products) {
+        const rec = data?.recommendations?.find(r => r.productId === productId);
+        if (rec) {
+          productPrices.push({
+            id: productId,
+            price: rec.metrics.recentAvgPrice || 0,
+          });
+        }
+      }
+
+      // Calcular precio combo con 15% descuento
+      const totalPrice = productPrices.reduce((sum, p) => sum + p.price, 0);
+      const promoPrice = Math.round(totalPrice * 0.85);
+
+      await promotionService.createFromAI({
+        name: promo.title.replace("📦 ", "").replace("🔥 ", ""),
+        items: promo.products.map(productId => ({ productId, qty: 1 })),
+        price: promoPrice,
+        justification: promo.description,
+      });
+
+      setPromoSuccessMsg(
+        `✅ Promoción "${promo.title}" creada y activa en catálogo`
+      );
+      setTimeout(() => setPromoSuccessMsg(null), 5000);
+    } catch (err: unknown) {
+      console.error("Error creating promo:", err);
+      setPromoSuccessMsg(`❌ Error: ${(err as Error).message}`);
+    } finally {
+      setCreatingPromoIdx(null);
+    }
+  };
+
   // Cargar memoria del CEO al iniciar
   useEffect(() => {
     const loadMemory = async () => {
@@ -142,6 +197,18 @@ export default function BusinessAssistant() {
     };
     loadMemory();
   }, []);
+
+  const getAbcBadgeColor = (abcClass?: string) => {
+    switch (abcClass) {
+      case "A":
+        return "bg-green-500/10 text-green-400 border-green-500/20";
+      case "B":
+        return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
+      case "C":
+      default:
+        return "bg-gray-500/10 text-gray-400 border-gray-500/20";
+    }
+  };
 
   const handleGenerateAnalysis = async (customQuestion?: string) => {
     try {
@@ -433,9 +500,15 @@ export default function BusinessAssistant() {
         : true;
       const matchesAction =
         actionFilter === "all" ? true : primaryAction === actionFilter;
-      const actionable = Boolean(item.recommendation.primary);
-      const matchesOnlyActionable = onlyActionable ? actionable : true;
-      return matchesSearch && matchesAction && matchesOnlyActionable;
+      const matchesOnlyActionable = onlyActionable
+        ? (item.recommendation.primary?.confidence || 0) > 0.6
+        : true;
+
+      const matchesAbc = abcFilter === "ALL" || item.abcClass === abcFilter;
+
+      return (
+        matchesSearch && matchesAction && matchesOnlyActionable && matchesAbc
+      );
     });
 
     return [...filtered].sort((a, b) => {
@@ -460,7 +533,14 @@ export default function BusinessAssistant() {
           return (bPrimary?.confidence ?? -1) - (aPrimary?.confidence ?? -1);
       }
     });
-  }, [actionFilter, data?.recommendations, onlyActionable, search, sortBy]);
+  }, [
+    actionFilter,
+    data?.recommendations,
+    onlyActionable,
+    search,
+    sortBy,
+    abcFilter,
+  ]);
 
   const renderPrimary = (item: BusinessAssistantRecommendationItem) => {
     const primary = item.recommendation.primary;
@@ -1146,219 +1226,357 @@ export default function BusinessAssistant() {
         ) : null}
       </div>
 
+      {/* Promotions Section */}
+      {data?.promotions && data.promotions.length > 0 && (
+        <div className="mb-8 rounded-xl border border-indigo-500/30 bg-indigo-900/10 p-6">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+            💡 Sugerencias de Marketing{" "}
+            <span className="text-xs font-normal text-indigo-300">
+              (Generadas por IA)
+            </span>
+          </h2>
+
+          {/* Success/Error Message */}
+          {promoSuccessMsg && (
+            <div
+              className={`mt-3 rounded-lg px-4 py-2 text-sm ${
+                promoSuccessMsg.startsWith("✅")
+                  ? "border border-green-500/30 bg-green-500/20 text-green-300"
+                  : "border border-red-500/30 bg-red-500/20 text-red-300"
+              }`}
+            >
+              {promoSuccessMsg}
+            </div>
+          )}
+
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {data.promotions.map((promo, idx) => (
+              <div
+                key={idx}
+                className="rounded-lg border border-indigo-500/20 bg-gray-900/40 p-4 shadow-sm transition-transform hover:scale-[1.02]"
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      promo.type === "combo"
+                        ? "bg-purple-500/20 text-purple-300"
+                        : "bg-orange-500/20 text-orange-300"
+                    }`}
+                  >
+                    {promo.type}
+                  </span>
+                </div>
+                <h3 className="font-medium text-white">{promo.title}</h3>
+                <p className="mt-1 text-sm text-gray-400">
+                  {promo.description}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleCreatePromoFromAI(promo, idx)}
+                  disabled={creatingPromoIdx !== null}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {creatingPromoIdx === idx ? (
+                    <>
+                      <span className="animate-spin">⏳</span>
+                      Creando...
+                    </>
+                  ) : (
+                    <>⚡ Crear esta Promo</>
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Results */}
       {loading ? (
         <div className="flex min-h-[40vh] items-center justify-center">
           <div className="text-xl text-gray-200">Analizando productos…</div>
         </div>
-      ) : (visibleRecommendations || []).length === 0 ? (
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6 text-gray-300">
-          No hay recomendaciones para mostrar.
-        </div>
       ) : (
         <>
-          {/* Mobile cards */}
-          <div className="space-y-4 md:hidden">
-            {(visibleRecommendations || []).map(item => (
-              <div
-                key={item.productId}
-                className="rounded-xl border border-gray-700 bg-gray-800/50 p-5"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-lg font-semibold text-white">
-                      {item.productName}
-                    </p>
-                    <p className="mt-1 text-sm text-gray-400">
-                      {item.categoryName ? `${item.categoryName} · ` : ""}
-                      Stock bodega: {item.stock.warehouseStock} · Margen:{" "}
-                      {item.metrics.recentMarginPct.toFixed(1)}%
-                    </p>
-                    {typeof item.recommendation.score?.impactScore ===
-                      "number" && item.recommendation.score.impactScore > 0 ? (
-                      <p className="mt-1 text-xs text-gray-500">
-                        Impacto score:{" "}
-                        {Math.round(
-                          item.recommendation.score.impactScore
-                        ).toLocaleString("es-CO")}
-                      </p>
-                    ) : null}
-                  </div>
-                  {renderPrimary(item)}
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-3">
-                    <p className="text-xs text-gray-400">
-                      Unidades ({item.metrics.recentDays}d)
-                    </p>
-                    <p className="text-sm font-semibold text-white">
-                      {item.metrics.recentUnits}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-3">
-                    <p className="text-xs text-gray-400">Tendencia</p>
-                    <p
-                      className={`text-sm font-semibold ${
-                        item.metrics.unitsGrowthPct >= 0
-                          ? "text-green-300"
-                          : "text-red-300"
-                      }`}
-                    >
-                      {item.metrics.unitsGrowthPct >= 0 ? "+" : ""}
-                      {item.metrics.unitsGrowthPct.toFixed(1)}%
-                    </p>
-                  </div>
-                </div>
-
-                {item.recommendation.primary?.suggestedQty ? (
-                  <p className="mt-3 text-sm text-green-200">
-                    Sugerencia: comprar{" "}
-                    {item.recommendation.primary.suggestedQty} unidades.
-                  </p>
-                ) : null}
-                {typeof item.recommendation.primary?.suggestedChangePct ===
-                "number" ? (
-                  <p className="mt-3 text-sm text-blue-200">
-                    Sugerencia: ajuste de precio{" "}
-                    {item.recommendation.primary.suggestedChangePct}%.
-                  </p>
-                ) : null}
-
-                {renderPriceLine(item.recommendation.primary)}
-
-                {renderImpactLine(item.recommendation.primary)}
-
-                <div className="mt-4">
-                  <p className="text-sm font-semibold text-gray-200">
-                    Justificación
-                  </p>
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-300">
-                    {(item.recommendation.justification || [])
-                      .slice(0, 4)
-                      .map((j, idx) => (
-                        <li key={idx}>{j}</li>
-                      ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
+          {/* ABC Filter UI */}
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setAbcFilter("ALL")}
+              className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                abcFilter === "ALL"
+                  ? "border-gray-500 bg-gray-700 text-white"
+                  : "border-gray-700 bg-gray-800/50 text-gray-400 hover:bg-gray-800"
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              onClick={() => setAbcFilter("A")}
+              className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                abcFilter === "A"
+                  ? "border-green-500 bg-green-500/20 text-green-300"
+                  : "border-gray-700 bg-gray-800/50 text-gray-400 hover:border-green-500/30 hover:text-green-400"
+              }`}
+            >
+              🟢 Clase A (Top)
+            </button>
+            <button
+              onClick={() => setAbcFilter("B")}
+              className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                abcFilter === "B"
+                  ? "border-yellow-500 bg-yellow-500/20 text-yellow-300"
+                  : "border-gray-700 bg-gray-800/50 text-gray-400 hover:border-yellow-500/30 hover:text-yellow-400"
+              }`}
+            >
+              🟡 Clase B
+            </button>
+            <button
+              onClick={() => setAbcFilter("C")}
+              className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                abcFilter === "C"
+                  ? "border-gray-500 bg-gray-500/20 text-gray-300"
+                  : "border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-500/30 hover:text-gray-300"
+              }`}
+            >
+              ⚪ Clase C
+            </button>
           </div>
 
-          {/* Desktop table */}
-          <div className="hidden overflow-x-auto rounded-xl border border-gray-700 bg-gray-800/50 md:block">
-            <table className="w-full">
-              <thead className="bg-gray-900/50 text-gray-300">
-                <tr>
-                  <th className="px-4 py-3 text-left">Producto</th>
-                  <th className="px-4 py-3 text-left">Acción</th>
-                  <th className="px-4 py-3 text-right">Stock</th>
-                  <th className="px-4 py-3 text-right">Unidades</th>
-                  <th className="px-4 py-3 text-right">Tendencia</th>
-                  <th className="px-4 py-3 text-right">Margen</th>
-                  <th className="px-4 py-3 text-right">Ingresos</th>
-                  <th className="px-4 py-3 text-left">Justificación</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700 text-gray-200">
+          {(visibleRecommendations || []).length === 0 ? (
+            <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6 text-gray-300">
+              No hay recomendaciones para mostrar.
+            </div>
+          ) : (
+            <>
+              {/* Mobile cards */}
+              <div className="space-y-4 md:hidden">
                 {(visibleRecommendations || []).map(item => (
-                  <tr
+                  <div
                     key={item.productId}
-                    className="align-top hover:bg-gray-900/30"
+                    className="rounded-xl border border-gray-700 bg-gray-800/50 p-5"
                   >
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-white">
-                        {item.productName}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-400">
-                        {item.categoryName ? `${item.categoryName} · ` : ""}
-                        Precio promedio:{" "}
-                        {formatCurrencyCOP(item.metrics.recentAvgPrice)} · vs
-                        categoría: {item.metrics.priceVsCategoryPct.toFixed(1)}%
-                      </p>
-                      {typeof item.recommendation.score?.impactScore ===
-                        "number" &&
-                      item.recommendation.score.impactScore > 0 ? (
-                        <p className="mt-1 text-xs text-gray-500">
-                          Impacto score:{" "}
-                          {Math.round(
-                            item.recommendation.score.impactScore
-                          ).toLocaleString("es-CO")}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate text-lg font-semibold text-white">
+                            {item.productName}
+                          </p>
+                          {item.abcClass && (
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-xs font-medium ${getAbcBadgeColor(
+                                item.abcClass
+                              )}`}
+                            >
+                              Clase {item.abcClass}
+                              {item.abcClass === "A" && " - Top Seller 🏆"}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-sm text-gray-400">
+                          {item.categoryName ? `${item.categoryName} · ` : ""}
+                          Stock bodega: {item.stock.warehouseStock} · Margen:{" "}
+                          {item.metrics.recentMarginPct.toFixed(1)}%
                         </p>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3">{renderPrimary(item)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <p className="font-semibold">
-                        {item.stock.warehouseStock}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        Alerta: {item.stock.lowStockAlert}
-                        {item.metrics.daysCover !== null
-                          ? ` · Cobertura: ${item.metrics.daysCover}d`
-                          : ""}
-                      </p>
-                      {item.recommendation.primary?.suggestedQty ? (
-                        <p className="mt-1 text-xs text-green-200">
-                          +{item.recommendation.primary.suggestedQty} uds
+                        {typeof item.recommendation.score?.impactScore ===
+                          "number" &&
+                        item.recommendation.score.impactScore > 0 ? (
+                          <p className="mt-1 text-xs text-gray-500">
+                            Impacto score:{" "}
+                            {Math.round(
+                              item.recommendation.score.impactScore
+                            ).toLocaleString("es-CO")}
+                          </p>
+                        ) : null}
+                      </div>
+                      {renderPrimary(item)}
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-3">
+                        <p className="text-xs text-gray-400">
+                          Unidades ({item.metrics.recentDays}d)
                         </p>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold">
-                      {item.metrics.recentUnits}
-                    </td>
-                    <td
-                      className={`px-4 py-3 text-right font-semibold ${
-                        item.metrics.unitsGrowthPct >= 0
-                          ? "text-green-300"
-                          : "text-red-300"
-                      }`}
-                    >
-                      {item.metrics.unitsGrowthPct >= 0 ? "+" : ""}
-                      {item.metrics.unitsGrowthPct.toFixed(1)}%
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="font-semibold">
-                        {item.metrics.recentMarginPct.toFixed(1)}%
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="font-semibold">
-                        {formatCurrencyCOP(item.metrics.recentRevenue)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <ul className="list-disc space-y-1 pl-5 text-sm text-gray-300">
+                        <p className="text-sm font-semibold text-white">
+                          {item.metrics.recentUnits}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-3">
+                        <p className="text-xs text-gray-400">Tendencia</p>
+                        <p
+                          className={`text-sm font-semibold ${
+                            item.metrics.unitsGrowthPct >= 0
+                              ? "text-green-300"
+                              : "text-red-300"
+                          }`}
+                        >
+                          {item.metrics.unitsGrowthPct >= 0 ? "+" : ""}
+                          {item.metrics.unitsGrowthPct.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {item.recommendation.primary?.suggestedQty ? (
+                      <p className="mt-3 text-sm text-green-200">
+                        Sugerencia: comprar{" "}
+                        {item.recommendation.primary.suggestedQty} unidades.
+                      </p>
+                    ) : null}
+                    {typeof item.recommendation.primary?.suggestedChangePct ===
+                    "number" ? (
+                      <p className="mt-3 text-sm text-blue-200">
+                        Sugerencia: ajuste de precio{" "}
+                        {item.recommendation.primary.suggestedChangePct}%.
+                      </p>
+                    ) : null}
+
+                    {renderPriceLine(item.recommendation.primary)}
+
+                    {renderImpactLine(item.recommendation.primary)}
+
+                    <div className="mt-4">
+                      <p className="text-sm font-semibold text-gray-200">
+                        Justificación
+                      </p>
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-300">
                         {(item.recommendation.justification || [])
-                          .slice(0, 3)
+                          .slice(0, 4)
                           .map((j, idx) => (
                             <li key={idx}>{j}</li>
                           ))}
                       </ul>
-                      {typeof item.recommendation.primary
-                        ?.suggestedChangePct === "number" ? (
-                        <p className="mt-2 text-xs text-blue-200">
-                          Sugerencia: ajuste de precio{" "}
-                          {item.recommendation.primary.suggestedChangePct}%.
-                        </p>
-                      ) : null}
-
-                      {renderPriceLine(item.recommendation.primary)}
-
-                      {renderImpactLine(item.recommendation.primary)}
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
 
-          {data?.window && (
-            <p className="mt-4 text-sm text-gray-400">
-              Nota:{" "}
-              {data.recommendations[0]?.recommendation.notes ||
-                "Las recomendaciones se basan en ventas confirmadas y stock actual."}
-            </p>
+              {/* Desktop table */}
+              <div className="hidden overflow-x-auto rounded-xl border border-gray-700 bg-gray-800/50 md:block">
+                <table className="w-full">
+                  <thead className="bg-gray-900/50 text-gray-300">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Producto</th>
+                      <th className="px-4 py-3 text-left">Acción</th>
+                      <th className="px-4 py-3 text-right">Stock</th>
+                      <th className="px-4 py-3 text-right">Unidades</th>
+                      <th className="px-4 py-3 text-right">Tendencia</th>
+                      <th className="px-4 py-3 text-right">Margen</th>
+                      <th className="px-4 py-3 text-right">Ingresos</th>
+                      <th className="px-4 py-3 text-left">Justificación</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700 text-gray-200">
+                    {(visibleRecommendations || []).map(item => (
+                      <tr
+                        key={item.productId}
+                        className="align-top hover:bg-gray-900/30"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-white">
+                              {item.productName}
+                            </p>
+                            {item.abcClass && (
+                              <span
+                                className={`rounded-full border px-2 py-0.5 text-xs font-medium ${getAbcBadgeColor(
+                                  item.abcClass
+                                )}`}
+                              >
+                                {item.abcClass}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs text-gray-400">
+                            {item.categoryName ? `${item.categoryName} · ` : ""}
+                            Precio promedio:{" "}
+                            {formatCurrencyCOP(item.metrics.recentAvgPrice)} ·
+                            vs categoría:{" "}
+                            {item.metrics.priceVsCategoryPct.toFixed(1)}%
+                          </p>
+                          {typeof item.recommendation.score?.impactScore ===
+                            "number" &&
+                          item.recommendation.score.impactScore > 0 ? (
+                            <p className="mt-1 text-xs text-gray-500">
+                              Impacto score:{" "}
+                              {Math.round(
+                                item.recommendation.score.impactScore
+                              ).toLocaleString("es-CO")}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-3">{renderPrimary(item)}</td>
+                        <td className="px-4 py-3 text-right">
+                          <p className="font-semibold">
+                            {item.stock.warehouseStock}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Alerta: {item.stock.lowStockAlert}
+                            {item.metrics.daysCover !== null
+                              ? ` · Cobertura: ${item.metrics.daysCover}d`
+                              : ""}
+                          </p>
+                          {item.recommendation.primary?.suggestedQty ? (
+                            <p className="mt-1 text-xs text-green-200">
+                              +{item.recommendation.primary.suggestedQty} uds
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold">
+                          {item.metrics.recentUnits}
+                        </td>
+                        <td
+                          className={`px-4 py-3 text-right font-semibold ${
+                            item.metrics.unitsGrowthPct >= 0
+                              ? "text-green-300"
+                              : "text-red-300"
+                          }`}
+                        >
+                          {item.metrics.unitsGrowthPct >= 0 ? "+" : ""}
+                          {item.metrics.unitsGrowthPct.toFixed(1)}%
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="font-semibold">
+                            {item.metrics.recentMarginPct.toFixed(1)}%
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="font-semibold">
+                            {formatCurrencyCOP(item.metrics.recentRevenue)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <ul className="list-disc space-y-1 pl-5 text-sm text-gray-300">
+                            {(item.recommendation.justification || [])
+                              .slice(0, 3)
+                              .map((j, idx) => (
+                                <li key={idx}>{j}</li>
+                              ))}
+                          </ul>
+                          {typeof item.recommendation.primary
+                            ?.suggestedChangePct === "number" ? (
+                            <p className="mt-2 text-xs text-blue-200">
+                              Sugerencia: ajuste de precio{" "}
+                              {item.recommendation.primary.suggestedChangePct}%.
+                            </p>
+                          ) : null}
+
+                          {renderPriceLine(item.recommendation.primary)}
+
+                          {renderImpactLine(item.recommendation.primary)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {data?.window && (
+                <p className="mt-4 text-sm text-gray-400">
+                  Nota:{" "}
+                  {data.recommendations[0]?.recommendation.notes ||
+                    "Las recomendaciones se basan en ventas confirmadas y stock actual."}
+                </p>
+              )}
+            </>
           )}
         </>
       )}

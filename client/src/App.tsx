@@ -17,7 +17,7 @@ const AccountHold = lazy(() => import("./pages/AccountHold"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const CategoryProducts = lazy(() => import("./pages/CategoryProducts"));
-const Login = lazy(() => import("./pages/Login"));
+const Login = lazy(() => import("./features/auth/pages/LoginPage"));
 const LoginAdmin = lazy(() => import("./pages/LoginAdmin"));
 const LoginDistributor = lazy(() => import("./pages/LoginDistributor"));
 const LoginGod = lazy(() => import("./pages/LoginGod"));
@@ -28,10 +28,16 @@ const UserSettings = lazy(() => import("./pages/UserSettings"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const GodPanel = lazy(() => import("./pages/GodPanel"));
 
+const GlobalInventory = lazy(
+  () => import("./features/inventory/pages/InventoryPage")
+);
+
 // Admin pages
 const DashboardLayout = lazy(() => import("./pages/DashboardLayout"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Products = lazy(() => import("./pages/Products"));
+const Dashboard = lazy(
+  () => import("./features/analytics/pages/DashboardPage")
+);
+const Products = lazy(() => import("./features/inventory/pages/InventoryPage"));
 const Categories = lazy(() => import("./pages/Categories"));
 const AddProduct = lazy(() => import("./pages/AddProduct"));
 const EditProduct = lazy(() => import("./pages/EditProduct"));
@@ -47,10 +53,12 @@ const Rankings = lazy(() => import("./pages/Rankings"));
 const DefectiveProductsManagement = lazy(
   () => import("./pages/DefectiveProductsManagement")
 );
-const AdminRegisterSale = lazy(() => import("./pages/AdminRegisterSale"));
+const AdminRegisterSale = lazy(
+  () => import("./features/sales/pages/RegisterSalePage")
+);
 const AdvancedDashboard = lazy(() => import("./pages/AdvancedDashboard"));
 const SpecialSales = lazy(() => import("./pages/SpecialSales"));
-const ProfitHistory = lazy(() => import("./pages/ProfitHistory"));
+
 const Expenses = lazy(() => import("./pages/Expenses"));
 const BusinessAssistant = lazy(() => import("./pages/BusinessAssistant"));
 const Credits = lazy(() => import("./pages/Credits"));
@@ -71,7 +79,9 @@ const DistributorDashboardLayout = lazy(
 );
 const DistributorDashboard = lazy(() => import("./pages/DistributorDashboard"));
 const DistributorProducts = lazy(() => import("./pages/DistributorProducts"));
-const RegisterSale = lazy(() => import("./pages/RegisterSale"));
+const RegisterSale = lazy(
+  () => import("./features/sales/pages/RegisterSalePage")
+);
 const DistributorSales = lazy(() => import("./pages/DistributorSales"));
 const DistributorCredits = lazy(() => import("./pages/DistributorCredits"));
 const DistributorStats = lazy(() => import("./pages/DistributorStats"));
@@ -195,6 +205,14 @@ export default function App() {
             }
           />
           <Route
+            path="global-inventory"
+            element={
+              <BusinessGate requiredFeature="inventory">
+                <GlobalInventory />
+              </BusinessGate>
+            }
+          />
+          <Route
             path="branches"
             element={
               <BusinessGate requiredFeature="inventory">
@@ -242,14 +260,7 @@ export default function App() {
               </BusinessGate>
             }
           />
-          <Route
-            path="profit-history"
-            element={
-              <BusinessGate requiredFeature="reports">
-                <ProfitHistory />
-              </BusinessGate>
-            }
-          />
+
           <Route
             path="expenses"
             element={
@@ -260,6 +271,14 @@ export default function App() {
           />
           <Route
             path="analytics"
+            element={
+              <BusinessGate requiredFeature="reports">
+                <AdvancedDashboard />
+              </BusinessGate>
+            }
+          />
+          <Route
+            path="profit-history"
             element={
               <BusinessGate requiredFeature="reports">
                 <AdvancedDashboard />

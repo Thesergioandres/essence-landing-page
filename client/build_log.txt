@@ -1,0 +1,24 @@
+﻿src/features/auth/api/auth.service.ts(3,3): error TS1484: 'AuthResponse' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/auth/api/auth.service.ts(4,3): error TS1484: 'LoginCredentials' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/auth/api/auth.service.ts(5,3): error TS1484: 'RegisterCredentials' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/auth/hooks/useAuth.ts(4,10): error TS1484: 'LoginCredentials' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/auth/hooks/useAuth.ts(4,28): error TS1484: 'RegisterCredentials' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/inventory/api/products.service.ts(3,3): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/inventory/api/products.service.ts(4,3): error TS1484: 'ProductFormData' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/inventory/api/products.service.ts(5,3): error TS1484: 'StockUpdatePayload' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/inventory/components/ProductForm.tsx(1,10): error TS1484: 'ChangeEvent' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/inventory/components/ProductForm.tsx(1,23): error TS1484: 'FormEvent' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/inventory/components/ProductForm.tsx(3,10): error TS1484: 'ProductFormData' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/inventory/components/ProductForm.tsx(38,9): error TS6133: 'handleFileChange' is declared but its value is never read.
+src/features/inventory/hooks/useProducts.ts(3,10): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/inventory/hooks/useStock.ts(3,10): error TS1484: 'StockUpdatePayload' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/inventory/pages/InventoryPage.tsx(8,37): error TS6133: 'refresh' is declared but its value is never read.
+src/features/sales/api/sales.service.ts(2,10): error TS1484: 'BulkSalePayload' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/sales/api/sales.service.ts(2,27): error TS1484: 'SaleResponse' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/sales/hooks/useCart.ts(2,10): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/sales/hooks/useCart.ts(3,10): error TS1484: 'SaleItem' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/sales/hooks/useSaleSubmit.ts(3,10): error TS1484: 'BulkSalePayload' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/sales/hooks/useSaleSubmit.ts(3,27): error TS1484: 'SaleResponse' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/pages/StockManagement.tsx(681,35): error TS2339: Property 'type' does not exist on type 'Product'.
+src/shared/api/httpClient.ts(1,29): error TS1484: 'InternalAxiosRequestConfig' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/ui/Input.tsx(1,10): error TS1484: 'InputHTMLAttributes' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.

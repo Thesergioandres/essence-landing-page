@@ -27,8 +27,18 @@ const checkBusinessOwnerAccess = async (userId) => {
       return { hasAccess: true };
     }
 
+    // Obtener el owner del negocio
     const owner = await User.findById(business.createdBy);
     if (!owner) {
+      return { hasAccess: true };
+    }
+
+    // ⭐ GOD BYPASS: Si el dueño del negocio es GOD, permitir acceso siempre
+    console.log(
+      `🔍 Checking Owner Access: OwnerID=${owner._id}, Role=${owner.role}, Status=${owner.status}`,
+    );
+    if (owner.role === "god") {
+      console.log("✅ GOD BYPASS ACTIVATED");
       return { hasAccess: true };
     }
 

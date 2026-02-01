@@ -46,7 +46,9 @@ export const assignStockToDistributor = async (req, res) => {
 
     // Verificar stock en bodega
     const product = await Product.findOne(
-      businessId ? { _id: productId, business: businessId } : { _id: productId }
+      businessId
+        ? { _id: productId, business: businessId }
+        : { _id: productId },
     );
     if (!product) {
       return res.status(404).json({ message: "Producto no encontrado" });
@@ -95,7 +97,7 @@ export const assignStockToDistributor = async (req, res) => {
         warehouseStock: { $gte: quantity },
       },
       { $inc: { warehouseStock: -quantity } },
-      { new: true }
+      { new: true },
     );
 
     if (!updateResult) {
@@ -200,7 +202,7 @@ export const withdrawStockFromDistributor = async (req, res) => {
         quantity: { $gte: quantity },
       },
       { $inc: { quantity: -quantity } },
-      { new: true }
+      { new: true },
     );
 
     if (!stockUpdateResult) {
@@ -213,7 +215,7 @@ export const withdrawStockFromDistributor = async (req, res) => {
     const product = await Product.findOneAndUpdate(
       { _id: productId, business: businessId },
       { $inc: { warehouseStock: quantity } },
-      { new: true }
+      { new: true },
     );
 
     res.json({
@@ -247,7 +249,39 @@ export const getDistributorStock = async (req, res) => {
       distributorId = req.user.userId || req.user.id;
     }
 
-    // Verificar permisos: admin/god/super_admin pueden ver cualquiera; distribuidor solo el suyo
+    // --- SELF HEALING: Sync Allowed Branches if missing ---
+    if (distributorId === (req.user.userId || req.user.id)) {
+      try {
+        const currentMem = await Membership.findOne({
+          user: distributorId,
+          business: businessId,
+        });
+        if (
+          currentMem &&
+          currentMem.allowedBranches &&
+          currentMem.allowedBranches.length > 0
+        ) {
+          // Check if User model has them (Optimistic)
+          const userDoc = await User.findById(distributorId);
+          if (
+            userDoc &&
+            (!userDoc.allowedBranches || userDoc.allowedBranches.length === 0)
+          ) {
+            console.log(
+              "🩹 SELF-HEALING: Syncing allowedBranches to User Model for",
+              distributorId,
+            );
+            userDoc.allowedBranches = currentMem.allowedBranches;
+            await userDoc.save();
+          }
+        }
+      } catch (healErr) {
+        console.warn("Self-healing failed (non-critical):", healErr);
+      }
+    }
+    // -----------------------------------------------------
+
+    // Verificar permisos
     const currentUserId = req.user.userId || req.user.id;
     const isAdminLike =
       req.user.role === "admin" ||
@@ -260,6 +294,7 @@ export const getDistributorStock = async (req, res) => {
       });
     }
 
+    // 1. Fetch existing stock
     const stock = await DistributorStock.find({
       distributor: distributorId,
       business: businessId,
@@ -267,16 +302,132 @@ export const getDistributorStock = async (req, res) => {
       .select("product distributor quantity lowStockAlert createdAt updatedAt")
       .populate(
         "product",
-        "name image purchasePrice distributorPrice clientPrice"
+        "name image purchasePrice distributorPrice clientPrice",
       )
       .populate("distributor", "name email")
       .lean();
 
-    // Agregar alertas de stock bajo
-    const stockWithAlerts = stock.map((item) => ({
-      ...item,
-      isLowStock: item.quantity <= item.lowStockAlert,
-    }));
+    // 2. Fetch User to get assignedProducts (for 0 stock items)
+    const userDoc =
+      await User.findById(distributorId).select("assignedProducts");
+    const assignedIds = (userDoc?.assignedProducts || []).map((id) =>
+      id.toString(),
+    );
+
+    // 3. Find missing products (Assigned but not in Stock)
+    const existingStockProductIds = stock
+      .filter((s) => s && s.product) // Filter out invalid records
+      .map((s) =>
+        s.product._id ? s.product._id.toString() : s.product.toString(),
+      );
+
+    const missingProductIds = assignedIds.filter(
+      (id) => !existingStockProductIds.includes(id),
+    );
+
+    if (missingProductIds.length > 0) {
+      const missingProducts = await Product.find({
+        _id: { $in: missingProductIds },
+        business: businessId,
+      })
+        .select("name image purchasePrice distributorPrice clientPrice")
+        .lean();
+
+      // Create synthetic 0-stock records
+      const zeroStockItems = missingProducts.map((prod) => ({
+        _id: `synthetic-${prod._id}`,
+        distributor: { _id: distributorId },
+        product: prod,
+        quantity: 0,
+        lowStockAlert: 5,
+        isLowStock: true,
+        isSynthetic: true,
+      }));
+
+      // Only push valid items
+      if (zeroStockItems.length > 0) {
+        stock.push(...zeroStockItems);
+      }
+    }
+
+    // Agregar alertas de stock bajo e Inyectar Promociones Virtuales
+    const stockWithAlerts = stock
+      .filter((item) => item !== null && item !== undefined) // 🛡️ Safety Check
+      .map((item) => ({
+        ...item,
+        isLowStock: item.quantity <= (item.lowStockAlert || 0),
+      }));
+
+    // --- LÓGICA DE PROMOCIONES VIRTUALES (Use Safe ID Extraction) ---
+    try {
+      const Promotion = mongoose.model("Promotion");
+      const promotions = await Promotion.find({
+        business: businessId,
+        status: "active",
+      })
+        .populate("comboItems.product")
+        .lean();
+
+      // 2. BUILD STOCK MAP (SAFE ID CONVERSION)
+      const stockMap = {}; // Map<ProductIdString, Quantity>
+      stock.forEach((item) => {
+        if (item.product) {
+          const pId = item.product._id
+            ? item.product._id.toString()
+            : item.product.toString();
+          stockMap[pId] = (stockMap[pId] || 0) + item.quantity;
+        }
+      });
+
+      const virtualPromos = promotions
+        .map((promo) => {
+          if (!promo.comboItems || promo.comboItems.length === 0) return null;
+
+          const maxPossibilities = promo.comboItems.map((item) => {
+            if (!item.product) return 999999;
+
+            // Safe ID Extraction
+            const rawProduct = item.product;
+            const ingId = rawProduct._id
+              ? rawProduct._id.toString()
+              : rawProduct.toString();
+
+            const available = stockMap[ingId] || 0;
+            const required = item.quantity || 1;
+            return Math.floor(available / required);
+          });
+
+          const virtualQty = Math.min(...maxPossibilities);
+
+          if (virtualQty > 0) {
+            return {
+              _id: `virtual-${promo._id}`,
+              distributor: { _id: distributorId },
+              product: {
+                _id: promo._id,
+                name: `📦 ${promo.name}`,
+                image: promo.image,
+                purchasePrice: promo.averageCost || 0,
+                distributorPrice: promo.distributorPrice,
+                clientPrice: promo.promotionPrice,
+                isPromotion: true,
+                totalStock: virtualQty, // Para el frontend
+              },
+              quantity: virtualQty,
+              lowStockAlert: 0,
+              isLowStock: false,
+              isVirtual: true,
+            };
+          }
+          return null;
+        })
+        .filter((p) => p !== null);
+
+      stockWithAlerts.push(...virtualPromos);
+    } catch (promoError) {
+      console.error("Error calculando promociones en stock:", promoError);
+      // No fallamos el request principal
+    }
 
     res.json(stockWithAlerts);
   } catch (error) {
@@ -331,14 +482,14 @@ export const getStockAlerts = async (req, res) => {
 
     // Distribuidores con stock bajo
     const lowDistributorStock = await DistributorStock.find(
-      businessId ? { business: businessId } : {}
+      businessId ? { business: businessId } : {},
     )
       .populate("product", "name")
       .populate("distributor", "name email")
       .lean();
 
     const distributorAlerts = lowDistributorStock.filter(
-      (item) => item.quantity <= item.lowStockAlert
+      (item) => item.quantity <= item.lowStockAlert,
     );
 
     res.json({
@@ -371,7 +522,7 @@ export const getBranchStock = async (req, res) => {
       .populate("branch", "name")
       .populate(
         "product",
-        "name image purchasePrice distributorPrice clientPrice"
+        "name image purchasePrice distributorPrice clientPrice",
       )
       .lean();
 
@@ -523,7 +674,7 @@ export const transferStockBetweenDistributors = async (req, res) => {
             product: productId,
             business: businessId,
           }
-        : { distributor: fromDistributorId, product: productId }
+        : { distributor: fromDistributorId, product: productId },
     );
 
     if (!fromStock || fromStock.quantity < quantity) {
@@ -545,7 +696,7 @@ export const transferStockBetweenDistributors = async (req, res) => {
             product: productId,
             business: businessId,
           }
-        : { distributor: toDistributorId, product: productId }
+        : { distributor: toDistributorId, product: productId },
     );
 
     const toStockBefore = toStock?.quantity || 0;
@@ -574,7 +725,7 @@ export const transferStockBetweenDistributors = async (req, res) => {
     }
 
     const hasProduct = toDistributor.assignedProducts.some(
-      (p) => p.toString() === productId.toString()
+      (p) => p.toString() === productId.toString(),
     );
 
     if (!hasProduct) {
@@ -639,7 +790,7 @@ export const transferStockBetweenDistributors = async (req, res) => {
     } catch (auditError) {
       console.error(
         "⚠️  Error al crear log de auditoría (no crítico):",
-        auditError.message
+        auditError.message,
       );
     }
 
@@ -724,7 +875,7 @@ export const getTransferHistory = async (req, res) => {
     const [transfers, total] = await Promise.all([
       StockTransfer.find(filters)
         .select(
-          "fromDistributor toDistributor product quantity fromStockBefore fromStockAfter toStockBefore toStockAfter status createdAt"
+          "fromDistributor toDistributor product quantity fromStockBefore fromStockAfter toStockBefore toStockAfter status createdAt",
         )
         .populate("fromDistributor", "name email")
         .populate("toDistributor", "name email")
@@ -772,11 +923,18 @@ export const getMyAllowedBranches = async (req, res) => {
     const businessId = resolveBusinessId(req);
     const userId = req.user?.id;
 
+    console.log(
+      "[DEBUG] getMyAllowedBranches for User:",
+      userId,
+      "Business:",
+      businessId,
+    );
+
     if (!businessId) {
       return res.status(400).json({ message: "Falta x-business-id" });
     }
 
-    // Obtener membership del usuario para ver sus bodegas permitidas
+    // Obtener membership del usuario
     const membership = await Membership.findOne({
       user: userId,
       business: businessId,
@@ -790,6 +948,7 @@ export const getMyAllowedBranches = async (req, res) => {
     }
 
     const allowedBranches = membership.allowedBranches || [];
+    console.log("[DEBUG] Allowed Branches Count:", allowedBranches.length);
 
     if (allowedBranches.length === 0) {
       return res.json({
@@ -798,36 +957,145 @@ export const getMyAllowedBranches = async (req, res) => {
       });
     }
 
-    // Obtener el stock de cada bodega permitida
-    const branchIds = allowedBranches.map((b) => b._id);
+    // Obtener stock de bodegas
+    const branches = allowedBranches;
+    const branchIds = branches.map((b) => b._id);
+    const warehouseBranches = branches.filter((b) => b.isWarehouse);
+    const regularBranches = branches.filter((b) => !b.isWarehouse);
+    const regularBranchIds = regularBranches.map((b) => b._id);
 
+    // FIX: Simplified Query - Remove business filter completely to ensure we see all stock for these branches
+    console.log("☢️ NUCLEAR FETCH for Branch IDs:", branchIds);
+
+    // 1. Fetch Regular Branch Stock (BranchStock)
     const branchStocks = await BranchStock.find({
-      business: businessId,
-      branch: { $in: branchIds },
+      branch: { $in: regularBranchIds },
+      // business: businessId, // IGNORE BUSINESS CONTEXT - NUCLEAR OPTION
       quantity: { $gt: 0 },
     })
       .populate("product", "name image clientPrice distributorPrice")
       .populate("branch", "name address isWarehouse")
       .lean();
 
-    // Agrupar stock por bodega
+    // 2. Fetch Warehouse Stock (Product.warehouseStock) if applicable
+    let warehouseStockItems = [];
+    if (warehouseBranches.length > 0) {
+      const ProductModel = mongoose.model("Product");
+      // Fetch all products with warehouse stock > 0
+      const products = await ProductModel.find({
+        business: businessId,
+        warehouseStock: { $gt: 0 },
+      })
+        .select("name image clientPrice distributorPrice warehouseStock")
+        .lean();
+
+      // Map products to "Stock Item" format for each warehouse branch
+      warehouseBranches.forEach((wb) => {
+        const items = products.map((p) => ({
+          branch: wb,
+          product: p,
+          quantity: p.warehouseStock, // Use global warehouse stock
+          isGlobal: true,
+        }));
+        warehouseStockItems.push(...items);
+      });
+
+      console.log(
+        `[DEBUG] Fetched ${products.length} global products for ${warehouseBranches.length} warehouses`,
+      );
+    }
+
+    const allStockItems = [...branchStocks, ...warehouseStockItems];
+    console.log("[DEBUG] Total Combined Stock Items:", allStockItems.length);
+
+    // Obtener promociones activas
+    let promotions = [];
+    try {
+      const Promotion = mongoose.model("Promotion");
+      promotions = await Promotion.find({
+        business: businessId,
+        status: "active",
+      })
+        .populate("comboItems.product")
+        .lean();
+    } catch (e) {
+      console.error("Error cargando promociones:", e);
+    }
+
+    // Agrupar y Calcular Virtual Stock
     const branchesWithStock = allowedBranches
       .filter((branch) => branch.active !== false)
       .map((branch) => {
-        const stockItems = branchStocks.filter(
-          (s) => s.branch?._id?.toString() === branch._id.toString()
+        const stockItems = allStockItems.filter(
+          (s) => s.branch?._id?.toString() === branch._id.toString(),
         );
+
+        // 2. BUILD STOCK MAP (SAFE ID CONVERSION)
+        const stockMap = {}; // Map<ProductIdString, Quantity>
+        stockItems.forEach((item) => {
+          if (item.product) {
+            const pId = item.product._id
+              ? item.product._id.toString()
+              : item.product.toString();
+            stockMap[pId] = (stockMap[pId] || 0) + item.quantity;
+          }
+        });
+
+        // 3. INJECT PROMOTIONS (VIRTUAL STOCK MATH)
+        const virtualPromos = promotions
+          .map((promo) => {
+            if (!promo.comboItems || promo.comboItems.length === 0) return null;
+
+            const maxPossibilities = promo.comboItems.map((item) => {
+              if (!item.product) return 999999;
+
+              // Safe ID Extraction
+              const rawProduct = item.product;
+              const ingId = rawProduct._id
+                ? rawProduct._id.toString()
+                : rawProduct.toString();
+
+              const available = stockMap[ingId] || 0;
+              const required = item.quantity || 1;
+              return Math.floor(available / required);
+            });
+
+            const virtualQty = Math.min(...maxPossibilities);
+
+            if (virtualQty > 0) {
+              return {
+                product: {
+                  _id: promo._id,
+                  name: `📦 ${promo.name}`,
+                  image: promo.image,
+                  clientPrice: promo.promotionPrice,
+                  distributorPrice: promo.distributorPrice,
+                  isPromotion: true,
+                },
+                quantity: virtualQty,
+                isVirtual: true,
+              };
+            }
+            return null;
+          })
+          .filter((p) => p !== null);
+
+        const finalStock = [
+          ...stockItems.map((s) => ({
+            product: s.product,
+            quantity: s.quantity,
+          })),
+          ...virtualPromos,
+        ];
+
         return {
           _id: branch._id,
           name: branch.name,
           address: branch.address,
           isWarehouse: branch.isWarehouse,
-          stock: stockItems.map((s) => ({
-            product: s.product,
-            quantity: s.quantity,
-          })),
-          totalProducts: stockItems.length,
-          totalUnits: stockItems.reduce((acc, s) => acc + s.quantity, 0),
+          stock: finalStock,
+          totalProducts: finalStock.length,
+          totalUnits: finalStock.reduce((acc, s) => acc + s.quantity, 0),
         };
       });
 
@@ -836,6 +1104,164 @@ export const getMyAllowedBranches = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al obtener bodegas permitidas:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Obtener inventario global (God Mode)
+// @route   GET /api/stock/global
+// @access  Private/Admin
+export const getGlobalInventory = async (req, res) => {
+  try {
+    const businessId = resolveBusinessId(req);
+    if (!businessId) {
+      return res.status(400).json({ message: "Falta x-business-id" });
+    }
+
+    // 1. Fetch all Products (Source of Truth)
+    const products = await Product.find({ business: businessId })
+      .select("name image sku warehouseStock totalStock category")
+      .populate("category", "name")
+      .lean();
+
+    // 2. Aggregate Branch Stock ...
+    const branchStocks = await BranchStock.find({
+      business: businessId,
+      quantity: { $gt: 0 },
+    })
+      .populate("branch", "name")
+      .lean();
+
+    // Fetch all DistributorStock
+    const distributorStocks = (await import("../models/DistributorStock.js"))
+      .default;
+    const distStocks = await distributorStocks
+      .find({ quantity: { $gt: 0 } })
+      .populate("distributor", "name email")
+      .lean();
+
+    // 3. Map aggregates
+    // Map<ProductId, { branchTotal, distTotal, branchDetails: [], distDetails: [] }>
+    const stockMap = new Map();
+
+    // Fill Map with Products first
+    products.forEach((p) => {
+      stockMap.set(p._id.toString(), {
+        product: p,
+        warehouse: p.warehouseStock || 0,
+        branches: 0,
+        branchDetails: [], // Array of { name, quantity }
+        distributors: 0,
+        distributorDetails: [], // Array of { name, quantity }
+        total: p.warehouseStock || 0,
+        systemTotal: p.totalStock || 0, // Total declarado en ficha del producto
+      });
+    });
+
+    // Sum Branch Stock
+    for (const stock of branchStocks) {
+      const pId = stock.product?.toString();
+      if (stockMap.has(pId)) {
+        const entry = stockMap.get(pId);
+        entry.branches += stock.quantity;
+        entry.branchDetails.push({
+          name: stock.branch?.name || "Sede desconocida",
+          quantity: stock.quantity,
+        });
+        entry.total += stock.quantity;
+      }
+    }
+
+    // Sum Distributor Stock
+    for (const stock of distStocks) {
+      const pId = stock.product?.toString();
+      if (stockMap.has(pId)) {
+        const entry = stockMap.get(pId);
+        entry.distributors += stock.quantity;
+        entry.distributorDetails.push({
+          name: stock.distributor?.name || "Distribuidor desconocido",
+          quantity: stock.quantity,
+        });
+        entry.total += stock.quantity;
+      }
+    }
+
+    // Convert to Array
+    const globalInventory = Array.from(stockMap.values());
+
+    // Sort by Total Name
+    globalInventory.sort((a, b) => b.total - a.total);
+
+    res.json({
+      success: true,
+      inventory: globalInventory,
+    });
+  } catch (error) {
+    console.error("Error getting global inventory:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const reconcileUnassignedStock = async (req, res) => {
+  try {
+    const { productId } = req.body;
+    const businessId = resolveBusinessId(req);
+
+    if (!productId) {
+      return res.status(400).json({ message: "Falta productId" });
+    }
+
+    // 1. Fetch Product
+    const product = await Product.findOne({
+      _id: productId,
+      business: businessId,
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    // 2. Fetch Active Stocks (Branches & Distributors)
+    const branchStocks = await BranchStock.find({
+      product: productId,
+      business: businessId,
+    }).lean();
+
+    const distributorStocks = (await import("../models/DistributorStock.js"))
+      .default;
+    const distStocks = await distributorStocks
+      .find({ product: productId })
+      .lean();
+
+    const branchTotal = branchStocks.reduce((sum, s) => sum + s.quantity, 0);
+    const distTotal = distStocks.reduce((sum, s) => sum + s.quantity, 0);
+    const currentWarehouse = product.warehouseStock || 0;
+
+    const calculatedTotal = currentWarehouse + branchTotal + distTotal;
+    const systemTotal = product.totalStock || 0;
+    const unassigned = systemTotal - calculatedTotal;
+
+    if (unassigned <= 0) {
+      return res
+        .status(400)
+        .json({ message: "No hay stock sin asignar para reconciliar" });
+    }
+
+    // 3. Move Unassigned to Warehouse
+    // Note: We leave totalStock as is, we just increase warehouseStock to match the difference
+    product.warehouseStock = currentWarehouse + unassigned;
+
+    // Optional: We could log this movement in a Helper logic if strict auditing is needed
+    // For now, prompt update
+    await product.save();
+
+    res.json({
+      success: true,
+      message: `Se movieron ${unassigned} unidades a Bodega Principal`,
+      newWarehouseStock: product.warehouseStock,
+    });
+  } catch (error) {
+    console.error("Error reconcialiando stock:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -962,7 +1388,7 @@ export const transferStockToBranch = async (req, res) => {
               quantity: quantity,
             },
           ],
-          { session }
+          { session },
         );
         branchStock = branchStock[0];
       }
@@ -981,7 +1407,7 @@ export const transferStockToBranch = async (req, res) => {
             completedAt: new Date(),
           },
         ],
-        { session }
+        { session },
       );
 
       await session.commitTransaction();
@@ -1018,5 +1444,96 @@ export const transferStockToBranch = async (req, res) => {
     res.status(500).json({
       message: error.message || "Error al transferir stock a sede",
     });
+  }
+};
+
+export const syncProductStock = async (req, res) => {
+  try {
+    const { productId } = req.body;
+    const Product = (await import("../models/Product.js")).default;
+    const BranchStock = (await import("../models/BranchStock.js")).default;
+    const DistributorStock = (await import("../models/DistributorStock.js"))
+      .default;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    // Calculate real stock in all locations
+    const branchStocks = await BranchStock.find({ product: productId });
+    const totalBranchStock = branchStocks.reduce(
+      (acc, curr) => acc + curr.quantity,
+      0,
+    );
+
+    const distStocks = await DistributorStock.find({ product: productId });
+    const totalDistStock = distStocks.reduce(
+      (acc, curr) => acc + curr.quantity,
+      0,
+    );
+
+    const warehouseStock = product.warehouseStock || 0;
+
+    const realTotal = warehouseStock + totalBranchStock + totalDistStock;
+
+    // Update system total
+    product.totalStock = realTotal;
+    await product.save();
+
+    res.json({
+      success: true,
+      message: "Total del sistema sincronizado con stock físico",
+      newTotal: realTotal,
+    });
+  } catch (error) {
+    console.error("Error syncing stock:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const syncAllProductStocks = async () => {
+  try {
+    console.log("🔄 Starting full stock synchronization...");
+    const Product = (await import("../models/Product.js")).default;
+    const BranchStock = (await import("../models/BranchStock.js")).default;
+    const DistributorStock = (await import("../models/DistributorStock.js"))
+      .default;
+
+    const products = await Product.find({});
+    let updatedCount = 0;
+
+    for (const product of products) {
+      // Calculate real stock in all locations
+      const branchStocks = await BranchStock.find({ product: product._id });
+      const totalBranchStock = branchStocks.reduce(
+        (acc, curr) => acc + curr.quantity,
+        0,
+      );
+
+      const distStocks = await DistributorStock.find({ product: product._id });
+      const totalDistStock = distStocks.reduce(
+        (acc, curr) => acc + curr.quantity,
+        0,
+      );
+
+      const warehouseStock = product.warehouseStock || 0;
+      const realTotal = warehouseStock + totalBranchStock + totalDistStock;
+
+      if (product.totalStock !== realTotal) {
+        console.log(
+          `📝 Fixing stock for ${product.name}: ${product.totalStock} -> ${realTotal}`,
+        );
+        product.totalStock = realTotal;
+        await product.save();
+        updatedCount++;
+      }
+    }
+
+    console.log(
+      `✅ Stock synchronization complete. Updated ${updatedCount} products.`,
+    );
+  } catch (error) {
+    console.error("❌ Error running stock synchronization:", error);
   }
 };

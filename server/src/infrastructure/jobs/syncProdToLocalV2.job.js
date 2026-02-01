@@ -23,15 +23,15 @@ import fs from "fs";
 import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
-import { validateProdReadOnlyPermissions } from "../config/validateProdReadOnlyPermissions.js";
-import { installFullProtection } from "../security/mongooseWriteProtector.js";
-import { syncLogger } from "../utils/syncLogger.js";
+import { validateProdReadOnlyPermissions } from "../../../config/validateProdReadOnlyPermissions.js";
+import { installFullProtection } from "../../../security/mongooseWriteProtector.js";
+import { syncLogger } from "../../../utils/syncLogger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Cargar variables de entorno
-dotenv.config({ path: path.join(__dirname, "..", ".env") });
+dotenv.config({ path: path.join(__dirname, "../../..", ".env") });
 
 // ============================================================================
 // CONFIGURACIÓN
@@ -45,7 +45,7 @@ const CONFIG = {
     "mongodb://localhost:27017/essence_local",
 
   // Archivo de estado
-  STATE_FILE: path.join(__dirname, "..", "data", "sync-state.json"),
+  STATE_FILE: path.join(__dirname, "../../..", "data", "sync-state.json"),
 
   // Configuración de batches
   BATCH_SIZE: parseInt(process.env.SYNC_BATCH_SIZE) || 1000,
@@ -600,7 +600,7 @@ async function runSync() {
 // Ejecutar si es el módulo principal
 const isMainModule =
   process.argv[1] &&
-  (process.argv[1].endsWith("syncProdToLocalV2.js") ||
+  (process.argv[1].endsWith("syncProdToLocalV2.job.js") ||
     process.argv[1].includes("syncProdToLocalV2"));
 
 if (isMainModule) {
@@ -625,9 +625,9 @@ if (isMainModule) {
 // ============================================================================
 
 export {
-  closeConnections,
   COLLECTIONS_TO_SYNC,
   CONFIG,
+  closeConnections,
   connectToLocal,
   connectToProd,
   loadSyncState,

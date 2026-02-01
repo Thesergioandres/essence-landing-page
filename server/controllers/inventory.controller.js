@@ -18,7 +18,7 @@ const generateRequestId = () => {
   const now = new Date();
   return `REQ-${now.getFullYear()}${String(now.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}${String(now.getDate()).padStart(2, "0")}-${now.getTime()}-${Math.random()
     .toString(36)
     .slice(2, 8)}`;
@@ -107,7 +107,7 @@ export const createInventoryEntry = async (req, res) => {
       await BranchStock.findOneAndUpdate(
         { business: businessId, branch: branch._id, product: product._id },
         { $inc: { quantity: qty } },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, new: true, setDefaultsOnInsert: true },
       );
     } else {
       product.warehouseStock = (product.warehouseStock || 0) + qty;
@@ -396,22 +396,54 @@ export const deleteInventoryEntry = async (req, res) => {
         .json({ message: "Producto no encontrado para revertir stock" });
     }
 
-    const qty = entry.quantity;
+    // === LÓGICA DE REVERSIÓN DE COSTO PROMEDIO ===
+    // 1. Revertir valor total del inventario
+    // TotalValue actual - (Costo Unitario de la entrada * Cantidad de la entrada)
+    // O usar entry.totalCost si se guardó confiablemente.
+    const entryTotalCost =
+      entry.totalCost || entry.quantity * (entry.unitCost || 0);
+
+    const currentTotalValue = product.totalInventoryValue || 0;
+    const currentTotalStock = product.totalStock || 0;
+
+    let newTotalValue = currentTotalValue - entryTotalCost;
+    let newTotalStock = currentTotalStock - qty;
+
+    // Protecciones contra valores negativos
+    if (newTotalValue < 0) newTotalValue = 0;
+    if (newTotalStock < 0) newTotalStock = 0;
+
+    // 2. Recalcular promedio
+    let newAverageCost = product.averageCost; // mantener si algo falla
+
+    if (newTotalStock > 0) {
+      newAverageCost = newTotalValue / newTotalStock;
+    } else {
+      // Si el stock vuelve a 0, ¿qué costo ponemos?
+      // Opción A: Mantener el último promedio conocido (no hacer nada)
+      // Opción B: Resetear al precio de compra base
+      // Preferimos Opción B para evitar "costos fantasma"
+      newAverageCost = product.purchasePrice || 0;
+      newTotalValue = 0; // asegurar coherencia
+    }
+
+    // Actualizar producto
+    product.totalStock = newTotalStock;
+    product.totalInventoryValue = newTotalValue;
+    product.averageCost = newAverageCost;
 
     // Revertir el stock según el destino original
     if (entry.destination === "branch" && entry.branch) {
       // Reducir stock de la sede
       await BranchStock.findOneAndUpdate(
         { business: businessId, branch: entry.branch, product: product._id },
-        { $inc: { quantity: -qty } }
+        { $inc: { quantity: -qty } },
       );
     } else {
       // Reducir stock de bodega
       product.warehouseStock = Math.max(0, (product.warehouseStock || 0) - qty);
     }
 
-    // Reducir stock total
-    product.totalStock = Math.max(0, (product.totalStock || 0) - qty);
     await product.save({ validateBeforeSave: false });
 
     // Eliminar la entrada

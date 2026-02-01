@@ -158,6 +158,11 @@ export const getCreditsLegacy = async (req, res) => {
 
     const filter = { business: businessId };
 
+    // Si es distribuidor, solo ver sus créditos
+    if (req.user.role === "distribuidor") {
+      filter.createdBy = req.user.id;
+    }
+
     if (status) filter.status = status;
     if (customerId) filter.customer = customerId;
     if (branchId) filter.branch = branchId;

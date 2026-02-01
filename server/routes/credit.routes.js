@@ -168,7 +168,7 @@ router.get(
  */
 router
   .route("/")
-  .get(admin, getCredits)
+  .get(getCredits)
   .post(creditValidation.create, admin, createCredit);
 
 /**

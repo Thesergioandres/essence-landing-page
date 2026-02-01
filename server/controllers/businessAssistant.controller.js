@@ -624,6 +624,37 @@ export const generateBusinessAssistantRecommendations = async ({
   // heurística adicional para liquidación cuando hay mucho stock y 0 ventas
   const clearanceDiscountPct = -20;
 
+  // --- ABC CLASSIFICATION (PARETO 80/15/5) ---
+  const totalRecentRevenue = productsUnified.reduce(
+    (sum, p) => sum + (Number(p.recentRevenue) || 0),
+    0,
+  );
+
+  const sortedByRevenue = [...productsUnified].sort(
+    (a, b) => (Number(b.recentRevenue) || 0) - (Number(a.recentRevenue) || 0),
+  );
+
+  let accumulatedRevenue = 0;
+  const abcClassMap = new Map();
+
+  for (const p of sortedByRevenue) {
+    const revenue = Number(p.recentRevenue) || 0;
+    accumulatedRevenue += revenue;
+    const accumulatedPct =
+      totalRecentRevenue > 0 ? accumulatedRevenue / totalRecentRevenue : 1;
+
+    let abcClass = "C";
+    if (revenue > 0) {
+      if (accumulatedPct <= 0.8) {
+        abcClass = "A";
+      } else if (accumulatedPct <= 0.95) {
+        abcClass = "B";
+      }
+    }
+    abcClassMap.set(String(p.productId), abcClass);
+  }
+  // -------------------------------------------
+
   const recommendations = productsUnified
     .map((p) => {
       const warehouseStock = Number(p.warehouseStock) || 0;
@@ -1084,6 +1115,33 @@ export const generateBusinessAssistantRecommendations = async ({
         }
       }
 
+      // A. Lógica de Justificación (Fallback)
+      if (justifications.length === 0) {
+        if (daysCover !== null) {
+          if (daysCover > 120) {
+            justifications.push(
+              "⚠️ Exceso de stock (Cobertura > 4 meses). Considera liquidar.",
+            );
+          } else if (daysCover > 60) {
+            justifications.push(
+              "📉 Rotación lenta. Stock alto para la demanda actual.",
+            );
+          } else if (daysCover > 15) {
+            justifications.push(
+              "✅ Stock saludable. Cobertura estable para el ciclo.",
+            );
+          }
+        }
+
+        if (warehouseStock === 0 && recentUnits === 0) {
+          justifications.push("💤 Sin actividad reciente. Evaluar demanda.");
+        }
+
+        if (justifications.length === 0) {
+          justifications.push("ℹ️ Revisar producto (datos neutros).");
+        }
+      }
+
       const primary = pickPrimaryAction(actions);
 
       const actionImpactScores = actions.map((a) =>
@@ -1098,6 +1156,7 @@ export const generateBusinessAssistantRecommendations = async ({
         productName: p.productName || "Producto",
         categoryId: p.category ? String(p.category) : null,
         categoryName: categoryName || null,
+        abcClass: abcClassMap.get(String(p.productId)) || "C",
         stock: {
           warehouseStock,
           totalStock: Number(p.totalStock) || 0,
@@ -1138,6 +1197,51 @@ export const generateBusinessAssistantRecommendations = async ({
       return confB - confA;
     });
 
+  // B. Motor de Promociones (Combos & Liquidez)
+  const anchors = recommendations.filter(
+    (r) => r.abcClass === "A" && r.stock.warehouseStock > 5,
+  );
+  const drags = recommendations.filter(
+    (r) =>
+      r.abcClass === "C" &&
+      r.stock.warehouseStock > 5 &&
+      r.metrics.recentUnits < 2,
+  );
+
+  const promotions = [];
+
+  if (anchors.length > 0 && drags.length > 0) {
+    // Generar hasta 3 sugerencias
+    const suggestionsCount = Math.min(3, anchors.length, drags.length);
+    const usedIndices = new Set();
+
+    for (let i = 0; i < suggestionsCount; i++) {
+      // Simple random pick avoiding exact duplicates if possible (not strictly enforced for simplicity)
+      const anchor = anchors[Math.floor(Math.random() * anchors.length)];
+      const drag = drags[Math.floor(Math.random() * drags.length)];
+
+      if (!anchor || !drag) continue;
+
+      const isCombo = Math.random() > 0.4; // 60% chance of combo
+
+      if (isCombo) {
+        promotions.push({
+          type: "combo",
+          title: "📦 Combo Limpieza",
+          description: `Compra 1 ${anchor.productName} y lleva ${drag.productName} con 20% OFF.`,
+          products: [anchor.productId, drag.productId],
+        });
+      } else {
+        promotions.push({
+          type: "volume",
+          title: "🔥 Promo Volumen",
+          description: `${drag.productName} 2x1 para recuperar liquidez.`,
+          products: [drag.productId],
+        });
+      }
+    }
+  }
+
   const payload = {
     generatedAt: new Date().toISOString(),
     window: {
@@ -1147,6 +1251,7 @@ export const generateBusinessAssistantRecommendations = async ({
       endDate: endDateStr || null,
     },
     recommendations,
+    promotions, // Nueva sección
   };
 
   if (!bypassCache && canUseRedis) {

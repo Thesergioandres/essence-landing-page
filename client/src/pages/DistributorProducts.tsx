@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
-import { stockService } from '../api/services';
-import type { DistributorStock } from '../types';
+import { useEffect, useState } from "react";
+import { stockService } from "../api/services";
+import type { DistributorStock } from "../types";
 
 export default function DistributorProducts() {
   const [stock, setStock] = useState<DistributorStock[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'normal' | 'low'>('all');
+  const [filter, setFilter] = useState<"all" | "normal" | "low">("all");
 
   useEffect(() => {
     loadStock();
@@ -14,32 +14,38 @@ export default function DistributorProducts() {
   const loadStock = async () => {
     try {
       setLoading(true);
-      const response = await stockService.getDistributorStock('me');
-      setStock(response);
+      const response = await stockService.getDistributorStock("me");
+      const productsOnly = response.filter(item => {
+        const product = typeof item.product === "object" ? item.product : null;
+        return product && !product.isPromotion;
+      });
+      setStock(productsOnly);
     } catch (error) {
-      console.error('Error al cargar inventario:', error);
+      console.error("Error al cargar inventario:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
       minimumFractionDigits: 0,
     }).format(value);
   };
 
-  const filteredStock = stock.filter((item) => {
-    if (filter === 'all') return true;
+  const filteredStock = stock.filter(item => {
+    if (filter === "all") return true;
     const isLowStock = item.quantity <= item.lowStockAlert;
-    if (filter === 'low') return isLowStock;
-    if (filter === 'normal') return !isLowStock;
+    if (filter === "low") return isLowStock;
+    if (filter === "normal") return !isLowStock;
     return true;
   });
 
-  const lowStockCount = stock.filter(item => item.quantity <= item.lowStockAlert).length;
+  const lowStockCount = stock.filter(
+    item => item.quantity <= item.lowStockAlert
+  ).length;
 
   if (loading) {
     return (
@@ -54,24 +60,22 @@ export default function DistributorProducts() {
       {/* Header */}
       <div>
         <h1 className="text-4xl font-bold text-white">Mis Productos</h1>
-        <p className="mt-2 text-gray-400">
-          Inventario asignado a tu cuenta
-        </p>
+        <p className="mt-2 text-gray-400">Inventario asignado a tu cuenta</p>
       </div>
 
       {/* Stats Summary */}
       <div className="grid gap-6 md:grid-cols-3">
-        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-blue-900/50 to-gray-800/50 p-6">
+        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-blue-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Total Productos</p>
           <p className="mt-2 text-3xl font-bold text-white">{stock.length}</p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-green-900/50 to-gray-800/50 p-6">
+        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-green-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Stock Normal</p>
           <p className="mt-2 text-3xl font-bold text-white">
             {stock.length - lowStockCount}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-linear-to-br from-red-900/50 to-gray-800/50 p-6">
+        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-red-900/50 to-gray-800/50 p-6">
           <p className="text-sm text-gray-400">Stock Bajo</p>
           <p className="mt-2 text-3xl font-bold text-white">{lowStockCount}</p>
         </div>
@@ -80,31 +84,31 @@ export default function DistributorProducts() {
       {/* Filters */}
       <div className="flex gap-4">
         <button
-          onClick={() => setFilter('all')}
+          onClick={() => setFilter("all")}
           className={`rounded-lg px-6 py-2 font-medium transition ${
-            filter === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            filter === "all"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-800 text-gray-400 hover:bg-gray-700"
           }`}
         >
           Todos ({stock.length})
         </button>
         <button
-          onClick={() => setFilter('normal')}
+          onClick={() => setFilter("normal")}
           className={`rounded-lg px-6 py-2 font-medium transition ${
-            filter === 'normal'
-              ? 'bg-green-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            filter === "normal"
+              ? "bg-green-600 text-white"
+              : "bg-gray-800 text-gray-400 hover:bg-gray-700"
           }`}
         >
           Stock Normal ({stock.length - lowStockCount})
         </button>
         <button
-          onClick={() => setFilter('low')}
+          onClick={() => setFilter("low")}
           className={`rounded-lg px-6 py-2 font-medium transition ${
-            filter === 'low'
-              ? 'bg-red-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            filter === "low"
+              ? "bg-red-600 text-white"
+              : "bg-gray-800 text-gray-400 hover:bg-gray-700"
           }`}
         >
           Stock Bajo ({lowStockCount})
@@ -128,15 +132,16 @@ export default function DistributorProducts() {
             />
           </svg>
           <p className="mt-4 text-lg text-gray-400">
-            {filter === 'all'
-              ? 'No tienes productos asignados'
-              : `No hay productos con ${filter === 'low' ? 'stock bajo' : 'stock normal'}`}
+            {filter === "all"
+              ? "No tienes productos asignados"
+              : `No hay productos con ${filter === "low" ? "stock bajo" : "stock normal"}`}
           </p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredStock.map((item) => {
-            const product = typeof item.product === 'object' ? item.product : null;
+          {filteredStock.map(item => {
+            const product =
+              typeof item.product === "object" ? item.product : null;
             const isLowStock = item.quantity <= item.lowStockAlert;
 
             return (
@@ -144,8 +149,8 @@ export default function DistributorProducts() {
                 key={item._id}
                 className={`rounded-xl border p-6 transition ${
                   isLowStock
-                    ? 'border-red-500 bg-red-900/20'
-                    : 'border-gray-700 bg-gray-800/50 hover:border-blue-500'
+                    ? "border-red-500 bg-red-900/20"
+                    : "border-gray-700 bg-gray-800/50 hover:border-blue-500"
                 }`}
               >
                 {/* Product Image */}
@@ -177,7 +182,7 @@ export default function DistributorProducts() {
                 <div className="mt-4">
                   <div className="flex items-start justify-between">
                     <h3 className="text-lg font-bold text-white">
-                      {product?.name || 'Producto'}
+                      {product?.name || "Producto"}
                     </h3>
                     {isLowStock && (
                       <span className="rounded-full bg-red-600/20 px-2 py-1 text-xs font-semibold text-red-400">
@@ -185,9 +190,9 @@ export default function DistributorProducts() {
                       </span>
                     )}
                   </div>
-                  
-                  <p className="mt-2 text-sm text-gray-400 line-clamp-2">
-                    {product?.description || 'Sin descripción'}
+
+                  <p className="mt-2 line-clamp-2 text-sm text-gray-400">
+                    {product?.description || "Sin descripción"}
                   </p>
 
                   {/* Pricing */}
@@ -199,7 +204,9 @@ export default function DistributorProducts() {
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Precio sugerido venta:</span>
+                      <span className="text-gray-400">
+                        Precio sugerido venta:
+                      </span>
                       <span className="font-semibold text-green-400">
                         {formatCurrency(product?.clientPrice || 0)}
                       </span>
@@ -208,7 +215,10 @@ export default function DistributorProducts() {
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Tu ganancia:</span>
                         <span className="font-bold text-purple-400">
-                          {formatCurrency((product?.clientPrice || 0) - (product?.distributorPrice || 0))}
+                          {formatCurrency(
+                            (product?.clientPrice || 0) -
+                              (product?.distributorPrice || 0)
+                          )}
                         </span>
                       </div>
                     </div>
@@ -218,13 +228,17 @@ export default function DistributorProducts() {
                   <div className="mt-4 flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-500">Stock disponible</p>
-                      <p className={`text-2xl font-bold ${isLowStock ? 'text-red-400' : 'text-blue-400'}`}>
+                      <p
+                        className={`text-2xl font-bold ${isLowStock ? "text-red-400" : "text-blue-400"}`}
+                      >
                         {item.quantity} unidades
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-gray-500">Alerta en</p>
-                      <p className="text-sm text-gray-400">{item.lowStockAlert}</p>
+                      <p className="text-sm text-gray-400">
+                        {item.lowStockAlert}
+                      </p>
                     </div>
                   </div>
                 </div>

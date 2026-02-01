@@ -230,8 +230,8 @@ export default function Dashboard() {
                   style: "currency",
                   currency: "MXN",
                 }).format(
-                  monthlyData.currentMonth.netProfit ??
-                    monthlyData.currentMonth.totalProfit
+                  monthlyData.currentMonth.netOperationProfit ??
+                    monthlyData.currentMonth.netProfit
                 )}
               </p>
               <p
@@ -640,16 +640,27 @@ export default function Dashboard() {
                       : product.category.name}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-purple-400">
-                    $
-                    {new Intl.NumberFormat("es-CO").format(
-                      product.salePrice || product.distributorPrice || 0
-                    )}
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    Stock: {product.totalStock || 0}
-                  </p>
+                <div className="flex flex-col items-end text-right">
+                  <div>
+                    <p className="text-xs text-gray-400">P. Venta</p>
+                    <p className="text-lg font-bold text-purple-400">
+                      {new Intl.NumberFormat("es-CO", {
+                        style: "currency",
+                        currency: "COP",
+                        minimumFractionDigits: 0,
+                      }).format(product.clientPrice || 0)}
+                    </p>
+                  </div>
+                  <div className="mt-1">
+                    <p className="text-xs text-gray-500">Costo</p>
+                    <p className="text-sm font-medium text-gray-400">
+                      {new Intl.NumberFormat("es-CO", {
+                        style: "currency",
+                        currency: "COP",
+                        minimumFractionDigits: 0,
+                      }).format(product.purchasePrice || 0)}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))

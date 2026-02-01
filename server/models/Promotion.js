@@ -11,7 +11,7 @@ const rewardSchema = new mongoose.Schema(
     },
     discountValue: { type: Number, default: 0 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ruleThresholdSchema = new mongoose.Schema(
@@ -19,7 +19,7 @@ const ruleThresholdSchema = new mongoose.Schema(
     minQty: { type: Number, default: 0 },
     minSubtotal: { type: Number, default: 0 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const volumeRuleSchema = new mongoose.Schema(
@@ -32,7 +32,7 @@ const volumeRuleSchema = new mongoose.Schema(
     },
     discountValue: { type: Number, default: 0 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const promotionSchema = new mongoose.Schema(
@@ -89,6 +89,8 @@ const promotionSchema = new mongoose.Schema(
 
     // Precio total de la promoción/bundle
     promotionPrice: { type: Number, default: 0 },
+    // Precio para distribuidores (B2B)
+    distributorPrice: { type: Number, default: 0 },
     // Precio original (suma de precios individuales) para mostrar ahorro
     originalPrice: { type: Number, default: 0 },
 
@@ -129,10 +131,13 @@ const promotionSchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 promotionSchema.index({ business: 1, status: 1, type: 1 });
 promotionSchema.index({ business: 1, startDate: 1, endDate: 1 });
 
-export default mongoose.model("Promotion", promotionSchema);
+// Prevent OverwriteModelError
+const Promotion =
+  mongoose.models.Promotion || mongoose.model("Promotion", promotionSchema);
+export default Promotion;

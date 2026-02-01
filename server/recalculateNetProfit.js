@@ -4,7 +4,7 @@
 
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import Sale from "./models/Sale.js";
+import Sale from "./src/infrastructure/database/models/Sale.js";
 
 dotenv.config();
 
@@ -50,11 +50,11 @@ async function recalculateNetProfit() {
               netProfit: calculatedNetProfit,
               totalAdditionalCosts: totalAdditionalCosts,
             },
-          }
+          },
         );
         updated++;
         console.log(
-          `✅ ${sale.saleId}: totalProfit=${sale.totalProfit}, netProfit=${calculatedNetProfit} (costos=${totalExtraCosts}, descuento=${discount})`
+          `✅ ${sale.saleId}: totalProfit=${sale.totalProfit}, netProfit=${calculatedNetProfit} (costos=${totalExtraCosts}, descuento=${discount})`,
         );
       } else {
         skipped++;

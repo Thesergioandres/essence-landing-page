@@ -160,7 +160,7 @@ const createAutomaticBackup = async () => {
 
     await fs.writeFile(
       path.join(backupPath, "metadata.json"),
-      JSON.stringify(metadata, null, 2)
+      JSON.stringify(metadata, null, 2),
     );
 
     // Limpiar backups antiguos
@@ -179,7 +179,7 @@ const createAutomaticBackup = async () => {
     console.log("\n" + "─".repeat(60));
     console.log(`✅ [BACKUP COMPLETADO]`);
     console.log(
-      `   📊 ${totalCollections} colecciones, ${totalDocuments} documentos`
+      `   📊 ${totalCollections} colecciones, ${totalDocuments} documentos`,
     );
     console.log(`   ⏱️  Duración: ${Date.now() - startTime}ms`);
     console.log(`   🕐 Próximo backup: ${getNextBackupTime()}`);

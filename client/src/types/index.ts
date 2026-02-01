@@ -38,6 +38,11 @@ export interface Product {
   benefits?: string[];
   createdAt?: string;
   updatedAt?: string;
+  isPromotion?: boolean;
+  comboItems?: Array<{
+    product: Product | string | { name: string };
+    quantity: number;
+  }>;
 }
 
 export interface User {
@@ -205,6 +210,7 @@ export interface Promotion {
   // Combo/Bundle fields
   comboItems?: PromotionComboItem[];
   promotionPrice?: number;
+  distributorPrice?: number;
   originalPrice?: number;
   // Discount fields
   discount?: {
@@ -295,6 +301,7 @@ export interface Sale {
   distributor: User | string;
   createdBy?: User | string; // Usuario que registró la venta (para ventas admin)
   product: Product | string;
+  productName?: string; // 📸 Snapshot
   branch?: Branch | string;
   customer?: Customer | string;
   customerName?: string;
@@ -409,6 +416,7 @@ export interface BusinessAssistantRecommendationItem {
   productName: string;
   categoryId: string | null;
   categoryName?: string | null;
+  abcClass?: "A" | "B" | "C";
   stock: {
     warehouseStock: number;
     totalStock: number;
@@ -442,6 +450,13 @@ export interface BusinessAssistantRecommendationItem {
   };
 }
 
+export interface BusinessAssistantPromotion {
+  type: "combo" | "volume";
+  title: string;
+  description: string;
+  products: string[];
+}
+
 export interface BusinessAssistantRecommendationsResponse {
   generatedAt: string;
   window: {
@@ -451,6 +466,7 @@ export interface BusinessAssistantRecommendationsResponse {
     endDate: string | null;
   };
   recommendations: BusinessAssistantRecommendationItem[];
+  promotions?: BusinessAssistantPromotion[];
 }
 
 export interface BusinessAssistantConfig {
@@ -570,6 +586,8 @@ export interface MonthlyProfitData {
     adminProfit: number;
     distributorProfit: number;
     totalProfit: number;
+    totalOPEX: number;
+    netOperationProfit: number;
     netProfit: number;
     totalAdditionalCosts: number;
     totalShippingCosts: number;
@@ -584,6 +602,8 @@ export interface MonthlyProfitData {
     adminProfit: number;
     distributorProfit: number;
     totalProfit: number;
+    totalOPEX: number;
+    netOperationProfit: number;
     netProfit: number;
     totalAdditionalCosts: number;
     totalShippingCosts: number;
@@ -596,6 +616,7 @@ export interface MonthlyProfitData {
   };
   growthPercentage: number;
   averageTicket: number;
+  accountsReceivable: number;
   _debug?: {
     nowUTC: string;
     nowColombia: string;
@@ -793,9 +814,12 @@ export interface ProfitHistoryAdminOverview {
     netProfit: number;
     totalDeductions: number;
     salesValue: number; // Total vendido (salePrice * quantity)
+    grossProfit?: number; // Total Profit (Revenue - Cost - Deductions) BEFORE commissions
+    distributorCommissions?: number; // Total Distributor Commissions
     adminProfit: number;
     distributorProfit: number;
     count: number;
+    totalAdditionalSalesCosts?: number;
     ordersCount?: number; // Número de órdenes únicas (por saleGroupId)
     averageTicket: number;
   };

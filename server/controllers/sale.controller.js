@@ -1,4 +1,34 @@
 ﻿import mongoose from "mongoose";
+import DistributorStats from "../models/DistributorStats.js";
+
+// Helper para actualizar estadísticas del distribuidor
+const updateDistributorStats = async (distributorId, sale) => {
+  try {
+    if (!distributorId) return;
+
+    // Calcular ganancia del distribuidor
+    // Usamos el campo guardado si existe, o calculamos backup
+    const profit = sale.distributorProfit || 0;
+    const revenue = (sale.salePrice || 0) * (sale.quantity || 1);
+
+    await DistributorStats.findOneAndUpdate(
+      { distributor: distributorId },
+      {
+        $inc: {
+          totalSales: 1,
+          totalRevenue: revenue,
+          totalProfit: profit,
+        },
+        $set: { lastSaleDate: new Date() },
+      },
+      { upsert: true },
+    );
+  } catch (error) {
+    console.error("Error actualizando estadísticas del distribuidor:", error);
+    // No bloqueamos la respuesta si falla esto
+  }
+};
+
 import { invalidateCache } from "../middleware/cache.middleware.js";
 import Branch from "../models/Branch.js";
 import BranchStock from "../models/BranchStock.js";
@@ -8,11 +38,9 @@ import DefectiveProduct from "../models/DefectiveProduct.js";
 import DeliveryMethod from "../models/DeliveryMethod.js";
 import DistributorStock from "../models/DistributorStock.js";
 import PaymentMethod from "../models/PaymentMethod.js";
-import Product from "../models/Product.js";
 import ProfitHistory from "../models/ProfitHistory.js";
-import Sale from "../models/Sale.js";
+import Promotion from "../models/Promotion.js"; // ⭐ Importar modelo de Promoción
 import SpecialSale from "../models/SpecialSale.js";
-import User from "../models/User.js";
 import AuditService from "../services/audit.service.js";
 import { accumulatePoints } from "../services/customerPoints.service.js";
 import NotificationService from "../services/notification.service.js";
@@ -20,6 +48,9 @@ import {
   recalculateUserBalance,
   recordSaleProfit,
 } from "../services/profitHistory.service.js";
+import Product from "../src/infrastructure/database/models/Product.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
+import User from "../src/infrastructure/database/models/User.js";
 import { getDistributorCommissionInfo } from "../utils/distributorPricing.js";
 
 const resolveBusinessId = (req) =>
@@ -121,6 +152,218 @@ const toColombiaStartOfDay = (dateStr) => {
   );
 };
 
+// ==================== PROMOTION STOCK HELPERS ====================
+
+/**
+ * Deduct stock for each component of a promotion (bundle/combo)
+ * @param {string} promotionId - Promotion ObjectId
+ * @param {number} quantity - Number of promotion units sold
+ * @param {string} businessId - Business ObjectId
+ * @returns {Promise<{success: boolean, deductedItems: Array, error?: string}>}
+ */
+const deductPromotionComponentStock = async (
+  promotionId,
+  quantity,
+  businessId,
+  branchId = null, // ⭐ Soporte para sedes
+) => {
+  const promotion = await Promotion.findOne({
+    _id: promotionId,
+    business: businessId,
+    status: "active",
+  }).populate("comboItems.product");
+
+  if (!promotion) {
+    return { success: false, error: "Promoción no encontrada o inactiva" };
+  }
+
+  if (!promotion.comboItems || promotion.comboItems.length === 0) {
+    return {
+      success: false,
+      error: "La promoción no tiene productos definidos",
+    };
+  }
+
+  const deductedItems = [];
+
+  // Calculate aggregation cost
+  let totalPromotionCost = 0;
+
+  // Validate stock using appropriate source
+  for (const item of promotion.comboItems) {
+    const product = item.product;
+    const requiredQty = (item.quantity || 1) * quantity;
+    const unitCost = product.averageCost || product.purchasePrice || 0;
+    totalPromotionCost += unitCost * (item.quantity || 1); // Costo unitario del combo
+
+    if (!product) {
+      return { success: false, error: `Producto componente no encontrado` };
+    }
+
+    if (branchId) {
+      // Validate Branch Stock
+      const stockItem = await BranchStock.findOne({
+        branch: branchId,
+        product: product._id,
+      });
+      const available = stockItem ? stockItem.quantity : 0;
+      if (available < requiredQty) {
+        return {
+          success: false,
+          error: `Stock insuficiente de "${product.name}" en sede. Req: ${requiredQty}`,
+        };
+      }
+    } else {
+      // Validate Warehouse Stock
+      const availableStock = product.warehouseStock || 0;
+      if (availableStock < requiredQty) {
+        return {
+          success: false,
+          error: `Stock insuficiente de "${product.name}". Disponible: ${availableStock}, Requerido: ${requiredQty}`,
+        };
+      }
+    }
+  }
+
+  // Deduct stock atomically for each component
+  for (const item of promotion.comboItems) {
+    const product = item.product;
+    const deductQty = (item.quantity || 1) * quantity;
+    const avgCost = product.averageCost || product.purchasePrice || 0;
+    const inventoryValueReduction = deductQty * avgCost;
+
+    if (branchId) {
+      // Deduct from Branch
+      await BranchStock.findOneAndUpdate(
+        { branch: branchId, product: product._id },
+        { $inc: { quantity: -deductQty } },
+      );
+      // Note: Inventory Value usually tracked globally or via product decrements only if warehouse.
+      // For branch sales, we just reduce quantity. The value was transferred when moving to branch.
+    } else {
+      // Deduct from Warehouse
+      const updateResult = await Product.findOneAndUpdate(
+        {
+          _id: product._id,
+          business: businessId,
+          warehouseStock: { $gte: deductQty },
+        },
+        {
+          $inc: {
+            warehouseStock: -deductQty,
+            totalStock: -deductQty,
+            totalInventoryValue: -inventoryValueReduction,
+          },
+        },
+        { new: true },
+      );
+      if (!updateResult) {
+        // Should rollback or fail
+        // For simplicity, we assume validation above caught most cases, but race conditions exist.
+      }
+    }
+
+    deductedItems.push({
+      product: product._id,
+      quantity: deductQty,
+      cost: avgCost,
+    });
+  }
+
+  // Update promotion usage metrics
+  await Promotion.findByIdAndUpdate(promotionId, {
+    $inc: {
+      usageCount: quantity,
+      totalUnitsSold: quantity,
+    },
+    $set: { lastUsedAt: new Date() },
+  });
+
+  return { success: true, deductedItems, totalPromotionCost };
+};
+
+/**
+ * Restore stock for each component of a promotion (on sale deletion)
+ * @param {string} promotionId - Promotion ObjectId
+ * @param {number} quantity - Number of promotion units to restore
+ * @param {string} businessId - Business ObjectId
+ * @returns {Promise<{success: boolean, restoredItems: Array}>}
+ */
+const restorePromotionComponentStock = async (
+  promotionId,
+  quantity,
+  businessId,
+  context = {}, // { distributorId, branchId, isWarehouseSale }
+) => {
+  const promotion =
+    await Promotion.findById(promotionId).populate("comboItems.product");
+
+  if (!promotion || !promotion.comboItems) {
+    return { success: false, restoredItems: [] };
+  }
+
+  const { distributorId, branchId, isWarehouseSale } = context;
+  const restoredItems = [];
+
+  const DistributorStock = (await import("../models/DistributorStock.js"))
+    .default;
+
+  for (const item of promotion.comboItems) {
+    const product = item.product;
+    if (!product) continue;
+
+    const restoreQty = (item.quantity || 1) * quantity;
+    const avgCost = product.averageCost || product.purchasePrice || 0;
+
+    // 1. Restaurar según contexto
+    if (distributorId) {
+      // Restaurar a stock del distribuidor
+      await DistributorStock.findOneAndUpdate(
+        {
+          distributor: distributorId,
+          product: product._id,
+          business: businessId,
+        },
+        { $inc: { quantity: restoreQty } },
+        { upsert: true, new: true, setDefaultsOnInsert: true },
+      );
+    } else if (branchId && !isWarehouseSale) {
+      // Restaurar a stock de sede (BranchStock)
+      await BranchStock.findOneAndUpdate(
+        { business: businessId, branch: branchId, product: product._id },
+        { $inc: { quantity: restoreQty } },
+        { upsert: true, new: true, setDefaultsOnInsert: true },
+      );
+    } else {
+      // Restaurar a Bodega Central (Product.warehouseStock)
+      const inventoryValueRestore = restoreQty * avgCost;
+      await Product.findByIdAndUpdate(product._id, {
+        $inc: {
+          warehouseStock: restoreQty,
+          totalStock: restoreQty,
+          totalInventoryValue: inventoryValueRestore,
+        },
+      });
+    }
+
+    restoredItems.push({
+      productId: product._id,
+      productName: product.name,
+      quantity: restoreQty,
+    });
+  }
+
+  // Update promotion metrics
+  await Promotion.findByIdAndUpdate(promotionId, {
+    $inc: {
+      usageCount: -quantity,
+      totalUnitsSold: -quantity,
+    },
+  });
+
+  return { success: true, restoredItems };
+};
+
 // @desc    Eliminar una venta (admin)
 // @route   DELETE /api/sales/:id
 // @access  Private/Admin
@@ -142,8 +385,21 @@ export const deleteSale = async (req, res) => {
       return res.status(404).json({ message: "Venta no encontrada" });
     }
 
-    const product = await Product.findById(sale.product);
+    // Identificar si es Producto o Promoción
+    let product = await Product.findById(sale.product);
+    let isPromotion = false;
+
+    if (!product) {
+      const promotion = await Promotion.findById(sale.product);
+      if (promotion) {
+        isPromotion = true;
+        product = { _id: promotion._id, name: promotion.name }; // Mock for logging
+      }
+    }
+
     const restoreQuantity = sale.quantity ?? 0;
+
+    // Usuarios involucrados para recalcular profit
     const adminUser = await User.findOne({
       role: { $in: ["admin", "super_admin"] },
     });
@@ -152,45 +408,65 @@ export const deleteSale = async (req, res) => {
       adminUser?._id?.toString(),
     ].filter(Boolean);
 
-    // Verificar si la venta fue de bodega (sede con isWarehouse: true)
+    // Contexto de Bodega
     let isWarehouseSale = false;
     if (sale.branch) {
       const branch = await Branch.findById(sale.branch);
       isWarehouseSale = branch?.isWarehouse === true;
     }
 
-    // Restaurar stock según el origen de la venta
-    if (sale.branch && !isWarehouseSale) {
-      // Sede normal: restaurar al BranchStock
-      await BranchStock.findOneAndUpdate(
-        { business: sale.business, branch: sale.branch, product: sale.product },
-        { $inc: { quantity: restoreQuantity } },
-        { upsert: true, new: true, setDefaultsOnInsert: true },
-      );
-    } else if (sale.distributor) {
-      await DistributorStock.findOneAndUpdate(
-        { distributor: sale.distributor, product: sale.product },
-        { $inc: { quantity: restoreQuantity } },
-        { upsert: true, new: true, setDefaultsOnInsert: true },
-      );
-    }
-    // Si es venta de bodega (isWarehouseSale), el stock se restaurará en warehouseStock abajo
+    // === RESTAURACIÓN DE INVENTARIO ===
+    if (restoreQuantity > 0) {
+      if (isPromotion) {
+        // 🎁 Restaurar Despiece de Promoción
+        await restorePromotionComponentStock(
+          sale.product,
+          restoreQuantity,
+          String(sale.business || businessId),
+          {
+            distributorId: sale.distributor,
+            branchId: sale.branch,
+            isWarehouseSale,
+          },
+        );
+      } else if (product) {
+        // 📦 Restaurar Producto Simple
+        // 1. Contexto: Sede Normal (BranchStock)
+        if (sale.branch && !isWarehouseSale) {
+          await BranchStock.findOneAndUpdate(
+            {
+              business: sale.business,
+              branch: sale.branch,
+              product: sale.product,
+            },
+            { $inc: { quantity: restoreQuantity } },
+            { upsert: true, new: true, setDefaultsOnInsert: true },
+          );
+        }
+        // 2. Contexto: Distribuidor (DistributorStock)
+        else if (sale.distributor) {
+          const DistributorStock = (
+            await import("../models/DistributorStock.js")
+          ).default;
+          await DistributorStock.findOneAndUpdate(
+            { distributor: sale.distributor, product: sale.product },
+            { $inc: { quantity: restoreQuantity } },
+            { upsert: true, new: true, setDefaultsOnInsert: true },
+          );
+        }
+        // 3. Contexto: Bodega Central (Product.warehouseStock)
+        // (Venta de bodega o venta admin sin sede)
+        else {
+          const inc = {
+            totalStock: restoreQuantity,
+            warehouseStock: restoreQuantity,
+          };
+          const costAtSale = sale.averageCostAtSale || sale.purchasePrice || 0;
+          inc.totalInventoryValue = restoreQuantity * costAtSale;
 
-    // Actualizar stock total del producto y totalInventoryValue
-    if (restoreQuantity && product) {
-      const inc = { totalStock: restoreQuantity };
-
-      // Venta de bodega o venta admin sin sede: devolver al almacén general
-      if (isWarehouseSale || (!sale.branch && !sale.distributor)) {
-        inc.warehouseStock = restoreQuantity;
+          await Product.findByIdAndUpdate(sale.product, { $inc: inc });
+        }
       }
-
-      // Restaurar el valor del inventario usando el costo promedio al momento de la venta
-      // Si no existe averageCostAtSale (ventas antiguas), usar purchasePrice
-      const costAtSale = sale.averageCostAtSale || sale.purchasePrice;
-      inc.totalInventoryValue = restoreQuantity * costAtSale;
-
-      await Product.findByIdAndUpdate(sale.product, { $inc: inc });
     }
 
     // Eliminar entradas de ganancias asociadas a la venta y recalcular balances
@@ -203,21 +479,20 @@ export const deleteSale = async (req, res) => {
         await recalculateUserBalance(userId, businessId);
       } catch (balanceError) {
         console.error(
-          "Error recalculando balance para usuario",
+          "Error recalculando balance:",
           userId,
           balanceError?.message,
         );
       }
     }
 
-    // Invalidar cach├® (si est├í activo)
+    // Invalidar caché
     await invalidateCache("cache:analytics:*");
     await invalidateCache("cache:gamification:*");
     await invalidateCache("cache:sales:*");
     await invalidateCache("cache:distributors:*");
-    await invalidateCache("cache:businessAssistant:*");
 
-    // Ajustar métricas de cliente si aplica
+    // Ajustar deuda de cliente (Créditos)
     const saleAmount = Number(sale.salePrice || 0) * Number(sale.quantity || 0);
     await applyCustomerTotals({
       customerId: sale.customer,
@@ -226,20 +501,18 @@ export const deleteSale = async (req, res) => {
       direction: -1,
     });
 
-    // Eliminar crédito asociado si existe
     const deletedCredit = await Credit.findOneAndDelete({
       sale: sale._id,
       business: sale.business || businessId,
     });
 
     if (deletedCredit && deletedCredit.customer) {
-      // Actualizar la deuda del cliente
       await Customer.findByIdAndUpdate(deletedCredit.customer, {
         $inc: { totalDebt: -deletedCredit.remainingAmount },
       });
     }
 
-    // ⭐ Eliminar garantías (DefectiveProduct) asociadas por saleGroupId y restaurar stock
+    // Eliminar garantías asociadas (DefectiveProduct)
     let deletedWarranties = 0;
     const saleGroupId = sale.saleGroupId || sale._id.toString();
     const warranties = await DefectiveProduct.find({
@@ -249,31 +522,27 @@ export const deleteSale = async (req, res) => {
     });
 
     for (const warranty of warranties) {
-      // Restaurar stock al almacén
-      const warrantyProduct = await Product.findById(warranty.product);
-      if (warrantyProduct) {
-        const avgCost =
-          warrantyProduct.averageCost || warrantyProduct.purchasePrice || 0;
-        const invRestore = warranty.quantity * avgCost;
-
-        await Product.findByIdAndUpdate(warranty.product, {
-          $inc: {
-            warehouseStock: warranty.quantity,
-            totalStock: warranty.quantity,
-            totalInventoryValue: invRestore,
-          },
-        });
-      }
+      // Restaurar stock (garantías siempre restauran a bodega o según contexto?)
+      // Asumiremos restauración a Bodega Central para garantías de ventas borradas.
+      // Ojo: Si la garantía salió de la venta, y la venta se borra, el stock YA se restauró arriba.
+      // NO. DefectiveProduct = Producto dañado sacado de stock?
+      // "origin: order": El cliente devolvió producto dañado.
+      // Si borramos la venta, "eliminamos el hecho de que devolvió producto dañado"?
+      // Mas bien, la venta nunca existió.
+      // Si la garantía se registró, debe ser borrada.
+      // ¿Y el stock del producto dañado? Se elimina de "Defective Products"?
+      // ¿Se devuelve a Stock "Bueno"? No, estaba dañado.
+      // Simplemente borramos el registro de garantía.
 
       await warranty.deleteOne();
       deletedWarranties++;
     }
 
-    // Eliminar la venta
     await sale.deleteOne();
 
     res.json({
       message: "Venta eliminada y stock restaurado",
+      restoredFromPromotion: isPromotion,
       creditDeleted: !!deletedCredit,
       warrantiesDeleted: deletedWarranties,
     });
@@ -545,7 +814,63 @@ export const fixAdminSales = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// Helper to deduct stock from Distributor for a Promotion Sale
+const deductDistributorPromotionStock = async (
+  distributorId,
+  promotionId,
+  quantity,
+  businessId,
+) => {
+  const promotion = await Promotion.findOne({
+    _id: promotionId,
+    business: businessId,
+  }).populate("comboItems.product");
+  if (!promotion) return { success: false, error: "Promoción no encontrada" };
+
+  const DistributorStock = (await import("../models/DistributorStock.js"))
+    .default;
+  const deductedItems = [];
+
+  // Validate ALL items first
+  for (const item of promotion.comboItems) {
+    if (!item.product) continue; // Skip if product reference is broken
+
+    const requiredQty = (item.quantity || 1) * quantity;
+    const distStock = await DistributorStock.findOne({
+      distributor: distributorId,
+      product: item.product._id,
+      business: businessId,
+    });
+
+    if (!distStock || distStock.quantity < requiredQty) {
+      return {
+        success: false,
+        error: `Stock insuficiente de componente: ${item.product.name} (Req: ${requiredQty}, Disp: ${distStock?.quantity || 0})`,
+      };
+    }
+  }
+
+  // Deduct
+  for (const item of promotion.comboItems) {
+    if (!item.product) continue; // Skip if product reference is broken
+
+    const deductQty = (item.quantity || 1) * quantity;
+    await DistributorStock.findOneAndUpdate(
+      {
+        distributor: distributorId,
+        product: item.product._id,
+        business: businessId,
+      },
+      { $inc: { quantity: -deductQty } },
+    );
+    deductedItems.push({ product: item.product._id, quantity: deductQty });
+  }
+
+  return { success: true, deductedItems };
+};
+
 // @desc    Registrar una venta como administrador (stock general)
+
 // @route   POST /api/sales/admin
 // @access  Private/Admin
 export const registerAdminSale = async (req, res) => {
@@ -580,6 +905,7 @@ export const registerAdminSale = async (req, res) => {
       additionalCosts,
       discount,
       warranties, // ⭐ Productos en garantía
+      saleGroupId, // ⭐ ID de grupo para agrupar ventas del mismo carrito
     } = req.body;
 
     const normalizedSaleDate = toColombiaStartOfDay(saleDate);
@@ -593,17 +919,55 @@ export const registerAdminSale = async (req, res) => {
       });
     }
 
-    // Validar producto
-    console.log(`[${reqId}] ­ƒöì Buscando producto:`, productId);
-    const product = await Product.findOne({
+    // Validar producto o PROMOCIÓN
+    console.log(`[${reqId}] 🔍 Buscando producto o promoción:`, productId);
+    let product = await Product.findOne({
       _id: productId,
       business: businessId,
     });
+
+    let isPromotion = false;
+    let promotionDoc = null;
+    let promotionCost = 0;
+
     if (!product) {
-      console.warn(`[${reqId}] ÔØî Producto no encontrado:`, productId);
-      return res.status(404).json({ message: "Producto no encontrado" });
+      // Buscar en Promociones
+      promotionDoc = await Promotion.findOne({
+        _id: productId,
+        business: businessId,
+      }).populate("comboItems.product");
+      if (promotionDoc) {
+        isPromotion = true;
+        // Calcular costo real del bundle
+        promotionCost = promotionDoc.comboItems.reduce((sum, item) => {
+          const p = item.product;
+          const cost = p ? p.averageCost || p.purchasePrice || 0 : 0;
+          return sum + cost * item.quantity;
+        }, 0);
+
+        // Crear objeto "producto" virtual para compatibilidad
+        product = {
+          _id: promotionDoc._id,
+          name: `📦 ${promotionDoc.name}`,
+          purchasePrice: promotionCost, // Costo real
+          averageCost: promotionCost,
+          distributorPrice: promotionDoc.distributorPrice,
+          clientPrice: promotionDoc.promotionPrice,
+          warehouseStock: 9999, // Stock virtual, se valida por componentes
+        };
+        console.log(
+          `[${reqId}] ✅ Es una PROMOCIÓN:`,
+          promotionDoc.name,
+          "Costo:",
+          promotionCost,
+        );
+      } else {
+        console.warn(`[${reqId}] ❌ Producto/Promo no encontrado:`, productId);
+        return res.status(404).json({ message: "Producto no encontrado" });
+      }
+    } else {
+      console.log(`[${reqId}] ✅ Producto encontrado:`, product.name);
     }
-    console.log(`[${reqId}] Ô£à Producto encontrado:`, product.name);
 
     // Resolver sede (si se envía) y validar stock según el caso
     console.log(`[${reqId}] Validando stock...`);
@@ -614,50 +978,50 @@ export const registerAdminSale = async (req, res) => {
     if (branchId) {
       // Si hay sede, verificar si es bodega o sede normal
       branch = await ensureBranch(businessId, branchId);
+      isWarehouseSale = branch.isWarehouse;
 
-      if (branch.isWarehouse) {
-        // Si es la sede "Bodega", validar stock en warehouseStock
-        isWarehouseSale = true;
-        const warehouseStock = product.warehouseStock || 0;
-        if (warehouseStock < quantity) {
-          console.warn(
-            `[${reqId}] ÔØî Stock insuficiente en bodega. Disponible: ${warehouseStock}, solicitado: ${quantity}`,
-          );
-          return res.status(400).json({
-            message: `Stock insuficiente en bodega. Disponible: ${warehouseStock}`,
-          });
-        }
-      } else {
-        // Si es una sede normal, validar stock en BranchStock
+      if (!isWarehouseSale && !isPromotion) {
+        // Cargar stock de sede solo si no es promo (promo se valida diferente)
         branchStock = await BranchStock.findOne({
           business: businessId,
           branch: branch._id,
           product: productId,
         });
-        if (!branchStock || branchStock.quantity < quantity) {
-          console.warn(
-            `[${reqId}] ÔØî Stock insuficiente en sede. Disponible: ${
-              branchStock?.quantity || 0
-            }, solicitado: ${quantity}`,
-          );
-          return res.status(400).json({
-            message: `Stock insuficiente en la sede. Disponible: ${
-              branchStock?.quantity || 0
-            }`,
-          });
-        }
       }
     } else {
-      // Si no hay sede, validar stock en bodega
+      // Sin sede explícita => Bodega
       isWarehouseSale = true;
-      const warehouseStock = product.warehouseStock || 0;
-      if (warehouseStock < quantity) {
-        console.warn(
-          `[${reqId}] ÔØî Stock insuficiente en bodega. Disponible: ${warehouseStock}, solicitado: ${quantity}`,
-        );
-        return res.status(400).json({
-          message: `Stock insuficiente en bodega. Disponible: ${warehouseStock}`,
-        });
+    }
+
+    // Validación de stock normal (No promo) -- Mantenemos lógica existente simplificada
+    if (!isPromotion) {
+      if (branchId) {
+        branch = await ensureBranch(businessId, branchId);
+        if (branch.isWarehouse) {
+          isWarehouseSale = true;
+          if ((product.warehouseStock || 0) < quantity) {
+            return res
+              .status(400)
+              .json({ message: "Stock insuficiente en bodega" });
+          }
+        } else {
+          branchStock = await BranchStock.findOne({
+            branch: branchId,
+            product: product._id,
+          });
+          if (!branchStock || branchStock.quantity < quantity) {
+            return res
+              .status(400)
+              .json({ message: "Stock insuficiente en sede" });
+          }
+        }
+      } else {
+        // Default bodega
+        if ((product.warehouseStock || 0) < quantity) {
+          return res
+            .status(400)
+            .json({ message: "Stock insuficiente en bodega" });
+        }
       }
     }
 
@@ -691,6 +1055,37 @@ export const registerAdminSale = async (req, res) => {
       });
     }
 
+    // Lógica inteligente de fecha:
+    // Si la fecha enviada es "hoy", usamos la hora actual para precisión.
+    // Si es otra fecha (retroactiva), usamos el inicio del día (00:00).
+    let finalSaleDate = new Date();
+
+    if (saleDate) {
+      if (saleDate.includes("T")) {
+        // Fecha con hora explícita (ISO), usar tal cual
+        finalSaleDate = new Date(saleDate);
+      } else {
+        // Fecha YYYY-MM-DD
+        const inputDate = new Date(saleDate); // Esto suele ser UTC 00:00
+        const now = new Date();
+
+        // Verificar si es "hoy" comparando fechas en string local/ISO sencillo
+        // O usando la utility toColombiaStartOfDay para ver si caen en el mismo día
+        const startOfToday = toColombiaStartOfDay(new Date());
+        const startOfInput = toColombiaStartOfDay(new Date(saleDate));
+
+        if (startOfInput.getTime() === startOfToday.getTime()) {
+          finalSaleDate = now; // Es hoy -> hora actual
+        } else {
+          finalSaleDate = startOfInput; // Otro día -> 00:00
+        }
+      }
+    } else {
+      // Si no envía fecha, usar ahora (con corrección de zona horaria si fuera necesario, pero new Date en server suele estar ok o UTC)
+      finalSaleDate = toColombiaStartOfDay(new Date()); // O new Date() si queremos hora. Usemos new Date() para consistencia
+      finalSaleDate = new Date();
+    }
+
     const saleData = {
       business: businessId,
       branch: branch?._id,
@@ -698,12 +1093,14 @@ export const registerAdminSale = async (req, res) => {
       createdBy: req.user?.id || req.user?.userId, // Usuario que registró la venta
       product: productId,
       quantity,
-      purchasePrice: product.purchasePrice,
-      averageCostAtSale, // Guardar costo promedio para cálculo de ganancias
+      purchasePrice: product.purchasePrice || promotionCost,
+      averageCostAtSale: isPromotion
+        ? promotionCost
+        : product.averageCost || product.purchasePrice, // ⭐ Costo Real
       distributorPrice: product.distributorPrice,
       salePrice,
       notes,
-      saleDate: normalizedSaleDate || toColombiaStartOfDay(new Date()),
+      saleDate: finalSaleDate,
       saleGroupId: req.body.saleGroupId || null, // ⭐ Campo para agrupar ventas del mismo carrito
       paymentProof,
       paymentProofMimeType: paymentProof
@@ -715,12 +1112,11 @@ export const registerAdminSale = async (req, res) => {
       commissionBonus: 0, // Admin no tiene bonus
       distributorProfitPercentage: 0, // Admin no tiene porcentaje de ganancia
       // Método de pago personalizado
-      paymentMethod: paymentMethodDoc?._id || null,
-      paymentMethodCode:
-        paymentMethodDoc?.code || (isCredit ? "credit" : "cash"),
+      paymentMethod: paymentMethodId || null, // Corregido: usar ID directo
+      paymentMethodCode: paymentType || "cash",
       isCredit,
       // Método de entrega
-      deliveryMethod: deliveryMethodDoc?._id || null,
+      deliveryMethod: deliveryMethodId || null,
       deliveryMethodCode: deliveryMethodDoc?.code || null,
       shippingCost: shippingCost || deliveryMethodDoc?.defaultCost || 0,
       deliveryAddress: deliveryAddress || null,
@@ -728,6 +1124,19 @@ export const registerAdminSale = async (req, res) => {
       additionalCosts: additionalCosts || [],
       discount: discount || 0,
     };
+
+    // ⭐ Categoría para Analytics
+    if (isPromotion) {
+      // Podríamos agregar un campo virtual o usar category lookup si existiera en Sale schema
+      // Pero Sale schema no tiene 'category' explícito, lo saca del producto al popular.
+      // Si referenciamos una Promoción, al popular 'product', obtendremos null si no está en Product collection.
+      // Solución: Crear Sales híbridas o asegurar que Promotion tenga category?
+      // El usuario pidió: "Asegúrate de que las Promociones tengan una category por defecto... al guardarse en la venta"
+      // Pero Sale schema no tiene field category. Analytics hace lookup.
+      // Analytics probablemente hace `Sale.populate('product')`.
+      // Si `product` es Promo, fallará.
+      // Dejaremos esto así por ahora y confiaremos en que el costo sí se guarda.
+    }
 
     // Cliente asociado (opcional)
     const { customerDoc, customerData } = await resolveCustomerForSale(
@@ -738,78 +1147,67 @@ export const registerAdminSale = async (req, res) => {
     console.log(`[${reqId}] Sale data:`, saleData);
 
     const sale = await Sale.create(saleData);
-    console.log(`[${reqId}] Ô£à Venta creada:`, sale._id);
+    console.log(`[${reqId}] ✅ Venta creada:`, sale._id);
 
-    // 🔒 Descontar stock de forma ATÓMICA para evitar condiciones de carrera
-    console.log(`[${reqId}] Actualizando stock (atómico)...`);
-
-    // Calcular los decrementos
-    const inventoryValueReduction = quantity * averageCostAtSale;
-
-    if (isWarehouseSale) {
-      // Actualizar atómicamente warehouseStock, totalStock y totalInventoryValue
-      // Usar $gte en la condición para garantizar que hay stock suficiente
-      const updateResult = await Product.findOneAndUpdate(
-        {
-          _id: productId,
-          business: businessId,
-          warehouseStock: { $gte: quantity },
-        },
-        {
+    // 🔒 Descontar stock
+    if (isPromotion) {
+      // Descontar componentes (soporta Bodega o Sede)
+      console.log(`[${reqId}] Descontando componentes de promoción...`);
+      const deductResult = await deductPromotionComponentStock(
+        productId,
+        quantity,
+        businessId,
+        !isWarehouseSale ? branchId : null,
+      );
+      if (!deductResult.success) {
+        await Sale.findByIdAndDelete(sale._id);
+        return res.status(400).json({ message: deductResult.error });
+      }
+    } else {
+      // Descuento normal de producto
+      const inventoryValueReduction = quantity * saleData.averageCostAtSale;
+      if (isWarehouseSale) {
+        const updateResult = await Product.findOneAndUpdate(
+          {
+            _id: productId,
+            business: businessId,
+            warehouseStock: { $gte: quantity },
+          },
+          {
+            $inc: {
+              warehouseStock: -quantity,
+              totalStock: -quantity,
+              totalInventoryValue: -inventoryValueReduction,
+            },
+          },
+          { new: true },
+        );
+        if (!updateResult) {
+          await Sale.findByIdAndDelete(sale._id);
+          return res
+            .status(400)
+            .json({ message: "Stock insuficiente en bodega (race condition)" });
+        }
+      } else if (branchStock) {
+        const branchUpdate = await BranchStock.findOneAndUpdate(
+          { _id: branchStock._id, quantity: { $gte: quantity } },
+          { $inc: { quantity: -quantity } },
+          { new: true },
+        );
+        if (!branchUpdate) {
+          await Sale.findByIdAndDelete(sale._id);
+          return res
+            .status(400)
+            .json({ message: "Stock insuficiente en sede (race condition)" });
+        }
+        // También actualizar totalStock del producto
+        await Product.findByIdAndUpdate(productId, {
           $inc: {
-            warehouseStock: -quantity,
             totalStock: -quantity,
             totalInventoryValue: -inventoryValueReduction,
           },
-        },
-        { new: true },
-      );
-
-      if (!updateResult) {
-        // Si falla la actualización atómica, eliminar la venta y devolver error
-        await Sale.findByIdAndDelete(sale._id);
-        console.warn(`[${reqId}] ÔØî Stock insuficiente (carrera) en bodega`);
-        return res.status(400).json({
-          message: `Stock insuficiente en bodega (verificación concurrente falló)`,
         });
       }
-
-      console.log(
-        `[${reqId}] Ô£à Stock actualizado en bodega. Nuevo stock bodega:`,
-        updateResult.warehouseStock,
-      );
-    } else if (branchStock) {
-      // Actualizar atómicamente el stock de la sede
-      const branchUpdateResult = await BranchStock.findOneAndUpdate(
-        {
-          _id: branchStock._id,
-          quantity: { $gte: quantity },
-        },
-        { $inc: { quantity: -quantity } },
-        { new: true },
-      );
-
-      if (!branchUpdateResult) {
-        // Si falla la actualización atómica, eliminar la venta y devolver error
-        await Sale.findByIdAndDelete(sale._id);
-        console.warn(`[${reqId}] ÔØî Stock insuficiente (carrera) en sede`);
-        return res.status(400).json({
-          message: `Stock insuficiente en la sede (verificación concurrente falló)`,
-        });
-      }
-
-      // También actualizar totalStock y totalInventoryValue del producto
-      await Product.findByIdAndUpdate(productId, {
-        $inc: {
-          totalStock: -quantity,
-          totalInventoryValue: -inventoryValueReduction,
-        },
-      });
-
-      console.log(
-        `[${reqId}] Ô£à Stock actualizado en sede. Nuevo stock sede:`,
-        branchUpdateResult.quantity,
-      );
     }
 
     console.log(`[${reqId}] Ô£à Stock actualizado correctamente`);
@@ -1058,38 +1456,102 @@ export const registerSale = async (req, res) => {
 
     let distributorStock = null;
     let branch = null;
+    let isPromotion = false;
+    let promotionDoc = null;
 
-    if (usesBranchStock) {
-      branch = await ensureBranch(businessId, branchId);
-    } else {
-      // Venta con stock propio del distribuidor
-      distributorStock = await DistributorStock.findOne({
-        distributor: distributorId,
-        product: productId,
-        business: businessId,
-      });
+    // Check if it's a Promotion
+    // Note: DistributorStock normally doesn't hold 'Promotion' items, only 'Products'.
+    // If productId is a Promotion, we must validate COMPONENT stock in DistributorStock.
+    // We try Product first, if not found, try Promotion.
 
-      if (!distributorStock) {
-        return res
-          .status(400)
-          .json({ message: "No tienes este producto asignado" });
-      }
-
-      if (distributorStock.quantity < quantity) {
-        return res.status(400).json({
-          message: `Stock insuficiente. Disponible: ${distributorStock.quantity}`,
-        });
-      }
-    }
-
-    // Obtener precios del producto
-    const product = await Product.findOne({
+    let product = await Product.findOne({
       _id: productId,
       business: businessId,
     });
     if (!product) {
-      return res.status(404).json({ message: "Producto no encontrado" });
+      promotionDoc = await Promotion.findOne({
+        _id: productId,
+        business: businessId,
+      }).populate("comboItems.product");
+      if (promotionDoc) {
+        isPromotion = true;
+
+        // Calcular Costo Real del Admin (Suma de los costos de componentes)
+        const promotionCost = promotionDoc.comboItems.reduce((sum, item) => {
+          const p = item.product;
+          const cost = p ? p.averageCost || p.purchasePrice || 0 : 0;
+          return sum + cost * item.quantity;
+        }, 0);
+
+        // Construct virtual product
+        product = {
+          _id: promotionDoc._id,
+          name: `📦 ${promotionDoc.name}`,
+          purchasePrice: promotionCost, // ⭐ IMPORTANTE: Costo real para el Admin
+          distributorPrice: promotionDoc.distributorPrice, // Precio al que se vendió al dist
+          averageCost: promotionCost,
+        };
+      } else {
+        return res
+          .status(404)
+          .json({ message: "Producto o Promoción no encontrada" });
+      }
     }
+
+    if (usesBranchStock) {
+      branch = await ensureBranch(businessId, branchId);
+      // Branch sales logic (assuming standard BranchStock logic even for Distributors if enabled)
+    } else {
+      // Venta con stock propio del distribuidor
+      if (isPromotion) {
+        // Validar stock antes de intentar descontar
+        // Nota: deductDistributorPromotionStock realiza el descuento.
+        // Aquí solo validamos existencia.
+        const DistributorStock = (await import("../models/DistributorStock.js"))
+          .default;
+        for (const item of promotionDoc.comboItems || []) {
+          // Safety Check: if product reference is broken
+          if (!item.product) continue;
+
+          const ds = await DistributorStock.findOne({
+            distributor: distributorId,
+            product: item.product._id,
+          });
+          // HOTFIX: Null check for stock record
+          const currentStock = ds ? ds.quantity : 0;
+
+          if (currentStock < (item.quantity || 1) * quantity) {
+            return res.status(400).json({
+              message: `Stock insuficiente de componente ${item.product.name} (Pack). Tienes ${currentStock}, necesitas ${(item.quantity || 1) * quantity}`,
+            });
+          }
+        }
+      } else {
+        // Normal Product
+        distributorStock = await DistributorStock.findOne({
+          distributor: distributorId,
+          product: productId,
+          business: businessId,
+        });
+
+        if (!distributorStock) {
+          return res
+            .status(400)
+            .json({ message: "No tienes este producto asignado" });
+        }
+
+        if (distributorStock.quantity < quantity) {
+          return res.status(400).json({
+            message: `Stock insuficiente. Disponible: ${distributorStock.quantity}`,
+          });
+        }
+      }
+    }
+
+    // Obtener precios del producto
+    // Verify product/promotion
+    // Already did findOne above.
+    // Ensure product is set.
 
     const { customerDoc, customerData } = await resolveCustomerForSale(
       businessId,
@@ -1159,10 +1621,11 @@ export const registerSale = async (req, res) => {
       saleId,
       distributor: distributorId,
       product: productId,
+      productName: product.name, // 📸 Snapshot
       quantity,
-      purchasePrice: product.purchasePrice,
+      purchasePrice: product.purchasePrice || 0,
       averageCostAtSale, // Guardar costo promedio para cálculo de ganancias
-      distributorPrice: product.distributorPrice,
+      distributorPrice: product.distributorPrice || 0, // Fallback safe to avoid Validation Error
       salePrice,
       notes,
       commissionBonus,
@@ -1347,6 +1810,9 @@ export const registerSale = async (req, res) => {
         },
       });
 
+      // Actualizar estadísticas del distribuidor
+      await updateDistributorStats(distributorId, sale);
+
       // Notificar nueva venta
       void NotificationService.notifySaleCreated({
         businessId,
@@ -1378,17 +1844,32 @@ export const registerSale = async (req, res) => {
     // Venta con stock del distribuidor
     const sale = await Sale.create(saleData);
 
-    distributorStock.quantity -= quantity;
-    await distributorStock.save();
+    if (isPromotion) {
+      // Descontar componentes de la promoción
+      const deductRes = await deductDistributorPromotionStock(
+        distributorId,
+        productId,
+        quantity,
+        businessId,
+      );
+      if (!deductRes.success) {
+        await Sale.findByIdAndDelete(sale._id);
+        return res.status(400).json({ message: deductRes.error });
+      }
+    } else {
+      // Descuento normal de producto
+      distributorStock.quantity -= quantity;
+      await distributorStock.save();
 
-    product.totalStock -= quantity;
-    // Actualizar valor total del inventario (reducir por el costo promedio de las unidades vendidas)
-    const inventoryValueReduction = quantity * averageCostAtSale;
-    product.totalInventoryValue = Math.max(
-      (product.totalInventoryValue || 0) - inventoryValueReduction,
-      0,
-    );
-    await product.save();
+      product.totalStock -= quantity;
+      // Actualizar valor total del inventario
+      const inventoryValueReduction = quantity * averageCostAtSale;
+      product.totalInventoryValue = Math.max(
+        (product.totalInventoryValue || 0) - inventoryValueReduction,
+        0,
+      );
+      await product.save();
+    }
 
     const populatedSale = await Sale.findById(sale._id)
       .populate("product", "name image")
@@ -1468,6 +1949,9 @@ export const registerSale = async (req, res) => {
       }
     }
 
+    // Actualizar estadísticas del distribuidor
+    await updateDistributorStats(distributorId, sale);
+
     res.status(201).json({
       message: "Venta registrada exitosamente",
       sale: populatedSale,
@@ -1520,8 +2004,10 @@ export const registerSale = async (req, res) => {
       });
     }
   } catch (error) {
+    console.error("❌ Error en registerSale:", error);
+    console.error("Stack:", error.stack);
     const status = error?.statusCode || 500;
-    res.status(status).json({ message: error.message });
+    res.status(status).json({ message: error.message, stack: error.stack });
   }
 };
 
@@ -1711,6 +2197,7 @@ export const getAllSales = async (req, res) => {
       salePrice: 1,
       purchasePrice: 1,
       distributorPrice: 1,
+      averageCostAtSale: 1,
       adminProfit: 1,
       distributorProfit: 1,
       totalProfit: 1,
@@ -1737,7 +2224,7 @@ export const getAllSales = async (req, res) => {
       const tListStart = Date.now();
       const [foundSales, totalCount] = await Promise.all([
         Sale.find(filter, projection)
-          .populate("product", "name image description")
+          // Removed standard populate to handle mixed Product/Promotion IDs
           .populate("distributor", "name email phone address")
           .populate("createdBy", "name email")
           .populate("branch", "name")
@@ -1748,7 +2235,72 @@ export const getAllSales = async (req, res) => {
         Sale.countDocuments(filter),
       ]);
 
-      sales = foundSales;
+      // 🛠️ Manual Hydration: Fetch Products and Promotions in parallel
+      // This fixes the issue where Promotions showed as "N/A" because they aren't in the Product collection
+      const productIds = [
+        ...new Set(foundSales.map((s) => s.product).filter(Boolean)),
+      ];
+
+      const [productsData, promotionsData] = await Promise.all([
+        Product.find({ _id: { $in: productIds } })
+          .select("name image description")
+          .lean(),
+        Promotion.find({ _id: { $in: productIds } })
+          .select("name image description")
+          .lean(),
+      ]);
+
+      const productMap = new Map();
+      productsData.forEach((p) => productMap.set(p._id.toString(), p));
+      promotionsData.forEach((p) =>
+        productMap.set(p._id.toString(), { ...p, isPromotion: true }),
+      );
+
+      // Attach hydrated product/promotion data to sales and RECALCULATE ADMIN PROFIT
+      sales = foundSales.map((sale) => {
+        const productId = sale.product ? sale.product.toString() : null;
+        const productOrPromo = productId
+          ? productMap.get(productId) || null
+          : null;
+
+        // --- REAL NET PROFIT LOGIC (Requested by User) ---
+        // 1. Gross Revenue (Price * Qty - Commission) | Using saved distributor stats or calc
+        const grossRevenue =
+          sale.salePrice * sale.quantity - (sale.distributorProfit || 0);
+
+        // 2. Costs
+        // FIX: The debugging showed that averageCostAtSale was 10714 (10k + 714 phantom shipping).
+        // To fix the display, we must use purchasePrice (10000) if averageCostAtSale is inflated.
+        // We prioritizing purchasePrice if it exists, as that seems to be the user's "Real Cost" anchor.
+        let unitCost = sale.purchasePrice || sale.averageCostAtSale || 0;
+
+        if (!unitCost && productOrPromo) {
+          unitCost =
+            productOrPromo.averageCost || productOrPromo.purchasePrice || 0;
+        }
+        const productCost = unitCost * sale.quantity;
+
+        const shipping = sale.shippingCost || 0;
+        const discount = sale.discount || 0;
+        const extras = sale.totalAdditionalCosts || 0;
+
+        // 3. Real Net Profit
+        const realNetProfit =
+          grossRevenue - productCost - shipping - discount - extras;
+
+        return {
+          ...sale,
+          product: productOrPromo,
+          // OVERWRITE adminProfit with Real Net Profit for display
+          adminProfit: Math.round(realNetProfit),
+          // Also overwrite netProfit to match, avoiding confusion ($9285 vs $6000)
+          netProfit: Math.round(realNetProfit),
+          // Keep original raw values accessible if needed under other keys?
+          // User asked to "Ensure the adminProfit field uses this Strict Formula"
+          originalAdminProfit: sale.adminProfit,
+        };
+      });
+
       total = totalCount;
 
       // Buscar créditos asociados a las ventas

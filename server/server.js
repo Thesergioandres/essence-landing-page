@@ -3,7 +3,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import swaggerUi from "swagger-ui-express";
-import connectDB from "./config/database.js";
 import { initRedis } from "./config/redis.js";
 import swaggerSpec from "./config/swagger.config.js";
 import { startBackupWorker } from "./jobs/backup.worker.js";
@@ -21,6 +20,7 @@ import {
   withResponseRequestId,
 } from "./middleware/requestId.middleware.js";
 import { requestLogger } from "./middleware/requestLogger.middleware.js";
+import { connectDB } from "./src/infrastructure/database/connection.js";
 
 // Importar rutas
 import {
@@ -54,13 +54,19 @@ import inventoryRoutes from "./routes/inventory.routes.js";
 import issueRoutes from "./routes/issue.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import paymentMethodRoutes from "./routes/paymentMethod.routes.js";
+
 import productRoutes from "./routes/product.routes.js";
 import profitHistoryRoutes from "./routes/profitHistory.routes.js";
 import promotionRoutes from "./routes/promotion.routes.js";
 import providerRoutes from "./routes/provider.routes.js";
+import analyticsRoutesV2 from "./src/infrastructure/http/routes/analytics.routes.v2.js";
+import authRoutesV2 from "./src/infrastructure/http/routes/auth.routes.v2.js";
+import productRoutesV2 from "./src/infrastructure/http/routes/product.routes.v2.js";
+import saleRoutesV2 from "./src/infrastructure/http/routes/sales.routes.v2.js";
 // import purchaseOrderRoutes from "./routes/purchaseOrder.routes.js"; // ⚠️ Archivo no existe
 import pushSubscriptionRoutes from "./routes/pushSubscription.routes.js";
 import saleRoutes from "./routes/sale.routes.js";
+
 // import saleOrderRoutes from "./routes/saleOrder.routes.js"; // ⚠️ Archivo no existe
 import segmentRoutes from "./routes/segment.routes.js";
 import specialSaleRoutes from "./routes/specialSale.routes.js";
@@ -85,6 +91,10 @@ const allowedOrigins = [
 // Conectar a MongoDB y Redis
 await connectDB();
 initRedis();
+
+// 🔄 Sincronizar inventario al inicio (Single Source of Truth)
+import { syncAllProductStocks } from "./controllers/stock.controller.js";
+syncAllProductStocks().catch(console.error);
 
 // 🛡️ Validar seguridad de base de datos antes de continuar
 if (process.env.NODE_ENV === "development") {
@@ -239,6 +249,11 @@ app.use("/api/upload", uploadLimiter, uploadRoutes);
 app.use("/api/distributors", distributorRoutes);
 app.use("/api/stock", stockRoutes);
 app.use("/api/sales", saleRoutes);
+app.use("/api/v2/sales", saleRoutesV2);
+app.use("/api/v2/products", productRoutesV2);
+app.use("/api/v2/auth", authRoutesV2);
+app.use("/api/v2/analytics", analyticsRoutesV2);
+
 // app.use("/api/sale-orders", saleOrderRoutes); // ⚠️ Archivo no existe
 // app.use("/api/purchase-orders", purchaseOrderRoutes); // ⚠️ Archivo no existe
 app.use("/api/special-sales", specialSaleRoutes);

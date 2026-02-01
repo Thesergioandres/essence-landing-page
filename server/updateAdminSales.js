@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
 import dotenv from "dotenv";
-import Sale from "./models/Sale.js";
+import mongoose from "mongoose";
+import Sale from "./src/infrastructure/database/models/Sale.js";
 
 dotenv.config();
 
@@ -13,25 +13,31 @@ const updateAdminSales = async () => {
     const result = await Sale.updateMany(
       {
         distributor: null,
-        paymentStatus: "pendiente"
+        paymentStatus: "pendiente",
       },
       {
         $set: {
           paymentStatus: "confirmado",
-          paymentConfirmedAt: new Date()
-        }
-      }
+          paymentConfirmedAt: new Date(),
+        },
+      },
     );
 
-    console.log(`✅ ${result.modifiedCount} ventas admin actualizadas a confirmadas`);
+    console.log(
+      `✅ ${result.modifiedCount} ventas admin actualizadas a confirmadas`,
+    );
 
     // Mostrar resumen de ventas admin
     const adminSales = await Sale.find({ distributor: null });
     console.log(`\n📊 Total de ventas admin: ${adminSales.length}`);
-    
-    const confirmed = adminSales.filter(s => s.paymentStatus === "confirmado").length;
-    const pending = adminSales.filter(s => s.paymentStatus === "pendiente").length;
-    
+
+    const confirmed = adminSales.filter(
+      (s) => s.paymentStatus === "confirmado",
+    ).length;
+    const pending = adminSales.filter(
+      (s) => s.paymentStatus === "pendiente",
+    ).length;
+
     console.log(`✅ Confirmadas: ${confirmed}`);
     console.log(`⏳ Pendientes: ${pending}`);
 

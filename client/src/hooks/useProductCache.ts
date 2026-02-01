@@ -16,6 +16,8 @@ interface Product {
   suggestedPrice?: number;
   clientPrice?: number;
   image?: { url: string };
+  isPromotion?: boolean;
+  type?: "bundle" | "combo" | string;
 }
 
 interface Category {

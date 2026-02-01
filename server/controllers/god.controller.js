@@ -122,7 +122,7 @@ export const getGlobalMetrics = async (_req, res) => {
         acc[item._id || "unknown"] = item.count;
         return acc;
       },
-      { pending: 0, active: 0, expired: 0, suspended: 0, paused: 0 }
+      { pending: 0, active: 0, expired: 0, suspended: 0, paused: 0 },
     );
 
     // Procesar negocios por estado
@@ -131,7 +131,7 @@ export const getGlobalMetrics = async (_req, res) => {
         acc[item._id || "unknown"] = item.count;
         return acc;
       },
-      { active: 0, archived: 0 }
+      { active: 0, archived: 0 },
     );
 
     // Procesar métricas de créditos
@@ -148,7 +148,7 @@ export const getGlobalMetrics = async (_req, res) => {
         pending: { count: 0, totalAmount: 0, totalPaid: 0 },
         paid: { count: 0, totalAmount: 0, totalPaid: 0 },
         overdue: { count: 0, totalAmount: 0, totalPaid: 0 },
-      }
+      },
     );
 
     const salesData = salesMetrics[0] || {

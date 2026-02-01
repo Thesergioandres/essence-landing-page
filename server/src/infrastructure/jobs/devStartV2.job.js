@@ -22,7 +22,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const SERVER_DIR = path.join(__dirname, "..");
+const SERVER_DIR = path.join(__dirname, "../../..");
 
 // Cargar variables de entorno
 dotenv.config({ path: path.join(SERVER_DIR, ".env") });
@@ -108,8 +108,7 @@ async function validateProductionPermissions() {
 
   try {
     // Importar dinámicamente para evitar errores si no existe
-    const { validateProdReadOnlyPermissions } =
-      await import("../config/validateProdReadOnlyPermissions.js");
+    await import("../../../config/validateProdReadOnlyPermissions.js");
 
     const connection = await mongoose
       .createConnection(CONFIG.PROD_URI, {
@@ -166,7 +165,7 @@ async function runSyncV2() {
   }
 
   return new Promise((resolve) => {
-    const syncScript = path.join(__dirname, "syncProdToLocalV2.js");
+    const syncScript = path.join(__dirname, "syncProdToLocalV2.job.js");
 
     logInfo(`Ejecutando sincronización: ${syncScript}`);
 

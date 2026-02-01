@@ -13,7 +13,7 @@ import {
   Warehouse,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import {
   branchService,
@@ -532,7 +532,7 @@ export default function InventoryEntries() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-purple-700 hover:to-pink-700"
+          className="bg-linear-to-r inline-flex items-center justify-center gap-2 rounded-lg from-purple-600 to-pink-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-purple-700 hover:to-pink-700"
         >
           <Plus className="h-5 w-5" />
           Nueva Entrada
@@ -684,10 +684,9 @@ export default function InventoryEntries() {
                   const firstEntry = group.entries[0];
 
                   return (
-                    <>
+                    <Fragment key={group.id}>
                       {/* Fila principal del grupo o entrada individual */}
                       <tr
-                        key={group.id}
                         className={`hover:bg-gray-800/50 ${group.isGroup ? "bg-purple-900/10 font-semibold" : ""}`}
                       >
                         <td className="px-4 py-3">
@@ -846,7 +845,7 @@ export default function InventoryEntries() {
                             </td>
                           </tr>
                         ))}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
@@ -880,7 +879,7 @@ export default function InventoryEntries() {
 
       {/* Modal con Carrito */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-4 md:pt-10">
           <div className="w-full max-w-5xl rounded-xl border border-gray-700 bg-gray-800 p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-white">
@@ -925,6 +924,7 @@ export default function InventoryEntries() {
                     showStock={true}
                     className="mt-1"
                     excludeProductIds={cart.map(item => item.product)}
+                    excludePromotions={true}
                   />
                 </div>
 
@@ -1554,7 +1554,7 @@ export default function InventoryEntries() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="bg-linear-to-r inline-flex items-center gap-2 rounded-lg from-purple-600 to-pink-600 px-6 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {saving && <Loader2 className="h-5 w-5 animate-spin" />}
                     {saving ? "Guardando..." : "Guardar producto"}

@@ -107,7 +107,7 @@ export const deleteUser = async (req, res) => {
 
     // Negocios creados por el usuario (solo super admins / creadores)
     const businessIds = await Business.find({ createdBy: user._id }).distinct(
-      "_id"
+      "_id",
     );
 
     // Borrar datos atados a esos negocios (cascada completa)

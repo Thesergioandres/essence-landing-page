@@ -504,6 +504,7 @@ export default function DistributorCatalog() {
                 key={product._id}
                 product={product}
                 viewMode={viewMode}
+                showDistributorPrice={true}
               />
             ))}
           </div>

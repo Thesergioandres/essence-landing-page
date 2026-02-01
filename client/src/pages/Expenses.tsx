@@ -48,6 +48,16 @@ const EXPENSE_CATEGORIES = [
     label: "💻 Tecnología",
     color: "bg-cyan-500/20 text-cyan-300",
   },
+  {
+    value: "defectuoso",
+    label: "💔 Pérdidas Defectuosos",
+    color: "bg-red-500/20 text-red-300",
+  },
+  {
+    value: "costo adicional",
+    label: "💸 Costo Adicional Envío",
+    color: "bg-orange-500/20 text-orange-300",
+  },
   { value: "otros", label: "📎 Otros", color: "bg-gray-500/20 text-gray-300" },
 ];
 

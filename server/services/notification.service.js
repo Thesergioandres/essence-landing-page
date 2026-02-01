@@ -33,7 +33,7 @@ const NotificationService = {
           link: `/sales`,
           relatedEntity: { type: "Sale", id: saleId },
         },
-        requestId
+        requestId,
       );
       logApiInfo({
         message: "notification_sale_created",
@@ -86,7 +86,7 @@ const NotificationService = {
           link: `/products/${productId}`,
           relatedEntity: { type: "Product", id: productId },
         },
-        requestId
+        requestId,
       );
       logApiInfo({
         message: "notification_low_stock",
@@ -124,13 +124,13 @@ const NotificationService = {
           type: "credit_overdue",
           title: "Crédito vencido",
           message: `El fiado de ${customerName} por $${amount.toFixed(
-            0
+            0,
           )} está vencido hace ${daysOverdue} días`,
           priority: "high",
           link: `/credits/${creditId}`,
           relatedEntity: { type: "Credit", id: creditId },
         },
-        requestId
+        requestId,
       );
       logApiInfo({
         message: "notification_credit_overdue",
@@ -172,16 +172,16 @@ const NotificationService = {
             : "Pago de fiado recibido",
           message: isPaidOff
             ? `${customerName} pagó completamente su deuda de $${paymentAmount.toFixed(
-                0
+                0,
               )}`
             : `${customerName} abonó $${paymentAmount.toFixed(
-                0
+                0,
               )}. Resta: $${remainingAmount.toFixed(0)}`,
           priority: isPaidOff ? "medium" : "low",
           link: `/credits/${creditId}`,
           relatedEntity: { type: "Credit", id: creditId },
         },
-        requestId
+        requestId,
       );
       logApiInfo({
         message: "notification_payment_received",
@@ -220,7 +220,7 @@ const NotificationService = {
           link: `/customers/${customerId}`,
           relatedEntity: { type: "Customer", id: customerId },
         },
-        requestId
+        requestId,
       );
     } catch (error) {
       logApiError({
@@ -254,7 +254,7 @@ const NotificationService = {
           link: `/gamification`,
           relatedEntity: { type: "User", id: userId },
         },
-        requestId
+        requestId,
       );
     } catch (error) {
       logApiError({
@@ -283,7 +283,7 @@ const NotificationService = {
 
       for (const credit of overdueCredits) {
         const daysOverdue = Math.floor(
-          (now - credit.dueDate) / (1000 * 60 * 60 * 24)
+          (now - credit.dueDate) / (1000 * 60 * 60 * 24),
         );
 
         // Actualizar estado a overdue si no lo está
@@ -327,7 +327,9 @@ const NotificationService = {
    */
   async checkLowStock(businessId, threshold = 10, requestId) {
     try {
-      const Product = (await import("../models/Product.js")).default;
+      const Product = (
+        await import("../src/infrastructure/database/models/Product.js")
+      ).default;
 
       const lowStockProducts = await Product.find({
         business: businessId,

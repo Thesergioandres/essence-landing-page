@@ -5,9 +5,12 @@ import {
   getBranchStock,
   getBranchStockAlerts,
   getDistributorStock,
+  getGlobalInventory,
   getMyAllowedBranches,
   getStockAlerts,
   getTransferHistory,
+  reconcileUnassignedStock,
+  syncProductStock,
   transferStockBetweenDistributors,
   transferStockToBranch,
   withdrawStockFromDistributor,
@@ -23,13 +26,41 @@ import { cacheMiddleware } from "../middleware/cache.middleware.js";
 const router = express.Router();
 
 // Rutas de administrador
+router.get(
+  "/global",
+  protect,
+  businessContext,
+  requireFeature("inventory"),
+  requirePermission({ module: "inventory", action: "read" }),
+  // cacheMiddleware(30, "stock:global"), // Optional: CACHE ENABLED
+  getGlobalInventory,
+);
+
+router.post(
+  "/reconcile",
+  protect,
+  businessContext,
+  requireFeature("inventory"),
+  requirePermission({ module: "inventory", action: "update" }),
+  reconcileUnassignedStock,
+);
+
+router.post(
+  "/sync-total",
+  protect,
+  businessContext,
+  requireFeature("inventory"),
+  requirePermission({ module: "inventory", action: "update" }),
+  syncProductStock,
+);
+
 router.post(
   "/assign",
   protect,
   businessContext,
   requireFeature("inventory"),
   requirePermission({ module: "inventory", action: "create" }),
-  assignStockToDistributor
+  assignStockToDistributor,
 );
 router.post(
   "/withdraw",
@@ -37,7 +68,7 @@ router.post(
   businessContext,
   requireFeature("inventory"),
   requirePermission({ module: "inventory", action: "update" }),
-  withdrawStockFromDistributor
+  withdrawStockFromDistributor,
 );
 router.get(
   "/all",
@@ -46,7 +77,7 @@ router.get(
   requireFeature("inventory"),
   requirePermission({ module: "inventory", action: "read" }),
   cacheMiddleware(60, "stock:all"),
-  getAllDistributorsStock
+  getAllDistributorsStock,
 );
 router.get(
   "/branch/:branchId?",
@@ -54,7 +85,7 @@ router.get(
   businessContext,
   requireFeature("inventory"),
   requirePermission({ module: "inventory", action: "read" }),
-  getBranchStock
+  getBranchStock,
 );
 router.get(
   "/alerts",
@@ -63,7 +94,7 @@ router.get(
   requireFeature("inventory"),
   requirePermission({ module: "inventory", action: "read" }),
   cacheMiddleware(30, "stock:alerts"),
-  getStockAlerts
+  getStockAlerts,
 );
 router.get(
   "/branch-alerts",
@@ -72,7 +103,7 @@ router.get(
   requireFeature("inventory"),
   requirePermission({ module: "inventory", action: "read" }),
   cacheMiddleware(30, "stock:branch-alerts"),
-  getBranchStockAlerts
+  getBranchStockAlerts,
 );
 router.get(
   "/transfers",
@@ -81,7 +112,7 @@ router.get(
   requireFeature("inventory"),
   requireFeature("transfers"),
   requirePermission({ module: "transfers", action: "read" }),
-  getTransferHistory
+  getTransferHistory,
 ); // Historial de transferencias
 
 // Rutas para distribuidor
@@ -89,7 +120,7 @@ router.get(
   "/my-allowed-branches",
   protect,
   businessContext,
-  getMyAllowedBranches
+  getMyAllowedBranches,
 );
 router.get(
   "/distributor/:distributorId",
@@ -97,7 +128,7 @@ router.get(
   businessContext,
   requireFeature("inventory"),
   requirePermission({ module: "inventory", action: "read" }),
-  getDistributorStock
+  getDistributorStock,
 );
 router.post(
   "/transfer",
@@ -106,14 +137,14 @@ router.post(
   requireFeature("inventory"),
   requireFeature("transfers"),
   requirePermission({ module: "transfers", action: "create" }),
-  transferStockBetweenDistributors
+  transferStockBetweenDistributors,
 );
 router.post(
   "/transfer-to-branch",
   protect,
   businessContext,
   requireFeature("inventory"),
-  transferStockToBranch
+  transferStockToBranch,
 );
 
 export default router;

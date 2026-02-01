@@ -78,6 +78,12 @@ export default function DistributorDashboard() {
             .catch(() => ({ credits: [] })),
         ]);
 
+      // Filter out promotions from stock data
+      const filteredStockData = stockData.filter(item => {
+        const product = typeof item.product === "object" ? item.product : null;
+        return product && !product.isPromotion;
+      });
+
       // Filtrar créditos pendientes y vencidos
       const myPendingCredits = creditsData.credits || [];
       const now = new Date();
@@ -95,7 +101,7 @@ export default function DistributorDashboard() {
         (sum, sale) => sum + sale.distributorProfit,
         0
       );
-      const lowStockCount = stockData.filter(
+      const lowStockCount = filteredStockData.filter(
         item => item.quantity <= item.lowStockAlert
       ).length;
 
@@ -115,7 +121,7 @@ export default function DistributorDashboard() {
         totalSales,
         totalRevenue,
         totalProfit,
-        productsCount: stockData.length,
+        productsCount: filteredStockData.length,
         lowStockCount,
         pendingCreditsAmount,
         pendingCreditsCount: myPendingCredits.length,
@@ -125,7 +131,7 @@ export default function DistributorDashboard() {
 
       setRecentSales(salesData.sales.slice(0, 5));
       setPendingCredits(myPendingCredits.slice(0, 5));
-      setMyStock(stockData.slice(0, 6));
+      setMyStock(filteredStockData.slice(0, 6));
 
       if (commissionData) {
         setRankingInfo(commissionData);

@@ -43,6 +43,7 @@ export default function Products() {
         limit: pagination.limit,
         sortBy,
         sortOrder,
+        excludePromotions: true,
       };
       if (categoryFilter) filters.category = categoryFilter;
       if (search) filters.search = search;
@@ -111,9 +112,25 @@ export default function Products() {
       await productService.delete(id);
       await loadData();
     } catch (err) {
+      const response = (
+        err as { response?: { status?: number; data?: { message?: string } } }
+      )?.response;
+
+      // Si el producto no existe (404), es un "fantasma" - removerlo del estado local
+      if (response?.status === 404) {
+        setProducts(prev => prev.filter(p => p._id !== id));
+        // Limpiar cache de productos para evitar ghost entries
+        Object.keys(sessionStorage).forEach(key => {
+          if (key.startsWith("products:")) {
+            sessionStorage.removeItem(key);
+          }
+        });
+        setError("");
+        return;
+      }
+
       const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || "No se pudo eliminar el producto";
+        response?.data?.message || "No se pudo eliminar el producto";
       setError(message);
     }
   };
@@ -216,9 +233,19 @@ export default function Products() {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-400">
-          {pagination.total} productos encontrados
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-sm text-gray-400">
+            {pagination.total} productos encontrados
+          </p>
+          <span className="h-4 w-px bg-gray-700"></span>
+          <p className="text-sm font-medium text-purple-400">
+            Total Stock:{" "}
+            {filteredProducts.reduce(
+              (sum, product) => sum + (product.totalStock || 0),
+              0
+            )}
+          </p>
+        </div>
         <button
           onClick={() => {
             setSearch("");

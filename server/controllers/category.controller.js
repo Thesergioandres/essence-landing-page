@@ -122,7 +122,7 @@ export const updateCategory = async (req, res) => {
     const category = await Category.findOneAndUpdate(
       { _id: req.params.id, business: businessId },
       { name, description },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!category) {

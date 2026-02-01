@@ -319,8 +319,67 @@ export default function AddProduct() {
                       min="0"
                       step="0.01"
                       className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="0.00"
                     />
+                  </div>
+                </div>
+
+                {/* Profit & ROI Summary */}
+                <div className="mt-4 rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    📊 Mi Rentabilidad (ROI)
+                  </p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {/* B2B: Selling to Distributor */}
+                    <div>
+                      <p className="text-[10px] uppercase text-gray-500">
+                        Venta a Distribuidor (B2B)
+                      </p>
+                      {(() => {
+                        const cost = Number(formData.purchasePrice) || 0;
+                        const price = Number(formData.distributorPrice) || 0;
+                        const profit = price - cost;
+                        const roi =
+                          cost > 0 ? Math.round((profit / cost) * 100) : 0;
+                        const isPositive = profit > 0;
+
+                        return (
+                          <p
+                            className={`text-sm font-bold ${isPositive ? "text-blue-400" : "text-red-400"}`}
+                          >
+                            ${profit.toLocaleString()}{" "}
+                            <span className="text-xs font-normal opacity-80">
+                              ({roi}%)
+                            </span>
+                          </p>
+                        );
+                      })()}
+                    </div>
+
+                    {/* B2C: Selling to Client Directly */}
+                    <div>
+                      <p className="text-[10px] uppercase text-gray-500">
+                        Venta a Cliente (Directa)
+                      </p>
+                      {(() => {
+                        const cost = Number(formData.purchasePrice) || 0;
+                        const price = Number(formData.clientPrice) || 0;
+                        const profit = price - cost;
+                        const roi =
+                          cost > 0 ? Math.round((profit / cost) * 100) : 0;
+                        const isPositive = profit > 0;
+
+                        return (
+                          <p
+                            className={`text-sm font-bold ${isPositive ? "text-purple-400" : "text-red-400"}`}
+                          >
+                            ${profit.toLocaleString()}{" "}
+                            <span className="text-xs font-normal opacity-80">
+                              ({roi}%)
+                            </span>
+                          </p>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
               </div>

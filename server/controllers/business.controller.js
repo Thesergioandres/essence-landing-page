@@ -198,7 +198,9 @@ export const updateMember = async (req, res) => {
         ...(role ? { role } : {}),
         ...(status ? { status } : {}),
         ...(permissions ? { permissions } : {}),
-        ...(Array.isArray(allowedBranches) ? { allowedBranches } : {}),
+        ...(Array.isArray(allowedBranches)
+          ? { allowedBranches: allowedBranches.filter((id) => id) }
+          : {}),
       },
       { new: true },
     );

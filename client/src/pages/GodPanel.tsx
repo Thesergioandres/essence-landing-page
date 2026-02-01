@@ -460,15 +460,17 @@ export default function GodPanel() {
                             />
                           </div>
 
-                          <ActionButton
-                            label="Activar"
-                            tone="primary"
-                            disabled={isSelf}
-                            loading={
-                              loadingThis && actionKey?.startsWith("activate")
-                            }
-                            onClick={() => handleAction(user._id, "activate")}
-                          />
+                          {user.status !== "active" && (
+                            <ActionButton
+                              label="Activar"
+                              tone="primary"
+                              disabled={isSelf}
+                              loading={
+                                loadingThis && actionKey?.startsWith("activate")
+                              }
+                              onClick={() => handleAction(user._id, "activate")}
+                            />
+                          )}
                           <ActionButton
                             label="Extender"
                             tone="muted"

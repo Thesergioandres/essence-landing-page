@@ -226,25 +226,25 @@ export default function DistributorSales() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-blue-900/50 to-gray-800/50 p-5">
+        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-blue-900/50 to-gray-800/50 p-5">
           <p className="text-sm text-gray-400">Total Ventas</p>
           <p className="mt-2 text-3xl font-bold text-white">
             {stats.totalSales}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-green-900/50 to-gray-800/50 p-5">
+        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-green-900/50 to-gray-800/50 p-5">
           <p className="text-sm text-gray-400">Ingresos Totales</p>
           <p className="mt-2 text-2xl font-bold text-white">
             {formatCurrency(stats.totalRevenue)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-purple-900/50 to-gray-800/50 p-5">
+        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-purple-900/50 to-gray-800/50 p-5">
           <p className="text-sm text-gray-400">Mis Ganancias</p>
           <p className="mt-2 text-2xl font-bold text-white">
             {formatCurrency(stats.totalProfit)}
           </p>
         </div>
-        <div className="rounded-xl border border-orange-700/50 bg-gradient-to-br from-orange-900/30 to-gray-800/50 p-5">
+        <div className="bg-linear-to-br rounded-xl border border-orange-700/50 from-orange-900/30 to-gray-800/50 p-5">
           <p className="text-sm text-orange-300">💳 Por Cobrar</p>
           <p className="mt-2 text-2xl font-bold text-orange-400">
             {creditStats.pendingCollection}
@@ -502,7 +502,9 @@ export default function DistributorSales() {
                                     )}
                                     <div>
                                       <span className="block font-medium text-white">
-                                        {product?.name || "N/A"}
+                                        {product?.name ||
+                                          sale.productName ||
+                                          "Producto Eliminado"}
                                       </span>
                                       <span className="text-xs text-gray-500">
                                         x{sale.quantity}
@@ -614,7 +616,9 @@ export default function DistributorSales() {
                           )}
                           <div>
                             <span className="block font-medium text-white">
-                              {product?.name || "N/A"}
+                              {product?.name ||
+                                sale.productName ||
+                                "Producto Eliminado"}
                             </span>
                             <span className="text-xs text-gray-500">
                               x{sale.quantity}
