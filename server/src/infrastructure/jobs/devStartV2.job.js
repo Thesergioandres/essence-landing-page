@@ -113,8 +113,11 @@ async function validateProductionPermissions() {
 
   try {
     // Importar dinámicamente para evitar errores si no existe
-    const { validateProdReadOnlyPermissions } =
+    const validateProdReadOnlyPermissionsModule =
       await import("../../../config/validateProdReadOnlyPermissions.js");
+    const validateProdReadOnlyPermissions =
+      validateProdReadOnlyPermissionsModule.validateProdReadOnlyPermissions ??
+      validateProdReadOnlyPermissionsModule.default;
 
     const connection = await mongoose
       .createConnection(CONFIG.PROD_URI, {

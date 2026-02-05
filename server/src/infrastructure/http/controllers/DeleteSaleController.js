@@ -99,29 +99,33 @@ async function restoreStock(sale, session) {
  * @param {mongoose.ClientSession} session
  */
 async function deleteRelatedRecords(sale, session) {
-  const sessionOptions = session ? { session } : undefined;
-
   // Delete profit history entries
-  await ProfitHistory.deleteMany(
-    {
-      $or: [
-        { sale: sale._id },
-        { "metadata.saleId": sale._id.toString() },
-        ...(sale.saleId ? [{ "metadata.saleId": sale.saleId }] : []),
-        { "metadata.saleGroupId": sale.saleGroupId },
-      ],
-    },
-    sessionOptions,
-  );
+  const profitHistoryQuery = {
+    $or: [
+      { sale: sale._id },
+      { "metadata.saleId": sale._id.toString() },
+      ...(sale.saleId ? [{ "metadata.saleId": sale.saleId }] : []),
+      { "metadata.saleGroupId": sale.saleGroupId },
+    ],
+  };
+
+  if (session) {
+    await ProfitHistory.deleteMany(profitHistoryQuery).session(session);
+  } else {
+    await ProfitHistory.deleteMany(profitHistoryQuery);
+  }
 
   // Delete credits if payment was credit
   if (sale.paymentType === "credit" || sale.paymentMethodId === "credit") {
-    await Credit.deleteMany(
-      {
-        $or: [{ sale: sale._id }, { "metadata.saleId": sale._id.toString() }],
-      },
-      sessionOptions,
-    );
+    const creditQuery = {
+      $or: [{ sale: sale._id }, { "metadata.saleId": sale._id.toString() }],
+    };
+
+    if (session) {
+      await Credit.deleteMany(creditQuery).session(session);
+    } else {
+      await Credit.deleteMany(creditQuery);
+    }
   }
 }
 

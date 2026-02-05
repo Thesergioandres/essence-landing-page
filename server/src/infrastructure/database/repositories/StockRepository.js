@@ -209,6 +209,17 @@ class StockRepository {
       .populate("distributor", "name email")
       .lean();
 
+    // Log entries where product is null (potential data integrity issues)
+    const nullProductEntries = stock.filter((item) => item.product == null);
+    if (nullProductEntries.length > 0) {
+      console.warn("DistributorStock entries with null product encountered", {
+        businessId,
+        distributorId,
+        distributorStockIds: nullProductEntries
+          .map((item) => item._id)
+          .filter((id) => id != null),
+      });
+    }
     // Filter out entries where product is null (deleted products)
     const validStock = stock.filter((item) => item.product != null);
 

@@ -303,21 +303,24 @@ class ProfitHistoryRepository {
       .select("user")
       .lean();
     const distributorUserIds = distributorMemberships.map((m) => m.user);
-    const normalizedDistributorUserIds = distributorUserIds.flatMap((id) => {
-      if (id instanceof mongoose.Types.ObjectId) return [id, id.toString()];
-      if (typeof id === "string" && mongoose.isValidObjectId(id)) {
-        return [new mongoose.Types.ObjectId(id), id];
-      }
-      return [id];
-    });
+    const distributorUserObjectIds = distributorUserIds
+      .filter((id) => id != null)
+      .map((id) => {
+        if (id instanceof mongoose.Types.ObjectId) return id;
+        if (typeof id === "string" && mongoose.isValidObjectId(id)) {
+          return new mongoose.Types.ObjectId(id);
+        }
+        return null;
+      })
+      .filter((id) => id !== null);
 
     const commissionMatch = {
       ...filter,
       $or: [
         { "metadata.commission": { $gt: 0 } },
         { description: { $regex: /comisi[oó]n/i } },
-        ...(normalizedDistributorUserIds.length > 0
-          ? [{ user: { $in: normalizedDistributorUserIds } }]
+        ...(distributorUserObjectIds.length > 0
+          ? [{ user: { $in: distributorUserObjectIds } }]
           : []),
       ],
     };
