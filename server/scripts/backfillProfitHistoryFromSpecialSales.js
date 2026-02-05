@@ -70,7 +70,7 @@ async function main() {
   const [specialSales, existing] = await Promise.all([
     SpecialSale.find({ status: "active" })
       .select(
-        "business product quantity specialPrice cost totalProfit distribution eventName saleDate"
+        "business product quantity specialPrice cost totalProfit distribution eventName saleDate",
       )
       .sort({ saleDate: 1 })
       .lean(),
@@ -84,7 +84,7 @@ async function main() {
     await buildUserMaps(businessIds);
 
   const existingKeys = new Set(
-    existing.map((e) => toKey(e.specialSale, e.user))
+    existing.map((e) => toKey(e.specialSale, e.user)),
   );
 
   let created = 0;
@@ -106,7 +106,7 @@ async function main() {
 
     const distributionSum = distribution.reduce(
       (sum, dist) => sum + (Number(dist.amount) || 0),
-      0
+      0,
     );
     const remainingProfit = Math.max(totalProfit - distributionSum, 0);
 
@@ -192,7 +192,7 @@ async function main() {
 
     if ((i + 1) % 200 === 0) {
       console.log(
-        `Progreso: ${i + 1}/${specialSales.length} ventas especiales | created=${created} skipped=${skipped} unresolved=${unresolved}`
+        `Progreso: ${i + 1}/${specialSales.length} ventas especiales | created=${created} skipped=${skipped} unresolved=${unresolved}`,
       );
     }
   }
