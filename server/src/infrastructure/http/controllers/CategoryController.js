@@ -1,5 +1,5 @@
-import AuditService from "../../../../services/audit.service.js";
 import CategoryRepository from "../../database/repositories/CategoryRepository.js";
+import AuditService from "../../services/audit.service.js";
 
 /**
  * CategoryController - Hexagonal Architecture

@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+import SpecialSale from "../../../../models/SpecialSale.js";
 import { SpecialSaleRepository } from "../../database/repositories/SpecialSaleRepository.js";
 
 const repository = new SpecialSaleRepository();
@@ -116,16 +118,16 @@ export class SpecialSaleController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
-      // Return mock/empty stats to satisfy frontend
+      const { startDate, endDate } = req.query;
+      const stats = await SpecialSale.getStatistics(
+        startDate,
+        endDate,
+        businessId,
+      );
+
       res.json({
         success: true,
-        data: {
-          totalRevenue: 0,
-          totalProfit: 0,
-          totalSales: 0,
-          averageOrderValue: 0,
-          period: req.query.period || "month",
-        },
+        data: stats,
       });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -141,13 +143,16 @@ export class SpecialSaleController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
+      const { startDate, endDate } = req.query;
+      const distribution = await SpecialSale.getDistributionByPerson(
+        startDate,
+        endDate,
+        businessId,
+      );
+
       res.json({
         success: true,
-        data: {
-          byCategory: [],
-          byProduct: [],
-          byPeriod: [],
-        },
+        data: distribution,
       });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -163,12 +168,37 @@ export class SpecialSaleController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
+      const { startDate, endDate, limit = 10 } = req.query;
+      const match = {
+        status: "active",
+        business: new mongoose.Types.ObjectId(businessId),
+      };
+
+      if (startDate || endDate) {
+        match.saleDate = {};
+        if (startDate) match.saleDate.$gte = new Date(startDate);
+        if (endDate) match.saleDate.$lte = new Date(endDate);
+      }
+
+      const topProducts = await SpecialSale.aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: "$product.name",
+            totalQuantity: { $sum: "$quantity" },
+            totalSales: { $sum: { $multiply: ["$specialPrice", "$quantity"] } },
+            totalProfit: { $sum: "$totalProfit" },
+            salesCount: { $sum: 1 },
+            averagePrice: { $avg: "$specialPrice" },
+          },
+        },
+        { $sort: { totalSales: -1 } },
+        { $limit: Number(limit) || 10 },
+      ]);
+
       res.json({
         success: true,
-        data: {
-          topProducts: [],
-          period: req.query.period || "month",
-        },
+        data: topProducts,
       });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });

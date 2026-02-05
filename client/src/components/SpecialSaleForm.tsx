@@ -69,6 +69,9 @@ export default function SpecialSaleForm({
   const isOverAllocated = remainingProfit < -tolerance;
   const isBalanced = Math.abs(remainingProfit) <= tolerance;
   const isValid = !isOverAllocated;
+  const selectedDistributorIds = distribution
+    .map(dist => dist.distributorId)
+    .filter((id): id is string => Boolean(id));
 
   const loadProducts = useCallback(async () => {
     try {
@@ -700,14 +703,22 @@ export default function SpecialSaleForm({
                           <option value="custom">
                             -- Persona personalizada --
                           </option>
-                          {distributors.map(distributor => (
-                            <option
-                              key={distributor._id}
-                              value={distributor._id}
-                            >
-                              {distributor.name}
-                            </option>
-                          ))}
+                          {distributors
+                            .filter(
+                              distributor =>
+                                distributor._id === dist.distributorId ||
+                                !selectedDistributorIds.includes(
+                                  distributor._id
+                                )
+                            )
+                            .map(distributor => (
+                              <option
+                                key={distributor._id}
+                                value={distributor._id}
+                              >
+                                {distributor.name}
+                              </option>
+                            ))}
                         </select>
 
                         {!dist.useExisting && (
