@@ -23,16 +23,22 @@ router.get("/strategic-analysis", (req, res) =>
 
 router.get(
   "/config",
-  requirePermission("manageBusinessAssistant"),
+  requirePermission({ module: "config", action: "read" }),
   (req, res) => controller.getConfig(req, res),
 );
 router.put(
   "/config",
-  requirePermission("manageBusinessAssistant"),
+  requirePermission({ module: "config", action: "update" }),
   (req, res) => controller.updateConfig(req, res),
 );
 router.get("/recommendations", (req, res) =>
   controller.generateRecommendations(req, res),
+);
+router.post("/recommendations/generate", (req, res) =>
+  controller.createRecommendationsJob(req, res),
+);
+router.get("/recommendations/job/:jobId", (req, res) =>
+  controller.getRecommendationsJob(req, res),
 );
 router.post("/ask", (req, res) => controller.askAssistant(req, res));
 

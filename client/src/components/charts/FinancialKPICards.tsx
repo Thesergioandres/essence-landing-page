@@ -103,7 +103,12 @@ export const FinancialKPICards: React.FC<{
           id: "rangeProfit",
           label: "Ganancia (rango)",
           value: formatMoney(
-            range.profit ?? daily.profit ?? summary.todayProfit
+            range.grossProfit ??
+              range.netProfit ??
+              range.totalProfit ??
+              range.profit ??
+              daily.profit ??
+              summary.todayProfit
           ),
           icon: <TrendingUp className="h-8 w-8" />,
           color: "bg-emerald-500",

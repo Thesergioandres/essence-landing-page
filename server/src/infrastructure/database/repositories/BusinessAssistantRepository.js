@@ -58,7 +58,10 @@ export class BusinessAssistantRepository {
     );
 
     const [products, sales, categories] = await Promise.all([
-      Product.find({ business: businessObjectId }).lean(),
+      Product.find({
+        business: businessObjectId,
+        isDeleted: { $ne: true },
+      }).lean(),
       Sale.find({
         business: businessObjectId,
         saleDate: { $gte: horizonDate },
@@ -159,7 +162,12 @@ export class BusinessAssistantRepository {
     const businessObjectId = new mongoose.Types.ObjectId(String(businessId));
 
     const [products, sales] = await Promise.all([
-      Product.find({ business: businessObjectId }).limit(50).lean(),
+      Product.find({
+        business: businessObjectId,
+        isDeleted: { $ne: true },
+      })
+        .limit(50)
+        .lean(),
       Sale.find({ business: businessObjectId })
         .sort({ saleDate: -1 })
         .limit(100)

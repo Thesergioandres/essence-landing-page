@@ -234,6 +234,7 @@ class StockRepository {
       const missing = await Product.find({
         _id: { $in: missingIds },
         business: businessId,
+        isDeleted: { $ne: true },
       })
         .select("name image purchasePrice distributorPrice clientPrice")
         .lean();
@@ -271,7 +272,10 @@ class StockRepository {
 
   async getGlobalInventory(businessId) {
     // 1. Fetch all products (Warehouse Stock)
-    const products = await Product.find({ business: businessId })
+    const products = await Product.find({
+      business: businessId,
+      isDeleted: { $ne: true },
+    })
       .select("name image category warehouseStock totalStock")
       .populate("category", "name")
       .lean();
@@ -338,6 +342,7 @@ class StockRepository {
   async getAlerts(businessId) {
     const lowWarehouse = await Product.find({
       business: businessId,
+      isDeleted: { $ne: true },
       $expr: { $lte: ["$warehouseStock", "$lowStockAlert"] },
     }).lean();
 

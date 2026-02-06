@@ -1,6 +1,9 @@
+import crypto from "crypto";
+import { getBusinessAssistantQueue } from "../../../../jobs/businessAssistant.queue.js";
 import { BusinessAssistantRepository } from "../../database/repositories/BusinessAssistantRepository.js";
 
 const repository = new BusinessAssistantRepository();
+const directJobs = new Map();
 
 export class BusinessAssistantController {
   async getConfig(req, res) {
@@ -54,6 +57,96 @@ export class BusinessAssistantController {
       });
 
       res.json({ success: true, data: result });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async createRecommendationsJob(req, res) {
+    try {
+      const businessId = req.businessId;
+      if (!businessId) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Falta x-business-id" });
+      }
+
+      const params = req.body || {};
+      const queue = getBusinessAssistantQueue();
+
+      if (!queue) {
+        const result = await repository.generateRecommendations(
+          businessId,
+          params,
+        );
+        const jobId = `direct-${crypto.randomUUID()}`;
+        directJobs.set(jobId, { status: "completed", result });
+
+        return res.json({
+          success: true,
+          message: "Recomendaciones generadas",
+          jobId,
+        });
+      }
+
+      const job = await queue.add("business-assistant", {
+        businessId,
+        params,
+      });
+
+      return res.json({
+        success: true,
+        message: "Job de recomendaciones creado",
+        jobId: job.id,
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async getRecommendationsJob(req, res) {
+    try {
+      const { jobId } = req.params;
+      if (!jobId) {
+        return res.status(400).json({ success: false, message: "Falta jobId" });
+      }
+
+      if (directJobs.has(jobId)) {
+        return res.json(directJobs.get(jobId));
+      }
+
+      const queue = getBusinessAssistantQueue();
+      if (!queue) {
+        return res.status(404).json({
+          success: false,
+          message: "Job no encontrado",
+        });
+      }
+
+      const job = await queue.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({
+          success: false,
+          message: "Job no encontrado",
+        });
+      }
+
+      const state = await job.getState();
+      const response = {
+        status:
+          state === "completed"
+            ? "completed"
+            : state === "failed"
+              ? "failed"
+              : state === "active"
+                ? "processing"
+                : "pending",
+        progress: job.progress || 0,
+        result: state === "completed" ? job.returnvalue : undefined,
+        error: state === "failed" ? job.failedReason : undefined,
+      };
+
+      return res.json(response);
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }

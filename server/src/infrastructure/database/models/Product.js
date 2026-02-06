@@ -91,6 +91,14 @@ const productSchema = new mongoose.Schema(
     },
     ingredients: [String],
     benefits: [String],
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    deletedAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

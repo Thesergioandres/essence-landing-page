@@ -109,7 +109,7 @@ class InventoryRepository {
   async listEntries(businessId, filters, page, limit) {
     const { productId, branchId, providerId, destination, startDate, endDate } =
       filters;
-    const filter = { business: businessId };
+    const filter = { business: businessId, deleted: { $ne: true } };
     if (productId) filter.product = productId;
     if (branchId) filter.branch = branchId;
     if (providerId) filter.provider = providerId;
@@ -145,6 +145,110 @@ class InventoryRepository {
         total,
         pages: Math.ceil(total / limitNum),
       },
+    };
+  }
+
+  async updateEntry(businessId, entryId, data) {
+    const entry = await InventoryEntry.findOne({
+      _id: entryId,
+      business: businessId,
+      deleted: { $ne: true },
+    });
+
+    if (!entry) {
+      throw new Error("Entrada de inventario no encontrada");
+    }
+
+    if (data.notes !== undefined) {
+      entry.notes = data.notes;
+    }
+
+    if (data.provider !== undefined) {
+      if (data.provider) {
+        const provider = await Provider.findOne({
+          _id: data.provider,
+          business: businessId,
+        });
+        if (!provider) throw new Error("Proveedor no encontrado");
+      }
+      entry.provider = data.provider || null;
+    }
+
+    await entry.save();
+
+    return { entry };
+  }
+
+  async deleteEntry(businessId, entryId, userId) {
+    const entry = await InventoryEntry.findOne({
+      _id: entryId,
+      business: businessId,
+      deleted: { $ne: true },
+    });
+
+    if (!entry) {
+      throw new Error("Entrada de inventario no encontrada");
+    }
+
+    const product = await Product.findOne({
+      _id: entry.product,
+      business: businessId,
+    });
+    if (!product) throw new Error("Producto no encontrado");
+
+    const qty = Number(entry.quantity) || 0;
+    if (qty <= 0) {
+      throw new Error("Cantidad inválida en la entrada");
+    }
+
+    if (entry.destination === "branch") {
+      const branchStock = await BranchStock.findOne({
+        business: businessId,
+        branch: entry.branch,
+        product: entry.product,
+      });
+      const branchQty = branchStock?.quantity || 0;
+      if (branchQty < qty) {
+        throw new Error("Stock insuficiente en la sede para revertir");
+      }
+
+      await BranchStock.findOneAndUpdate(
+        { business: businessId, branch: entry.branch, product: entry.product },
+        { $inc: { quantity: -qty } },
+      );
+    } else {
+      const warehouseQty = product.warehouseStock || 0;
+      if (warehouseQty < qty) {
+        throw new Error("Stock insuficiente en bodega para revertir");
+      }
+      product.warehouseStock = warehouseQty - qty;
+    }
+
+    const totalStock = product.totalStock || 0;
+    product.totalStock = Math.max(totalStock - qty, 0);
+
+    const totalValue = product.totalInventoryValue || 0;
+    const entryValue = Number(entry.totalCost) || 0;
+    const newTotalValue = Math.max(totalValue - entryValue, 0);
+    product.totalInventoryValue = newTotalValue;
+
+    product.averageCost =
+      product.totalStock > 0
+        ? newTotalValue / product.totalStock
+        : product.purchasePrice || 0;
+    product.lastCostUpdate = new Date();
+
+    await product.save({ validateBeforeSave: false });
+
+    entry.deleted = true;
+    entry.deletedAt = new Date();
+    entry.deletedBy = userId || null;
+    await entry.save();
+
+    return {
+      entry,
+      revertedQuantity: qty,
+      destination: entry.destination,
     };
   }
 }

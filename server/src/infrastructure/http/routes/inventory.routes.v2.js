@@ -15,6 +15,16 @@ router.post(
   requirePermission({ module: "inventory", action: "create" }),
   InventoryController.createEntry.bind(InventoryController),
 );
+router.put(
+  "/entry/:id",
+  requirePermission({ module: "inventory", action: "update" }),
+  InventoryController.updateEntry.bind(InventoryController),
+);
+router.delete(
+  "/entry/:id",
+  requirePermission({ module: "inventory", action: "delete" }),
+  InventoryController.deleteEntry.bind(InventoryController),
+);
 router.get(
   "/entries",
   requirePermission({ module: "inventory", action: "read" }),

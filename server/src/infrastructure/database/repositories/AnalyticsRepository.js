@@ -199,6 +199,7 @@ export class AnalyticsRepository {
     const warehouseProducts = await Product.find({
       business: businessObjectId,
       warehouseStock: { $gt: 0 },
+      isDeleted: { $ne: true },
     })
       .select(
         "name warehouseStock purchasePrice averageCost distributorPrice clientPrice",

@@ -6,7 +6,12 @@
 
 import api from "../../../api/axios";
 import type { User } from "../../auth/types/auth.types";
-import type { Business, BusinessMembership } from "../types/business.types";
+import type {
+  Business,
+  BusinessAssistantActionType,
+  BusinessAssistantRecommendationsResponse,
+  BusinessMembership,
+} from "../types/business.types";
 
 // ==================== BUSINESS SERVICE ====================
 export const businessService = {
@@ -250,6 +255,119 @@ export const businessService = {
 
 // ==================== BUSINESS ASSISTANT SERVICE ====================
 export const businessAssistantService = {
+  normalizeResponse<T>(response: {
+    data: T | { success?: boolean; data?: T };
+  }) {
+    const payload = response?.data as any;
+    return payload?.data ?? payload;
+  },
+  mapLegacyRecommendations(payload: any) {
+    if (
+      !payload?.recommendations ||
+      payload?.recommendations?.[0]?.recommendation
+    ) {
+      return payload;
+    }
+
+    const mapAction = (action: string): BusinessAssistantActionType => {
+      switch (action) {
+        case "buy_more_inventory":
+        case "pause_purchases":
+        case "decrease_price":
+        case "increase_price":
+        case "run_promotion":
+        case "review_margin":
+        case "clearance":
+        case "keep":
+          return action;
+        case "adjust_price":
+          return "increase_price";
+        default:
+          return "keep";
+      }
+    };
+
+    const mapCategory = (type: string | undefined) => {
+      switch (type) {
+        case "inventory":
+          return "inventario";
+        case "pricing":
+          return "precio";
+        default:
+          return "operacion";
+      }
+    };
+
+    const mapConfidence = (priority: string | undefined) => {
+      switch (priority) {
+        case "high":
+          return 0.9;
+        case "medium":
+          return 0.7;
+        case "low":
+        default:
+          return 0.5;
+      }
+    };
+
+    const horizonDays = payload?.metadata?.horizonDays ?? null;
+    const recentDays = payload?.metadata?.recentDays ?? 0;
+    const generatedAt =
+      payload?.metadata?.generatedAt || new Date().toISOString();
+
+    return {
+      generatedAt,
+      window: {
+        horizonDays,
+        recentDays,
+        startDate: null,
+        endDate: null,
+      },
+      recommendations: payload.recommendations.map((item: any) => {
+        const action = mapAction(item.action);
+        return {
+          productId: item.productId || item.product?._id || "",
+          productName: item.productName || item.title || "Producto",
+          categoryId: null,
+          categoryName: null,
+          abcClass: "C",
+          stock: {
+            warehouseStock: item.stock ?? 0,
+            totalStock: item.stock ?? 0,
+            lowStockAlert: 0,
+          },
+          metrics: {
+            recentDays,
+            horizonDays,
+            recentUnits: 0,
+            prevUnits: 0,
+            unitsGrowthPct: 0,
+            recentRevenue: 0,
+            recentProfit: 0,
+            recentMarginPct: 0,
+            avgDailyUnits: 0,
+            daysCover: null,
+            recentAvgPrice: 0,
+            categoryAvgPrice: 0,
+            priceVsCategoryPct: 0,
+          },
+          recommendation: {
+            primary: {
+              action,
+              title: item.title || action,
+              confidence: mapConfidence(item.priority),
+              category: mapCategory(item.type),
+            },
+            actions: [],
+            justification: item.reason ? [item.reason] : [],
+            score: { impactScore: 0 },
+            notes: item.reason,
+          },
+        };
+      }),
+      promotions: payload.promotions || [],
+    } as BusinessAssistantRecommendationsResponse;
+  },
   async getRecommendations(): Promise<{
     recommendations: Array<{
       _id: string;
@@ -279,7 +397,8 @@ export const businessAssistantService = {
     };
   }> {
     const response = await api.get("/business-assistant/recommendations");
-    return response.data;
+    const payload = businessAssistantService.normalizeResponse(response);
+    return businessAssistantService.mapLegacyRecommendations(payload);
   },
 
   async getConfig(): Promise<{
@@ -295,7 +414,7 @@ export const businessAssistantService = {
     };
   }> {
     const response = await api.get("/business-assistant/config");
-    return response.data;
+    return businessAssistantService.normalizeResponse(response);
   },
 
   async updateConfig(config: {
@@ -312,7 +431,7 @@ export const businessAssistantService = {
     config: Record<string, any>;
   }> {
     const response = await api.put("/business-assistant/config", config);
-    return response.data;
+    return businessAssistantService.normalizeResponse(response);
   },
 
   async createRecommendationsJob(): Promise<{
@@ -322,7 +441,7 @@ export const businessAssistantService = {
     const response = await api.post(
       "/business-assistant/recommendations/generate"
     );
-    return response.data;
+    return businessAssistantService.normalizeResponse(response);
   },
 
   async getRecommendationsJob(jobId: string): Promise<{
@@ -334,7 +453,16 @@ export const businessAssistantService = {
     const response = await api.get(
       `/business-assistant/recommendations/job/${jobId}`
     );
-    return response.data;
+    const payload = businessAssistantService.normalizeResponse(response);
+    if (payload?.status === "completed" && payload?.result) {
+      return {
+        ...payload,
+        result: businessAssistantService.mapLegacyRecommendations(
+          payload.result
+        ),
+      };
+    }
+    return payload;
   },
 
   async getStrategicAnalysis(): Promise<{
@@ -354,7 +482,7 @@ export const businessAssistantService = {
     generatedAt: Date;
   }> {
     const response = await api.get("/business-assistant/strategic-analysis");
-    return response.data;
+    return businessAssistantService.normalizeResponse(response);
   },
 
   async getLatestAnalysis(): Promise<{
@@ -367,6 +495,6 @@ export const businessAssistantService = {
     };
   }> {
     const response = await api.get("/business-assistant/analysis/latest");
-    return response.data;
+    return businessAssistantService.normalizeResponse(response);
   },
 };

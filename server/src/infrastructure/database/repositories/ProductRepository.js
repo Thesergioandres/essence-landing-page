@@ -1,3 +1,7 @@
+import BranchStock from "../../../../models/BranchStock.js";
+import DistributorStock from "../../../../models/DistributorStock.js";
+import InventoryEntry from "../../../../models/InventoryEntry.js";
+import User from "../../../../models/User.js";
 import Product from "../models/Product.js";
 
 export class ProductRepository {
@@ -17,7 +21,12 @@ export class ProductRepository {
    * @returns {Promise<Array>}
    */
   async findAll(businessId, filter = {}) {
-    return Product.find({ business: businessId, ...filter })
+    const normalizedFilter = { business: businessId, ...filter };
+    if (typeof normalizedFilter.isDeleted === "undefined") {
+      normalizedFilter.isDeleted = { $ne: true };
+    }
+
+    return Product.find(normalizedFilter)
       .populate("category", "name color icon")
       .sort({ createdAt: -1 })
       .lean();
@@ -119,7 +128,29 @@ export class ProductRepository {
     if (!product) {
       throw new Error("Producto no encontrado");
     }
-    await Product.deleteOne({ _id: id, business: businessId });
+
+    const deletedAt = new Date();
+
+    await Promise.all([
+      BranchStock.deleteMany({ business: businessId, product: id }),
+      DistributorStock.deleteMany({ business: businessId, product: id }),
+      InventoryEntry.updateMany(
+        { business: businessId, product: id, deleted: { $ne: true } },
+        { $set: { deleted: true, deletedAt } },
+      ),
+      User.updateMany(
+        { business: businessId, assignedProducts: id },
+        { $pull: { assignedProducts: id } },
+      ),
+    ]);
+
+    product.isDeleted = true;
+    product.deletedAt = deletedAt;
+    product.totalStock = 0;
+    product.warehouseStock = 0;
+    product.totalInventoryValue = 0;
+
+    await product.save();
     return product;
   }
 }

@@ -1009,7 +1009,10 @@ export class AdvancedAnalyticsRepository {
   async getInventoryStatus(businessId) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
 
-    const products = await Product.find({ business: businessObjectId })
+    const products = await Product.find({
+      business: businessObjectId,
+      isDeleted: { $ne: true },
+    })
       .select("name warehouseStock stock purchasePrice salePrice")
       .lean();
 

@@ -104,7 +104,10 @@ export class DataExportController {
 
         // Catalog
         Category.find({ business: businessId }).lean(),
-        Product.find({ business: businessId }).lean(),
+        Product.find({
+          business: businessId,
+          isDeleted: { $ne: true },
+        }).lean(),
         Provider.find({ business: businessId }).lean(),
         Customer.find({ business: businessId }).lean(),
         Segment.find({ business: businessId }).lean(),
