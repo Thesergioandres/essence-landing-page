@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import BranchStock from "../../../models/BranchStock.js";
 import DistributorStock from "../../../models/DistributorStock.js";
 import Membership from "../../../models/Membership.js";
 import PaymentMethod from "../../../models/PaymentMethod.js";
@@ -42,6 +43,7 @@ export class RegisterSaleUseCase {
       items, // Expecting Array
       businessId,
       distributorId,
+      branchId,
       notes,
       paymentMethodId,
       customerId,
@@ -153,18 +155,7 @@ export class RegisterSaleUseCase {
       const product = await this.productRepository.findById(productId);
       if (!product) throw new Error(`Product not found: ${productId}`);
 
-      // Check stock availability
-      const hasStock = InventoryService.hasSufficientStock(
-        product.totalStock,
-        quantity,
-      );
-      if (!hasStock) {
-        throw new Error(
-          `Insufficient stock for ${product.name}. Requested: ${quantity}, Available: ${product.totalStock}`,
-        );
-      }
-
-      // If distributor sale, check distributor stock
+      let availableStock = 0;
       if (distributorId) {
         const distStock = await DistributorStock.findOne({
           business: businessId,
@@ -172,9 +163,30 @@ export class RegisterSaleUseCase {
           product: productId,
         });
 
-        if (!distStock || distStock.quantity < quantity) {
+        availableStock = distStock?.quantity || 0;
+        if (!InventoryService.hasSufficientStock(availableStock, quantity)) {
           throw new Error(
-            `Insufficient distributor stock for ${product.name}. Requested: ${quantity}, Available: ${distStock?.quantity || 0}`,
+            `Stock insuficiente en el distribuidor para ${product.name}. Disponible: ${availableStock}`,
+          );
+        }
+      } else if (branchId) {
+        const branchStock = await BranchStock.findOne({
+          business: businessId,
+          branch: branchId,
+          product: productId,
+        });
+
+        availableStock = branchStock?.quantity || 0;
+        if (!InventoryService.hasSufficientStock(availableStock, quantity)) {
+          throw new Error(
+            `Stock insuficiente en la sede para ${product.name}. Disponible: ${availableStock}`,
+          );
+        }
+      } else {
+        availableStock = product.warehouseStock ?? 0;
+        if (!InventoryService.hasSufficientStock(availableStock, quantity)) {
+          throw new Error(
+            `Stock insuficiente en bodega para ${product.name}. Disponible: ${availableStock}`,
           );
         }
       }
@@ -326,6 +338,8 @@ export class RegisterSaleUseCase {
       // Only set distributor field if this is actually a distributor sale
       if (distributorId) {
         saleData.distributor = distributorId;
+      } else if (branchId) {
+        saleData.branch = branchId;
       }
 
       const createdSale = await this.saleRepository.create(saleData, session);
@@ -364,6 +378,26 @@ export class RegisterSaleUseCase {
         console.log(
           `📦 Deducted ${quantity} from DistributorStock (distributor: ${distributorId})`,
         );
+      } else if (branchId) {
+        // Admin Sale from Branch → Deduct from BranchStock
+        const updatedBranchStock = await BranchStock.findOneAndUpdate(
+          {
+            business: businessId,
+            branch: branchId,
+            product: productId,
+            quantity: { $gte: quantity },
+          },
+          { $inc: { quantity: -quantity } },
+          session ? { session, new: true } : { new: true },
+        );
+
+        if (!updatedBranchStock) {
+          throw new Error(
+            `Stock insuficiente en la sede para ${product.name}.`,
+          );
+        }
+
+        console.log(`📦 Deducted ${quantity} from BranchStock (admin sale)`);
       } else {
         // Admin Sale → Deduct from Warehouse
         await this.productRepository.updateWarehouseStock(
