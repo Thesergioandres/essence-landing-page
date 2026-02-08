@@ -6,6 +6,24 @@ import Product from "../../../../models/Product.js";
 import StockTransfer from "../../../../models/StockTransfer.js";
 import User from "../../../../models/User.js";
 
+const normalizeBranchName = (name) =>
+  String(name || "")
+    .trim()
+    .toLowerCase();
+const isBodegaBranch = (branch) =>
+  Boolean(branch?.isWarehouse) ||
+  normalizeBranchName(branch?.name) === "bodega";
+
+const getBodegaBranchIds = async (businessId) => {
+  const branches = await Branch.find({
+    business: businessId,
+    $or: [{ name: /^bodega$/i }, { isWarehouse: true }],
+  })
+    .select("_id")
+    .lean();
+  return branches.map((branch) => branch._id.toString());
+};
+
 class StockRepository {
   async assignToDistributor(businessId, distributorId, productId, quantity) {
     const product = await Product.findOne({
@@ -164,6 +182,8 @@ class StockRepository {
       throw new Error("Sede no encontrada");
     }
 
+    const redirectToWarehouse = isBodegaBranch(branch);
+
     const fromStock = await DistributorStock.findOne({
       business: businessId,
       distributor: fromDistributorId,
@@ -176,6 +196,21 @@ class StockRepository {
 
     fromStock.quantity -= quantity;
     await fromStock.save();
+
+    if (redirectToWarehouse) {
+      const product = await Product.findOne({
+        _id: productId,
+        business: businessId,
+      });
+      if (!product) {
+        throw new Error("Producto no encontrado");
+      }
+
+      product.warehouseStock = (product.warehouseStock || 0) + quantity;
+      await product.save();
+
+      return { fromStock, branchStock: null };
+    }
 
     let branchStock = await BranchStock.findOne({
       business: businessId,
@@ -260,7 +295,37 @@ class StockRepository {
 
   async getBranchStock(businessId, branchId) {
     const filter = businessId ? { business: businessId } : {};
-    if (branchId) filter.branch = branchId;
+
+    const bodegaIds = businessId ? await getBodegaBranchIds(businessId) : [];
+    const isBodegaId =
+      branchId && bodegaIds.includes(String(branchId).toString());
+
+    if (isBodegaId) {
+      const products = await Product.find({
+        business: businessId,
+        isDeleted: { $ne: true },
+      })
+        .select(
+          "name image purchasePrice distributorPrice clientPrice lowStockAlert warehouseStock",
+        )
+        .lean();
+
+      return products
+        .filter((product) => (product.warehouseStock || 0) > 0)
+        .map((product) => ({
+          _id: `warehouse-${product._id}`,
+          branch: branchId,
+          product,
+          quantity: product.warehouseStock || 0,
+          lowStockAlert: product.lowStockAlert || 0,
+        }));
+    }
+
+    if (branchId) {
+      filter.branch = branchId;
+    } else if (bodegaIds.length > 0) {
+      filter.branch = { $nin: bodegaIds };
+    }
 
     return BranchStock.find(filter)
       .populate("branch", "name")
@@ -282,6 +347,9 @@ class StockRepository {
       .lean();
 
     // 2. Fetch all branch stocks
+    const bodegaIds = await getBodegaBranchIds(businessId);
+    const bodegaIdSet = new Set(bodegaIds);
+
     const branchStocks = await BranchStock.find({ business: businessId })
       .populate("branch", "name")
       .lean();
@@ -312,6 +380,7 @@ class StockRepository {
     // Add Branch Stock
     branchStocks.forEach((item) => {
       if (!item.product) return;
+      if (item.branch && bodegaIdSet.has(item.branch.toString())) return;
       const productId = item.product.toString();
       if (!inventoryMap.has(productId)) return; // Access to deleted product?
 
@@ -452,9 +521,11 @@ class StockRepository {
     );
 
     // Calcular stock asignado en sucursales
+    const bodegaIds = await getBodegaBranchIds(businessId);
     const branchStocks = await BranchStock.find({
       product: productId,
       business: businessId,
+      ...(bodegaIds.length > 0 ? { branch: { $nin: bodegaIds } } : {}),
     });
     const totalBranch = branchStocks.reduce(
       (sum, item) => sum + (item.quantity || 0),
@@ -502,9 +573,11 @@ class StockRepository {
       0,
     );
 
+    const bodegaIds = await getBodegaBranchIds(businessId);
     const branchStocks = await BranchStock.find({
       product: productId,
       business: businessId,
+      ...(bodegaIds.length > 0 ? { branch: { $nin: bodegaIds } } : {}),
     });
     const totalBranch = branchStocks.reduce(
       (sum, item) => sum + (item.quantity || 0),

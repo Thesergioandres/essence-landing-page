@@ -49,10 +49,24 @@ export default function GlobalInventoryPage() {
         // Map backend response to component state structure
         const mappedInventory: GlobalInventoryItem[] = res.inventory.map(
           (item: any) => {
+            const filteredBranchDetails = (item.branchDetails || []).filter(
+              (detail: StockDetail) =>
+                String(detail.name || "")
+                  .trim()
+                  .toLowerCase() !== "bodega"
+            );
+            const branchesFromDetails = filteredBranchDetails.reduce(
+              (sum: number, detail: StockDetail) =>
+                sum + (detail.quantity || 0),
+              0
+            );
+            const branches =
+              (item.branchDetails || []).length > 0
+                ? branchesFromDetails
+                : item.branches || 0;
+
             const calculatedTotal =
-              (item.warehouse || 0) +
-              (item.branches || 0) +
-              (item.distributors || 0);
+              (item.warehouse || 0) + branches + (item.distributors || 0);
 
             const systemTotal = item.systemTotal || 0;
             const unassigned = systemTotal - calculatedTotal;
@@ -60,8 +74,8 @@ export default function GlobalInventoryPage() {
             return {
               product: item.product,
               warehouse: item.warehouse || 0,
-              branches: item.branches || 0,
-              branchDetails: item.branchDetails || [],
+              branches,
+              branchDetails: filteredBranchDetails,
               distributors: item.distributors || 0,
               distributorDetails: item.distributorDetails || [],
               total: calculatedTotal,

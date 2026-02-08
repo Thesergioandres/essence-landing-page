@@ -1,3 +1,4 @@
+import Branch from "../../../../models/Branch.js";
 import BranchStock from "../../../../models/BranchStock.js";
 import DistributorStock from "../../../../models/DistributorStock.js";
 import InventoryEntry from "../../../../models/InventoryEntry.js";
@@ -148,9 +149,18 @@ export class ProductRepository {
         0,
       );
 
+      const bodegaBranches = await Branch.find({
+        business: businessId,
+        $or: [{ name: /^bodega$/i }, { isWarehouse: true }],
+      })
+        .select("_id")
+        .lean();
+      const bodegaIds = bodegaBranches.map((branch) => branch._id);
+
       const branchStocks = await BranchStock.find({
         product: id,
         business: businessId,
+        ...(bodegaIds.length > 0 ? { branch: { $nin: bodegaIds } } : {}),
       });
       const totalBranch = branchStocks.reduce(
         (sum, item) => sum + (item.quantity || 0),
