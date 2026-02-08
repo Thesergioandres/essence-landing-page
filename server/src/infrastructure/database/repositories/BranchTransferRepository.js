@@ -5,10 +5,14 @@ import BranchTransfer from "../../../../models/BranchTransfer.js";
 import Product from "../../../../models/Product.js";
 
 const WAREHOUSE_KEY = "warehouse";
-const normalizeBranchName = (name) => String(name || "").trim().toLowerCase();
+const normalizeBranchName = (name) =>
+  String(name || "")
+    .trim()
+    .toLowerCase();
 
 const isWarehouseBranch = (branch) =>
-  Boolean(branch?.isWarehouse) || normalizeBranchName(branch?.name) === "bodega";
+  Boolean(branch?.isWarehouse) ||
+  normalizeBranchName(branch?.name) === "bodega";
 
 export class BranchTransferRepository {
   async ensureWarehouse(businessId) {
