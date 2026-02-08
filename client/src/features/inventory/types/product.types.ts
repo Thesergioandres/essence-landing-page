@@ -157,10 +157,25 @@ export interface InventoryEntry {
   quantity: number;
   unitCost?: number;
   totalCost?: number;
+  averageCostAfter?: number;
   branch?: { _id: string; name: string } | string;
   provider?: { _id: string; name: string } | string;
   notes?: string;
+  purchaseGroupId?: string;
   destination: "branch" | "warehouse";
   requestId: string;
   createdAt: string;
+}
+
+export interface ProductHistoryEntry {
+  _id: string;
+  createdAt: string;
+  provider?: { _id: string; name: string } | null;
+  quantity: number;
+  unitCost?: number;
+  totalCost?: number;
+  averageCostAfter?: number;
+  notes?: string;
+  purchaseGroupId?: string;
+  requestId?: string;
 }

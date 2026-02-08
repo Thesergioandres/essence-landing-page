@@ -483,6 +483,48 @@ class StockRepository {
     };
   }
 
+  async syncProductStock(businessId, productId) {
+    const product = await Product.findOne({
+      _id: productId,
+      business: businessId,
+    });
+
+    if (!product) {
+      throw new Error("Producto no encontrado");
+    }
+
+    const distStocks = await DistributorStock.find({
+      product: productId,
+      business: businessId,
+    });
+    const totalDistributor = distStocks.reduce(
+      (sum, item) => sum + (item.quantity || 0),
+      0,
+    );
+
+    const branchStocks = await BranchStock.find({
+      product: productId,
+      business: businessId,
+    });
+    const totalBranch = branchStocks.reduce(
+      (sum, item) => sum + (item.quantity || 0),
+      0,
+    );
+
+    const warehouseStock = product.warehouseStock || 0;
+    const syncedTotal = warehouseStock + totalDistributor + totalBranch;
+
+    product.totalStock = syncedTotal;
+    await product.save();
+
+    return {
+      totalStock: product.totalStock,
+      warehouseStock,
+      totalDistributor,
+      totalBranch,
+    };
+  }
+
   async getTransferHistory(businessId, filters = {}) {
     const query = { business: businessId };
 

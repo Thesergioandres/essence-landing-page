@@ -36,6 +36,8 @@ export const initialOrderState: OrderState = {
   discount: 0,
   discountPercent: 0,
   additionalCosts: [],
+  paymentProof: null,
+  paymentProofMimeType: null,
 
   // Credit
   creditDueDate: null,
@@ -237,6 +239,17 @@ export function orderReducer(
         // Clear credit fields if not credit
         creditDueDate: action.method === "credit" ? state.creditDueDate : null,
         initialPayment: action.method === "credit" ? state.initialPayment : 0,
+        paymentProof: action.method === "transfer" ? state.paymentProof : null,
+        paymentProofMimeType:
+          action.method === "transfer" ? state.paymentProofMimeType : null,
+      };
+      break;
+
+    case "SET_PAYMENT_PROOF":
+      newState = {
+        ...state,
+        paymentProof: action.paymentProof,
+        paymentProofMimeType: action.paymentProofMimeType,
       };
       break;
 

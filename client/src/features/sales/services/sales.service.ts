@@ -59,6 +59,8 @@ export const saleService = {
     customerId?: string;
     creditDueDate?: string;
     initialPayment?: number;
+    paymentProof?: string;
+    paymentProofMimeType?: string;
     deliveryMethodId?: string;
     shippingCost?: number;
     deliveryAddress?: string;
@@ -129,6 +131,90 @@ export const saleService = {
     };
   }> {
     const response = await api.post("/sales", data);
+    return response.data;
+  },
+
+  async registerStandardBulk(data: {
+    items: Array<{
+      productId: string;
+      quantity: number;
+      salePrice: number;
+    }>;
+    branchId?: string;
+    notes?: string;
+    saleDate?: string;
+    paymentType?: string;
+    paymentMethodId?: string;
+    customerId?: string;
+    creditDueDate?: string;
+    initialPayment?: number;
+    paymentProof?: string;
+    paymentProofMimeType?: string;
+    deliveryMethodId?: string;
+    shippingCost?: number;
+    deliveryAddress?: string;
+    additionalCosts?: Array<{
+      type: string;
+      description: string;
+      amount: number;
+    }>;
+    discount?: number;
+    saleGroupId?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      saleGroupId: string;
+      totalAmount: number;
+      totalItems: number;
+      netProfit: number;
+      adminProfit: number;
+    };
+  }> {
+    const response = await api.post("/sales/standard", data);
+    return response.data;
+  },
+
+  async registerPromotionBulk(data: {
+    items: Array<{
+      productId: string;
+      promotionId: string;
+      quantity: number;
+      salePrice: number;
+      isPromotion?: boolean;
+    }>;
+    branchId?: string;
+    notes?: string;
+    saleDate?: string;
+    paymentType?: string;
+    paymentMethodId?: string;
+    customerId?: string;
+    creditDueDate?: string;
+    initialPayment?: number;
+    paymentProof?: string;
+    paymentProofMimeType?: string;
+    deliveryMethodId?: string;
+    shippingCost?: number;
+    deliveryAddress?: string;
+    additionalCosts?: Array<{
+      type: string;
+      description: string;
+      amount: number;
+    }>;
+    discount?: number;
+    saleGroupId?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      saleGroupId: string;
+      totalAmount: number;
+      totalItems: number;
+      netProfit: number;
+      adminProfit: number;
+    };
+  }> {
+    const response = await api.post("/sales/promotion", data);
     return response.data;
   },
 

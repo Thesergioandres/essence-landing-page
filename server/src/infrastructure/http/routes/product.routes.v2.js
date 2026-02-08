@@ -12,6 +12,7 @@ import {
   getAllProducts,
   getMyCatalog,
   getProductById,
+  getProductHistory,
   updateProduct,
   updateStock,
 } from "../controllers/ProductController.js";
@@ -23,6 +24,16 @@ router.get("/", protect, businessContext, getAllProducts);
 
 // Get distributor catalog (products with stock > 0)
 router.get("/my-catalog", protect, getMyCatalog);
+
+// Get product inventory history
+router.get(
+  "/:id/history",
+  protect,
+  businessContext,
+  requireFeature("inventory"),
+  requirePermission({ module: "inventory", action: "read" }),
+  getProductHistory,
+);
 
 // Get single product by ID
 router.get("/:id", protect, businessContext, getProductById);

@@ -79,6 +79,8 @@ export interface OrderState {
   discount: number; // Amount in currency
   discountPercent: number; // Percentage
   additionalCosts: AdditionalCost[];
+  paymentProof: string | null;
+  paymentProofMimeType: string | null;
 
   // Payment Details (for credit)
   creditDueDate: string | null;
@@ -130,6 +132,11 @@ export type OrderAction =
       customerName: string | null;
     }
   | { type: "SET_PAYMENT_METHOD"; method: PaymentMethod }
+  | {
+      type: "SET_PAYMENT_PROOF";
+      paymentProof: string | null;
+      paymentProofMimeType: string | null;
+    }
   | { type: "SET_DELIVERY_METHOD"; method: DeliveryMethod }
   | { type: "SET_SHIPPING_COST"; cost: number }
   | { type: "SET_DISCOUNT"; amount: number }
@@ -184,6 +191,8 @@ export interface AdminOrderPayload {
   paymentType?: string;
   creditDueDate?: string;
   initialPayment?: number;
+  paymentProof?: string;
+  paymentProofMimeType?: string;
 
   // Delivery (shippingCost only - deliveryMethodId removed as it expects ObjectId, not string)
   shippingCost?: number;

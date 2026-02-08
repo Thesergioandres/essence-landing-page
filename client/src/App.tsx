@@ -53,6 +53,9 @@ const EditProduct = lazy(
 const ProductDetail = lazy(
   () => import("./features/inventory/pages/ProductDetailPage")
 );
+const AdminProductDetail = lazy(
+  () => import("./features/inventory/pages/AdminProductDetailPage")
+);
 const CategoryProducts = lazy(
   () => import("./features/inventory/pages/CategoryProductsPage")
 );
@@ -81,11 +84,11 @@ const Sales = lazy(() => import("./features/sales/pages/SalesPage"));
 const SpecialSales = lazy(
   () => import("./features/sales/pages/SpecialSalesPage")
 );
-const RegisterSale = lazy(
-  () => import("./features/sales/pages/RegisterSalePage")
+const StandardSale = lazy(
+  () => import("./features/sales/pages/StandardSalePage")
 );
-const AdminRegisterSale = lazy(
-  () => import("./features/sales/pages/RegisterSalePage")
+const PromotionSale = lazy(
+  () => import("./features/sales/pages/PromotionSalePage")
 );
 
 // Distributors pages
@@ -268,6 +271,14 @@ export default function App() {
             }
           />
           <Route
+            path="products/:id"
+            element={
+              <BusinessGate requiredFeature="products">
+                <AdminProductDetail />
+              </BusinessGate>
+            }
+          />
+          <Route
             path="categories"
             element={
               <BusinessGate requiredFeature="products">
@@ -438,7 +449,17 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={["admin", "super_admin", "god"]}>
                 <BusinessGate requiredFeature="sales">
-                  <AdminRegisterSale />
+                  <StandardSale />
+                </BusinessGate>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="register-promotion"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "super_admin", "god"]}>
+                <BusinessGate requiredFeature="sales">
+                  <PromotionSale />
                 </BusinessGate>
               </ProtectedRoute>
             }
@@ -579,7 +600,15 @@ export default function App() {
             path="register-sale"
             element={
               <BusinessGate requiredFeature="sales">
-                <RegisterSale />
+                <StandardSale />
+              </BusinessGate>
+            }
+          />
+          <Route
+            path="register-promotion"
+            element={
+              <BusinessGate requiredFeature="sales">
+                <PromotionSale />
               </BusinessGate>
             }
           />

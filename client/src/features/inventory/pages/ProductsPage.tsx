@@ -282,7 +282,8 @@ export default function ProductsPage() {
             {filteredProducts.map(product => (
               <div
                 key={product._id}
-                className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm transition hover:border-purple-500"
+                className="cursor-pointer rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm transition hover:border-purple-500"
+                onClick={() => navigate(`/admin/products/${product._id}`)}
               >
                 <div className="flex gap-4">
                   {product.image?.url ? (
@@ -318,15 +319,19 @@ export default function ProductsPage() {
                 </div>
                 <div className="mt-3 flex gap-2">
                   <button
-                    onClick={() =>
-                      navigate(`/admin/products/${product._id}/edit`)
-                    }
+                    onClick={event => {
+                      event.stopPropagation();
+                      navigate(`/admin/products/${product._id}/edit`);
+                    }}
                     className="min-h-[44px] flex-1 rounded-lg border border-purple-500/60 px-3 py-2 text-xs font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95"
                   >
                     Editar
                   </button>
                   <button
-                    onClick={() => handleDelete(product._id, product.name)}
+                    onClick={event => {
+                      event.stopPropagation();
+                      handleDelete(product._id, product.name);
+                    }}
                     className="min-h-[44px] flex-1 rounded-lg border border-red-500/60 px-3 py-2 text-xs font-medium text-red-300 transition hover:bg-red-600/20 active:scale-95"
                   >
                     Eliminar
@@ -390,7 +395,8 @@ export default function ProductsPage() {
                   {filteredProducts.map(product => (
                     <tr
                       key={product._id}
-                      className="transition hover:bg-gray-900/60"
+                      className="cursor-pointer transition hover:bg-gray-900/60"
+                      onClick={() => navigate(`/admin/products/${product._id}`)}
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
@@ -430,17 +436,19 @@ export default function ProductsPage() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-3">
                           <button
-                            onClick={() =>
-                              navigate(`/admin/products/${product._id}/edit`)
-                            }
+                            onClick={event => {
+                              event.stopPropagation();
+                              navigate(`/admin/products/${product._id}/edit`);
+                            }}
                             className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95"
                           >
                             Editar
                           </button>
                           <button
-                            onClick={() =>
-                              handleDelete(product._id, product.name)
-                            }
+                            onClick={event => {
+                              event.stopPropagation();
+                              handleDelete(product._id, product.name);
+                            }}
                             className="rounded-lg border border-red-500/60 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-600/20 active:scale-95"
                           >
                             Eliminar

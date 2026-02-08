@@ -232,6 +232,25 @@ export default function DistributorDashboardLayout() {
               </svg>
               Registrar Venta
             </NavLink>
+            <NavLink
+              to="/distributor/register-promotion"
+              className={({ isActive }): string => navLinkClasses(isActive)}
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 12h14M12 5l7 7-7 7"
+                />
+              </svg>
+              Venta Promocion
+            </NavLink>
 
             <NavLink
               to="/distributor/sales"

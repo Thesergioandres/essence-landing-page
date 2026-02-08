@@ -351,6 +351,9 @@ export default function GlobalInventoryPage() {
                         <span className="text-lg">
                           ⚠️ {formatNumber(item.unassigned)}
                         </span>
+                        <span className="text-[10px] text-red-300">
+                          Faltan unidades en ubicaciones.
+                        </span>
                         <button
                           onClick={async e => {
                             e.stopPropagation();
@@ -385,6 +388,9 @@ export default function GlobalInventoryPage() {
                       <div className="flex flex-col items-center gap-2">
                         <span className="text-xs font-medium text-green-500">
                           +{Math.abs(item.unassigned)} (Sobra)
+                        </span>
+                        <span className="text-[10px] text-blue-300">
+                          Hay mas stock fisico que el total del sistema.
                         </span>
                         <button
                           onClick={async e => {

@@ -65,5 +65,10 @@ router.post(
   requirePermission({ module: "inventory", action: "update" }),
   StockController.reconcileStock.bind(StockController),
 );
+router.post(
+  "/sync",
+  requirePermission({ module: "inventory", action: "update" }),
+  StockController.syncProductStock.bind(StockController),
+);
 
 export default router;

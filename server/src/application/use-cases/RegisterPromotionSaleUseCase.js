@@ -2,17 +2,15 @@ import { v4 as uuidv4 } from "uuid";
 import DistributorStock from "../../../models/DistributorStock.js";
 import Membership from "../../../models/Membership.js";
 import PaymentMethod from "../../../models/PaymentMethod.js";
-import {
-  applySaleGamification,
-  getCommissionBonusForDistributor,
-} from "../../../utils/gamificationEngine.js";
+import Promotion from "../../../models/Promotion.js";
+import { applySaleGamification } from "../../../utils/gamificationEngine.js";
 import { FinanceService } from "../../domain/services/FinanceService.js";
 import { InventoryService } from "../../domain/services/InventoryService.js";
 import CreditRepository from "../../infrastructure/database/repositories/CreditRepository.js";
 import { ProductRepository } from "../../infrastructure/database/repositories/ProductRepository.js";
 import ProfitHistoryRepository from "../../infrastructure/database/repositories/ProfitHistoryRepository.js";
 import { SaleRepository } from "../../infrastructure/database/repositories/SaleRepository.js";
-export class RegisterSaleUseCase {
+export class RegisterPromotionSaleUseCase {
   constructor() {
     this.saleRepository = new SaleRepository();
     this.productRepository = new ProductRepository();
@@ -108,11 +106,7 @@ export class RegisterSaleUseCase {
 
     // 2. PHASE 1: Validate ALL items BEFORE making any changes
     const validatedItems = [];
-    let distributorCommissionBonus = 0;
-    if (distributorId) {
-      const bonusInfo = await getCommissionBonusForDistributor(distributorId);
-      distributorCommissionBonus = bonusInfo.bonusCommission || 0;
-    }
+    const distributorCommissionBonus = 0;
 
     const discountTotal = Math.max(0, Number(discount || 0));
     const additionalChargesTotal = (additionalCosts || []).reduce(
@@ -133,8 +127,45 @@ export class RegisterSaleUseCase {
       0,
     );
 
+    const promotionIds = Array.from(
+      new Set(
+        items
+          .map((item) => {
+            if (!item.promotionId) return null;
+            if (typeof item.promotionId === "object") {
+              return item.promotionId._id || null;
+            }
+            return item.promotionId;
+          })
+          .filter((id) => Boolean(id)),
+      ),
+    );
+    const promotionMap = new Map();
+    if (promotionIds.length > 0) {
+      const promotions = await Promotion.find({
+        _id: { $in: promotionIds },
+      })
+        .select("_id distributorPrice")
+        .lean();
+      promotions.forEach((promo) => {
+        promotionMap.set(String(promo._id), promo);
+      });
+    }
+    const promotionTotals = items.reduce((acc, item) => {
+      const rawPromotionId = item.promotionId;
+      if (!rawPromotionId) return acc;
+      const key = String(
+        typeof rawPromotionId === "object"
+          ? rawPromotionId._id || rawPromotionId
+          : rawPromotionId,
+      );
+      const subtotal = Number(item.salePrice || 0) * Number(item.quantity || 0);
+      acc[key] = (acc[key] || 0) + subtotal;
+      return acc;
+    }, {});
+
     for (const item of items) {
-      const { productId, quantity, salePrice } = item;
+      const { productId, quantity, salePrice, promotionId } = item;
       const itemSubtotal = Number(salePrice || 0) * Number(quantity || 0);
       const discountShare =
         totalSubtotal > 0 ? (itemSubtotal / totalSubtotal) * discountTotal : 0;
@@ -182,15 +213,46 @@ export class RegisterSaleUseCase {
       // Calculate financials
       const costBasis = product.averageCost || product.purchasePrice || 0;
       const isDistributorSale = Boolean(distributorId);
-      const effectiveDistributorProfitPercentage = isDistributorSale
-        ? distributorProfitPercentage + distributorCommissionBonus
+      const effectiveDistributorProfitPercentage = 0;
+      const promotionKey = promotionId
+        ? String(
+            typeof promotionId === "object"
+              ? promotionId._id || promotionId
+              : promotionId,
+          )
+        : null;
+      const promotionData = promotionKey
+        ? promotionMap.get(promotionKey)
+        : null;
+      const promotionTotal = promotionKey
+        ? Number(promotionTotals[promotionKey] || 0)
         : 0;
+      const promotionDistributorTotal = promotionData
+        ? Number(promotionData.distributorPrice || 0)
+        : 0;
+      const promotionShare =
+        promotionTotal > 0 ? itemSubtotal / promotionTotal : 0;
+      const promotionDistributorUnitPrice =
+        promotionDistributorTotal > 0 && promotionShare > 0
+          ? (promotionDistributorTotal * promotionShare) /
+            Math.max(1, Number(quantity || 0))
+          : 0;
+      if (promotionKey && !promotionData) {
+        throw new Error("Promocion no encontrada para aplicar precio B2B.");
+      }
+
+      if (!promotionKey) {
+        throw new Error("Promocion requerida para venta promocional.");
+      }
+
       let distributorPrice = salePrice;
       if (isDistributorSale) {
-        distributorPrice = FinanceService.calculateDistributorPrice(
-          salePrice,
-          effectiveDistributorProfitPercentage,
-        );
+        if (promotionDistributorUnitPrice <= 0) {
+          throw new Error(
+            "Promocion sin precio B2B valido para calcular la comision.",
+          );
+        }
+        distributorPrice = promotionDistributorUnitPrice;
       }
       const distributorProfit = isDistributorSale
         ? FinanceService.calculateDistributorProfit(
@@ -222,6 +284,8 @@ export class RegisterSaleUseCase {
         adminProfit,
         totalProfit,
         adminNetProfit,
+        isPromotion: true,
+        promotionId: promotionId || null,
         distributorProfitPercentage: effectiveDistributorProfitPercentage,
         commissionBonus: distributorCommissionBonus,
         commissionBonusAmount: isDistributorSale
@@ -251,6 +315,8 @@ export class RegisterSaleUseCase {
         adminProfit,
         totalProfit,
         adminNetProfit,
+        isPromotion,
+        promotionId,
         distributorProfitPercentage,
         commissionBonus,
         commissionBonusAmount,
@@ -303,6 +369,8 @@ export class RegisterSaleUseCase {
         adminProfit,
         totalProfit,
         netProfit: adminNetProfit,
+        isPromotion,
+        promotion: promotionId || undefined,
         distributorProfitPercentage,
         commissionBonus,
         commissionBonusAmount,

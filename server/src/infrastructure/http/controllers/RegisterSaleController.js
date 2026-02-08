@@ -1,11 +1,42 @@
 import mongoose from "mongoose";
-import { RegisterSaleUseCase } from "../../../application/use-cases/RegisterSaleUseCase.js";
+import { RegisterPromotionSaleUseCase } from "../../../application/use-cases/RegisterPromotionSaleUseCase.js";
+import { RegisterStandardSaleUseCase } from "../../../application/use-cases/RegisterStandardSaleUseCase.js";
 
 /**
  * Register Sale Controller
  * Entry point for the Sales Registration (Hexagonal Adapter)
  */
-export const registerSale = async (req, res, next) => {
+const buildSaleInput = (req, distributorId) => ({
+  user: req.user,
+  businessId: req.headers["x-business-id"],
+  distributorId,
+  items: req.body.items,
+  paymentMethodId: req.body.paymentMethodId,
+  customerId: req.body.customerId,
+  creditDueDate: req.body.creditDueDate,
+  initialPayment: req.body.initialPayment,
+  paymentProof: req.body.paymentProof,
+  paymentProofMimeType: req.body.paymentProofMimeType,
+  saleDate: req.body.saleDate,
+  deliveryMethodId: req.body.deliveryMethodId,
+  shippingCost: req.body.shippingCost,
+  discount: req.body.discount,
+  additionalCosts: req.body.additionalCosts,
+  notes: req.body.notes,
+  distributorProfitPercentage: req.body.distributorProfitPercentage,
+});
+
+const resolveDistributorId = (req) => {
+  if (req.user.role === "distribuidor") {
+    return req.user.id;
+  }
+  if (req.body.distributorId) {
+    return req.body.distributorId;
+  }
+  return null;
+};
+
+const runRegisterSale = async (req, res, next, UseCaseClass) => {
   let session = null;
   let useTransactions = false;
 
@@ -31,35 +62,11 @@ export const registerSale = async (req, res, next) => {
     // Determine distributorId based on user role:
     // - If user is distributor: use their ID
     // - If user is admin: only set distributorId if explicitly provided in body
-    let distributorId = null;
-    if (req.user.role === "distribuidor") {
-      // User is a distributor, this is their sale
-      distributorId = req.user.id;
-    } else if (req.body.distributorId) {
-      // Admin can create sales on behalf of a distributor
-      distributorId = req.body.distributorId;
-    }
-
-    const input = {
-      user: req.user,
-      businessId: req.headers["x-business-id"], // Assumed from middleware
-      distributorId, // Correctly set based on role
-      items: req.body.items, // Bulk Items Array
-      paymentMethodId: req.body.paymentMethodId,
-      customerId: req.body.customerId,
-      creditDueDate: req.body.creditDueDate,
-      initialPayment: req.body.initialPayment,
-      saleDate: req.body.saleDate,
-      deliveryMethodId: req.body.deliveryMethodId,
-      shippingCost: req.body.shippingCost,
-      discount: req.body.discount,
-      additionalCosts: req.body.additionalCosts,
-      notes: req.body.notes,
-      distributorProfitPercentage: req.body.distributorProfitPercentage,
-    };
+    const distributorId = resolveDistributorId(req);
+    const input = buildSaleInput(req, distributorId);
 
     // 3. Invoke Application Use Case
-    const useCase = new RegisterSaleUseCase();
+    const useCase = new UseCaseClass();
     const result = await useCase.execute(input, session);
 
     // 4. Commit Transaction
@@ -86,3 +93,12 @@ export const registerSale = async (req, res, next) => {
     }
   }
 };
+
+export const registerSale = async (req, res, next) =>
+  runRegisterSale(req, res, next, RegisterStandardSaleUseCase);
+
+export const registerStandardSale = async (req, res, next) =>
+  runRegisterSale(req, res, next, RegisterStandardSaleUseCase);
+
+export const registerPromotionSale = async (req, res, next) =>
+  runRegisterSale(req, res, next, RegisterPromotionSaleUseCase);

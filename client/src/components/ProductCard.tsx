@@ -110,18 +110,37 @@ export default function ProductCard({
           <div className="text-right">
             {showDistributorPrice ? (
               <>
-                <p className="mb-0.5 text-xs text-gray-400 line-through">
-                  $
-                  {product.clientPrice?.toFixed(2) ||
-                    product.suggestedPrice?.toFixed(2) ||
-                    "0.00"}
-                </p>
-                <p className="text-3xl font-bold text-green-400">
-                  ${product.distributorPrice?.toFixed(2) || "0.00"}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-green-600">
-                  Precio Distribuidor
-                </p>
+                {product.isPromotion ? (
+                  <>
+                    <p className="mb-0.5 text-xs text-gray-400">
+                      Precio promocion
+                    </p>
+                    <p className="text-3xl font-bold text-purple-300">
+                      $
+                      {product.clientPrice?.toFixed(2) ||
+                        product.suggestedPrice?.toFixed(2) ||
+                        "0.00"}
+                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-green-600">
+                      B2B: ${product.distributorPrice?.toFixed(2) || "0.00"}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mb-0.5 text-xs text-gray-400 line-through">
+                      $
+                      {product.clientPrice?.toFixed(2) ||
+                        product.suggestedPrice?.toFixed(2) ||
+                        "0.00"}
+                    </p>
+                    <p className="text-3xl font-bold text-green-400">
+                      ${product.distributorPrice?.toFixed(2) || "0.00"}
+                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-green-600">
+                      Precio Distribuidor
+                    </p>
+                  </>
+                )}
               </>
             ) : (
               <>
@@ -267,16 +286,35 @@ export default function ProductCard({
           <div>
             {showDistributorPrice ? (
               <>
-                <p className="mb-0.5 text-[10px] uppercase text-gray-500">
-                  Tu Precio (B2B)
-                </p>
-                <p className="text-2xl font-bold text-green-400">
-                  ${product.distributorPrice?.toFixed(2) || "0.00"}
-                </p>
-                {product.clientPrice && (
-                  <p className="text-xs text-gray-500 line-through">
-                    Venta: ${product.clientPrice.toFixed(2)}
-                  </p>
+                {product.isPromotion ? (
+                  <>
+                    <p className="mb-0.5 text-[10px] uppercase text-gray-500">
+                      Precio promocion
+                    </p>
+                    <p className="text-2xl font-bold text-purple-300">
+                      $
+                      {product.clientPrice?.toFixed(2) ||
+                        product.suggestedPrice?.toFixed(2) ||
+                        "0.00"}
+                    </p>
+                    <p className="text-xs text-green-500">
+                      B2B: ${product.distributorPrice?.toFixed(2) || "0.00"}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mb-0.5 text-[10px] uppercase text-gray-500">
+                      Tu Precio (B2B)
+                    </p>
+                    <p className="text-2xl font-bold text-green-400">
+                      ${product.distributorPrice?.toFixed(2) || "0.00"}
+                    </p>
+                    {product.clientPrice && (
+                      <p className="text-xs text-gray-500 line-through">
+                        Venta: ${product.clientPrice.toFixed(2)}
+                      </p>
+                    )}
+                  </>
                 )}
               </>
             ) : (

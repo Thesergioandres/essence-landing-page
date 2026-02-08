@@ -469,35 +469,36 @@ export default function EditProduct() {
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-300">
-                    Stock Total *
+                    Stock Total
                   </label>
                   <input
                     type="number"
                     name="totalStock"
                     value={formData.totalStock}
-                    onChange={handleChange}
-                    required
-                    min="0"
-                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    readOnly
+                    disabled
+                    className="w-full cursor-not-allowed rounded-lg border border-gray-700 bg-gray-900/30 px-4 py-3 text-gray-400"
                   />
-                  <p className="mt-1 text-xs text-gray-500">Unidades totales</p>
+                  <p className="mt-1 text-xs text-amber-400">
+                    Solo cambia con Entradas de Inventario, ventas o ajustes.
+                  </p>
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-300">
-                    Stock en Bodega *
+                    Stock en Bodega
                   </label>
                   <input
                     type="number"
                     name="warehouseStock"
                     value={formData.warehouseStock}
-                    onChange={handleChange}
-                    required
-                    min="0"
-                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    readOnly
+                    disabled
+                    className="w-full cursor-not-allowed rounded-lg border border-gray-700 bg-gray-900/30 px-4 py-3 text-gray-400"
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Disponible para asignar
+                  <p className="mt-1 text-xs text-amber-400">
+                    Ajusta desde Entradas de Inventario para mantener
+                    trazabilidad.
                   </p>
                 </div>
 

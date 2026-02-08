@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { isCloudinaryConfigured } from "../../../../config/cloudinary.js";
 import DistributorStock from "../../../../models/DistributorStock.js";
+import InventoryEntry from "../../../../models/InventoryEntry.js";
 import { CreateProductUseCase } from "../../../application/use-cases/CreateProductUseCase.js";
 import { UpdateStockUseCase } from "../../../application/use-cases/UpdateStockUseCase.js";
 import { ProductRepository } from "../../database/repositories/ProductRepository.js";
@@ -151,6 +152,45 @@ export const getProductById = async (req, res, next) => {
     res.json({ success: true, data: product });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * Get Product Inventory History
+ */
+export const getProductHistory = async (req, res) => {
+  try {
+    const businessId = req.headers["x-business-id"] || req.businessId;
+    if (!businessId) {
+      return res.status(400).json({
+        success: false,
+        message: "Business ID required",
+      });
+    }
+
+    const { id } = req.params;
+    const entries = await InventoryEntry.find({
+      business: businessId,
+      product: id,
+      deleted: { $ne: true },
+    })
+      .select(
+        "createdAt provider quantity unitCost totalCost averageCostAfter notes purchaseGroupId requestId",
+      )
+      .populate({ path: "provider", select: "name" })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: entries,
+    });
+  } catch (error) {
+    console.error("❌ Error in getProductHistory:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error al obtener el historial del producto",
+    });
   }
 };
 

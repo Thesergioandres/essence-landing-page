@@ -255,6 +255,32 @@ class StockController {
     }
   }
 
+  async syncProductStock(req, res) {
+    try {
+      const businessId = req.businessId || req.headers["x-business-id"];
+      if (!businessId)
+        return res.status(400).json({ message: "Falta x-business-id" });
+
+      const { productId } = req.body;
+      if (!productId)
+        return res.status(400).json({ message: "productId requerido" });
+
+      const result = await StockRepository.syncProductStock(
+        businessId,
+        productId,
+      );
+
+      res.json({
+        success: true,
+        message: "Total del sistema sincronizado correctamente",
+        data: result,
+      });
+    } catch (error) {
+      console.error("Error in syncProductStock:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   async getTransferHistory(req, res) {
     try {
       const businessId = req.businessId || req.headers["x-business-id"];

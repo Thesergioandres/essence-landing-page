@@ -11,7 +11,11 @@ import {
   deleteSaleGroup,
 } from "../controllers/DeleteSaleController.js";
 import { listSales } from "../controllers/ListSalesController.js";
-import { registerSale } from "../controllers/RegisterSaleController.js";
+import {
+  registerPromotionSale,
+  registerSale,
+  registerStandardSale,
+} from "../controllers/RegisterSaleController.js";
 
 const router = express.Router();
 const branchFromReq = (req) =>
@@ -45,7 +49,7 @@ router.get(
   listSales,
 );
 
-// POST /api/v2/sales
+// POST /api/v2/sales (default: standard)
 router.post(
   "/",
   protect,
@@ -57,6 +61,34 @@ router.post(
     branchResolver: branchFromReq,
   }),
   registerSale,
+);
+
+// POST /api/v2/sales/standard
+router.post(
+  "/standard",
+  protect,
+  businessContext,
+  requireFeature("sales"),
+  requirePermission({
+    module: "sales",
+    action: "create",
+    branchResolver: branchFromReq,
+  }),
+  registerStandardSale,
+);
+
+// POST /api/v2/sales/promotion
+router.post(
+  "/promotion",
+  protect,
+  businessContext,
+  requireFeature("sales"),
+  requirePermission({
+    module: "sales",
+    action: "create",
+    branchResolver: branchFromReq,
+  }),
+  registerPromotionSale,
 );
 
 // PUT /api/v2/sales/:saleId/confirm-payment - Confirm sale payment

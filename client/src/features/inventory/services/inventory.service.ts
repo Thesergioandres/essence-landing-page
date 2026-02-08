@@ -12,6 +12,7 @@ import type {
   DistributorStock,
   InventoryEntry,
   Product,
+  ProductHistoryEntry,
   ProductPayload,
   StockAlert,
 } from "../types/product.types";
@@ -48,6 +49,14 @@ export const productService = {
     }
     // Fallback for old format
     return response.data;
+  },
+
+  async getHistory(id: string): Promise<ProductHistoryEntry[]> {
+    const response = await api.get(`/products/${id}/history`);
+    if (response.data?.success && Array.isArray(response.data?.data)) {
+      return response.data.data as ProductHistoryEntry[];
+    }
+    return Array.isArray(response.data) ? (response.data as any) : [];
   },
 
   async getAllCategories(): Promise<Category[]> {
