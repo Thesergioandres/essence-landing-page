@@ -221,33 +221,12 @@ export const branchService = {
 // ==================== BRANCH TRANSFER SERVICE ====================
 export const branchTransferService = {
   async create(data: {
-    fromType: "warehouse" | "branch" | "distributor";
-    fromId?: string;
-    toType: "warehouse" | "branch" | "distributor";
-    toId?: string;
-    productId: string;
-    quantity: number;
-    reason?: string;
-  }): Promise<{
-    message: string;
-    transfer: {
-      _id: string;
-      fromType: string;
-      fromId?: string;
-      toType: string;
-      toId?: string;
-      product: Product;
-      quantity: number;
-      reason?: string;
-      createdBy: { _id: string; name: string };
-      createdAt: Date;
-    };
-    newStockLevels: {
-      from: number;
-      to: number;
-    };
-  }> {
-    const response = await api.post("/stock/transfer", data);
+    originBranchId: string;
+    targetBranchId: string;
+    items: Array<{ productId: string; quantity: number }>;
+    notes?: string;
+  }) {
+    const response = await api.post("/branch-transfers", data);
     return response.data;
   },
 
@@ -281,7 +260,7 @@ export const branchTransferService = {
       pages: number;
     };
   }> {
-    const response = await api.get("/stock/transfer/history", { params });
+    const response = await api.get("/branch-transfers", { params });
     return response.data;
   },
 
@@ -301,7 +280,7 @@ export const branchTransferService = {
       createdAt: Date;
     };
   }> {
-    const response = await api.get(`/stock/transfer/${transferId}`);
+    const response = await api.get(`/branch-transfers/${transferId}`);
     return response.data;
   },
 
@@ -321,7 +300,7 @@ export const branchTransferService = {
     }>;
     totalTransferred: number;
   }> {
-    const response = await api.post("/stock/transfer/bulk", data);
+    const response = await api.post("/branch-transfers/bulk", data);
     return response.data;
   },
 };

@@ -5,6 +5,10 @@ import BranchTransfer from "../../../../models/BranchTransfer.js";
 import Product from "../../../../models/Product.js";
 
 const WAREHOUSE_KEY = "warehouse";
+const normalizeBranchName = (name) => String(name || "").trim().toLowerCase();
+
+const isWarehouseBranch = (branch) =>
+  Boolean(branch?.isWarehouse) || normalizeBranchName(branch?.name) === "bodega";
 
 export class BranchTransferRepository {
   async ensureWarehouse(businessId) {
@@ -66,6 +70,11 @@ export class BranchTransferRepository {
         throw new Error("Sede inválida");
       }
 
+      const originIsWarehouse =
+        originRequestedWarehouse || isWarehouseBranch(originBranch);
+      const targetIsWarehouse =
+        targetRequestedWarehouse || isWarehouseBranch(targetBranch);
+
       const transferItems = [];
 
       for (const item of data.items) {
@@ -77,39 +86,56 @@ export class BranchTransferRepository {
           throw new Error(`Producto ${item.productId} no encontrado`);
         }
 
-        const originStock = await BranchStock.findOne({
-          branch: originBranchId,
-          product: item.productId,
-        });
+        if (originIsWarehouse) {
+          const currentWarehouse = product.warehouseStock || 0;
+          if (currentWarehouse < item.quantity) {
+            throw new Error(`Stock insuficiente para ${product.name}`);
+          }
+          product.warehouseStock = currentWarehouse - item.quantity;
+        } else {
+          const originStock = await BranchStock.findOne({
+            branch: originBranchId,
+            product: item.productId,
+          });
 
-        if (!originStock || originStock.quantity < item.quantity) {
-          throw new Error(`Stock insuficiente para ${product.name}`);
+          if (!originStock || originStock.quantity < item.quantity) {
+            throw new Error(`Stock insuficiente para ${product.name}`);
+          }
+
+          originStock.quantity -= item.quantity;
+          await originStock.save({ session });
         }
 
-        originStock.quantity -= item.quantity;
-        await originStock.save({ session });
-
-        let targetStock = await BranchStock.findOne({
-          branch: targetBranchId,
-          product: item.productId,
-        });
-
-        if (!targetStock) {
-          targetStock = await BranchStock.create(
-            [
-              {
-                branch: targetBranchId,
-                product: item.productId,
-                business: businessId,
-                quantity: item.quantity,
-              },
-            ],
-            { session },
-          );
-          targetStock = targetStock[0];
+        if (targetIsWarehouse) {
+          product.warehouseStock =
+            (product.warehouseStock || 0) + item.quantity;
         } else {
-          targetStock.quantity += item.quantity;
-          await targetStock.save({ session });
+          let targetStock = await BranchStock.findOne({
+            branch: targetBranchId,
+            product: item.productId,
+          });
+
+          if (!targetStock) {
+            targetStock = await BranchStock.create(
+              [
+                {
+                  branch: targetBranchId,
+                  product: item.productId,
+                  business: businessId,
+                  quantity: item.quantity,
+                },
+              ],
+              { session },
+            );
+            targetStock = targetStock[0];
+          } else {
+            targetStock.quantity += item.quantity;
+            await targetStock.save({ session });
+          }
+        }
+
+        if (originIsWarehouse || targetIsWarehouse) {
+          await product.save({ session, validateBeforeSave: false });
         }
 
         transferItems.push({

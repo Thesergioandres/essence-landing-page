@@ -402,13 +402,14 @@ const StockManagement = () => {
     try {
       setBranchLoading(true);
       await branchTransferService.create({
+        originBranchId,
         targetBranchId,
         items: branchItems.map(item => ({
-          product: item.productId,
+          productId: item.productId,
           quantity: item.quantity,
         })),
         notes: branchNotes || undefined,
-      } as any);
+      });
 
       setSuccess(
         `Transferencia creada entre sedes (${branchItems.length} producto(s))`
