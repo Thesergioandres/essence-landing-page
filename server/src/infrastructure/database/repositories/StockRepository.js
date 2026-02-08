@@ -34,22 +34,34 @@ class StockRepository {
       throw new Error("Stock insuficiente");
     }
 
-    let distStock = await DistributorStock.findOne({
-      distributor: distributorId,
-      product: productId,
-      business: businessId,
-    });
-
-    if (distStock) {
-      distStock.quantity += quantity;
-      await distStock.save();
-    } else {
-      distStock = await DistributorStock.create({
-        distributor: distributorId,
-        product: productId,
-        quantity,
-        business: businessId,
-      });
+    let distStock;
+    try {
+      distStock = await DistributorStock.findOneAndUpdate(
+        {
+          distributor: distributorId,
+          product: productId,
+          business: businessId,
+        },
+        {
+          $inc: { quantity },
+          $setOnInsert: {
+            distributor: distributorId,
+            product: productId,
+            business: businessId,
+          },
+        },
+        { new: true, upsert: true },
+      );
+    } catch (error) {
+      if (error?.code === 11000) {
+        distStock = await DistributorStock.findOneAndUpdate(
+          { distributor: distributorId, product: productId },
+          { $inc: { quantity } },
+          { new: true },
+        );
+      } else {
+        throw error;
+      }
     }
 
     const updated = await Product.findOneAndUpdate(
