@@ -134,4 +134,13 @@ router.post("/cron/cleanup-subscriptions", async (req, res) => {
   }
 });
 
+/**
+ * @route   POST /api/v2/god/sales/validate-integrity
+ * @desc    Validate and cleanup orphan sales for a business
+ * @access  Private/God
+ */
+router.post("/sales/validate-integrity", (req, res) =>
+  GodController.validateSalesIntegrity(req, res),
+);
+
 export default router;

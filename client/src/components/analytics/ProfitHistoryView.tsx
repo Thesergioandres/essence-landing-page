@@ -15,6 +15,7 @@ import { creditService } from "../../features/credits/services";
 import type { CreditMetrics } from "../../features/credits/types/credit.types";
 import { defectiveProductService } from "../../features/sales/services";
 import { useFeature } from "../FeatureSection";
+import InfoTooltip from "../InfoTooltip";
 
 interface DefectiveStats {
   totalReports: number;
@@ -353,23 +354,22 @@ export default function ProfitHistoryView({
             <div
               className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${distributorsEnabled ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}
             >
-              <div className="bg-linear-to-br rounded-xl border border-gray-800 from-purple-600/30 via-indigo-600/20 to-gray-900 p-4 text-white shadow-lg">
-                <p className="text-sm text-purple-100">Ganancia bruta</p>
+              <div className="bg-linear-to-br rounded-xl border border-gray-800 from-emerald-600/30 via-teal-600/20 to-gray-900 p-4 text-white shadow-lg">
+                <p className="text-sm text-emerald-100">
+                  Ganancia neta de ventas
+                  <InfoTooltip
+                    text="Utilidad neta real por ventas confirmadas en el periodo."
+                    tone="neutral"
+                    className="border-emerald-200/70 text-emerald-100"
+                  />
+                </p>
                 <p className="mt-2 text-2xl font-bold">
-                  {formatCurrency(grossProfit)}
-                </p>
-                <p className="text-xs text-purple-100/80">
-                  {distributorsEnabled
-                    ? "Admin + distribuidores"
-                    : "Total ventas"}
-                </p>
-              </div>
-              <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 text-white">
-                <p className="text-sm text-gray-300">Ganancia neta ventas</p>
-                <p className="mt-2 text-xl font-semibold text-emerald-300">
                   {formatCurrency(netProfit)}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-emerald-100/80">
+                  Metrica principal del periodo
+                </p>
+                <p className="text-xs text-emerald-100/70">
                   {totalExpenses > 0 ||
                   defectiveLosses > 0 ||
                   additionalSalesCosts > 0
@@ -379,10 +379,25 @@ export default function ProfitHistoryView({
                       : "Ventas directas"}
                 </p>
               </div>
+              <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 text-white">
+                <p className="text-sm text-gray-300">
+                  Ganancia bruta
+                  <InfoTooltip text="Suma de utilidades de ventas antes de gastos y ajustes." />
+                </p>
+                <p className="mt-2 text-xl font-semibold text-purple-200">
+                  {formatCurrency(grossProfit)}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {distributorsEnabled
+                    ? "Admin + distribuidores"
+                    : "Total ventas"}
+                </p>
+              </div>
               {distributorsEnabled && (
                 <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 text-white">
                   <p className="text-sm text-gray-300">
                     Comisiones distribuidores
+                    <InfoTooltip text="Total pagado a distribuidores por ventas confirmadas." />
                   </p>
                   <p className="mt-2 text-xl font-semibold text-cyan-300">
                     {formatCurrency(commissions)}
@@ -393,7 +408,13 @@ export default function ProfitHistoryView({
                 </div>
               )}
               <div className="rounded-xl border border-red-900/50 bg-red-950/30 p-4 text-white">
-                <p className="text-sm text-red-300">Total gastos + pérdidas</p>
+                <p className="text-sm text-red-300">
+                  Total gastos + perdidas
+                  <InfoTooltip
+                    text="Gastos operativos y perdidas por defectuosos del periodo."
+                    tone="danger"
+                  />
+                </p>
                 <p className="mt-2 text-xl font-semibold text-red-400">
                   -{formatCurrency(totalExpenses + defectiveLosses)}
                 </p>
@@ -466,13 +487,22 @@ export default function ProfitHistoryView({
                 <>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
                     <div className="rounded-lg border border-red-700/30 bg-red-900/20 p-3">
-                      <p className="text-xs text-red-300">Total Pérdidas</p>
+                      <p className="text-xs text-red-300">
+                        Total Pérdidas
+                        <InfoTooltip
+                          text="Perdida total por productos defectuosos en el periodo."
+                          tone="danger"
+                        />
+                      </p>
                       <p className="mt-1 text-xl font-bold text-red-400">
                         {formatCurrency(defectiveStats.totalLoss)}
                       </p>
                     </div>
                     <div className="rounded-lg bg-gray-800/50 p-3">
-                      <p className="text-xs text-gray-400">Total Reportes</p>
+                      <p className="text-xs text-gray-400">
+                        Total Reportes
+                        <InfoTooltip text="Cantidad de reportes defectuosos registrados." />
+                      </p>
                       <p className="mt-1 text-lg font-semibold text-orange-300">
                         {defectiveStats.totalReports}
                       </p>
@@ -480,13 +510,17 @@ export default function ProfitHistoryView({
                     <div className="rounded-lg bg-gray-800/50 p-3">
                       <p className="text-xs text-gray-400">
                         Unidades Afectadas
+                        <InfoTooltip text="Total de unidades reportadas como defectuosas." />
                       </p>
                       <p className="mt-1 text-lg font-semibold text-orange-300">
                         {defectiveStats.totalQuantity}
                       </p>
                     </div>
                     <div className="rounded-lg bg-gray-800/50 p-3">
-                      <p className="text-xs text-gray-400">Con Garantía</p>
+                      <p className="text-xs text-gray-400">
+                        Con Garantía
+                        <InfoTooltip text="Reportes con garantia asociada." />
+                      </p>
                       <p className="mt-1 text-lg font-semibold text-amber-300">
                         {defectiveStats.withWarranty}
                       </p>
@@ -497,7 +531,10 @@ export default function ProfitHistoryView({
                       )}
                     </div>
                     <div className="rounded-lg bg-gray-800/50 p-3">
-                      <p className="text-xs text-gray-400">Stock Recuperado</p>
+                      <p className="text-xs text-gray-400">
+                        Stock Recuperado
+                        <InfoTooltip text="Unidades recuperadas al inventario." />
+                      </p>
                       <p className="mt-1 text-lg font-semibold text-green-400">
                         {defectiveStats.stockRestored}
                       </p>
@@ -524,15 +561,21 @@ export default function ProfitHistoryView({
               )}
             </div>
 
-            {/* Ganancia Estimada Total */}
+            {/* Utilidad Potencial del Inventario */}
             <div className="bg-linear-to-br rounded-xl border border-teal-900/50 from-teal-950/40 to-gray-900 p-4">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-teal-200">
-                    📊 Ganancia Estimada Total
+                    📦 Utilidad Potencial del Inventario
+                    <InfoTooltip
+                      text="Calculo teorico de cuanto ganarias si vendieras todo tu stock actual hoy."
+                      tone="neutral"
+                      className="border-teal-200/70 text-teal-200"
+                    />
                   </h3>
                   <p className="text-xs text-gray-400">
-                    {estimatedProfit?.message || "Cargando..."}
+                    {estimatedProfit?.message ||
+                      "Estimado con inventario actual"}
                   </p>
                 </div>
                 <button
@@ -549,7 +592,10 @@ export default function ProfitHistoryView({
                 <>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                     <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
-                      <p className="text-xs text-gray-400">Tu Ganancia Admin</p>
+                      <p className="text-xs text-gray-400">
+                        Tu Ganancia Admin
+                        <InfoTooltip text="Suma de la utilidad de tus ventas directas + la diferencia del precio B2B de tus distribuidores." />
+                      </p>
                       <p className="mt-1 text-xl font-bold text-emerald-400">
                         {formatCurrency(
                           estimatedProfit.consolidated.adminProfit || 0
@@ -557,7 +603,10 @@ export default function ProfitHistoryView({
                       </p>
                     </div>
                     <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
-                      <p className="text-xs text-gray-400">Inversión Total</p>
+                      <p className="text-xs text-gray-400">
+                        Inversión Total
+                        <InfoTooltip text="Costo total del inventario actual." />
+                      </p>
                       <p className="mt-1 text-xl font-bold text-amber-300">
                         {formatCurrency(
                           estimatedProfit.consolidated.investment || 0
@@ -565,7 +614,10 @@ export default function ProfitHistoryView({
                       </p>
                     </div>
                     <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
-                      <p className="text-xs text-gray-400">Valor en Ventas</p>
+                      <p className="text-xs text-gray-400">
+                        Valor en Ventas
+                        <InfoTooltip text="Valor total estimado si se vende todo el inventario." />
+                      </p>
                       <p className="mt-1 text-xl font-bold text-green-300">
                         {formatCurrency(
                           estimatedProfit.consolidated.salesValue || 0
@@ -573,19 +625,28 @@ export default function ProfitHistoryView({
                       </p>
                     </div>
                     <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
-                      <p className="text-xs text-gray-400">Total Productos</p>
+                      <p className="text-xs text-gray-400">
+                        Total Productos
+                        <InfoTooltip text="Cantidad de referencias distintas en inventario." />
+                      </p>
                       <p className="mt-1 text-xl font-bold text-purple-300">
                         {estimatedProfit.consolidated.totalProducts}
                       </p>
                     </div>
                     <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
-                      <p className="text-xs text-gray-400">Total Unidades</p>
+                      <p className="text-xs text-gray-400">
+                        Total Unidades
+                        <InfoTooltip text="Cantidad total de unidades en inventario." />
+                      </p>
                       <p className="mt-1 text-xl font-bold text-blue-300">
                         {estimatedProfit.consolidated.totalUnits.toLocaleString()}
                       </p>
                     </div>
                     <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
-                      <p className="text-xs text-gray-400">📈 Rentabilidad</p>
+                      <p className="text-xs text-gray-400">
+                        📈 Rentabilidad
+                        <InfoTooltip text="Ganancia estimada / valor total de ventas." />
+                      </p>
                       <p className="mt-1 text-xl font-bold text-teal-300">
                         {estimatedProfit.consolidated.profitability ??
                           (estimatedProfit.consolidated.salesValue > 0
@@ -602,7 +663,10 @@ export default function ProfitHistoryView({
                       </p>
                     </div>
                     <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
-                      <p className="text-xs text-gray-400">⚡ Multiplicador</p>
+                      <p className="text-xs text-gray-400">
+                        ⚡ Multiplicador
+                        <InfoTooltip text="Ganancia estimada / inversion total." />
+                      </p>
                       <p className="mt-1 text-xl font-bold text-amber-300">
                         {estimatedProfit.consolidated.costMultiplier ??
                           (estimatedProfit.consolidated.investment > 0
@@ -1104,10 +1168,14 @@ export default function ProfitHistoryView({
                           </td>
                         )}
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-emerald-300">
-                          {formatCurrency(entry.netProfit ?? entry.adminProfit)}
+                          {formatCurrency(entry.adminProfit ?? 0)}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-purple-200">
-                          {formatCurrency(entry.netProfit ?? entry.totalProfit)}
+                          {formatCurrency(
+                            entry.totalProfit ??
+                              (entry.adminProfit || 0) +
+                                (entry.distributorProfit || 0)
+                          )}
                         </td>
                       </tr>
                     )
@@ -1193,13 +1261,17 @@ export default function ProfitHistoryView({
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-gray-400">Ganancia admin</span>
                       <span className="font-semibold text-emerald-300">
-                        {formatCurrency(entry.netProfit ?? entry.adminProfit)}
+                        {formatCurrency(entry.adminProfit ?? 0)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-gray-400">Total</span>
                       <span className="font-semibold text-purple-200">
-                        {formatCurrency(entry.netProfit ?? entry.totalProfit)}
+                        {formatCurrency(
+                          entry.totalProfit ??
+                            (entry.adminProfit || 0) +
+                              (entry.distributorProfit || 0)
+                        )}
                       </span>
                     </div>
                   </div>

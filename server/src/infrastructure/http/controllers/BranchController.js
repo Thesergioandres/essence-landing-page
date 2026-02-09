@@ -124,7 +124,16 @@ class BranchController {
 
       res.json({ success: true, message: "Sede eliminada" });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      const statusCode = error.statusCode || 500;
+      console.error("[BranchController.delete] Error", {
+        branchId: req.params.id,
+        businessId: req.businessId || req.headers["x-business-id"],
+        statusCode,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+      });
+      res.status(statusCode).json({ success: false, message: error.message });
     }
   }
 }

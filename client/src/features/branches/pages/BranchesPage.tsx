@@ -385,9 +385,9 @@ export default function Branches() {
                 No hay sedes registradas.
               </div>
             ) : (
-              branches.map(branch => (
+              branches.map((branch, index) => (
                 <div
-                  key={branch._id}
+                  key={branch._id || `${branch.name}-${index}`}
                   className="rounded-lg border border-gray-700 bg-gray-900/60 p-4 shadow"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">

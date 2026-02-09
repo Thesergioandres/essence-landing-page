@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import Branch from "../../../models/Branch.js";
 import BranchStock from "../../../models/BranchStock.js";
 import DistributorStock from "../../../models/DistributorStock.js";
 import Membership from "../../../models/Membership.js";
@@ -62,6 +63,17 @@ export class RegisterSaleUseCase {
     // 1. Validation (Business Rules)
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new Error("No items provided for sale.");
+    }
+
+    let branchName = null;
+    if (branchId) {
+      const branch = await Branch.findOne({
+        _id: branchId,
+        business: businessId,
+      })
+        .select("name")
+        .lean();
+      branchName = branch?.name || null;
     }
 
     // 1.1 Resolve PaymentMethod
@@ -340,6 +352,9 @@ export class RegisterSaleUseCase {
         saleData.distributor = distributorId;
       } else if (branchId) {
         saleData.branch = branchId;
+        if (branchName) {
+          saleData.branchName = branchName;
+        }
       }
 
       const createdSale = await this.saleRepository.create(saleData, session);

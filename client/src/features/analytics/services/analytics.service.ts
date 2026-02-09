@@ -1119,7 +1119,8 @@ export const advancedAnalyticsService = {
       rank: number;
       distributorId: string;
       distributorName: string;
-      salesCount: number;
+      distributorEmail?: string;
+      totalSales: number;
       revenue: number;
       profit: number;
       averageOrderValue: number;
@@ -1133,7 +1134,44 @@ export const advancedAnalyticsService = {
     const response = await api.get("/advanced-analytics/distributor-rankings", {
       params,
     });
-    return response.data;
+    const payload =
+      response.data?.data ?? response.data?.rankings ?? response.data;
+    const rawRankings = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.rankings)
+        ? payload.rankings
+        : [];
+
+    const rankings = rawRankings.map((item: any, index: number) => {
+      const totalSales = Number(
+        item.totalSales ?? item.salesCount ?? item.sales ?? 0
+      );
+      const totalRevenue = Number(item.totalRevenue ?? item.revenue ?? 0);
+      const totalProfit = Number(item.totalProfit ?? item.profit ?? 0);
+      const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
+
+      return {
+        rank: index + 1,
+        distributorId: item.distributorId || item._id,
+        distributorName: item.distributorName || item.name || "Sin nombre",
+        distributorEmail: item.distributorEmail || item.email || "",
+        totalSales,
+        revenue: totalRevenue,
+        profit: totalProfit,
+        averageOrderValue: Number(
+          item.avgOrderValue ?? item.averageOrderValue ?? averageOrderValue
+        ),
+        change: Number(item.change ?? 0) || 0,
+      };
+    });
+
+    const period = response.data?.period ||
+      response.data?.data?.period || {
+        startDate: params?.startDate || "",
+        endDate: params?.endDate || "",
+      };
+
+    return { rankings, period };
   },
 
   // ===== Inventory Visual Analytics =====

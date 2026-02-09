@@ -66,6 +66,7 @@ export default function StandardSalePage() {
   const [branchStock, setBranchStock] = useState<Map<string, number>>(
     new Map()
   );
+  const [allowWarehouse, setAllowWarehouse] = useState(true);
   const [productSelectorId, setProductSelectorId] = useState("");
 
   // State: Loading/Error/Success
@@ -128,12 +129,32 @@ export default function StandardSalePage() {
           console.log("✅ Distributor Products Res:", distProductsRes);
 
           const activeMembership = membershipsRes.activeMembership;
-          const allowedBranchIds = activeMembership?.allowedBranches || [];
-
-          const distributorBranches = allBranches.filter(
-            b => allowedBranchIds.includes(b._id) && b.active !== false
-          );
-          setBranches(distributorBranches);
+          const userAllowedBranches = (
+            user as { allowedBranches?: string[] } | null
+          )?.allowedBranches;
+          const rawAllowedBranches =
+            activeMembership?.allowedBranches ?? userAllowedBranches;
+          const hasAllowedBranchList = Array.isArray(rawAllowedBranches);
+          const allowedBranchIds = hasAllowedBranchList
+            ? rawAllowedBranches.map(id => String(id))
+            : [];
+          const allowAnyBranches =
+            hasAllowedBranchList && allowedBranchIds.length > 0;
+          const activeBranches = allBranches.filter(b => b.active !== false);
+          const distributorBranches = allowAnyBranches
+            ? activeBranches.filter(b => allowedBranchIds.includes(b._id))
+            : [];
+          const warehouseBranchIds = activeBranches
+            .filter(b => b.isWarehouse)
+            .map(b => b._id);
+          const canUseWarehouse =
+            allowAnyBranches &&
+            warehouseBranchIds.some(id => allowedBranchIds.includes(id));
+          const visibleBranches = canUseWarehouse
+            ? distributorBranches
+            : distributorBranches.filter(b => !b.isWarehouse);
+          setAllowWarehouse(canUseWarehouse);
+          setBranches(visibleBranches);
 
           const allProducts = await productsService.getProducts();
           const distStockMap = new Map<string, number>();
@@ -161,18 +182,27 @@ export default function StandardSalePage() {
               locationId: user?._id || "",
               locationName: "Mi Inventario",
             });
-          } else if (distributorBranches.length > 0) {
-            const firstBranch = distributorBranches[0];
+          } else if (visibleBranches.length > 0) {
+            const firstBranch = visibleBranches[0];
             console.log(
               "📍 Distribuidor sin stock, seleccionando sede:",
               firstBranch.name
             );
-            dispatch({
-              type: "SET_LOCATION",
-              locationType: "branch",
-              locationId: firstBranch._id,
-              locationName: firstBranch.name,
-            });
+            if (firstBranch.isWarehouse && canUseWarehouse) {
+              dispatch({
+                type: "SET_LOCATION",
+                locationType: "warehouse",
+                locationId: "warehouse",
+                locationName: "Bodega Central",
+              });
+            } else {
+              dispatch({
+                type: "SET_LOCATION",
+                locationType: "branch",
+                locationId: firstBranch._id,
+                locationName: firstBranch.name,
+              });
+            }
           }
 
           const mappedProducts: ProductWithStock[] = (
@@ -199,7 +229,8 @@ export default function StandardSalePage() {
             branchService.getAll(),
             productsService.getProducts(),
           ]);
-          setBranches(branchesData);
+          setBranches(branchesData.filter(b => b.active !== false));
+          setAllowWarehouse(true);
 
           const productsWithStock: ProductWithStock[] = (
             productsData as Product[]
@@ -326,21 +357,39 @@ export default function StandardSalePage() {
     });
   }, [products, order.locationType, branchStock]);
 
+  const getLocationStock = useCallback(
+    (product: ProductWithStock) => {
+      if (order.locationType === "warehouse")
+        return product.warehouseStock ?? 0;
+      if (order.locationType === "branch") return product.branchStock ?? 0;
+      return product.distributorStock ?? 0;
+    },
+    [order.locationType]
+  );
+
+  const productsInSelectedInventory = useMemo(
+    () => productsWithLocationStock.filter(p => getLocationStock(p) > 0),
+    [productsWithLocationStock, getLocationStock]
+  );
+
   const selectorProducts = useMemo(
     () =>
-      productsWithLocationStock.map(product => ({
-        _id: product._id,
-        name: product.name,
-        category: product.category,
-        totalStock: product.totalStock,
-        warehouseStock: product.warehouseStock,
-        purchasePrice: product.purchasePrice,
-        averageCost: product.averageCost,
-        suggestedPrice: product.clientPrice,
-        clientPrice: product.clientPrice,
-        image: product.image,
-      })),
-    [productsWithLocationStock]
+      productsInSelectedInventory.map(product => {
+        const stock = getLocationStock(product);
+        return {
+          _id: product._id,
+          name: product.name,
+          category: product.category,
+          totalStock: stock,
+          warehouseStock: product.warehouseStock,
+          purchasePrice: product.purchasePrice,
+          averageCost: product.averageCost,
+          suggestedPrice: product.clientPrice,
+          clientPrice: product.clientPrice,
+          image: product.image,
+        };
+      }),
+    [productsInSelectedInventory, getLocationStock]
   );
 
   const gamificationSummary = useMemo(() => {
@@ -399,6 +448,10 @@ export default function StandardSalePage() {
       id: string,
       name: string
     ) => {
+      if (isDistributor && type === "warehouse" && !allowWarehouse) {
+        setSubmitError("No tienes permiso para vender desde bodega.");
+        return;
+      }
       // Allow Distributors to switch between "distributor" (My Inventory) and "branch" (Allowed Warehouse)
       // They cannot select "warehouse" (Main Warehouse) usually, unless its a branch?
       // LocationSelector sends "warehouse" type for the main button.
@@ -412,7 +465,7 @@ export default function StandardSalePage() {
         locationName: name,
       });
     },
-    []
+    [allowWarehouse, isDistributor]
   );
 
   const handleAddProduct = useCallback(
@@ -880,6 +933,7 @@ export default function StandardSalePage() {
               locationType={order.locationType}
               locationId={order.locationId}
               branches={branches}
+              allowWarehouse={!isDistributor || allowWarehouse}
               onLocationChange={handleLocationChange}
             />
 
@@ -934,7 +988,7 @@ export default function StandardSalePage() {
               style={{ animationDelay: "120ms" }}
             >
               <InventoryGrid
-                products={productsWithLocationStock}
+                products={productsInSelectedInventory}
                 locationType={order.locationType}
                 loading={dataLoading}
                 onAddProduct={handleAddProduct}

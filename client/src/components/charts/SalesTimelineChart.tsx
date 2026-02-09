@@ -3,6 +3,7 @@ import { es } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { advancedAnalyticsService } from "../../features/analytics/services";
+import InfoTooltip from "../InfoTooltip";
 
 interface SalesTimelineChartProps {
   period: "day" | "week" | "month";
@@ -143,12 +144,30 @@ export const SalesTimelineChart: React.FC<SalesTimelineChartProps> = ({
         <table className="min-w-full text-left text-sm text-gray-300">
           <thead className="border-b border-gray-800 text-xs uppercase tracking-wide text-gray-500">
             <tr>
-              <th className="py-2 pr-4">Fecha</th>
-              <th className="py-2 pr-4 text-right">Ventas</th>
-              <th className="py-2 pr-4 text-right">Productos</th>
-              <th className="py-2 text-right">Ingresos</th>
-              <th className="py-2 pr-4 text-right">Ganancia bruta</th>
-              <th className="py-2 text-right">Ganancia neta</th>
+              <th className="py-2 pr-4">
+                Fecha
+                <InfoTooltip text="Periodo o fecha agrupada de la venta." />
+              </th>
+              <th className="py-2 pr-4 text-right">
+                Ventas
+                <InfoTooltip text="Cantidad de ventas confirmadas." />
+              </th>
+              <th className="py-2 pr-4 text-right">
+                Productos
+                <InfoTooltip text="Unidades totales vendidas." />
+              </th>
+              <th className="py-2 text-right">
+                Ingresos
+                <InfoTooltip text="Ingresos brutos del periodo." />
+              </th>
+              <th className="py-2 pr-4 text-right">
+                Ganancia bruta
+                <InfoTooltip text="Ingresos menos costo de venta." />
+              </th>
+              <th className="py-2 text-right">
+                Ganancia neta
+                <InfoTooltip text="Ganancia luego de ajustes y gastos." />
+              </th>
             </tr>
           </thead>
           <tbody>

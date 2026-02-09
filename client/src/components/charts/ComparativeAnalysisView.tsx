@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { advancedAnalyticsService } from "../../features/analytics/services";
+import InfoTooltip from "../InfoTooltip";
 
 export const ComparativeAnalysisView: React.FC<{ reloadKey?: number }> = ({
   reloadKey = 0,
@@ -53,6 +54,7 @@ export const ComparativeAnalysisView: React.FC<{ reloadKey?: number }> = ({
   const metrics = [
     {
       label: "Ventas",
+      tooltip: "Cantidad de ventas del mes actual vs mes anterior.",
       current: comparison.currentMonth.sales,
       previous: comparison.previousMonth.sales,
       growth: comparison.growth.salesGrowth,
@@ -60,6 +62,7 @@ export const ComparativeAnalysisView: React.FC<{ reloadKey?: number }> = ({
     },
     {
       label: "Ingresos",
+      tooltip: "Ingresos brutos del mes actual vs mes anterior.",
       current: comparison.currentMonth.revenue,
       previous: comparison.previousMonth.revenue,
       growth: comparison.growth.revenueGrowth,
@@ -67,6 +70,7 @@ export const ComparativeAnalysisView: React.FC<{ reloadKey?: number }> = ({
     },
     {
       label: "Ganancia",
+      tooltip: "Ganancia estimada del mes actual vs mes anterior.",
       current: comparison.currentMonth.profit,
       previous: comparison.previousMonth.profit,
       growth: comparison.growth.profitGrowth,
@@ -94,7 +98,10 @@ export const ComparativeAnalysisView: React.FC<{ reloadKey?: number }> = ({
             transition={{ duration: 0.3, delay: index * 0.1 }}
             className="rounded-lg border border-gray-800 p-6 transition-colors hover:bg-white/5"
           >
-            <div className="mb-2 text-sm text-gray-400">{metric.label}</div>
+            <div className="mb-2 text-sm text-gray-400">
+              {metric.label}
+              <InfoTooltip text={metric.tooltip} />
+            </div>
 
             <div className="mb-4 flex items-end justify-between">
               <div>

@@ -12,6 +12,7 @@ interface LocationSelectorProps {
   locationId: string | null;
   branches: Branch[];
   loading?: boolean;
+  allowWarehouse?: boolean;
   onLocationChange: (type: LocationType, id: string, name: string) => void;
 }
 
@@ -20,13 +21,18 @@ export function LocationSelector({
   locationId,
   branches,
   loading,
+  allowWarehouse = true,
   onLocationChange,
 }: LocationSelectorProps) {
-  // Filter: only show branches that are NOT the main warehouse (isWarehouse: false or undefined)
-  // This prevents showing "Bodega" twice (once as button, once in dropdown)
   const activeBranches = branches.filter(
     b => b.active !== false && b.isWarehouse !== true
   );
+  const getBranchLabel = (branch: Branch) => `Sede: ${branch.name}`;
+  const selectedBranch = branches.find(b => b._id === locationId) || null;
+  const selectedLabel =
+    selectedBranch && !selectedBranch.isWarehouse
+      ? getBranchLabel(selectedBranch)
+      : "Sin seleccionar";
 
   return (
     <div className="rounded-xl border border-gray-700/50 bg-gray-800/30 p-4">
@@ -89,21 +95,23 @@ export function LocationSelector({
             If locationType is 'distributor' OR 'branch' OR 'warehouse' we need to support switching.
         */}
 
-        <button
-          type="button"
-          onClick={() => {
-            // HYBRID MODEL: "Bodega Central" = warehouse stock for dropshipping
-            onLocationChange("warehouse", "warehouse", "Bodega Central");
-          }}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-3 font-medium transition ${
-            locationType === "warehouse"
-              ? "border-purple-500 bg-purple-500/20 text-purple-300"
-              : "border-gray-600 bg-gray-800/50 text-gray-400 hover:border-gray-500 hover:text-gray-300"
-          }`}
-        >
-          <Building2 className="h-5 w-5" />
-          Bodega Central
-        </button>
+        {allowWarehouse && (
+          <button
+            type="button"
+            onClick={() => {
+              // HYBRID MODEL: "Bodega Central" = warehouse stock for dropshipping
+              onLocationChange("warehouse", "warehouse", "Bodega Central");
+            }}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-3 font-medium transition ${
+              locationType === "warehouse"
+                ? "border-purple-500 bg-purple-500/20 text-purple-300"
+                : "border-gray-600 bg-gray-800/50 text-gray-400 hover:border-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <Building2 className="h-5 w-5" />
+            Bodega Central
+          </button>
+        )}
 
         {/* Branch Selector */}
         <div className="flex-1">
@@ -111,9 +119,8 @@ export function LocationSelector({
             value={locationType === "branch" ? locationId || "" : ""}
             onChange={e => {
               const branch = activeBranches.find(b => b._id === e.target.value);
-              if (branch) {
-                onLocationChange("branch", branch._id, branch.name);
-              }
+              if (!branch) return;
+              onLocationChange("branch", branch._id, branch.name);
             }}
             disabled={loading}
             className={`w-full rounded-lg border px-4 py-3 font-medium transition ${
@@ -125,7 +132,7 @@ export function LocationSelector({
             <option value="">Seleccionar Sede...</option>
             {activeBranches.map(branch => (
               <option key={branch._id} value={branch._id}>
-                {branch.name}
+                {getBranchLabel(branch)}
               </option>
             ))}
           </select>
@@ -147,11 +154,10 @@ export function LocationSelector({
           Stock desde:{" "}
           <span className="font-medium text-white">
             {locationType === "warehouse"
-              ? "Bodega Principal"
+              ? "Bodega Central"
               : locationType === "distributor"
                 ? "Mi Inventario Personal"
-                : branches.find(b => b._id === locationId)?.name ||
-                  "Sin seleccionar"}
+                : selectedLabel}
           </span>
         </span>
       </div>

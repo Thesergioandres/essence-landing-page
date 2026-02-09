@@ -54,11 +54,18 @@ export default function DistributorCatalog() {
           ? response
           : response?.data || [];
 
-        setProducts(productsList);
+        const normalizedProducts = (productsList || []).map(
+          (product: ProductWithStock) => ({
+            ...product,
+            totalStock: product.distributorStock ?? product.totalStock ?? 0,
+          })
+        );
+
+        setProducts(normalizedProducts);
 
         const maxClientPrice = Math.max(
           0,
-          ...productsList.map(
+          ...normalizedProducts.map(
             (p: ProductWithStock) => Number(p.clientPrice) || 0
           )
         );
@@ -67,7 +74,7 @@ export default function DistributorCatalog() {
 
         const uniqueCategories = Array.from(
           new Set(
-            (productsList || []).map((p: ProductWithStock) =>
+            (normalizedProducts || []).map((p: ProductWithStock) =>
               typeof p.category === "string" ? p.category : p.category.name
             )
           )

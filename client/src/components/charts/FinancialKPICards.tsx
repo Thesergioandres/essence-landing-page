@@ -9,11 +9,13 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { advancedAnalyticsService } from "../../features/analytics/services";
+import InfoTooltip from "../InfoTooltip";
 
 interface KPI {
   id: string;
   label: string;
   value: string | number;
+  tooltip?: string;
   change?: number;
   icon: React.ReactNode;
   color: string;
@@ -86,6 +88,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "rangeSales",
           label: "Ventas (rango)",
+          tooltip: "Cantidad de ventas confirmadas en el rango seleccionado.",
           value: safeNumber(range.sales ?? daily.sales ?? summary.todaySales),
           icon: <ShoppingCart className="h-8 w-8" />,
           color: "bg-purple-500",
@@ -93,6 +96,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "rangeRevenue",
           label: "Ingresos (rango)",
+          tooltip: "Ingresos brutos generados en el rango seleccionado.",
           value: formatMoney(
             range.revenue ?? daily.revenue ?? summary.todayRevenue
           ),
@@ -102,6 +106,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "rangeProfit",
           label: "Ganancia (rango)",
+          tooltip: "Ganancia estimada para el rango seleccionado.",
           value: formatMoney(
             range.grossProfit ??
               range.netProfit ??
@@ -116,6 +121,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "avgTicket",
           label: "Ticket promedio",
+          tooltip: "Ingreso promedio por venta en el rango seleccionado.",
           value: formatMoney(
             range.avgTicket ??
               range.averageTicket ??
@@ -129,6 +135,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "activeDistributors",
           label: "Distribuidores activos",
+          tooltip: "Distribuidores con al menos una venta en el periodo.",
           value: safeNumber(summary.totalActiveDistributors),
           icon: <Users className="h-8 w-8" />,
           color: "bg-gray-600",
@@ -139,6 +146,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "todaySales",
           label: "Ventas Hoy",
+          tooltip: "Cantidad de ventas confirmadas hoy.",
           value: safeNumber(daily.sales ?? summary.todaySales),
           icon: <ShoppingCart className="h-8 w-8" />,
           color: "bg-purple-500",
@@ -146,6 +154,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "todayRevenue",
           label: "Ingresos Hoy",
+          tooltip: "Ingresos brutos generados hoy.",
           value: formatMoney(daily.revenue ?? summary.todayRevenue),
           icon: <DollarSign className="h-8 w-8" />,
           color: "bg-violet-500",
@@ -153,6 +162,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "todayProfit",
           label: "Ganancia Hoy",
+          tooltip: "Ganancia estimada generada hoy.",
           value: formatMoney(daily.profit ?? summary.todayProfit),
           icon: <TrendingUp className="h-8 w-8" />,
           color: "bg-emerald-500",
@@ -160,6 +170,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "weekSales",
           label: "Ventas Semana",
+          tooltip: "Cantidad de ventas confirmadas en la semana actual.",
           value: safeNumber(weekly.sales ?? summary.weekSales),
           icon: <ShoppingCart className="h-8 w-8" />,
           color: "bg-pink-500",
@@ -167,6 +178,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "weekRevenue",
           label: "Ingresos Semana",
+          tooltip: "Ingresos brutos generados en la semana actual.",
           value: formatMoney(weekly.revenue ?? summary.weekRevenue),
           icon: <DollarSign className="h-8 w-8" />,
           color: "bg-teal-500",
@@ -174,6 +186,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "weekProfit",
           label: "Ganancia Semana",
+          tooltip: "Ganancia estimada generada en la semana actual.",
           value: formatMoney(weekly.profit ?? summary.weekProfit),
           icon: <TrendingUp className="h-8 w-8" />,
           color: "bg-green-500",
@@ -181,6 +194,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "monthSales",
           label: "Ventas Mes",
+          tooltip: "Cantidad de ventas confirmadas del mes.",
           value: safeNumber(monthly.sales ?? summary.monthSales),
           icon: <ShoppingCart className="h-8 w-8" />,
           color: "bg-blue-500",
@@ -188,6 +202,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "monthRevenue",
           label: "Ingresos Mes",
+          tooltip: "Ingresos brutos generados en el mes.",
           value: formatMoney(monthly.revenue ?? summary.monthRevenue),
           icon: <DollarSign className="h-8 w-8" />,
           color: "bg-indigo-600",
@@ -195,6 +210,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "monthProfit",
           label: "Ganancia Mes",
+          tooltip: "Ganancia estimada generada en el mes.",
           value: formatMoney(monthly.profit ?? summary.monthProfit),
           icon: <TrendingUp className="h-8 w-8" />,
           color: "bg-cyan-600",
@@ -202,6 +218,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "avgTicket",
           label: "Ticket promedio",
+          tooltip: "Ingreso promedio por venta en el periodo actual.",
           value: formatMoney(summary.averageTicket ?? kpis?.avgTicket),
           icon: <Target className="h-8 w-8" />,
           color: "bg-orange-500",
@@ -209,6 +226,7 @@ export const FinancialKPICards: React.FC<{
         {
           id: "activeDistributors",
           label: "Distribuidores activos",
+          tooltip: "Distribuidores con al menos una venta en el periodo.",
           value: safeNumber(summary.totalActiveDistributors),
           icon: <Users className="h-8 w-8" />,
           color: "bg-gray-600",
@@ -246,7 +264,10 @@ export const FinancialKPICards: React.FC<{
               )}
             </div>
             <div>
-              <p className="mb-1 text-sm text-gray-400">{kpi.label}</p>
+              <p className="mb-1 text-sm text-gray-400">
+                {kpi.label}
+                {kpi.tooltip && <InfoTooltip text={kpi.tooltip} />}
+              </p>
               <p className="text-3xl font-bold text-white">{kpi.value}</p>
             </div>
           </div>

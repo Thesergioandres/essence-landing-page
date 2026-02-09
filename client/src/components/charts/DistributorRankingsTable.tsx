@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Award, Medal, TrendingUp, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { advancedAnalyticsService } from "../../features/analytics/services";
+import InfoTooltip from "../InfoTooltip";
 
 interface DistributorRankingsTableProps {
   startDate?: string;
@@ -30,11 +31,12 @@ export const DistributorRankingsTable: React.FC<
           (item: any, index: number) => ({
             ...item,
             rank: index + 1,
-            totalSales: Number(item.totalSales) || 0,
-            revenue: Number(item.totalRevenue) || 0,
-            profit: Number(item.totalProfit) || 0,
+            totalSales: Number(item.totalSales ?? item.salesCount) || 0,
+            revenue: Number(item.revenue ?? item.totalRevenue) || 0,
+            profit: Number(item.profit ?? item.totalProfit) || 0,
             conversionRate: Number(item.conversionRate) || 0,
-            averageOrderValue: Number(item.avgOrderValue) || 0,
+            averageOrderValue:
+              Number(item.averageOrderValue ?? item.avgOrderValue) || 0,
           })
         );
         setRankings(validatedData);
@@ -52,7 +54,11 @@ export const DistributorRankingsTable: React.FC<
   const filteredRankings = useMemo(() => {
     const term = search.toLowerCase();
     const filtered = rankings.filter(r =>
-      `${r.name || ""} ${r.email || ""}`.toLowerCase().includes(term)
+      `${r.distributorName || r.name || ""} ${
+        r.distributorEmail || r.email || ""
+      }`
+        .toLowerCase()
+        .includes(term)
     );
     return filtered.slice(0, limit);
   }, [limit, rankings, search]);
@@ -115,24 +121,31 @@ export const DistributorRankingsTable: React.FC<
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                 Posición
+                <InfoTooltip text="Ranking por rendimiento en el periodo." />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                 Distribuidor
+                <InfoTooltip text="Nombre y contacto del distribuidor." />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                 Ventas
+                <InfoTooltip text="Cantidad de ventas confirmadas." />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                 Ingresos
+                <InfoTooltip text="Ingresos confirmados generados por el distribuidor." />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                 Ganancia
+                <InfoTooltip text="Ganancia estimada para el negocio por esas ventas." />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
-                Conv. Rate
+                Tasa de confirmacion
+                <InfoTooltip text="Porcentaje de pedidos confirmados sobre el total registrado." />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                 Ticket Prom.
+                <InfoTooltip text="Ingreso promedio por venta confirmada." />
               </th>
             </tr>
           </thead>
@@ -141,7 +154,7 @@ export const DistributorRankingsTable: React.FC<
               const position = index + 1;
               return (
                 <motion.tr
-                  key={distributor._id}
+                  key={distributor.distributorId || distributor._id || index}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -156,10 +169,10 @@ export const DistributorRankingsTable: React.FC<
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="text-sm font-medium text-white">
-                      {distributor.name}
+                      {distributor.distributorName || distributor.name}
                     </div>
                     <div className="text-sm text-gray-400">
-                      {distributor.email}
+                      {distributor.distributorEmail || distributor.email}
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { advancedAnalyticsService } from "../../features/analytics/services";
+import InfoTooltip from "../InfoTooltip";
 
 interface TopProductsChartProps {
   limit?: number;
@@ -121,12 +122,30 @@ export const TopProductsChart: React.FC<TopProductsChartProps> = ({
         <table className="min-w-full text-left text-sm text-gray-300">
           <thead className="border-b border-gray-800 text-xs uppercase tracking-wide text-gray-500">
             <tr>
-              <th className="py-2 pr-4">#</th>
-              <th className="py-2 pr-4">Producto</th>
-              <th className="py-2 pr-4">Categoria</th>
-              <th className="py-2 pr-4 text-right">Cantidad</th>
-              <th className="py-2 pr-4 text-right">Ingresos</th>
-              <th className="py-2 text-right">Utilidad</th>
+              <th className="py-2 pr-4">
+                #
+                <InfoTooltip text="Posicion en el ranking." />
+              </th>
+              <th className="py-2 pr-4">
+                Producto
+                <InfoTooltip text="Nombre del producto." />
+              </th>
+              <th className="py-2 pr-4">
+                Categoria
+                <InfoTooltip text="Categoria del producto." />
+              </th>
+              <th className="py-2 pr-4 text-right">
+                Cantidad
+                <InfoTooltip text="Unidades vendidas en el periodo." />
+              </th>
+              <th className="py-2 pr-4 text-right">
+                Ingresos
+                <InfoTooltip text="Ingresos brutos generados por el producto." />
+              </th>
+              <th className="py-2 text-right">
+                Utilidad
+                <InfoTooltip text="Ganancia estimada generada por el producto." />
+              </th>
             </tr>
           </thead>
           <tbody>

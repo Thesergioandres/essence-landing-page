@@ -13,6 +13,8 @@ export class BusinessRepository {
     const business = await Business.create({
       name: data.name,
       description: data.description,
+      logoUrl: data.logoUrl,
+      logoPublicId: data.logoPublicId,
       contactEmail: data.contactEmail,
       contactPhone: data.contactPhone,
       contactWhatsapp: data.contactWhatsapp,

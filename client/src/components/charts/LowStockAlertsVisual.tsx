@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { AlertCircle, AlertTriangle, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { advancedAnalyticsService } from "../../features/analytics/services";
+import InfoTooltip from "../InfoTooltip";
 
 export const LowStockAlertsVisual: React.FC<{ reloadKey?: number }> = ({
   reloadKey = 0,
@@ -94,7 +95,13 @@ export const LowStockAlertsVisual: React.FC<{ reloadKey?: number }> = ({
       className="rounded-lg border border-gray-800 bg-gray-900 p-6"
     >
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-xl font-bold text-white">Alertas de Stock Bajo</h3>
+        <h3 className="text-xl font-bold text-white">
+          Alertas de Stock Bajo
+          <InfoTooltip
+            text="Productos con stock por debajo del minimo configurado."
+            className="ml-2"
+          />
+        </h3>
         <span className="rounded-full bg-red-500/15 px-3 py-1 text-sm font-semibold text-red-300">
           {products.length} producto{products.length !== 1 ? "s" : ""}
         </span>
@@ -135,6 +142,10 @@ export const LowStockAlertsVisual: React.FC<{ reloadKey?: number }> = ({
                 </div>
                 <div className="text-xs text-gray-400">
                   Mínimo: {product.lowStockAlert}
+                  <InfoTooltip
+                    text="Nivel minimo configurado para el producto."
+                    size="sm"
+                  />
                 </div>
               </div>
             </div>
@@ -144,6 +155,10 @@ export const LowStockAlertsVisual: React.FC<{ reloadKey?: number }> = ({
                 <div>
                   <span className="inline-block text-xs font-semibold text-gray-300">
                     Nivel de Stock
+                    <InfoTooltip
+                      text="Porcentaje del stock actual respecto al minimo."
+                      size="sm"
+                    />
                   </span>
                 </div>
                 <div className="text-right">

@@ -962,7 +962,6 @@ export class AdvancedAnalyticsRepository {
 
     const match = {
       business: businessObjectId,
-      paymentStatus: "confirmado",
       distributor: { $ne: null },
       ...(dateRange ? { saleDate: dateRange } : {}),
     };
@@ -1289,11 +1288,48 @@ export class AdvancedAnalyticsRepository {
       {
         $group: {
           _id: "$distributorObjId",
-          totalSales: { $sum: 1 },
-          totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
-          totalProfit: { $sum: "$totalProfit" },
-          distributorProfit: { $sum: "$distributorProfit" },
-          totalQuantity: { $sum: "$quantity" },
+          totalSalesAll: { $sum: 1 },
+          confirmedSales: {
+            $sum: {
+              $cond: [{ $eq: ["$paymentStatus", "confirmado"] }, 1, 0],
+            },
+          },
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                { $eq: ["$paymentStatus", "confirmado"] },
+                { $multiply: ["$salePrice", "$quantity"] },
+                0,
+              ],
+            },
+          },
+          totalProfit: {
+            $sum: {
+              $cond: [
+                { $eq: ["$paymentStatus", "confirmado"] },
+                "$totalProfit",
+                0,
+              ],
+            },
+          },
+          distributorProfit: {
+            $sum: {
+              $cond: [
+                { $eq: ["$paymentStatus", "confirmado"] },
+                "$distributorProfit",
+                0,
+              ],
+            },
+          },
+          totalQuantity: {
+            $sum: {
+              $cond: [
+                { $eq: ["$paymentStatus", "confirmado"] },
+                "$quantity",
+                0,
+              ],
+            },
+          },
         },
       },
       { $sort: { totalRevenue: -1 } },
@@ -1315,11 +1351,13 @@ export class AdvancedAnalyticsRepository {
       distributorId: r._id,
       distributorName: r.distributorInfo?.name || "Sin nombre",
       distributorEmail: r.distributorInfo?.email,
-      totalSales: r.totalSales,
+      totalSales: r.confirmedSales,
       totalRevenue: r.totalRevenue,
       totalProfit: r.totalProfit,
       distributorProfit: r.distributorProfit,
       totalQuantity: r.totalQuantity,
+      conversionRate:
+        r.totalSalesAll > 0 ? (r.confirmedSales / r.totalSalesAll) * 100 : 0,
     }));
   }
 

@@ -9,6 +9,7 @@ import {
   Tooltip,
 } from "recharts";
 import { advancedAnalyticsService } from "../../features/analytics/services";
+import InfoTooltip from "../InfoTooltip";
 
 interface CategoryDistributionChartProps {
   startDate?: string;
@@ -90,6 +91,10 @@ export const CategoryDistributionChart: React.FC<
       >
         <h3 className="mb-4 text-xl font-bold text-white">
           Distribución por Categoría
+          <InfoTooltip
+            text="Ventas y porcentaje de participacion por categoria."
+            className="ml-2"
+          />
         </h3>
         <div className="flex h-96 flex-col items-center justify-center text-gray-400">
           <svg
@@ -162,6 +167,10 @@ export const CategoryDistributionChart: React.FC<
     >
       <h3 className="mb-4 text-xl font-bold text-white">
         Distribución de Ventas por Categoría
+        <InfoTooltip
+          text="Cada porcion representa ventas por categoria."
+          className="ml-2"
+        />
       </h3>
       <ResponsiveContainer width="100%" height={400}>
         <PieChart>

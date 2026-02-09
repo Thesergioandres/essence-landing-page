@@ -6,6 +6,7 @@ import type {
 } from "../../features/analytics/types/analytics.types";
 import { profitHistoryService } from "../../features/common/services";
 import { useFeature } from "../FeatureSection";
+import InfoTooltip from "../InfoTooltip";
 
 interface ProfitHistoryTableProps {
   dateRange: { startDate: string; endDate: string };
@@ -135,28 +136,35 @@ export default function ProfitHistoryTable({
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Fecha
+                  <InfoTooltip text="Fecha del movimiento o venta." />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Venta / Evento
+                  <InfoTooltip text="Tipo de transaccion registrada." />
                 </th>
                 {distributorsEnabled && (
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Distribuidor
+                    <InfoTooltip text="Distribuidor asociado a la venta." />
                   </th>
                 )}
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Producto
+                  <InfoTooltip text="Producto o concepto asociado a la transaccion." />
                 </th>
                 {distributorsEnabled && (
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Ganancia Dist
+                    <InfoTooltip text="Comision del distribuidor en la transaccion." />
                   </th>
                 )}
                 <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Ganancia Admin
+                  <InfoTooltip text="Suma de la utilidad de tus ventas directas + la diferencia del precio B2B de tus distribuidores." />
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Total
+                  <InfoTooltip text="Suma de ganancia admin y comision de distribuidor." />
                 </th>
               </tr>
             </thead>
@@ -244,10 +252,14 @@ export default function ProfitHistoryTable({
                       </td>
                     )}
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-emerald-400">
-                      {formatCurrency(entry.netProfit ?? entry.adminProfit)}
+                      {formatCurrency(entry.adminProfit ?? 0)}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-purple-300">
-                      {formatCurrency(entry.netProfit ?? entry.totalProfit)}
+                      {formatCurrency(
+                        entry.totalProfit ??
+                          (entry.adminProfit || 0) +
+                            (entry.distributorProfit || 0)
+                      )}
                     </td>
                   </tr>
                 ))}

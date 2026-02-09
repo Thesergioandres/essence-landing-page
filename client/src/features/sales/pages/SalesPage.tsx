@@ -589,6 +589,18 @@ export default function Sales() {
   const pendingConfirmableCount = sales.filter(
     sale => sale.paymentStatus === "pendiente" && !hasActiveCredit(sale)
   ).length;
+  const groupIds = useMemo(
+    () => saleGroups.filter(group => group.isGroup).map(group => group.id),
+    [saleGroups]
+  );
+  const allGroupsExpanded =
+    groupIds.length > 0 && groupIds.every(id => expandedGroups.has(id));
+
+  const toggleAllGroups = () => {
+    setExpandedGroups(() =>
+      allGroupsExpanded ? new Set() : new Set(groupIds)
+    );
+  };
 
   const toggleGroup = (groupId: string) => {
     setExpandedGroups(prev => {
@@ -683,6 +695,19 @@ export default function Sales() {
             </button>
           )}
           <button
+            onClick={toggleAllGroups}
+            disabled={groupIds.length === 0}
+            className="flex items-center gap-2 rounded-lg border border-slate-600/50 bg-slate-900/20 px-4 py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-900/40 disabled:opacity-50"
+          >
+            <span>{allGroupsExpanded ? "➖" : "➕"}</span>
+            <span className="hidden sm:inline">
+              {allGroupsExpanded ? "Contraer grupos" : "Desglosar grupos"}
+            </span>
+            <span className="sm:hidden">
+              {allGroupsExpanded ? "Contraer" : "Desglosar"}
+            </span>
+          </button>
+          <button
             onClick={() => handleExport("excel")}
             disabled={isExporting || loading || sales.length === 0}
             className="flex items-center gap-2 rounded-lg border border-green-600/50 bg-green-900/20 px-4 py-2 text-sm font-medium text-green-400 transition-colors hover:bg-green-900/40 disabled:opacity-50"
@@ -719,57 +744,6 @@ export default function Sales() {
             <span className="hidden sm:inline">Todas las ventas</span>
             <span className="sm:hidden">Todo</span>
           </button>
-        </div>
-      </div>
-
-      {/* Estadísticas */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
-          <p className="truncate text-xs text-gray-400 sm:text-sm">
-            Total Ventas
-          </p>
-          <p className="text-xl font-bold text-white sm:text-2xl">
-            {stats.total}
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
-          <p className="truncate text-xs text-gray-400 sm:text-sm">
-            Pendientes
-          </p>
-          <p className="text-xl font-bold text-yellow-400 sm:text-2xl">
-            {stats.pendiente}
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
-          <p className="truncate text-xs text-gray-400 sm:text-sm">
-            Confirmadas
-          </p>
-          <p className="text-xl font-bold text-green-400 sm:text-2xl">
-            {stats.confirmado}
-          </p>
-        </div>
-        <div className="rounded-xl border border-orange-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
-          <p className="truncate text-xs text-orange-300 sm:text-sm">
-            💳 Por Cobrar
-          </p>
-          <p className="text-xl font-bold text-orange-400 sm:text-2xl">
-            {stats.pendingCollection}
-          </p>
-          <p className="mt-1 truncate text-xs text-orange-300/70">
-            ${stats.pendingCollectionAmount.toLocaleString()}
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
-          <p className="truncate text-xs text-gray-400 sm:text-sm">Ingresos</p>
-          <p className="truncate text-xl font-bold text-white sm:text-2xl">
-            ${(stats.totalRevenue || 0).toLocaleString()}
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
-          <p className="truncate text-xs text-gray-400 sm:text-sm">Ganancia</p>
-          <p className="truncate text-xl font-bold text-green-400 sm:text-2xl">
-            ${(stats.totalProfit || 0).toLocaleString()}
-          </p>
         </div>
       </div>
 

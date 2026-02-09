@@ -64,16 +64,19 @@ interface IssueReport {
 // ==================== UPLOAD SERVICE ====================
 export const uploadService = {
   async uploadImage(file: File): Promise<ProductImage> {
+    const maxSizeBytes = 5 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      throw new Error("La imagen es muy grande. Maximo 5MB.");
+    }
+
     const formData = new FormData();
     formData.append("image", file);
 
-    const response = await api.post<ProductImage>("/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    return response.data;
+    const response = await api.post("/upload", formData);
+    const payload = response.data as { data?: ProductImage } | ProductImage;
+    return (
+      (payload as { data?: ProductImage }).data || (payload as ProductImage)
+    );
   },
 
   async deleteImage(publicId: string): Promise<{ message: string }> {

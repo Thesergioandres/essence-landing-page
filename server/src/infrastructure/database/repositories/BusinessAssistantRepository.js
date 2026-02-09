@@ -7,33 +7,32 @@ import { aiService } from "../../services/ai.service.js";
 
 export class BusinessAssistantRepository {
   async getOrCreateConfig(businessId) {
-    let config = businessId
-      ? await BusinessAssistantConfig.findOne({ business: businessId })
-      : await BusinessAssistantConfig.findOne({
-          $or: [{ business: { $exists: false } }, { business: null }],
-        });
-
-    if (!config && businessId) {
-      const fallback = await BusinessAssistantConfig.findOne({
+    if (!businessId) {
+      return BusinessAssistantConfig.findOne({
         $or: [{ business: { $exists: false } }, { business: null }],
       });
-
-      if (fallback) {
-        const payload = fallback.toObject();
-        delete payload._id;
-        delete payload.createdAt;
-        delete payload.updatedAt;
-        delete payload.__v;
-        config = await BusinessAssistantConfig.create({
-          ...payload,
-          business: businessId,
-        });
-      }
     }
 
-    if (!config) {
-      config = await BusinessAssistantConfig.create({ business: businessId });
-    }
+    const existing = await BusinessAssistantConfig.findOne({
+      business: businessId,
+    });
+    if (existing) return existing;
+
+    const fallback = await BusinessAssistantConfig.findOne({
+      $or: [{ business: { $exists: false } }, { business: null }],
+    });
+
+    const payload = fallback ? fallback.toObject() : {};
+    delete payload._id;
+    delete payload.createdAt;
+    delete payload.updatedAt;
+    delete payload.__v;
+
+    const config = await BusinessAssistantConfig.findOneAndUpdate(
+      { business: businessId },
+      { $setOnInsert: { ...payload, business: businessId } },
+      { new: true, upsert: true },
+    );
 
     return config;
   }

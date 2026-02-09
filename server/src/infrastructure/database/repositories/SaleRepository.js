@@ -236,4 +236,66 @@ export class SaleRepository {
       .populate("product", "name sku")
       .lean();
   }
+
+  /**
+   * Validate and cleanup orphan sales for a business.
+   * - Normalizes invalid paymentStatus to "pendiente".
+   * - Removes sales with missing product references when no productName snapshot exists.
+   */
+  async validateIntegrity(businessId, options = {}) {
+    const { dryRun = false } = options;
+    const businessObjectId =
+      typeof businessId === "string"
+        ? Sale.base.Types.ObjectId.createFromHexString(businessId)
+        : businessId;
+
+    const invalidStatusFilter = {
+      business: businessObjectId,
+      paymentStatus: { $nin: ["pendiente", "confirmado"] },
+    };
+    const invalidStatusCount = await Sale.countDocuments(invalidStatusFilter);
+    let statusUpdated = 0;
+    if (!dryRun && invalidStatusCount > 0) {
+      const updateResult = await Sale.updateMany(invalidStatusFilter, {
+        $set: { paymentStatus: "pendiente" },
+      });
+      statusUpdated = updateResult.modifiedCount || 0;
+    }
+
+    const orphanCandidates = await Sale.aggregate([
+      { $match: { business: businessObjectId } },
+      {
+        $lookup: {
+          from: "products",
+          localField: "product",
+          foreignField: "_id",
+          as: "productInfo",
+        },
+      },
+      {
+        $addFields: {
+          productMissing: { $eq: [{ $size: "$productInfo" }, 0] },
+        },
+      },
+      { $match: { productMissing: true } },
+      { $project: { _id: 1, productName: 1 } },
+    ]);
+
+    const orphanIds = orphanCandidates
+      .filter((sale) => !sale.productName || !String(sale.productName).trim())
+      .map((sale) => sale._id);
+
+    let orphanDeleted = 0;
+    if (!dryRun && orphanIds.length > 0) {
+      const deleteResult = await Sale.deleteMany({ _id: { $in: orphanIds } });
+      orphanDeleted = deleteResult.deletedCount || 0;
+    }
+
+    return {
+      invalidStatusCount,
+      statusUpdated,
+      orphanCandidates: orphanCandidates.length,
+      orphanDeleted,
+    };
+  }
 }

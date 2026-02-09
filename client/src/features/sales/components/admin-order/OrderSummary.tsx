@@ -31,6 +31,7 @@ export function OrderSummary({
     paymentMethod,
     deliveryMethod,
     isDistributorSale,
+    distributorProfitPercentage,
   } = order;
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
@@ -45,6 +46,19 @@ export function OrderSummary({
   );
   const effectiveDiscount =
     discount > 0 ? discount : (subtotal * discountPercent) / 100;
+  const adminDue = isDistributorSale
+    ? items.reduce((sum, item) => {
+        const unitPrice = Number(item.unitPrice || 0);
+        const quantity = Number(item.quantity || 0);
+        const hasDistributorPrice =
+          typeof item.distributorPrice === "number" &&
+          !Number.isNaN(item.distributorPrice);
+        const unitDue = hasDistributorPrice
+          ? Number(item.distributorPrice || 0)
+          : unitPrice * (1 - distributorProfitPercentage / 100);
+        return sum + unitDue * quantity;
+      }, 0)
+    : 0;
 
   const canSubmit = items.length > 0 && !isSubmitting;
 
@@ -90,6 +104,13 @@ export function OrderSummary({
           <div className="flex justify-between text-green-400">
             <span>Ajustes</span>
             <span>-${additionalAdjustments.toLocaleString()}</span>
+          </div>
+        )}
+
+        {isDistributorSale && (
+          <div className="flex justify-between text-sky-300">
+            <span>Enviar al admin</span>
+            <span>${Math.max(0, adminDue).toLocaleString()}</span>
           </div>
         )}
       </div>

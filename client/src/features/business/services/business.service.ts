@@ -50,7 +50,39 @@ export const businessService = {
     membership: BusinessMembership;
   }> {
     const response = await api.post("/business", data);
-    return response.data;
+    const payload = response.data as {
+      message?: string;
+      business?: Business;
+      membership?: BusinessMembership;
+      data?:
+        | Business
+        | { business?: Business; membership?: BusinessMembership };
+    };
+
+    if (payload.business) {
+      return {
+        message: payload.message || "Negocio creado",
+        business: payload.business,
+        membership: payload.membership as BusinessMembership,
+      };
+    }
+
+    const dataPayload = payload.data as
+      | Business
+      | { business?: Business; membership?: BusinessMembership }
+      | undefined;
+
+    const business =
+      (dataPayload as { business?: Business } | undefined)?.business ||
+      (dataPayload as Business | undefined);
+
+    return {
+      message: payload.message || "Negocio creado",
+      business: business as Business,
+      membership: (
+        dataPayload as { membership?: BusinessMembership } | undefined
+      )?.membership as BusinessMembership,
+    };
   },
 
   async getMyMemberships(): Promise<{

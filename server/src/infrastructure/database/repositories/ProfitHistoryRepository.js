@@ -472,22 +472,40 @@ class ProfitHistoryRepository {
       return acc;
     }, {});
 
+    const distributorIdSet = new Set(
+      distributorUserObjectIds.map((id) => id?.toString()),
+    );
+
     // Transform recentEntries to match frontend expectations
-    const transformedEntries = recentEntries.map((entry) => ({
-      id: entry._id,
-      date: entry.date,
-      saleId: entry.metadata?.saleId || entry.sale?._id || entry._id,
-      source: entry.type === "venta_especial" ? "special" : "normal",
-      eventName:
-        entry.metadata?.eventName || entry.specialSale?.eventName || null,
-      distributorName: entry.user?.name || "Admin",
-      distributorEmail: entry.user?.email || "",
-      productName: entry.product?.name || entry.description || "-",
-      distributorProfit: entry.metadata?.commission || 0,
-      adminProfit: entry.amount - (entry.metadata?.commission || 0),
-      netProfit: entry.amount,
-      totalProfit: entry.amount,
-    }));
+    const transformedEntries = recentEntries.map((entry) => {
+      const description =
+        typeof entry.description === "string" ? entry.description : "";
+      const isCommissionEntry = /comisi[oó]n/i.test(description);
+      const isDistributorUser = entry.user?._id
+        ? distributorIdSet.has(entry.user._id.toString())
+        : false;
+      const isDistributorCommission = isCommissionEntry || isDistributorUser;
+      const amount = Number(entry.amount) || 0;
+      const distributorProfit = isDistributorCommission ? amount : 0;
+      const adminProfit = isDistributorCommission ? 0 : amount;
+      const totalProfit = adminProfit + distributorProfit;
+
+      return {
+        id: entry._id,
+        date: entry.date,
+        saleId: entry.metadata?.saleId || entry.sale?._id || entry._id,
+        source: entry.type === "venta_especial" ? "special" : "normal",
+        eventName:
+          entry.metadata?.eventName || entry.specialSale?.eventName || null,
+        distributorName: entry.user?.name || "Admin",
+        distributorEmail: entry.user?.email || "",
+        productName: entry.product?.name || entry.description || "-",
+        distributorProfit,
+        adminProfit,
+        netProfit: isDistributorCommission ? undefined : adminProfit,
+        totalProfit,
+      };
+    });
 
     const netProfitAdjusted = totals.netProfit - commissions.total;
     const totalAdminProfit = netProfitAdjusted;

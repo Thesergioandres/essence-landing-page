@@ -53,6 +53,12 @@ api.interceptors.request.use(
     const token = localStorage.getItem("token");
     const businessId = localStorage.getItem("businessId");
 
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+      if (config.headers) {
+        delete (config.headers as Record<string, string>)["Content-Type"];
+      }
+    }
+
     const url = config.url || "";
     const allowsWithoutBusiness =
       url.startsWith("/auth") ||

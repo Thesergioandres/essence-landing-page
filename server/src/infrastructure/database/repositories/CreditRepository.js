@@ -194,7 +194,7 @@ class CreditRepository {
 
   async getMetrics(businessId) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
-    const [pending, paid, overdue] = await Promise.all([
+    const [pending, paid, overdue, paidByStatus] = await Promise.all([
       Credit.aggregate([
         {
           $match: {
@@ -233,17 +233,60 @@ class CreditRepository {
           },
         },
       ]),
+      CreditPayment.aggregate([
+        { $match: { business: businessObjectId } },
+        {
+          $group: {
+            _id: "$credit",
+            totalPaid: { $sum: "$amount" },
+          },
+        },
+        {
+          $lookup: {
+            from: "credits",
+            localField: "_id",
+            foreignField: "_id",
+            as: "credit",
+          },
+        },
+        { $unwind: "$credit" },
+        {
+          $group: {
+            _id: "$credit.status",
+            totalPaid: { $sum: "$totalPaid" },
+          },
+        },
+      ]),
     ]);
 
+    const paidByStatusMap = paidByStatus.reduce((acc, row) => {
+      acc[row._id] = row.totalPaid || 0;
+      return acc;
+    }, {});
+
+    const paidPending =
+      (paidByStatusMap.pending || 0) + (paidByStatusMap.partial || 0);
+    const paidPaid = paidByStatusMap.paid || 0;
+    const paidOverdue = paidByStatusMap.overdue || 0;
+
     return {
-      pending: pending[0] || { count: 0, totalAmount: 0, totalPaid: 0 },
-      paid: paid[0] || { count: 0, totalAmount: 0, totalPaid: 0 },
-      overdue: overdue[0] || { count: 0, totalAmount: 0, totalPaid: 0 },
+      pending: {
+        ...(pending[0] || { count: 0, totalAmount: 0, totalPaid: 0 }),
+        totalPaid: paidPending,
+      },
+      paid: {
+        ...(paid[0] || { count: 0, totalAmount: 0, totalPaid: 0 }),
+        totalPaid: paidPaid,
+      },
+      overdue: {
+        ...(overdue[0] || { count: 0, totalAmount: 0, totalPaid: 0 }),
+        totalPaid: paidOverdue,
+      },
       totalOutstanding:
         (pending[0]?.totalAmount || 0) -
-        (pending[0]?.totalPaid || 0) +
+        paidPending +
         (overdue[0]?.totalAmount || 0) -
-        (overdue[0]?.totalPaid || 0),
+        paidOverdue,
     };
   }
 }

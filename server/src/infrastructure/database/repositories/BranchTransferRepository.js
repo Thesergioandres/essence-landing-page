@@ -42,10 +42,10 @@ export class BranchTransferRepository {
   }
 
   async create(data, businessId, userId) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    const performCreate = async (session) => {
+      const query = (modelQuery) =>
+        session ? modelQuery.session(session) : modelQuery;
 
-    try {
       const warehouseBranch = await this.ensureWarehouse(businessId);
       const originRequestedWarehouse = data.originBranchId === WAREHOUSE_KEY;
       const targetRequestedWarehouse = data.targetBranchId === WAREHOUSE_KEY;
@@ -61,14 +61,12 @@ export class BranchTransferRepository {
         ? warehouseBranch._id
         : data.targetBranchId;
 
-      const originBranch = await Branch.findOne({
-        _id: originBranchId,
-        business: businessId,
-      });
-      const targetBranch = await Branch.findOne({
-        _id: targetBranchId,
-        business: businessId,
-      });
+      const originBranch = await query(
+        Branch.findOne({ _id: originBranchId, business: businessId }),
+      );
+      const targetBranch = await query(
+        Branch.findOne({ _id: targetBranchId, business: businessId }),
+      );
 
       if (!originBranch || !targetBranch) {
         throw new Error("Sede inválida");
@@ -82,10 +80,9 @@ export class BranchTransferRepository {
       const transferItems = [];
 
       for (const item of data.items) {
-        const product = await Product.findOne({
-          _id: item.productId,
-          business: businessId,
-        });
+        const product = await query(
+          Product.findOne({ _id: item.productId, business: businessId }),
+        );
         if (!product) {
           throw new Error(`Producto ${item.productId} no encontrado`);
         }
@@ -97,30 +94,34 @@ export class BranchTransferRepository {
           }
           product.warehouseStock = currentWarehouse - item.quantity;
         } else {
-          const originStock = await BranchStock.findOne({
-            branch: originBranchId,
-            product: item.productId,
-          });
+          const originStock = await query(
+            BranchStock.findOne({
+              branch: originBranchId,
+              product: item.productId,
+            }),
+          );
 
           if (!originStock || originStock.quantity < item.quantity) {
             throw new Error(`Stock insuficiente para ${product.name}`);
           }
 
           originStock.quantity -= item.quantity;
-          await originStock.save({ session });
+          await originStock.save(session ? { session } : undefined);
         }
 
         if (targetIsWarehouse) {
           product.warehouseStock =
             (product.warehouseStock || 0) + item.quantity;
         } else {
-          let targetStock = await BranchStock.findOne({
-            branch: targetBranchId,
-            product: item.productId,
-          });
+          let targetStock = await query(
+            BranchStock.findOne({
+              branch: targetBranchId,
+              product: item.productId,
+            }),
+          );
 
           if (!targetStock) {
-            targetStock = await BranchStock.create(
+            const created = await BranchStock.create(
               [
                 {
                   branch: targetBranchId,
@@ -129,17 +130,21 @@ export class BranchTransferRepository {
                   quantity: item.quantity,
                 },
               ],
-              { session },
+              session ? { session } : undefined,
             );
-            targetStock = targetStock[0];
+            targetStock = created[0];
           } else {
             targetStock.quantity += item.quantity;
-            await targetStock.save({ session });
+            await targetStock.save(session ? { session } : undefined);
           }
         }
 
         if (originIsWarehouse || targetIsWarehouse) {
-          await product.save({ session, validateBeforeSave: false });
+          await product.save(
+            session
+              ? { session, validateBeforeSave: false }
+              : { validateBeforeSave: false },
+          );
         }
 
         transferItems.push({
@@ -161,13 +166,28 @@ export class BranchTransferRepository {
             status: "completed",
           },
         ],
-        { session },
+        session ? { session } : undefined,
       );
 
-      await session.commitTransaction();
       return transfer[0];
+    };
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const transfer = await performCreate(session);
+      await session.commitTransaction();
+      return transfer;
     } catch (error) {
       await session.abortTransaction();
+      const message = String(error?.message || "");
+      const isTxnUnsupported = message.includes(
+        "Transaction numbers are only allowed on a replica set member or mongos",
+      );
+      if (isTxnUnsupported) {
+        return performCreate();
+      }
       throw error;
     } finally {
       session.endSession();

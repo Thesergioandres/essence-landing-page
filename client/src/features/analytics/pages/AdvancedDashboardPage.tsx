@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFeature } from "../../../components/FeatureSection";
+import InfoTooltip from "../../../components/InfoTooltip";
 import ProfitHistoryView from "../../../components/analytics/ProfitHistoryView";
 import {
   CategoryDistributionChart,
@@ -537,7 +538,10 @@ export default function AdvancedDashboard() {
               ) : (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <div className="rounded-lg border border-gray-800 bg-gray-950/20 p-4">
-                    <p className="text-sm text-gray-400">Pendientes</p>
+                    <p className="text-sm text-gray-400">
+                      Pendientes
+                      <InfoTooltip text="Ventas registradas que aun no se confirman o cobran." />
+                    </p>
                     <p className="text-2xl font-bold text-yellow-300">
                       {salesFunnel.pending.count}
                     </p>
@@ -546,7 +550,10 @@ export default function AdvancedDashboard() {
                     </p>
                   </div>
                   <div className="rounded-lg border border-gray-800 bg-gray-950/20 p-4">
-                    <p className="text-sm text-gray-400">Confirmadas</p>
+                    <p className="text-sm text-gray-400">
+                      Confirmadas
+                      <InfoTooltip text="Ventas confirmadas en el periodo." />
+                    </p>
                     <p className="text-2xl font-bold text-green-300">
                       {salesFunnel.confirmed.count}
                     </p>
@@ -555,7 +562,10 @@ export default function AdvancedDashboard() {
                     </p>
                   </div>
                   <div className="rounded-lg border border-gray-800 bg-gray-950/20 p-4">
-                    <p className="text-sm text-gray-400">Conversión</p>
+                    <p className="text-sm text-gray-400">
+                      Conversión
+                      <InfoTooltip text="Porcentaje de confirmadas frente al total." />
+                    </p>
                     <p className="text-2xl font-bold text-purple-300">
                       {salesFunnel.conversionRate.toFixed(2)}%
                     </p>
@@ -684,6 +694,7 @@ export default function AdvancedDashboard() {
                       <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
                         <p className="text-xs uppercase text-gray-400">
                           Total Créditos
+                          <InfoTooltip text="Cantidad total de creditos registrados." />
                         </p>
                         <p className="mt-1 text-2xl font-bold text-white">
                           {creditMetrics.total.totalCredits}
@@ -692,6 +703,7 @@ export default function AdvancedDashboard() {
                       <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
                         <p className="text-xs uppercase text-gray-400">
                           Deuda Pendiente
+                          <InfoTooltip text="Saldo pendiente por cobrar en creditos." />
                         </p>
                         <p className="mt-1 text-2xl font-bold text-red-400">
                           {formatCurrency(
@@ -702,6 +714,7 @@ export default function AdvancedDashboard() {
                       <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
                         <p className="text-xs uppercase text-gray-400">
                           Total Recuperado
+                          <InfoTooltip text="Monto total pagado por los clientes." />
                         </p>
                         <p className="mt-1 text-2xl font-bold text-green-400">
                           {formatCurrency(creditMetrics.total.totalPaidAmount)}
@@ -710,6 +723,7 @@ export default function AdvancedDashboard() {
                       <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
                         <p className="text-xs uppercase text-gray-400">
                           Tasa Recuperación
+                          <InfoTooltip text="Porcentaje recuperado sobre el total de creditos." />
                         </p>
                         <p
                           className={`mt-1 text-2xl font-bold ${Number(creditMetrics.recoveryRate) >= 50 ? "text-green-400" : "text-amber-400"}`}
@@ -724,6 +738,10 @@ export default function AdvancedDashboard() {
                       <div className="rounded-lg border border-red-700/30 bg-red-900/10 p-4">
                         <p className="text-sm font-medium text-red-300">
                           ⚠️ Créditos Vencidos
+                          <InfoTooltip
+                            text="Creditos con fecha vencida y saldo pendiente."
+                            tone="danger"
+                          />
                         </p>
                         <p className="mt-2 text-3xl font-bold text-red-400">
                           {creditMetrics.overdue.count}
@@ -735,6 +753,7 @@ export default function AdvancedDashboard() {
                       <div className="col-span-2 rounded-lg border border-gray-700 bg-gray-900/40 p-4">
                         <p className="text-sm font-medium text-gray-300">
                           Indicador de Salud
+                          <InfoTooltip text="Semaforo basado en la tasa de recuperacion." />
                         </p>
                         <div className="mt-3 flex items-center gap-4">
                           <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-700">
@@ -769,12 +788,24 @@ export default function AdvancedDashboard() {
                                 <tr>
                                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-amber-300/70">
                                     Cliente
+                                    <InfoTooltip
+                                      text="Cliente con deuda pendiente."
+                                      tone="warning"
+                                    />
                                   </th>
                                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-amber-300/70">
                                     Deuda Total
+                                    <InfoTooltip
+                                      text="Monto total adeudado por el cliente."
+                                      tone="warning"
+                                    />
                                   </th>
                                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-amber-300/70">
                                     Créditos
+                                    <InfoTooltip
+                                      text="Cantidad de creditos abiertos por el cliente."
+                                      tone="warning"
+                                    />
                                   </th>
                                 </tr>
                               </thead>
@@ -837,6 +868,7 @@ export default function AdvancedDashboard() {
                     <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
                       <p className="text-xs uppercase text-gray-400">
                         Este Mes
+                        <InfoTooltip text="Gasto total registrado en el mes actual." />
                       </p>
                       <p className="mt-1 text-2xl font-bold text-rose-400">
                         {formatCurrency(expenseMetrics.thisMonth)}
@@ -861,6 +893,7 @@ export default function AdvancedDashboard() {
                     <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
                       <p className="text-xs uppercase text-gray-400">
                         Mes Anterior
+                        <InfoTooltip text="Gasto total registrado el mes anterior." />
                       </p>
                       <p className="mt-1 text-2xl font-bold text-amber-400">
                         {formatCurrency(expenseMetrics.lastMonth)}
@@ -869,6 +902,7 @@ export default function AdvancedDashboard() {
                     <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
                       <p className="text-xs uppercase text-gray-400">
                         Total Histórico
+                        <InfoTooltip text="Suma total de gastos registrados." />
                       </p>
                       <p className="mt-1 text-2xl font-bold text-purple-400">
                         {formatCurrency(expenseMetrics.total)}
@@ -877,6 +911,7 @@ export default function AdvancedDashboard() {
                     <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
                       <p className="text-xs uppercase text-gray-400">
                         Promedio/Gasto
+                        <InfoTooltip text="Promedio por cada gasto registrado." />
                       </p>
                       <p className="mt-1 text-2xl font-bold text-cyan-400">
                         {formatCurrency(
@@ -893,6 +928,11 @@ export default function AdvancedDashboard() {
                     <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
                       <h4 className="mb-4 text-lg font-semibold text-rose-300">
                         📊 Distribución por Categoría
+                        <InfoTooltip
+                          text="Participacion de cada categoria en el total de gastos."
+                          tone="accent"
+                          className="ml-2"
+                        />
                       </h4>
                       <div className="space-y-3">
                         {expenseMetrics.byCategory.map((cat, idx) => {
@@ -1101,11 +1141,26 @@ export default function AdvancedDashboard() {
                     <table className="w-full">
                       <thead className="bg-gray-900/50 text-gray-300">
                         <tr>
-                          <th className="px-4 py-3 text-left">Producto</th>
-                          <th className="px-4 py-3 text-right">Unidades</th>
-                          <th className="px-4 py-3 text-right">Frecuencia</th>
-                          <th className="px-4 py-3 text-right">Stock</th>
-                          <th className="px-4 py-3 text-right">Rotación</th>
+                          <th className="px-4 py-3 text-left">
+                            Producto
+                            <InfoTooltip text="Producto evaluado en el periodo." />
+                          </th>
+                          <th className="px-4 py-3 text-right">
+                            Unidades
+                            <InfoTooltip text="Unidades vendidas en el periodo." />
+                          </th>
+                          <th className="px-4 py-3 text-right">
+                            Frecuencia
+                            <InfoTooltip text="Numero de ventas donde aparecio el producto." />
+                          </th>
+                          <th className="px-4 py-3 text-right">
+                            Stock
+                            <InfoTooltip text="Stock actual disponible." />
+                          </th>
+                          <th className="px-4 py-3 text-right">
+                            Rotación
+                            <InfoTooltip text="Porcentaje de rotacion segun ventas y stock." />
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-800 text-gray-200">

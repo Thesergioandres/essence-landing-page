@@ -1088,10 +1088,14 @@ export default function ProfitHistory() {
                           </td>
                         )}
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-emerald-300">
-                          {formatCurrency(entry.netProfit ?? entry.adminProfit)}
+                          {formatCurrency(entry.adminProfit ?? 0)}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-purple-200">
-                          {formatCurrency(entry.netProfit ?? entry.totalProfit)}
+                          {formatCurrency(
+                            entry.totalProfit ??
+                              (entry.adminProfit || 0) +
+                                (entry.distributorProfit || 0)
+                          )}
                         </td>
                       </tr>
                     )
@@ -1175,13 +1179,17 @@ export default function ProfitHistory() {
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-gray-400">Ganancia admin</span>
                       <span className="font-semibold text-emerald-300">
-                        {formatCurrency(entry.netProfit ?? entry.adminProfit)}
+                        {formatCurrency(entry.adminProfit ?? 0)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-gray-400">Total</span>
                       <span className="font-semibold text-purple-200">
-                        {formatCurrency(entry.netProfit ?? entry.totalProfit)}
+                        {formatCurrency(
+                          entry.totalProfit ??
+                            (entry.adminProfit || 0) +
+                              (entry.distributorProfit || 0)
+                        )}
                       </span>
                     </div>
                   </div>

@@ -5,6 +5,9 @@
 
 import { logApiError, logApiInfo } from "../../../../utils/logger.js";
 import GodRepository from "../../database/repositories/GodRepository.js";
+import { SaleRepository } from "../../database/repositories/SaleRepository.js";
+
+const saleRepository = new SaleRepository();
 
 class GodController {
   /**
@@ -326,6 +329,38 @@ class GodController {
       res.status(500).json({
         success: false,
         message: error.message || "Error reanudando suscripción",
+      });
+    }
+  }
+
+  /**
+   * POST /api/v2/god/sales/validate-integrity
+   * Validate and cleanup orphan sales for a business
+   */
+  async validateSalesIntegrity(req, res) {
+    try {
+      const { businessId, dryRun } = req.body || {};
+
+      if (!businessId) {
+        return res.status(400).json({
+          success: false,
+          message: "Falta businessId",
+        });
+      }
+
+      const result = await saleRepository.validateIntegrity(businessId, {
+        dryRun: Boolean(dryRun),
+      });
+
+      return res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error("Error validating sales integrity:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error validando integridad de ventas",
       });
     }
   }

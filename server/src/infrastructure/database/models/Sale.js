@@ -12,6 +12,12 @@ const saleSchema = new mongoose.Schema(
       ref: "Branch",
       index: true,
     },
+    // 📍 Snapshot: Nombre de la sede al momento de la venta
+    branchName: {
+      type: String,
+      required: false,
+      trim: true,
+    },
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",
