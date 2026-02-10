@@ -580,7 +580,9 @@ class ProfitHistoryRepository {
                 {
                   $ifNull: ["$saleDistributorProfit", "$distributorProfitSum"],
                 },
-                "$distributorProfitSum",
+                {
+                  $ifNull: ["$saleDistributorProfit", "$distributorProfitSum"],
+                },
               ],
             },
             saleAdminNetProfit: {
@@ -611,35 +613,6 @@ class ProfitHistoryRepository {
                 },
               ],
             },
-            totalProfit: {
-              $cond: [
-                { $ne: ["$saleAdminProfit", null] },
-                { $add: ["$saleAdminNetProfit", "$distributorProfit"] },
-                {
-                  $cond: [
-                    { $ne: ["$saleNetProfit", null] },
-                    "$saleNetProfit",
-                    {
-                      $cond: [
-                        "$isPromotionDistributor",
-                        {
-                          $ifNull: [
-                            "$saleTotalProfit",
-                            {
-                              $add: [
-                                "$saleAdminProfit",
-                                "$saleDistributorProfit",
-                              ],
-                            },
-                          ],
-                        },
-                        "$totalProfitSum",
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
             adminProfit: {
               $cond: [
                 { $ne: ["$saleAdminProfit", null] },
@@ -655,7 +628,10 @@ class ProfitHistoryRepository {
                           $ifNull: [
                             "$saleAdminProfit",
                             {
-                              $subtract: ["$totalProfit", "$distributorProfit"],
+                              $subtract: [
+                                "$totalProfitSum",
+                                "$distributorProfitSum",
+                              ],
                             },
                           ],
                         },
@@ -675,6 +651,23 @@ class ProfitHistoryRepository {
                     },
                   ],
                 },
+              ],
+            },
+          },
+        },
+        {
+          $addFields: {
+            totalProfit: {
+              $cond: [
+                "$hasDistributorContext",
+                {
+                  $cond: [
+                    { $lt: ["$adminProfit", 0] },
+                    "$distributorProfit",
+                    { $add: ["$distributorProfit", "$adminProfit"] },
+                  ],
+                },
+                "$adminProfit",
               ],
             },
           },
