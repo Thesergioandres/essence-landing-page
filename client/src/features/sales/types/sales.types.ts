@@ -49,6 +49,7 @@ export interface Sale {
   customer?: SaleCustomer | string | null;
   customerName?: string;
   branch?: SaleBranch | string | null;
+  branchName?: string;
   paymentMethod?: unknown | string;
   deliveryMethod?: unknown | string | null;
   paymentMethodName?: string;
@@ -73,6 +74,7 @@ export interface Sale {
   saleId?: string;
   notes?: string;
   saleDate: string;
+  sourceLocation?: "warehouse" | "branch" | "distributor";
   paymentStatus: "pendiente" | "confirmado";
   paymentConfirmedAt?: string;
   paymentConfirmedBy?: unknown | string;

@@ -74,6 +74,7 @@ export default function PromotionSalePage() {
     new Map()
   );
   const [allowWarehouse, setAllowWarehouse] = useState(true);
+  const [hasAuthorizedLocations, setHasAuthorizedLocations] = useState(true);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [promotionsLoading, setPromotionsLoading] = useState(false);
   const [promotionsError, setPromotionsError] = useState<string | null>(null);
@@ -142,32 +143,70 @@ export default function PromotionSalePage() {
           const userAllowedBranches = (
             user as { allowedBranches?: string[] } | null
           )?.allowedBranches;
+          const memberships = membershipsRes.memberships || [];
+          const storedBusinessId = localStorage.getItem("businessId");
+          const userBusinessId = (
+            user as { business?: string | { _id?: string } } | null
+          )?.business;
+          const resolvedBusinessId =
+            storedBusinessId ||
+            (typeof userBusinessId === "object"
+              ? userBusinessId?._id
+              : userBusinessId);
+          const resolvedMembership = resolvedBusinessId
+            ? memberships.find(m => {
+                const membershipBusinessId =
+                  typeof m.business === "object" ? m.business?._id : m.business;
+                return (
+                  String(membershipBusinessId) === String(resolvedBusinessId)
+                );
+              })
+            : memberships[0];
           const rawAllowedBranches =
-            activeMembership?.allowedBranches ?? userAllowedBranches;
+            resolvedMembership?.allowedBranches ??
+            activeMembership?.allowedBranches ??
+            userAllowedBranches;
+          console.log("🔐 Allowed branches (raw):", rawAllowedBranches);
+          console.log("🔐 Membership for business:", {
+            resolvedBusinessId,
+            membershipId: resolvedMembership?._id,
+          });
           const hasAllowedBranchList = Array.isArray(rawAllowedBranches);
           const allowedBranchIds = hasAllowedBranchList
             ? rawAllowedBranches.map(id => String(id))
             : [];
-          const allowAllBranches = rawAllowedBranches == null;
+          console.log("🔐 Allowed branch IDs:", allowedBranchIds);
           const allowAnyBranches =
-            allowAllBranches ||
-            (hasAllowedBranchList && allowedBranchIds.length > 0);
+            hasAllowedBranchList && allowedBranchIds.length > 0;
           const activeBranches = allBranches.filter(b => b.active !== false);
-          const distributorBranches = allowAllBranches
-            ? activeBranches
-            : allowAnyBranches
-              ? activeBranches.filter(b => allowedBranchIds.includes(b._id))
-              : [];
+          console.log(
+            "🏢 Active branches:",
+            activeBranches.map(b => ({
+              id: b._id,
+              name: b.name,
+              isWarehouse: b.isWarehouse,
+            }))
+          );
+          const distributorBranches = allowAnyBranches
+            ? activeBranches.filter(b => allowedBranchIds.includes(b._id))
+            : [];
           const warehouseBranchIds = activeBranches
             .filter(b => b.isWarehouse)
             .map(b => b._id);
-          const canUseWarehouse = allowAllBranches
-            ? warehouseBranchIds.length > 0
-            : allowAnyBranches &&
-              warehouseBranchIds.some(id => allowedBranchIds.includes(id));
+          const canUseWarehouse =
+            allowAnyBranches &&
+            warehouseBranchIds.some(id => allowedBranchIds.includes(id));
           const visibleBranches = canUseWarehouse
             ? distributorBranches
             : distributorBranches.filter(b => !b.isWarehouse);
+          console.log(
+            "✅ Visible branches:",
+            visibleBranches.map(b => ({
+              id: b._id,
+              name: b.name,
+              isWarehouse: b.isWarehouse,
+            }))
+          );
           setAllowWarehouse(canUseWarehouse);
           setBranches(visibleBranches);
 
@@ -185,6 +224,8 @@ export default function PromotionSalePage() {
           const hasStock =
             distStockMap.size > 0 &&
             Array.from(distStockMap.values()).some(qty => qty > 0);
+          const hasLocations = hasStock || visibleBranches.length > 0;
+          setHasAuthorizedLocations(hasLocations);
 
           // Auto-seleccionar: si tiene stock -> "Mi Inventario", si no -> primera sede
           if (hasStock) {
@@ -218,6 +259,13 @@ export default function PromotionSalePage() {
                 locationName: firstBranch.name,
               });
             }
+          } else if (!hasLocations) {
+            dispatch({
+              type: "SET_LOCATION",
+              locationType: "distributor",
+              locationId: "",
+              locationName: "Mi Inventario",
+            });
           }
 
           const mappedProducts: ProductWithStock[] = (
@@ -1099,137 +1147,153 @@ export default function PromotionSalePage() {
             <p className="text-sm opacity-80">{submitError}</p>
           </div>
         )}
+        {isDistributor && !hasAuthorizedLocations && !dataLoading && (
+          <div className="mb-4 animate-fade-in rounded-2xl border border-amber-500/40 bg-amber-950/40 p-4 text-amber-200 shadow-[0_20px_40px_-30px_rgba(251,191,36,0.6)]">
+            <p className="font-semibold">Acceso restringido</p>
+            <p className="text-sm opacity-80">
+              No tienes ubicaciones de stock autorizadas para vender
+            </p>
+          </div>
+        )}
 
         {/* NEW LAYOUT: Two Main Columns */}
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           {/* ============ LEFT COLUMN: Products & Cart ============ */}
           <div className="space-y-5">
             {/* Location Selector - Compact */}
-            <LocationSelector
-              locationType={order.locationType}
-              locationId={order.locationId}
-              branches={branches}
-              allowWarehouse={!isDistributor || allowWarehouse}
-              onLocationChange={handleLocationChange}
-            />
+            {!(!hasAuthorizedLocations && isDistributor) && (
+              <LocationSelector
+                locationType={order.locationType}
+                locationId={order.locationId}
+                branches={branches}
+                allowWarehouse={!isDistributor || allowWarehouse}
+                isDistributor={isDistributor}
+                onLocationChange={handleLocationChange}
+              />
+            )}
 
             {/* Quick Selectors */}
-            <div className="animate-fade-in-up rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-[0_18px_50px_-35px_rgba(15,23,42,0.9)]">
-              <h3 className="mb-4 text-lg font-semibold text-white">
-                Selectores rapidos
-              </h3>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-3">
-                  <p className="mb-2 text-xs uppercase tracking-wide text-slate-400">
-                    Promociones
-                  </p>
-                  <PromotionSelector
-                    value={promotionSelectorId}
-                    promotions={sellablePromotions}
-                    onChange={(promotionId, promotion) => {
-                      setPromotionSelectorId(promotionId);
-                      if (!promotionId || !promotion) return;
-                      handleAddPromotion(promotion);
-                      setPromotionSelectorId("");
-                    }}
-                    placeholder="Buscar promocion..."
-                  />
+            {!(!hasAuthorizedLocations && isDistributor) && (
+              <div className="animate-fade-in-up rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-[0_18px_50px_-35px_rgba(15,23,42,0.9)]">
+                <h3 className="mb-4 text-lg font-semibold text-white">
+                  Selectores rapidos
+                </h3>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-3">
+                    <p className="mb-2 text-xs uppercase tracking-wide text-slate-400">
+                      Promociones
+                    </p>
+                    <PromotionSelector
+                      value={promotionSelectorId}
+                      promotions={sellablePromotions}
+                      onChange={(promotionId, promotion) => {
+                        setPromotionSelectorId(promotionId);
+                        if (!promotionId || !promotion) return;
+                        handleAddPromotion(promotion);
+                        setPromotionSelectorId("");
+                      }}
+                      placeholder="Buscar promocion..."
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Promotions */}
-            <div className="animate-fade-in-up rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-slate-800/60 p-5 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.9)] backdrop-blur">
-              <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-                <ShoppingBag className="h-5 w-5 text-teal-300" />
-                Promociones Activas
-              </h3>
+            {!(!hasAuthorizedLocations && isDistributor) && (
+              <div className="animate-fade-in-up rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-slate-800/60 p-5 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.9)] backdrop-blur">
+                <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+                  <ShoppingBag className="h-5 w-5 text-teal-300" />
+                  Promociones Activas
+                </h3>
 
-              {promotionsLoading && (
-                <div className="flex h-24 items-center justify-center text-gray-400">
-                  Cargando promociones...
-                </div>
-              )}
+                {promotionsLoading && (
+                  <div className="flex h-24 items-center justify-center text-gray-400">
+                    Cargando promociones...
+                  </div>
+                )}
 
-              {promotionsError && (
-                <div className="mb-3 rounded-lg border border-red-500/40 bg-red-900/20 p-3 text-sm text-red-300">
-                  {promotionsError}
-                </div>
-              )}
+                {promotionsError && (
+                  <div className="mb-3 rounded-lg border border-red-500/40 bg-red-900/20 p-3 text-sm text-red-300">
+                    {promotionsError}
+                  </div>
+                )}
 
-              {!promotionsLoading && sellablePromotions.length === 0 && (
-                <div className="flex h-20 items-center justify-center text-gray-500">
-                  No hay promociones activas para vender.
-                </div>
-              )}
+                {!promotionsLoading && sellablePromotions.length === 0 && (
+                  <div className="flex h-20 items-center justify-center text-gray-500">
+                    No hay promociones activas para vender.
+                  </div>
+                )}
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                {sellablePromotions.map(promo => {
-                  const promoItems = promo.comboItems || [];
-                  const promoImage =
-                    promo.image?.url ||
-                    (typeof promoItems[0]?.product === "object"
-                      ? promoItems[0]?.product?.image?.url
-                      : undefined);
-                  const fallbackTotal = promoItems.reduce((sum, item) => {
-                    const product =
-                      typeof item.product === "object" && item.product !== null
-                        ? item.product
-                        : null;
-                    const unitPrice =
-                      item.unitPrice ??
-                      product?.clientPrice ??
-                      product?.suggestedPrice ??
-                      0;
-                    return sum + unitPrice * (item.quantity || 1);
-                  }, 0);
-                  const displayPrice =
-                    promo.promotionPrice && promo.promotionPrice > 0
-                      ? promo.promotionPrice
-                      : fallbackTotal;
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {sellablePromotions.map(promo => {
+                    const promoItems = promo.comboItems || [];
+                    const promoImage =
+                      promo.image?.url ||
+                      (typeof promoItems[0]?.product === "object"
+                        ? promoItems[0]?.product?.image?.url
+                        : undefined);
+                    const fallbackTotal = promoItems.reduce((sum, item) => {
+                      const product =
+                        typeof item.product === "object" &&
+                        item.product !== null
+                          ? item.product
+                          : null;
+                      const unitPrice =
+                        item.unitPrice ??
+                        product?.clientPrice ??
+                        product?.suggestedPrice ??
+                        0;
+                      return sum + unitPrice * (item.quantity || 1);
+                    }, 0);
+                    const displayPrice =
+                      promo.promotionPrice && promo.promotionPrice > 0
+                        ? promo.promotionPrice
+                        : fallbackTotal;
 
-                  return (
-                    <div
-                      key={promo._id}
-                      className="rounded-xl border border-slate-700/70 bg-slate-900/70 p-3 transition hover:-translate-y-0.5 hover:border-teal-500/50 hover:shadow-[0_15px_30px_-20px_rgba(45,212,191,0.6)]"
-                    >
-                      <div className="flex items-start gap-3">
-                        {promoImage ? (
-                          <img
-                            src={promoImage}
-                            alt={promo.name}
-                            className="h-12 w-12 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-700">
-                            <Package className="h-6 w-6 text-gray-500" />
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-white">
-                            {promo.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {promoItems.length} productos incluidos
-                          </p>
-                          <p className="mt-1 text-sm font-bold text-green-400">
-                            ${displayPrice.toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleAddPromotion(promo)}
-                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-500/20 px-3 py-2 text-sm font-medium text-teal-200 transition hover:bg-teal-500/30"
+                    return (
+                      <div
+                        key={promo._id}
+                        className="rounded-xl border border-slate-700/70 bg-slate-900/70 p-3 transition hover:-translate-y-0.5 hover:border-teal-500/50 hover:shadow-[0_15px_30px_-20px_rgba(45,212,191,0.6)]"
                       >
-                        <Plus className="h-4 w-4" />
-                        Agregar promocion
-                      </button>
-                    </div>
-                  );
-                })}
+                        <div className="flex items-start gap-3">
+                          {promoImage ? (
+                            <img
+                              src={promoImage}
+                              alt={promo.name}
+                              className="h-12 w-12 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-700">
+                              <Package className="h-6 w-6 text-gray-500" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-white">
+                              {promo.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {promoItems.length} productos incluidos
+                            </p>
+                            <p className="mt-1 text-sm font-bold text-green-400">
+                              ${displayPrice.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleAddPromotion(promo)}
+                          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-500/20 px-3 py-2 text-sm font-medium text-teal-200 transition hover:bg-teal-500/30"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Agregar promocion
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Cart - Below Inventory */}
             <div

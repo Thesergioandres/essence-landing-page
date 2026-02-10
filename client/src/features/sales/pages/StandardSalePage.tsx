@@ -67,6 +67,7 @@ export default function StandardSalePage() {
     new Map()
   );
   const [allowWarehouse, setAllowWarehouse] = useState(true);
+  const [hasAuthorizedLocations, setHasAuthorizedLocations] = useState(true);
   const [productSelectorId, setProductSelectorId] = useState("");
 
   // State: Loading/Error/Success
@@ -132,32 +133,70 @@ export default function StandardSalePage() {
           const userAllowedBranches = (
             user as { allowedBranches?: string[] } | null
           )?.allowedBranches;
+          const memberships = membershipsRes.memberships || [];
+          const storedBusinessId = localStorage.getItem("businessId");
+          const userBusinessId = (
+            user as { business?: string | { _id?: string } } | null
+          )?.business;
+          const resolvedBusinessId =
+            storedBusinessId ||
+            (typeof userBusinessId === "object"
+              ? userBusinessId?._id
+              : userBusinessId);
+          const resolvedMembership = resolvedBusinessId
+            ? memberships.find(m => {
+                const membershipBusinessId =
+                  typeof m.business === "object" ? m.business?._id : m.business;
+                return (
+                  String(membershipBusinessId) === String(resolvedBusinessId)
+                );
+              })
+            : memberships[0];
           const rawAllowedBranches =
-            activeMembership?.allowedBranches ?? userAllowedBranches;
+            resolvedMembership?.allowedBranches ??
+            activeMembership?.allowedBranches ??
+            userAllowedBranches;
+          console.log("🔐 Allowed branches (raw):", rawAllowedBranches);
+          console.log("🔐 Membership for business:", {
+            resolvedBusinessId,
+            membershipId: resolvedMembership?._id,
+          });
           const hasAllowedBranchList = Array.isArray(rawAllowedBranches);
           const allowedBranchIds = hasAllowedBranchList
             ? rawAllowedBranches.map(id => String(id))
             : [];
-          const allowAllBranches = rawAllowedBranches == null;
+          console.log("🔐 Allowed branch IDs:", allowedBranchIds);
           const allowAnyBranches =
-            allowAllBranches ||
-            (hasAllowedBranchList && allowedBranchIds.length > 0);
+            hasAllowedBranchList && allowedBranchIds.length > 0;
           const activeBranches = allBranches.filter(b => b.active !== false);
-          const distributorBranches = allowAllBranches
-            ? activeBranches
-            : allowAnyBranches
-              ? activeBranches.filter(b => allowedBranchIds.includes(b._id))
-              : [];
+          console.log(
+            "🏢 Active branches:",
+            activeBranches.map(b => ({
+              id: b._id,
+              name: b.name,
+              isWarehouse: b.isWarehouse,
+            }))
+          );
+          const distributorBranches = allowAnyBranches
+            ? activeBranches.filter(b => allowedBranchIds.includes(b._id))
+            : [];
           const warehouseBranchIds = activeBranches
             .filter(b => b.isWarehouse)
             .map(b => b._id);
-          const canUseWarehouse = allowAllBranches
-            ? warehouseBranchIds.length > 0
-            : allowAnyBranches &&
-              warehouseBranchIds.some(id => allowedBranchIds.includes(id));
+          const canUseWarehouse =
+            allowAnyBranches &&
+            warehouseBranchIds.some(id => allowedBranchIds.includes(id));
           const visibleBranches = canUseWarehouse
             ? distributorBranches
             : distributorBranches.filter(b => !b.isWarehouse);
+          console.log(
+            "✅ Visible branches:",
+            visibleBranches.map(b => ({
+              id: b._id,
+              name: b.name,
+              isWarehouse: b.isWarehouse,
+            }))
+          );
           setAllowWarehouse(canUseWarehouse);
           setBranches(visibleBranches);
 
@@ -175,6 +214,8 @@ export default function StandardSalePage() {
           const hasStock =
             distStockMap.size > 0 &&
             Array.from(distStockMap.values()).some(qty => qty > 0);
+          const hasLocations = hasStock || visibleBranches.length > 0;
+          setHasAuthorizedLocations(hasLocations);
 
           // Auto-seleccionar: si tiene stock -> "Mi Inventario", si no -> primera sede
           if (hasStock) {
@@ -208,6 +249,13 @@ export default function StandardSalePage() {
                 locationName: firstBranch.name,
               });
             }
+          } else if (!hasLocations) {
+            dispatch({
+              type: "SET_LOCATION",
+              locationType: "distributor",
+              locationId: "",
+              locationName: "Mi Inventario",
+            });
           }
 
           const mappedProducts: ProductWithStock[] = (
@@ -932,77 +980,92 @@ export default function StandardSalePage() {
             <p className="text-sm opacity-80">{submitError}</p>
           </div>
         )}
+        {isDistributor && !hasAuthorizedLocations && !dataLoading && (
+          <div className="mb-4 animate-fade-in rounded-2xl border border-amber-500/40 bg-amber-950/40 p-4 text-amber-200 shadow-[0_20px_40px_-30px_rgba(251,191,36,0.6)]">
+            <p className="font-semibold">Acceso restringido</p>
+            <p className="text-sm opacity-80">
+              No tienes ubicaciones de stock autorizadas para vender
+            </p>
+          </div>
+        )}
 
         {/* NEW LAYOUT: Two Main Columns */}
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           {/* ============ LEFT COLUMN: Products & Cart ============ */}
           <div className="space-y-5">
             {/* Location Selector - Compact */}
-            <LocationSelector
-              locationType={order.locationType}
-              locationId={order.locationId}
-              branches={branches}
-              allowWarehouse={!isDistributor || allowWarehouse}
-              onLocationChange={handleLocationChange}
-            />
+            {!(!hasAuthorizedLocations && isDistributor) && (
+              <LocationSelector
+                locationType={order.locationType}
+                locationId={order.locationId}
+                branches={branches}
+                allowWarehouse={!isDistributor || allowWarehouse}
+                isDistributor={isDistributor}
+                onLocationChange={handleLocationChange}
+              />
+            )}
 
             {/* Quick Selectors */}
-            <div className="animate-fade-in-up rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-[0_18px_50px_-35px_rgba(15,23,42,0.9)]">
-              <h3 className="mb-4 text-lg font-semibold text-white">
-                Selectores rapidos
-              </h3>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-3">
-                  <p className="mb-2 text-xs uppercase tracking-wide text-slate-400">
-                    Productos
-                  </p>
-                  <ProductSelector
-                    value={productSelectorId}
-                    onChange={productId => {
-                      setProductSelectorId(productId);
-                      if (!productId) return;
-                      const product = productsWithLocationStock.find(
-                        p => p._id === productId
-                      );
-                      if (!product) return;
-
-                      const stock =
-                        order.locationType === "warehouse"
-                          ? (product.warehouseStock ?? 0)
-                          : order.locationType === "branch"
-                            ? (product.branchStock ?? 0)
-                            : (product.distributorStock ?? 0);
-
-                      if (stock <= 0) {
-                        setSubmitError(
-                          `Sin stock disponible para ${product.name}.`
+            {!(!hasAuthorizedLocations && isDistributor) && (
+              <div className="animate-fade-in-up rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-[0_18px_50px_-35px_rgba(15,23,42,0.9)]">
+                <h3 className="mb-4 text-lg font-semibold text-white">
+                  Selectores rapidos
+                </h3>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-3">
+                    <p className="mb-2 text-xs uppercase tracking-wide text-slate-400">
+                      Productos
+                    </p>
+                    <ProductSelector
+                      value={productSelectorId}
+                      onChange={productId => {
+                        setProductSelectorId(productId);
+                        if (!productId) return;
+                        const product = productsWithLocationStock.find(
+                          p => p._id === productId
                         );
-                        return;
-                      }
+                        if (!product) return;
 
-                      handleAddProduct(product, 1);
-                      setProductSelectorId("");
-                    }}
-                    placeholder="Buscar producto para agregar..."
-                    showStock={true}
-                    products={selectorProducts}
-                  />
+                        const stock =
+                          order.locationType === "warehouse"
+                            ? (product.warehouseStock ?? 0)
+                            : order.locationType === "branch"
+                              ? (product.branchStock ?? 0)
+                              : (product.distributorStock ?? 0);
+
+                        if (stock <= 0) {
+                          setSubmitError(
+                            `Sin stock disponible para ${product.name}.`
+                          );
+                          return;
+                        }
+
+                        handleAddProduct(product, 1);
+                        setProductSelectorId("");
+                      }}
+                      placeholder="Buscar producto para agregar..."
+                      showStock={true}
+                      products={selectorProducts}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Inventory Grid - Main Focus */}
-            <div
-              className="animate-fade-in-up"
-              style={{ animationDelay: "120ms" }}
-            >
-              <InventoryGrid
-                products={productsInSelectedInventory}
-                locationType={order.locationType}
-                loading={dataLoading}
-                onAddProduct={handleAddProduct}
-              />
-            </div>
+            {!(!hasAuthorizedLocations && isDistributor) && (
+              <div
+                className="animate-fade-in-up"
+                style={{ animationDelay: "120ms" }}
+              >
+                <InventoryGrid
+                  products={productsInSelectedInventory}
+                  locationType={order.locationType}
+                  loading={dataLoading}
+                  onAddProduct={handleAddProduct}
+                />
+              </div>
+            )}
 
             {/* Cart - Below Inventory */}
             <div

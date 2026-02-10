@@ -13,6 +13,7 @@ import {
   getMyCatalog,
   getProductById,
   getProductHistory,
+  getPublicCatalog,
   updateProduct,
   updateStock,
 } from "../controllers/ProductController.js";
@@ -21,6 +22,9 @@ const router = express.Router();
 
 // Get all products for business
 router.get("/", protect, businessContext, getAllProducts);
+
+// Public catalog (no auth)
+router.get("/public", getPublicCatalog);
 
 // Get distributor catalog (products with stock > 0)
 router.get("/my-catalog", protect, getMyCatalog);

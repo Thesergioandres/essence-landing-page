@@ -79,6 +79,30 @@ export default function DistributorSales() {
     });
   };
 
+  const getSaleSourceLabel = (sale: Sale) => {
+    const source = sale.sourceLocation;
+    if (source === "distributor") return "Inventario distribuidor";
+    if (source === "branch") {
+      const branchName =
+        sale.branchName ||
+        (typeof sale.branch === "object" ? sale.branch?.name : null);
+      return branchName ? `Sede: ${branchName}` : "Sede";
+    }
+    if (source === "warehouse") return "Bodega central";
+
+    if (sale.branchName) return `Sede: ${sale.branchName}`;
+    if (typeof sale.branch === "object" && sale.branch?.name)
+      return `Sede: ${sale.branch.name}`;
+    if (sale.distributor) return "Inventario distribuidor";
+    return "Bodega central";
+  };
+
+  const getGroupSourceLabel = (groupSales: Sale[]) => {
+    const labels = new Set(groupSales.map(getSaleSourceLabel));
+    if (labels.size === 1) return Array.from(labels)[0];
+    return "Mixto";
+  };
+
   // Helper para obtener el crédito de una venta (puede venir en creditId o credit)
   const getCreditFromSale = (sale: Sale) => {
     // El backend devuelve creditId poblado cuando es crédito
@@ -364,6 +388,9 @@ export default function DistributorSales() {
                     Cliente
                   </th>
                   <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-400">
+                    Origen
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-400">
                     Total
                   </th>
                   <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-400">
@@ -413,6 +440,9 @@ export default function DistributorSales() {
                             {typeof group.sales[0].customer === "object"
                               ? group.sales[0].customer.name
                               : "-"}
+                          </td>
+                          <td className="px-3 py-3 text-sm text-gray-300">
+                            {getGroupSourceLabel(group.sales)}
                           </td>
                           <td className="px-3 py-3 text-sm font-semibold text-white">
                             {formatCurrency(group.totalRevenue)}
@@ -516,6 +546,9 @@ export default function DistributorSales() {
                                 </td>
                                 <td className="px-3 py-3 text-sm text-gray-300">
                                   {customer?.name || "-"}
+                                </td>
+                                <td className="px-3 py-3 text-sm text-gray-300">
+                                  {getSaleSourceLabel(sale)}
                                 </td>
                                 <td className="px-3 py-3 text-sm font-semibold text-white">
                                   {formatCurrency(total)}
@@ -630,6 +663,9 @@ export default function DistributorSales() {
                       </td>
                       <td className="px-3 py-3 text-sm text-gray-300">
                         {customer?.name || "-"}
+                      </td>
+                      <td className="px-3 py-3 text-sm text-gray-300">
+                        {getSaleSourceLabel(sale)}
                       </td>
                       <td className="px-3 py-3 text-sm font-semibold text-white">
                         {formatCurrency(total)}

@@ -137,6 +137,12 @@ const saleSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    sourceLocation: {
+      type: String,
+      enum: ["warehouse", "branch", "distributor"],
+      default: null,
+      index: true,
+    },
     // Usuario que registró la venta (para ventas admin o cuando distributor es null)
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

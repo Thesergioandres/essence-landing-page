@@ -69,9 +69,13 @@ export default function Catalog() {
       try {
         // En modo público (sin token) las categorías están protegidas en la API;
         // derivamos categorías desde los productos para evitar 401.
-        const productsResponse = await productService.getAll(
-          publicBusinessId ? { businessId: publicBusinessId } : {}
-        );
+        const productsResponse = hasToken
+          ? await productService.getAll(
+              publicBusinessId ? { businessId: publicBusinessId } : {}
+            )
+          : await productService.getPublicCatalog(
+              publicBusinessId ? { businessId: publicBusinessId } : {}
+            );
         const productsList = Array.isArray(productsResponse)
           ? productsResponse
           : productsResponse.data || [];
@@ -173,9 +177,31 @@ export default function Catalog() {
     [shareLink]
   );
 
+  const copyToClipboard = async (text: string) => {
+    if (!text) return false;
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.top = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return ok;
+  };
+
   const handleCopyShareLink = async () => {
     try {
-      await navigator.clipboard.writeText(shareLink);
+      const copied = await copyToClipboard(shareLink);
+      if (!copied) {
+        throw new Error("copy_failed");
+      }
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
       setShareError(null);

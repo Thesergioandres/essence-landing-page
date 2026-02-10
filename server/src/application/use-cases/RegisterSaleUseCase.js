@@ -334,6 +334,12 @@ export class RegisterSaleUseCase {
         });
       }
 
+      const resolvedSourceLocation =
+        sourceLocation === "distributor" && distributorId
+          ? "distributor"
+          : sourceLocation === "branch" && branchId
+            ? "branch"
+            : "warehouse";
       const saleData = {
         business: businessId,
         product: productId,
@@ -355,6 +361,7 @@ export class RegisterSaleUseCase {
         commissionBonusAmount,
         notes,
         saleDate: resolvedSaleDate,
+        sourceLocation: resolvedSourceLocation,
         saleGroupId, // Link them!
         paymentMethod: resolvedPaymentMethodId, // Use resolved ObjectId
         paymentMethodCode: paymentMethodCode, // Store the code for quick lookups

@@ -47,33 +47,40 @@ async function restoreStock(sale, session) {
     return;
   }
 
+  const sourceLocation = sale.sourceLocation || null;
+  const businessId = sale.business || null;
+
   // Determine where stock came from and restore it
-  if (sale.branch) {
-    // Stock was deducted from branch
-    await BranchStock.findOneAndUpdate(
-      { branch: sale.branch, product: productId },
-      { $inc: { quantity } },
-      { session },
-    );
-    console.log(
-      `📦 Restored ${quantity} to BranchStock for branch ${sale.branch}`,
-    );
-  } else if (sale.distributor) {
-    // Stock was deducted from distributor
+  if (
+    sourceLocation === "distributor" ||
+    (!sourceLocation && sale.distributor)
+  ) {
     await DistributorStock.findOneAndUpdate(
       {
         distributor: sale.distributor,
         product: productId,
-        business: sale.business,
+        ...(businessId ? { business: businessId } : {}),
       },
       { $inc: { quantity } },
-      { session },
+      { session, upsert: true },
     );
     console.log(
       `📦 Restored ${quantity} to DistributorStock for distributor ${sale.distributor}`,
     );
+  } else if (sourceLocation === "branch" || (!sourceLocation && sale.branch)) {
+    await BranchStock.findOneAndUpdate(
+      {
+        branch: sale.branch,
+        product: productId,
+        ...(businessId ? { business: businessId } : {}),
+      },
+      { $inc: { quantity } },
+      { session, upsert: true },
+    );
+    console.log(
+      `📦 Restored ${quantity} to BranchStock for branch ${sale.branch}`,
+    );
   } else {
-    // Stock was deducted from warehouse (default for admin sales)
     await Product.findByIdAndUpdate(
       productId,
       {

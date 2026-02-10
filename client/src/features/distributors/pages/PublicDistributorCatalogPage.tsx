@@ -70,7 +70,29 @@ export default function PublicDistributorCatalog() {
     }
 
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      const copyToClipboard = async (text: string) => {
+        if (!text) return false;
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.top = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        return ok;
+      };
+
+      const copied = await copyToClipboard(shareUrl);
+      if (!copied) {
+        throw new Error("copy_failed");
+      }
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     } catch (error) {

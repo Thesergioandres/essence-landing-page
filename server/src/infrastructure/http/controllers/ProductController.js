@@ -80,6 +80,51 @@ export const getAllProducts = async (req, res, next) => {
 };
 
 /**
+ * Get Public Catalog (no auth)
+ */
+export const getPublicCatalog = async (req, res) => {
+  try {
+    const businessId = req.query.businessId || req.headers["x-business-id"];
+    if (!businessId) {
+      return res.status(400).json({
+        success: false,
+        message: "Business ID required",
+      });
+    }
+
+    const filter = {};
+    if (req.query.category) filter.category = req.query.category;
+    if (req.query.active !== undefined)
+      filter.isActive = req.query.active === "true";
+
+    const products = await productRepository.findAll(businessId, filter);
+    const safeProducts = products.map((product) => {
+      const {
+        purchasePrice,
+        averageCost,
+        supplierPrice,
+        totalInventoryValue,
+        distributorPrice,
+        distributorCommission,
+        ...safeProduct
+      } = product;
+      return safeProduct;
+    });
+
+    res.json({
+      success: true,
+      data: safeProducts,
+    });
+  } catch (error) {
+    console.error("Error in getPublicCatalog:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error al obtener productos",
+    });
+  }
+};
+
+/**
  * Get Distributor Catalog (only products with stock > 0)
  */
 export const getMyCatalog = async (req, res) => {

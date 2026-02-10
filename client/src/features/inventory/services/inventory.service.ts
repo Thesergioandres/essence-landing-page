@@ -41,6 +41,18 @@ export const productService = {
     };
   },
 
+  async getPublicCatalog(
+    filters: Record<string, string | boolean | number> = {}
+  ): Promise<{ data: Product[] }> {
+    const response = await api.get("/products/public", { params: filters });
+    if (response.data?.success && Array.isArray(response.data?.data)) {
+      return { data: response.data.data };
+    }
+    return {
+      data: Array.isArray(response.data) ? response.data : [],
+    };
+  },
+
   async getById(id: string): Promise<Product> {
     const response = await api.get<Product>(`/products/${id}`);
     // Backend V2 returns { success: true, data: product }
