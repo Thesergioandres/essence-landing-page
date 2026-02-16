@@ -19,14 +19,16 @@ export async function listSales(req, res) {
       page = 1,
       limit = 20,
       branchId,
+      productId,
       startDate,
       endDate,
       statsOnly,
+      distributorId: distributorIdQuery,
     } = req.query;
 
     // Check if this is a distributor-specific query
     // Route: /api/v2/sales/distributor/:distributorId?
-    let distributorId = req.params.distributorId;
+    let distributorId = req.params.distributorId || distributorIdQuery;
 
     // If no distributorId in params, check if current user is distributor
     // Note: Role is 'distribuidor' in Spanish in the database
@@ -39,6 +41,7 @@ export async function listSales(req, res) {
       limit: Number(limit),
       branchId,
       distributorId, // Pass distributorId to filter
+      productId,
       startDate,
       endDate,
       statsOnly: statsOnly === "true",

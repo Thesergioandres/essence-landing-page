@@ -53,6 +53,7 @@ export class SaleRepository {
       limit = 20,
       branchId,
       distributorId,
+      productId,
       startDate,
       endDate,
       statsOnly = false,
@@ -67,6 +68,10 @@ export class SaleRepository {
 
     if (distributorId) {
       filter.distributor = distributorId;
+    }
+
+    if (productId) {
+      filter.product = productId;
     }
 
     if (startDate || endDate) {

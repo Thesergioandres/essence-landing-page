@@ -12,6 +12,9 @@ import {
 import { authService } from "../../auth/services";
 import { branchService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
+import { distributorService } from "../../distributors/services";
+import { productService } from "../../inventory/services/inventory.service";
+import type { Product } from "../../inventory/types/product.types";
 import { saleService } from "../../sales/services";
 import type { Sale } from "../types/sales.types";
 
@@ -46,6 +49,8 @@ export default function Sales() {
   const [loading, setLoading] = useState(true);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchId, setBranchId] = useState<string>("");
+  const [productId, setProductId] = useState<string>("");
+  const [distributorId, setDistributorId] = useState<string>("");
   const [filter, setFilter] = useState<"all" | "pendiente" | "confirmado">(
     "all"
   );
@@ -60,6 +65,8 @@ export default function Sales() {
     startDate: "",
     endDate: "",
   });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [distributors, setDistributors] = useState<User[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
   const [showAllSales, setShowAllSales] = useState(false);
@@ -147,7 +154,16 @@ export default function Sales() {
       loadSales();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, filter, sortBy, dateFilters, branchId, showAllSales]);
+  }, [
+    pagination.page,
+    filter,
+    sortBy,
+    dateFilters,
+    branchId,
+    productId,
+    distributorId,
+    showAllSales,
+  ]);
 
   useEffect(() => {
     const fetchBranches = async () => {
@@ -161,6 +177,37 @@ export default function Sales() {
     void fetchBranches();
   }, []);
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await productService.getAll({
+          limit: 1000,
+          excludePromotions: true,
+        });
+        const list = Array.isArray(response) ? response : response.data || [];
+        setProducts(list);
+      } catch (error) {
+        console.error("Error cargando productos", error);
+        setProducts([]);
+      }
+    };
+
+    const fetchDistributors = async () => {
+      if (!distributorsEnabled) return;
+      try {
+        const response = await distributorService.getAll();
+        const list = Array.isArray(response) ? response : response.data || [];
+        setDistributors(list.filter((d: User) => d.active));
+      } catch (error) {
+        console.error("Error cargando distribuidores", error);
+        setDistributors([]);
+      }
+    };
+
+    void fetchProducts();
+    void fetchDistributors();
+  }, [distributorsEnabled]);
+
   const buildSalesParams = () => {
     const params: any = {
       page: pagination.page,
@@ -168,6 +215,8 @@ export default function Sales() {
       sortBy: sortBy,
     };
     if (branchId) params.branchId = branchId;
+    if (productId) params.productId = productId;
+    if (distributorId) params.distributorId = distributorId;
     if (filter !== "all") params.paymentStatus = filter;
     if (dateFilters.startDate) params.startDate = dateFilters.startDate;
     if (dateFilters.endDate) params.endDate = dateFilters.endDate;
@@ -222,6 +271,8 @@ export default function Sales() {
       setShowAllSales(true);
       // Limpiar filtros
       setBranchId("");
+      setProductId("");
+      setDistributorId("");
       setFilter("all");
       setDateFilters({ startDate: "", endDate: "" });
 
@@ -873,6 +924,58 @@ export default function Sales() {
                 )}
               </div>
             </div>
+
+            <div>
+              <p className="mb-2 text-sm font-medium text-gray-300">
+                Filtrar por producto:
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <div className="min-w-[220px] flex-1">
+                  <select
+                    value={productId}
+                    onChange={e => {
+                      setProductId(e.target.value);
+                      setPagination(prev => ({ ...prev, page: 1 }));
+                    }}
+                    className="min-h-[44px] w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  >
+                    <option value="">Todos los productos</option>
+                    {products.map(product => (
+                      <option key={product._id} value={product._id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {distributorsEnabled && (
+              <div>
+                <p className="mb-2 text-sm font-medium text-gray-300">
+                  Filtrar por vendedor:
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  <div className="min-w-[220px] flex-1">
+                    <select
+                      value={distributorId}
+                      onChange={e => {
+                        setDistributorId(e.target.value);
+                        setPagination(prev => ({ ...prev, page: 1 }));
+                      }}
+                      className="min-h-[44px] w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    >
+                      <option value="">Todos los vendedores</option>
+                      {distributors.map(distributor => (
+                        <option key={distributor._id} value={distributor._id}>
+                          {distributor.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <p className="mb-2 text-sm font-medium text-gray-300">
