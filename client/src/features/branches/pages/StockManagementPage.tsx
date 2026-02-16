@@ -452,8 +452,9 @@ const StockManagement = () => {
         if (!product) return null;
         return [product._id, { product, quantity: stock.quantity || 0 }];
       })
-      .filter((entry): entry is [string, { product: Product; quantity: number }] =>
-        Boolean(entry)
+      .filter(
+        (entry): entry is [string, { product: Product; quantity: number }] =>
+          Boolean(entry)
       )
   );
 
@@ -842,8 +843,9 @@ const StockManagement = () => {
                                 max={
                                   operation === "assign"
                                     ? item.warehouseStock
-                                    : distributorStockByProduct.get(item.productId)
-                                        ?.quantity
+                                    : distributorStockByProduct.get(
+                                        item.productId
+                                      )?.quantity
                                 }
                                 value={item.quantity === 0 ? "" : item.quantity}
                                 onChange={e => {
@@ -871,7 +873,10 @@ const StockManagement = () => {
                                         item.productId
                                       )?.quantity ?? 0;
                                     if (val > maxQty && maxQty > 0) {
-                                      updateItemQuantity(item.productId, maxQty);
+                                      updateItemQuantity(
+                                        item.productId,
+                                        maxQty
+                                      );
                                     }
                                   }
                                 }}
@@ -896,15 +901,16 @@ const StockManagement = () => {
 
                           {operation === "assign" && (
                             <div className="mt-2 text-xs text-gray-400">
-                              Quedará en bodega: {" "}
+                              Quedará en bodega:{" "}
                               {item.warehouseStock - item.quantity} unidades
                             </div>
                           )}
                           {operation === "withdraw" && (
                             <div className="mt-2 text-xs text-gray-400">
-                              Quedará en distribuidor: {" "}
+                              Quedará en distribuidor:{" "}
                               {(distributorStockByProduct.get(item.productId)
-                                ?.quantity || 0) - item.quantity} unidades
+                                ?.quantity || 0) - item.quantity}{" "}
+                              unidades
                             </div>
                           )}
                         </div>
