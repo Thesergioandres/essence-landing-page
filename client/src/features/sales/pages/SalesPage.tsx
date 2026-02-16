@@ -10,6 +10,7 @@ import {
   writeSessionCache,
 } from "../../../utils/requestCache";
 import { authService } from "../../auth/services";
+import type { User } from "../../auth/types/auth.types";
 import { branchService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
 import { distributorService } from "../../distributors/services";
