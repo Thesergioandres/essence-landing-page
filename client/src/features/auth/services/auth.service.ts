@@ -13,6 +13,34 @@ import type {
   User,
 } from "../types/auth.types";
 
+const ADMIN_ORIGINAL_TOKEN_KEY = "admin_original_token";
+
+const resolveBusinessIdFromUser = (user?: {
+  memberships?: Membership[];
+  business?: string;
+}): string | null => {
+  if (!user) return null;
+  return user.memberships?.[0]?.business?._id || user.business || null;
+};
+
+const applySession = (payload: {
+  token: string;
+  user: User | AuthResponse;
+}) => {
+  localStorage.setItem("token", payload.token);
+  localStorage.setItem("user", JSON.stringify(payload.user));
+  const businessId = resolveBusinessIdFromUser(payload.user);
+  if (businessId) {
+    localStorage.setItem("businessId", businessId);
+  }
+};
+
+const notifySessionChange = () => {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event("auth-changed"));
+  window.dispatchEvent(new Event("session-refresh"));
+};
+
 /**
  * Helper to set businessId for god users with single membership
  */
@@ -144,8 +172,73 @@ export const authService = {
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
     localStorage.removeItem("businessId");
+    localStorage.removeItem(ADMIN_ORIGINAL_TOKEN_KEY);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("auth-changed"));
+    }
+  },
+
+  isImpersonating(): boolean {
+    return Boolean(localStorage.getItem(ADMIN_ORIGINAL_TOKEN_KEY));
+  },
+
+  async impersonate(distributorId: string): Promise<void> {
+    const currentToken = localStorage.getItem("token");
+    if (!currentToken) {
+      throw new Error("No hay sesión activa para iniciar suplantación");
+    }
+
+    const originalSavedToken = localStorage.getItem(ADMIN_ORIGINAL_TOKEN_KEY);
+    if (!originalSavedToken) {
+      localStorage.setItem(ADMIN_ORIGINAL_TOKEN_KEY, currentToken);
+    }
+
+    const response = await api.post<{
+      success: boolean;
+      token: string;
+      user: User;
+    }>(`/auth/impersonate/${distributorId}`);
+
+    const payload = (response.data as any)?.data ?? response.data;
+    if (!payload?.token || !payload?.user) {
+      throw new Error("Respuesta inválida al suplantar distribuidor");
+    }
+
+    applySession({ token: payload.token, user: payload.user });
+    localStorage.removeItem("refreshToken");
+    notifySessionChange();
+
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  },
+
+  async revertImpersonation(): Promise<void> {
+    const adminOriginalToken = localStorage.getItem(ADMIN_ORIGINAL_TOKEN_KEY);
+    if (!adminOriginalToken) {
+      throw new Error("No hay sesión original de admin para restaurar");
+    }
+
+    const response = await api.post<{
+      success: boolean;
+      token: string;
+      user: User;
+    }>("/auth/impersonate/revert", {
+      adminOriginalToken,
+    });
+
+    const payload = (response.data as any)?.data ?? response.data;
+    if (!payload?.token || !payload?.user) {
+      throw new Error("Respuesta inválida al restaurar sesión");
+    }
+
+    applySession({ token: payload.token, user: payload.user });
+    localStorage.removeItem(ADMIN_ORIGINAL_TOKEN_KEY);
+    localStorage.removeItem("refreshToken");
+    notifySessionChange();
+
+    if (typeof window !== "undefined") {
+      window.location.reload();
     }
   },
 

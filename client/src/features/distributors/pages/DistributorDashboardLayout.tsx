@@ -23,6 +23,7 @@ export default function DistributorDashboardLayout() {
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [distributorStats, setDistributorStats] =
     useState<DistributorStats | null>(null);
+  const isImpersonating = authService.isImpersonating();
 
   const handleLogout = () => {
     authService.logout();
@@ -71,7 +72,9 @@ export default function DistributorDashboardLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-40 h-screen w-72 border-r border-gray-700 bg-gray-800/95 backdrop-blur-lg transition-transform duration-300 ${
+        className={`fixed left-0 z-40 w-72 border-r border-gray-700 bg-gray-800/95 backdrop-blur-lg transition-transform duration-300 ${
+          isImpersonating ? "top-10 h-[calc(100vh-2.5rem)]" : "top-0 h-screen"
+        } ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } ${desktopSidebarOpen ? "lg:translate-x-0" : "lg:-translate-x-full"}`}
       >
@@ -458,7 +461,11 @@ export default function DistributorDashboardLayout() {
       </aside>
 
       {/* Mobile Header */}
-      <div className="mobile-header-safe fixed left-0 right-0 top-0 z-20 border-b border-gray-700 bg-gray-800/95 backdrop-blur-lg lg:hidden">
+      <div
+        className={`mobile-header-safe fixed left-0 right-0 z-20 border-b border-gray-700 bg-gray-800/95 backdrop-blur-lg lg:hidden ${
+          isImpersonating ? "top-10" : "top-0"
+        }`}
+      >
         <div className="safe-x flex h-full items-center justify-between px-3 sm:px-4">
           <button
             onClick={() => setSidebarOpen(true)}

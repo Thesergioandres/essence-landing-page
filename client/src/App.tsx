@@ -1,10 +1,13 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import BusinessGate from "./components/BusinessGate";
+import ImpersonationBanner from "./components/ImpersonationBanner";
 import LoadingProgress from "./components/LoadingProgress";
 import QuickGodAccess from "./components/QuickGodAccess";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { ToastContainer } from "./shared/components/ui";
+
+const ADMIN_ORIGINAL_TOKEN_KEY = "admin_original_token";
 
 // Loading component con duración corta para minimizar pantalla en blanco
 const PageLoader = () => (
@@ -213,478 +216,502 @@ const Advertising = lazy(
 );
 
 export default function App() {
+  const [isImpersonating, setIsImpersonating] = useState(
+    typeof window !== "undefined" &&
+      Boolean(localStorage.getItem(ADMIN_ORIGINAL_TOKEN_KEY))
+  );
+
+  useEffect(() => {
+    const syncImpersonationState = () => {
+      setIsImpersonating(
+        Boolean(localStorage.getItem(ADMIN_ORIGINAL_TOKEN_KEY))
+      );
+    };
+
+    window.addEventListener("auth-changed", syncImpersonationState);
+    window.addEventListener("storage", syncImpersonationState);
+
+    return () => {
+      window.removeEventListener("auth-changed", syncImpersonationState);
+      window.removeEventListener("storage", syncImpersonationState);
+    };
+  }, []);
+
   return (
     <Suspense fallback={<PageLoader />}>
       <ToastContainer position="top-right" />
+      <ImpersonationBanner />
       <QuickGodAccess />
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/demo" element={<DemoPage />} />
-        <Route path="/account-hold" element={<AccountHold />} />
-        <Route path="/productos" element={<Catalog />} />
-        <Route path="/producto/:id" element={<ProductDetail />} />
-        <Route path="/categoria/:slug" element={<CategoryProducts />} />
-        <Route
-          path="/distributor-catalog/:distributorId"
-          element={<PublicDistributorCatalog />}
-        />
+      <div className={isImpersonating ? "pt-10" : ""}>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/demo" element={<DemoPage />} />
+          <Route path="/account-hold" element={<AccountHold />} />
+          <Route path="/productos" element={<Catalog />} />
+          <Route path="/producto/:id" element={<ProductDetail />} />
+          <Route path="/categoria/:slug" element={<CategoryProducts />} />
+          <Route
+            path="/distributor-catalog/:distributorId"
+            element={<PublicDistributorCatalog />}
+          />
 
-        {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/login/admin" element={<LoginAdmin />} />
-        <Route path="/login/god" element={<LoginGod />} />
-        <Route path="/login/distributor" element={<LoginDistributor />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/onboarding"
-          element={
-            <ProtectedRoute
-              allowedRoles={["admin", "distribuidor", "super_admin", "god"]}
-            >
-              <Onboarding />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/god"
-          element={
-            <ProtectedRoute allowedRoles={["god"]}>
-              <GodPanel />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Shared authenticated route - accessible by admin and distributor */}
-        <Route path="/catalog" element={<Catalog />} />
-
-        {/* Admin Routes */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRoles={["admin", "super_admin", "god"]}>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          {/* Redirect /admin to /admin/analytics */}
-          <Route index element={<Navigate to="/admin/analytics" replace />} />
+          {/* Auth Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/login/admin" element={<LoginAdmin />} />
+          <Route path="/login/god" element={<LoginGod />} />
+          <Route path="/login/distributor" element={<LoginDistributor />} />
+          <Route path="/register" element={<Register />} />
           <Route
-            path="products"
+            path="/onboarding"
             element={
-              <BusinessGate requiredFeature="products">
-                <Products />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="products/:id"
-            element={
-              <BusinessGate requiredFeature="products">
-                <AdminProductDetail />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="categories"
-            element={
-              <BusinessGate requiredFeature="products">
-                <Categories />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="add-product"
-            element={
-              <BusinessGate requiredFeature="products">
-                <AddProduct />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="products/:id/edit"
-            element={
-              <BusinessGate requiredFeature="products">
-                <EditProduct />
-              </BusinessGate>
-            }
-          />
-          <Route path="distributors" element={<Distributors />} />
-          <Route path="distributors/add" element={<AddDistributor />} />
-          <Route path="distributors/:id" element={<DistributorDetail />} />
-          <Route path="distributors/:id/edit" element={<EditDistributor />} />
-          <Route
-            path="stock-management"
-            element={
-              <BusinessGate requiredFeature="inventory">
-                <StockManagement />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="global-inventory"
-            element={
-              <BusinessGate requiredFeature="inventory">
-                <GlobalInventory />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="branches"
-            element={
-              <BusinessGate requiredFeature="inventory">
-                <Branches />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="inventory-entries"
-            element={
-              <BusinessGate requiredFeature="inventory">
-                <InventoryEntries />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="sales"
-            element={
-              <BusinessGate requiredFeature="sales">
-                <Sales />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="payment-methods"
-            element={
-              <BusinessGate requiredFeature="sales">
-                <PaymentMethods />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="delivery-methods"
-            element={
-              <BusinessGate requiredFeature="sales">
-                <DeliveryMethods />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="special-sales"
-            element={
-              <BusinessGate requiredFeature="sales">
-                <SpecialSales />
-              </BusinessGate>
+              <ProtectedRoute
+                allowedRoles={["admin", "distribuidor", "super_admin", "god"]}
+              >
+                <Onboarding />
+              </ProtectedRoute>
             }
           />
 
           <Route
-            path="expenses"
+            path="/god"
             element={
-              <BusinessGate requiredFeature="expenses">
-                <Expenses />
-              </BusinessGate>
+              <ProtectedRoute allowedRoles={["god"]}>
+                <GodPanel />
+              </ProtectedRoute>
             }
           />
+
+          {/* Shared authenticated route - accessible by admin and distributor */}
+          <Route path="/catalog" element={<Catalog />} />
+
+          {/* Admin Routes */}
           <Route
-            path="analytics"
-            element={
-              <BusinessGate requiredFeature="reports">
-                <AdvancedDashboard />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="profit-history"
-            element={
-              <BusinessGate requiredFeature="reports">
-                <ProfitHistory />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="advanced-analytics"
-            element={<Navigate to="/admin/analytics" replace />}
-          />
-          {/* Legacy redirect for old dashboard URL */}
-          <Route
-            path="dashboard"
-            element={<Navigate to="/admin/analytics" replace />}
-          />
-          <Route
-            path="business-assistant"
-            element={
-              <BusinessGate requiredFeature="assistant">
-                <BusinessAssistant />
-              </BusinessGate>
-            }
-          />
-          <Route path="business-settings" element={<BusinessSettings />} />
-          <Route path="create-business" element={<CreateBusiness />} />
-          <Route path="user-settings" element={<UserSettings />} />
-          <Route path="team" element={<TeamManagement />} />
-          <Route
-            path="audit-logs"
-            element={
-              <BusinessGate requiredFeature="reports">
-                <AuditLogs />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="gamification-config"
-            element={
-              <BusinessGate requiredFeature="gamification">
-                <GamificationConfig />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="rankings"
-            element={
-              <BusinessGate requiredFeature="gamification">
-                <Rankings />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="defective-products"
-            element={<DefectiveProductsManagement />}
-          />
-          <Route
-            path="warranties"
-            element={
-              <BusinessGate requiredFeature="defectiveProducts">
-                <CustomerWarranty />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="warrantiess"
-            element={<Navigate to="/admin/warranties" replace />}
-          />
-          <Route
-            path="register-sale"
+            path="/admin"
             element={
               <ProtectedRoute allowedRoles={["admin", "super_admin", "god"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            {/* Redirect /admin to /admin/analytics */}
+            <Route index element={<Navigate to="/admin/analytics" replace />} />
+            <Route
+              path="products"
+              element={
+                <BusinessGate requiredFeature="products">
+                  <Products />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="products/:id"
+              element={
+                <BusinessGate requiredFeature="products">
+                  <AdminProductDetail />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="categories"
+              element={
+                <BusinessGate requiredFeature="products">
+                  <Categories />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="add-product"
+              element={
+                <BusinessGate requiredFeature="products">
+                  <AddProduct />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="products/:id/edit"
+              element={
+                <BusinessGate requiredFeature="products">
+                  <EditProduct />
+                </BusinessGate>
+              }
+            />
+            <Route path="distributors" element={<Distributors />} />
+            <Route path="distributors/add" element={<AddDistributor />} />
+            <Route path="distributors/:id" element={<DistributorDetail />} />
+            <Route path="distributors/:id/edit" element={<EditDistributor />} />
+            <Route
+              path="stock-management"
+              element={
+                <BusinessGate requiredFeature="inventory">
+                  <StockManagement />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="global-inventory"
+              element={
+                <BusinessGate requiredFeature="inventory">
+                  <GlobalInventory />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="branches"
+              element={
+                <BusinessGate requiredFeature="inventory">
+                  <Branches />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="inventory-entries"
+              element={
+                <BusinessGate requiredFeature="inventory">
+                  <InventoryEntries />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="sales"
+              element={
+                <BusinessGate requiredFeature="sales">
+                  <Sales />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="payment-methods"
+              element={
+                <BusinessGate requiredFeature="sales">
+                  <PaymentMethods />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="delivery-methods"
+              element={
+                <BusinessGate requiredFeature="sales">
+                  <DeliveryMethods />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="special-sales"
+              element={
+                <BusinessGate requiredFeature="sales">
+                  <SpecialSales />
+                </BusinessGate>
+              }
+            />
+
+            <Route
+              path="expenses"
+              element={
+                <BusinessGate requiredFeature="expenses">
+                  <Expenses />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="analytics"
+              element={
+                <BusinessGate requiredFeature="reports">
+                  <AdvancedDashboard />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="profit-history"
+              element={
+                <BusinessGate requiredFeature="reports">
+                  <ProfitHistory />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="advanced-analytics"
+              element={<Navigate to="/admin/analytics" replace />}
+            />
+            {/* Legacy redirect for old dashboard URL */}
+            <Route
+              path="dashboard"
+              element={<Navigate to="/admin/analytics" replace />}
+            />
+            <Route
+              path="business-assistant"
+              element={
+                <BusinessGate requiredFeature="assistant">
+                  <BusinessAssistant />
+                </BusinessGate>
+              }
+            />
+            <Route path="business-settings" element={<BusinessSettings />} />
+            <Route path="create-business" element={<CreateBusiness />} />
+            <Route path="user-settings" element={<UserSettings />} />
+            <Route path="team" element={<TeamManagement />} />
+            <Route
+              path="audit-logs"
+              element={
+                <BusinessGate requiredFeature="reports">
+                  <AuditLogs />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="gamification-config"
+              element={
+                <BusinessGate requiredFeature="gamification">
+                  <GamificationConfig />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="rankings"
+              element={
+                <BusinessGate requiredFeature="gamification">
+                  <Rankings />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="defective-products"
+              element={<DefectiveProductsManagement />}
+            />
+            <Route
+              path="warranties"
+              element={
+                <BusinessGate requiredFeature="defectiveProducts">
+                  <CustomerWarranty />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="warrantiess"
+              element={<Navigate to="/admin/warranties" replace />}
+            />
+            <Route
+              path="register-sale"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "super_admin", "god"]}>
+                  <BusinessGate requiredFeature="sales">
+                    <StandardSale />
+                  </BusinessGate>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="register-promotion"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "super_admin", "god"]}>
+                  <BusinessGate requiredFeature="sales">
+                    <PromotionSale />
+                  </BusinessGate>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="transfer-history"
+              element={
+                <BusinessGate requiredFeature="transfers">
+                  <TransferHistory />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="credits"
+              element={
+                <BusinessGate>
+                  <Credits />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="credits/:id"
+              element={
+                <BusinessGate>
+                  <CreditDetail />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="notifications"
+              element={
+                <BusinessGate>
+                  <Notifications />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="providers"
+              element={
+                <BusinessGate requiredFeature="inventory">
+                  <Providers />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="promotions"
+              element={
+                <BusinessGate requiredFeature="promotions">
+                  <Promotions />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="advertising"
+              element={
+                <BusinessGate>
+                  <Advertising />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="customers"
+              element={
+                <BusinessGate>
+                  <Customers />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="segments"
+              element={
+                <BusinessGate>
+                  <Segments />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="test-optimization"
+              element={
+                <BusinessGate requiredFeature="sales">
+                  <TestOptimization />
+                </BusinessGate>
+              }
+            />
+          </Route>
+
+          {/* Distributor Routes */}
+          <Route
+            path="/distributor"
+            element={
+              <ProtectedRoute allowedRoles={["distribuidor"]}>
+                <DistributorDashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<DistributorDashboard />} />
+            <Route
+              path="products"
+              element={
+                <BusinessGate requiredFeature="inventory">
+                  <DistributorProducts />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="catalog"
+              element={
+                <BusinessGate requiredFeature="inventory">
+                  <DistributorCatalog />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="share-catalog"
+              element={
+                <BusinessGate requiredFeature="inventory">
+                  <DistributorCatalogShare />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="advertising"
+              element={
+                <BusinessGate requiredFeature="inventory">
+                  <DistributorAdvertising />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="transfer-stock"
+              element={
+                <BusinessGate requiredFeature="transfers">
+                  <TransferStock />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="register-sale"
+              element={
                 <BusinessGate requiredFeature="sales">
                   <StandardSale />
                 </BusinessGate>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="register-promotion"
-            element={
-              <ProtectedRoute allowedRoles={["admin", "super_admin", "god"]}>
+              }
+            />
+            <Route
+              path="register-promotion"
+              element={
                 <BusinessGate requiredFeature="sales">
                   <PromotionSale />
                 </BusinessGate>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="transfer-history"
-            element={
-              <BusinessGate requiredFeature="transfers">
-                <TransferHistory />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="credits"
-            element={
-              <BusinessGate>
-                <Credits />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="credits/:id"
-            element={
-              <BusinessGate>
-                <CreditDetail />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="notifications"
-            element={
-              <BusinessGate>
-                <Notifications />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="providers"
-            element={
-              <BusinessGate requiredFeature="inventory">
-                <Providers />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="promotions"
-            element={
-              <BusinessGate requiredFeature="promotions">
-                <Promotions />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="advertising"
-            element={
-              <BusinessGate>
-                <Advertising />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="customers"
-            element={
-              <BusinessGate>
-                <Customers />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="segments"
-            element={
-              <BusinessGate>
-                <Segments />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="test-optimization"
-            element={
-              <BusinessGate requiredFeature="sales">
-                <TestOptimization />
-              </BusinessGate>
-            }
-          />
-        </Route>
+              }
+            />
+            <Route
+              path="sales"
+              element={
+                <BusinessGate requiredFeature="sales">
+                  <DistributorSales />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="credits"
+              element={
+                <BusinessGate requiredFeature="sales">
+                  <DistributorCredits />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="stats"
+              element={
+                <BusinessGate requiredFeature="reports">
+                  <DistributorStats />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="level"
+              element={
+                <BusinessGate requiredFeature="gamification">
+                  <DistributorLevel />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="defective-reports"
+              element={
+                <BusinessGate requiredFeature="incidents">
+                  <DefectiveReports />
+                </BusinessGate>
+              }
+            />
+            <Route
+              path="warranties"
+              element={
+                <BusinessGate requiredFeature="defectiveProducts">
+                  <CustomerWarranty />
+                </BusinessGate>
+              }
+            />
+          </Route>
 
-        {/* Distributor Routes */}
-        <Route
-          path="/distributor"
-          element={
-            <ProtectedRoute allowedRoles={["distribuidor"]}>
-              <DistributorDashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="dashboard" element={<DistributorDashboard />} />
-          <Route
-            path="products"
-            element={
-              <BusinessGate requiredFeature="inventory">
-                <DistributorProducts />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="catalog"
-            element={
-              <BusinessGate requiredFeature="inventory">
-                <DistributorCatalog />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="share-catalog"
-            element={
-              <BusinessGate requiredFeature="inventory">
-                <DistributorCatalogShare />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="advertising"
-            element={
-              <BusinessGate requiredFeature="inventory">
-                <DistributorAdvertising />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="transfer-stock"
-            element={
-              <BusinessGate requiredFeature="transfers">
-                <TransferStock />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="register-sale"
-            element={
-              <BusinessGate requiredFeature="sales">
-                <StandardSale />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="register-promotion"
-            element={
-              <BusinessGate requiredFeature="sales">
-                <PromotionSale />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="sales"
-            element={
-              <BusinessGate requiredFeature="sales">
-                <DistributorSales />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="credits"
-            element={
-              <BusinessGate requiredFeature="sales">
-                <DistributorCredits />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="stats"
-            element={
-              <BusinessGate requiredFeature="reports">
-                <DistributorStats />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="level"
-            element={
-              <BusinessGate requiredFeature="gamification">
-                <DistributorLevel />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="defective-reports"
-            element={
-              <BusinessGate requiredFeature="incidents">
-                <DefectiveReports />
-              </BusinessGate>
-            }
-          />
-          <Route
-            path="warranties"
-            element={
-              <BusinessGate requiredFeature="defectiveProducts">
-                <CustomerWarranty />
-              </BusinessGate>
-            }
-          />
-        </Route>
-
-        {/* Redirect unknown routes to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Redirect unknown routes to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
     </Suspense>
   );
 }

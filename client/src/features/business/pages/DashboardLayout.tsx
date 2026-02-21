@@ -1,5 +1,5 @@
 import { BarChart3 } from "lucide-react";
-import { useState } from "react";
+import { type ChangeEvent, useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import BusinessGate from "../../../components/BusinessGate";
 import BusinessSelector from "../../../components/BusinessSelector";
@@ -8,7 +8,9 @@ import ReportIssueButton from "../../../components/ReportIssueButton";
 import { useBusiness } from "../../../context/BusinessContext";
 import { useBrandLogo } from "../../../hooks/useBrandLogo";
 import { authService } from "../../auth/services";
+import type { User } from "../../auth/types/auth.types";
 import DemoModeTour from "../../demo/DemoModeTour";
+import { distributorService } from "../../distributors/services";
 
 const navLinkClasses = (isActive: boolean): string =>
   [
@@ -37,10 +39,56 @@ export default function DashboardLayout() {
   const brandName = business?.name || "Selecciona un negocio";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [distributors, setDistributors] = useState<User[]>([]);
+  const [loadingImpersonation, setLoadingImpersonation] = useState(false);
+  const isImpersonating = authService.isImpersonating();
+
+  useEffect(() => {
+    const loadDistributors = async () => {
+      try {
+        const response = await distributorService.getAll({ active: true });
+        const items = response?.data || [];
+        setDistributors(
+          items.filter(
+            item => item.role === "distribuidor" && item.active !== false
+          )
+        );
+      } catch (error) {
+        console.error(
+          "Error cargando distribuidores para suplantación:",
+          error
+        );
+        setDistributors([]);
+      }
+    };
+
+    if (["admin", "super_admin", "god"].includes(user.role)) {
+      loadDistributors();
+    }
+  }, [user.role]);
 
   const handleLogout = () => {
     authService.logout();
     navigate("/login");
+  };
+
+  const handleImpersonateDistributor = async (
+    event: ChangeEvent<HTMLSelectElement>
+  ) => {
+    const distributorId = event.target.value;
+    if (!distributorId || loadingImpersonation) return;
+
+    setLoadingImpersonation(true);
+    try {
+      await authService.impersonate(distributorId);
+    } catch (error: any) {
+      console.error("Error al suplantar distribuidor:", error);
+      alert(
+        error?.response?.data?.message ||
+          "No se pudo iniciar modo de suplantación"
+      );
+      setLoadingImpersonation(false);
+    }
   };
 
   if (!user) {
@@ -60,7 +108,9 @@ export default function DashboardLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-50 h-screen w-72 border-r border-gray-800 bg-[#0f1018]/95 backdrop-blur-xl transition-transform duration-300 ${
+        className={`fixed left-0 z-50 w-72 border-r border-gray-800 bg-[#0f1018]/95 backdrop-blur-xl transition-transform duration-300 ${
+          isImpersonating ? "top-10 h-[calc(100vh-2.5rem)]" : "top-0 h-screen"
+        } ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } ${desktopSidebarOpen ? "lg:translate-x-0" : "lg:-translate-x-full"}`}
       >
@@ -742,7 +792,11 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Header (mobile + desktop) */}
-      <div className="mobile-header-safe fixed left-0 right-0 top-0 z-30 border-b border-gray-800 bg-[#0d0e16]/80 backdrop-blur-lg lg:h-16">
+      <div
+        className={`mobile-header-safe fixed left-0 right-0 z-30 border-b border-gray-800 bg-[#0d0e16]/80 backdrop-blur-lg lg:h-16 ${
+          isImpersonating ? "top-10" : "top-0"
+        }`}
+      >
         <div
           className={`safe-x flex h-full items-center justify-between px-3 sm:px-5 lg:px-8 ${
             desktopSidebarOpen ? "lg:ml-72" : "lg:ml-0"
@@ -784,6 +838,27 @@ export default function DashboardLayout() {
           </div>
 
           <div className="flex items-center gap-3">
+            <select
+              defaultValue=""
+              onChange={handleImpersonateDistributor}
+              disabled={loadingImpersonation || distributors.length === 0}
+              className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-gray-200 transition hover:border-purple-400/60 hover:text-white lg:block"
+            >
+              <option value="" className="bg-gray-900 text-gray-200">
+                {loadingImpersonation
+                  ? "Iniciando soporte..."
+                  : "Entrar como distribuidor"}
+              </option>
+              {distributors.map(distributor => (
+                <option
+                  key={distributor._id}
+                  value={distributor._id}
+                  className="bg-gray-900 text-gray-200"
+                >
+                  {distributor.name}
+                </option>
+              ))}
+            </select>
             <div className="hidden items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs font-medium text-purple-100 lg:flex">
               <span className="inline-block h-2 w-2 rounded-full bg-green-400" />
               Multi-negocio activo
