@@ -209,11 +209,10 @@ export class DefectiveProductController {
       }
 
       const lookup = req.params.saleId || req.query.saleId;
-      const result = await repository.getSaleLookup(
-        businessId,
-        lookup,
-        req.user,
-      );
+      const result = await repository.getSaleLookup(businessId, lookup, {
+        ...req.user,
+        membership: req.membership,
+      });
 
       res.json({ success: true, data: result });
     } catch (error) {
@@ -231,7 +230,7 @@ export class DefectiveProductController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
-      const role = req.membership?.role || req.user?.role;
+      const role = req.membership?.role;
       const isDistributor = role === "distribuidor";
       const replacementSource = req.body?.replacementSource;
 
@@ -258,7 +257,10 @@ export class DefectiveProductController {
       const result = await repository.createCustomerWarranty(
         req.body,
         businessId,
-        req.user,
+        {
+          ...req.user,
+          membership: req.membership,
+        },
       );
 
       res.status(201).json({ success: true, data: result });
@@ -277,7 +279,7 @@ export class DefectiveProductController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
-      const role = req.membership?.role || req.user?.role;
+      const role = req.membership?.role;
       if (role === "distribuidor") {
         return res.status(403).json({
           success: false,

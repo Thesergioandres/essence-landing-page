@@ -9,6 +9,14 @@ import Sale from "../../../../models/Sale.js";
 import ProfitHistoryRepository from "./ProfitHistoryRepository.js";
 
 export class DefectiveProductRepository {
+  getContextRole(actor) {
+    return (
+      actor?.membership?.role ||
+      actor?.businessContext?.membership?.role ||
+      null
+    );
+  }
+
   async reportFromAdmin(data, businessId, userId) {
     const product = await Product.findOne({
       _id: data.productId,
@@ -224,7 +232,9 @@ export class DefectiveProductRepository {
       throw err;
     }
 
-    if (user?.role === "distribuidor") {
+    const contextRole = this.getContextRole(user);
+
+    if (contextRole === "distribuidor") {
       const distributorId = user._id?.toString?.() || user.id?.toString?.();
       const saleDistributorId = sale.distributor
         ? sale.distributor.toString()
@@ -281,6 +291,8 @@ export class DefectiveProductRepository {
   }
 
   async createCustomerWarranty(data, businessId, user, options = {}) {
+    const contextRole = this.getContextRole(user);
+
     const userId = user?._id || user?.id;
     if (!userId) {
       const err = new Error("Usuario no autenticado");
@@ -321,7 +333,7 @@ export class DefectiveProductRepository {
     }
 
     if (
-      user?.role === "distribuidor" &&
+      contextRole === "distribuidor" &&
       saleItem.distributor &&
       saleItem.distributor.toString() !== userId.toString()
     ) {
@@ -439,7 +451,7 @@ export class DefectiveProductRepository {
     }
 
     if (replacementSource === "distributor") {
-      if (user?.role !== "distribuidor") {
+      if (contextRole !== "distribuidor") {
         const err = new Error("Solo distribuidores pueden usar su inventario");
         err.statusCode = 403;
         throw err;
@@ -512,7 +524,7 @@ export class DefectiveProductRepository {
     }
 
     const ticketId = await this.generateWarrantyTicket(businessId);
-    const isDistributor = user?.role === "distribuidor";
+    const isDistributor = contextRole === "distribuidor";
 
     const resolvedSaleGroupId =
       saleItem.saleGroupId || saleItem._id?.toString();
@@ -554,6 +566,50 @@ export class DefectiveProductRepository {
       origin: "customer_warranty",
       warrantyResolution: "pending",
     });
+
+    let upsellSale = null;
+
+    if (priceDifference > 0) {
+      const upsellNetProfit = replacementNetProfit - originalNetProfit;
+
+      upsellSale = await Sale.create({
+        business: businessId,
+        branch: saleItem.branch || null,
+        customer: saleItem.customer || null,
+        customerName: saleItem.customerName || null,
+        customerEmail: saleItem.customerEmail || null,
+        customerPhone: saleItem.customerPhone || null,
+        saleGroupId: resolvedSaleGroupId,
+        isComplementarySale: true,
+        parentSaleId: saleItem._id,
+        parentSaleGroupId: resolvedSaleGroupId,
+        warrantyTicketId: ticketId,
+        distributor: saleItem.distributor || null,
+        product: replacementProduct._id,
+        quantity: 1,
+        purchasePrice: 0,
+        distributorPrice: 0,
+        salePrice: priceDifference,
+        sourceLocation: replacementSource,
+        createdBy: userId,
+        paymentStatus: isDistributor ? "pendiente" : "confirmado",
+        paymentConfirmedAt: isDistributor ? null : new Date(),
+        paymentConfirmedBy: isDistributor ? null : userId,
+        actualPayment: priceDifference,
+        discount: 0,
+        shippingCost: 0,
+        totalAdditionalCosts: 0,
+        distributorProfit: 0,
+        adminProfit: priceDifference,
+        totalProfit: priceDifference,
+        totalGroupProfit: priceDifference,
+        netProfit: upsellNetProfit,
+        notes: `Venta complementaria por garantía ${ticketId}`,
+      });
+
+      report.upsellSale = upsellSale._id;
+      await report.save();
+    }
 
     const adminMembership = await Membership.findOne({
       business: businessId,
@@ -603,9 +659,34 @@ export class DefectiveProductRepository {
           metadata: adjustmentMetadata,
         });
       }
+
+      if (upsellSale && priceDifference > 0) {
+        await ProfitHistoryRepository.create({
+          business: businessId,
+          user: adminMembership.user,
+          type: "venta_normal",
+          amount: priceDifference,
+          sale: upsellSale._id,
+          product: replacementProduct._id,
+          description: `Ingreso por upselling en garantía (${ticketId})`,
+          date: new Date(),
+          metadata: {
+            quantity,
+            salePrice: priceDifference,
+            saleId: upsellSale.saleId,
+            eventName: "warranty_upsell_sale",
+            ticketId,
+            originalSaleId: saleItem.saleId,
+            originalNetProfit,
+            replacementNetProfit,
+            priceDifference,
+            cashRefund,
+          },
+        });
+      }
     }
 
-    return { report, upsellSale: null };
+    return { report, upsellSale };
   }
 
   async resolveCustomerWarranty(reportId, businessId, userId, data) {

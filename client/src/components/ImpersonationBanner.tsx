@@ -32,7 +32,23 @@ export default function ImpersonationBanner() {
     if (isReverting) return;
     setIsReverting(true);
     try {
-      await authService.revertImpersonation();
+      const originalToken = localStorage.getItem(ADMIN_ORIGINAL_TOKEN_KEY);
+      if (!originalToken) {
+        throw new Error("No se encontró token original de admin");
+      }
+
+      localStorage.setItem("token", originalToken);
+      localStorage.removeItem(ADMIN_ORIGINAL_TOKEN_KEY);
+
+      try {
+        const profile = await authService.getProfile();
+        localStorage.setItem("user", JSON.stringify(profile));
+      } catch {
+        localStorage.removeItem("user");
+      }
+
+      window.dispatchEvent(new Event("auth-changed"));
+      window.location.reload();
     } catch (error: any) {
       console.error("Error al volver a cuenta admin:", error);
       alert(
@@ -46,17 +62,17 @@ export default function ImpersonationBanner() {
   if (!isImpersonating) return null;
 
   return (
-    <div className="z-70 fixed left-0 right-0 top-0 border-b border-orange-500/40 bg-orange-900/95 px-4 py-2 text-white backdrop-blur">
-      <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-3">
-        <p className="truncate text-xs font-semibold sm:text-sm">
-          ⚠️ MODO SOPORTE: Estás operando en la cuenta de {currentName}.
+    <div className="z-100 fixed top-0 flex w-full items-center justify-between bg-orange-600/90 px-4 py-2 font-bold text-white">
+      <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3">
+        <p className="truncate text-xs sm:text-sm">
+          ⚠️ MODO SOPORTE: Operando en la cuenta de {currentName}
         </p>
         <button
           onClick={handleRevert}
           disabled={isReverting}
-          className="shrink-0 rounded-md border border-orange-300/50 bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-70"
+          className="shrink-0 rounded border border-white/30 bg-black/15 px-3 py-1 text-xs font-bold text-white transition hover:bg-black/25 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {isReverting ? "Restaurando..." : "Volver a mi cuenta Admin"}
+          {isReverting ? "Restaurando..." : "Volver a Admin"}
         </button>
       </div>
     </div>

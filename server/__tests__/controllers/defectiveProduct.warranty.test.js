@@ -20,9 +20,9 @@ const { default: Business } = await import("../../models/Business.js");
 const { default: Product } = await import("../../models/Product.js");
 const { default: Category } = await import("../../models/Category.js");
 const { default: Membership } = await import("../../models/Membership.js");
-const { default: DefectiveProduct } = await import(
-  "../../models/DefectiveProduct.js"
-);
+const { default: DefectiveProduct } =
+  await import("../../models/DefectiveProduct.js");
+const { default: Sale } = await import("../../models/Sale.js");
 
 const JWT_SECRET = process.env.JWT_SECRET || "test-secret";
 
@@ -50,7 +50,7 @@ describe("Defective Product Warranty System", () => {
         status: "active",
         active: true,
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
     // Crear negocio de prueba
@@ -62,7 +62,7 @@ describe("Defective Product Warranty System", () => {
         status: "active",
         isActive: true,
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
     // Crear membership
@@ -74,7 +74,7 @@ describe("Defective Product Warranty System", () => {
         role: "admin",
         status: "active",
       },
-      { upsert: true }
+      { upsert: true },
     );
 
     // Crear categoría de prueba
@@ -85,7 +85,7 @@ describe("Defective Product Warranty System", () => {
         business: testBusiness._id,
         slug: "test-category-warranty",
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
     // Crear producto de prueba
@@ -110,18 +110,28 @@ describe("Defective Product Warranty System", () => {
     adminToken = jwt.sign(
       { userId: adminUser._id, role: "admin" },
       JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
   });
 
   afterAll(async () => {
     // Limpiar datos de prueba
-    await DefectiveProduct.deleteMany({ business: testBusiness._id });
-    await Product.deleteMany({ business: testBusiness._id });
-    await Category.deleteMany({ business: testBusiness._id });
-    await Membership.deleteMany({ business: testBusiness._id });
-    await Business.findByIdAndDelete(testBusiness._id);
-    await User.findByIdAndDelete(adminUser._id);
+    if (testBusiness?._id) {
+      await DefectiveProduct.deleteMany({ business: testBusiness._id });
+      await Product.deleteMany({ business: testBusiness._id });
+      await Category.deleteMany({ business: testBusiness._id });
+      await Membership.deleteMany({ business: testBusiness._id });
+      await Business.findByIdAndDelete(testBusiness._id);
+      await Sale.deleteMany({ business: testBusiness._id });
+    }
+
+    if (adminUser?._id) {
+      await User.findByIdAndDelete(adminUser._id);
+    }
+
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
   });
 
   beforeEach(async () => {
@@ -151,12 +161,13 @@ describe("Defective Product Warranty System", () => {
   afterEach(async () => {
     // Limpiar reportes después de cada test
     await DefectiveProduct.deleteMany({ business: testBusiness._id });
+    await Sale.deleteMany({ business: testBusiness._id });
   });
 
-  describe("POST /api/defective-products/:id/approve-warranty", () => {
+  describe("POST /api/v2/defective-products/:id/approve-warranty", () => {
     test("debe aprobar garantía y reponer stock a bodega", async () => {
       const response = await request(app)
-        .put(`/api/defective-products/${testReport._id}/approve-warranty`)
+        .put(`/api/v2/defective-products/${testReport._id}/approve-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({ adminNotes: "Proveedor confirmó reposición" });
@@ -177,7 +188,7 @@ describe("Defective Product Warranty System", () => {
     test("debe fallar si el reporte no existe", async () => {
       const fakeId = new mongoose.Types.ObjectId();
       const response = await request(app)
-        .put(`/api/defective-products/${fakeId}/approve-warranty`)
+        .put(`/api/v2/defective-products/${fakeId}/approve-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({});
@@ -201,7 +212,9 @@ describe("Defective Product Warranty System", () => {
       });
 
       const response = await request(app)
-        .put(`/api/defective-products/${noWarrantyReport._id}/approve-warranty`)
+        .put(
+          `/api/v2/defective-products/${noWarrantyReport._id}/approve-warranty`,
+        )
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({});
@@ -219,7 +232,7 @@ describe("Defective Product Warranty System", () => {
       });
 
       const response = await request(app)
-        .put(`/api/defective-products/${testReport._id}/approve-warranty`)
+        .put(`/api/v2/defective-products/${testReport._id}/approve-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({});
@@ -231,7 +244,7 @@ describe("Defective Product Warranty System", () => {
     test("debe guardar las notas del admin", async () => {
       const adminNotes = "Proveedor envió reposición por correo";
       const response = await request(app)
-        .put(`/api/defective-products/${testReport._id}/approve-warranty`)
+        .put(`/api/v2/defective-products/${testReport._id}/approve-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({ adminNotes });
@@ -241,10 +254,10 @@ describe("Defective Product Warranty System", () => {
     });
   });
 
-  describe("POST /api/defective-products/:id/reject-warranty", () => {
+  describe("POST /api/v2/defective-products/:id/reject-warranty", () => {
     test("debe rechazar garantía y calcular pérdida", async () => {
       const response = await request(app)
-        .put(`/api/defective-products/${testReport._id}/reject-warranty`)
+        .put(`/api/v2/defective-products/${testReport._id}/reject-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({ adminNotes: "Proveedor no acepta garantía" });
@@ -265,7 +278,7 @@ describe("Defective Product Warranty System", () => {
     test("debe fallar si el reporte no existe", async () => {
       const fakeId = new mongoose.Types.ObjectId();
       const response = await request(app)
-        .put(`/api/defective-products/${fakeId}/reject-warranty`)
+        .put(`/api/v2/defective-products/${fakeId}/reject-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({});
@@ -288,7 +301,9 @@ describe("Defective Product Warranty System", () => {
       });
 
       const response = await request(app)
-        .put(`/api/defective-products/${noWarrantyReport._id}/reject-warranty`)
+        .put(
+          `/api/v2/defective-products/${noWarrantyReport._id}/reject-warranty`,
+        )
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({});
@@ -305,7 +320,7 @@ describe("Defective Product Warranty System", () => {
       });
 
       const response = await request(app)
-        .put(`/api/defective-products/${testReport._id}/reject-warranty`)
+        .put(`/api/v2/defective-products/${testReport._id}/reject-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({});
@@ -341,7 +356,9 @@ describe("Defective Product Warranty System", () => {
       });
 
       const response = await request(app)
-        .put(`/api/defective-products/${expensiveReport._id}/reject-warranty`)
+        .put(
+          `/api/v2/defective-products/${expensiveReport._id}/reject-warranty`,
+        )
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({});
@@ -354,13 +371,151 @@ describe("Defective Product Warranty System", () => {
     test("debe guardar las notas del admin al rechazar", async () => {
       const adminNotes = "Proveedor rechazó garantía por mal uso";
       const response = await request(app)
-        .put(`/api/defective-products/${testReport._id}/reject-warranty`)
+        .put(`/api/v2/defective-products/${testReport._id}/reject-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({ adminNotes });
 
       expect(response.status).toBe(200);
       expect(response.body.report.adminNotes).toBe(adminNotes);
+    });
+  });
+
+  describe("POST /api/v2/defective-products/warranty - escenarios financieros", () => {
+    test("same price: no debe crear upsellSale", async () => {
+      const originalSale = await Sale.create({
+        business: testBusiness._id,
+        createdBy: adminUser._id,
+        product: testProduct._id,
+        quantity: 1,
+        purchasePrice: 1000,
+        distributorPrice: 1200,
+        salePrice: 1500,
+        paymentStatus: "confirmado",
+      });
+
+      const samePriceReplacement = await Product.create({
+        name: "Replacement Same Price",
+        description: "Reemplazo mismo precio",
+        business: testBusiness._id,
+        category: testCategory._id,
+        warehouseStock: 50,
+        totalStock: 50,
+        purchasePrice: 900,
+        distributorPrice: 1200,
+        clientPrice: 1500,
+      });
+
+      const response = await request(app)
+        .post("/api/v2/defective-products/warranty")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .set("x-business-id", testBusiness._id.toString())
+        .send({
+          saleItemId: originalSale._id,
+          quantity: 1,
+          reason: "Garantía same price",
+          replacementProductId: samePriceReplacement._id,
+          replacementPrice: 1500,
+          replacementSource: "warehouse",
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.report.priceDifference).toBe(0);
+      expect(response.body.data.upsellSale).toBeNull();
+    });
+
+    test("upsell: debe crear upsellSale válido y no nulo", async () => {
+      const originalSale = await Sale.create({
+        business: testBusiness._id,
+        createdBy: adminUser._id,
+        product: testProduct._id,
+        quantity: 1,
+        purchasePrice: 1000,
+        distributorPrice: 1200,
+        salePrice: 1500,
+        paymentStatus: "confirmado",
+      });
+
+      const upsellReplacement = await Product.create({
+        name: "Replacement Upsell",
+        description: "Reemplazo más caro",
+        business: testBusiness._id,
+        category: testCategory._id,
+        warehouseStock: 50,
+        totalStock: 50,
+        purchasePrice: 1200,
+        distributorPrice: 1600,
+        clientPrice: 2000,
+      });
+
+      const response = await request(app)
+        .post("/api/v2/defective-products/warranty")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .set("x-business-id", testBusiness._id.toString())
+        .send({
+          saleItemId: originalSale._id,
+          quantity: 1,
+          reason: "Garantía upsell",
+          replacementProductId: upsellReplacement._id,
+          replacementPrice: 2000,
+          replacementSource: "warehouse",
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.report.priceDifference).toBe(500);
+      expect(response.body.data.upsellSale).toBeTruthy();
+      expect(response.body.data.upsellSale._id).toBeTruthy();
+
+      const createdUpsell = await Sale.findById(
+        response.body.data.upsellSale._id,
+      );
+      expect(createdUpsell).toBeTruthy();
+      expect(createdUpsell.isComplementarySale).toBe(true);
+      expect(createdUpsell.warrantyTicketId).toBeTruthy();
+      expect(createdUpsell.salePrice).toBe(500);
+    });
+
+    test("downgrade/refund: no debe crear upsellSale y debe calcular cashRefund", async () => {
+      const originalSale = await Sale.create({
+        business: testBusiness._id,
+        createdBy: adminUser._id,
+        product: testProduct._id,
+        quantity: 1,
+        purchasePrice: 1000,
+        distributorPrice: 1200,
+        salePrice: 1500,
+        paymentStatus: "confirmado",
+      });
+
+      const downgradeReplacement = await Product.create({
+        name: "Replacement Downgrade",
+        description: "Reemplazo más barato",
+        business: testBusiness._id,
+        category: testCategory._id,
+        warehouseStock: 50,
+        totalStock: 50,
+        purchasePrice: 700,
+        distributorPrice: 900,
+        clientPrice: 1200,
+      });
+
+      const response = await request(app)
+        .post("/api/v2/defective-products/warranty")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .set("x-business-id", testBusiness._id.toString())
+        .send({
+          saleItemId: originalSale._id,
+          quantity: 1,
+          reason: "Garantía downgrade",
+          replacementProductId: downgradeReplacement._id,
+          replacementPrice: 1200,
+          replacementSource: "warehouse",
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.report.priceDifference).toBe(0);
+      expect(response.body.data.report.cashRefund).toBe(300);
+      expect(response.body.data.upsellSale).toBeNull();
     });
   });
 
@@ -372,7 +527,7 @@ describe("Defective Product Warranty System", () => {
 
       // Aprobar garantía
       const response = await request(app)
-        .put(`/api/defective-products/${testReport._id}/approve-warranty`)
+        .put(`/api/v2/defective-products/${testReport._id}/approve-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({ adminNotes: "OK" });
@@ -386,14 +541,14 @@ describe("Defective Product Warranty System", () => {
     test("no debe permitir rechazar una garantía ya aprobada", async () => {
       // Aprobar primero
       await request(app)
-        .put(`/api/defective-products/${testReport._id}/approve-warranty`)
+        .put(`/api/v2/defective-products/${testReport._id}/approve-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({});
 
       // Intentar rechazar
       const response = await request(app)
-        .put(`/api/defective-products/${testReport._id}/reject-warranty`)
+        .put(`/api/v2/defective-products/${testReport._id}/reject-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({});
@@ -405,7 +560,7 @@ describe("Defective Product Warranty System", () => {
 
     test("debe mantener los campos de garantía en el reporte", async () => {
       const response = await request(app)
-        .put(`/api/defective-products/${testReport._id}/approve-warranty`)
+        .put(`/api/v2/defective-products/${testReport._id}/approve-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({ adminNotes: "Test notes" });
@@ -423,7 +578,7 @@ describe("Defective Product Warranty System", () => {
   describe("Validaciones de seguridad", () => {
     test("debe requerir autenticación", async () => {
       const response = await request(app)
-        .put(`/api/defective-products/${testReport._id}/approve-warranty`)
+        .put(`/api/v2/defective-products/${testReport._id}/approve-warranty`)
         .send({});
 
       expect(response.status).toBe(401);
@@ -431,12 +586,17 @@ describe("Defective Product Warranty System", () => {
 
     test("debe validar que el reporte pertenezca al negocio del usuario", async () => {
       // Crear otro negocio y usuario
-      const otherBusiness = await Business.create({
-        name: "Other Business",
-        createdBy: adminUser._id,
-        status: "active",
-        isActive: true,
-      });
+      const otherBusiness = await Business.findOneAndUpdate(
+        {
+          name: `Other Business ${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        },
+        {
+          createdBy: adminUser._id,
+          status: "active",
+          isActive: true,
+        },
+        { upsert: true, new: true },
+      );
 
       const otherReport = await DefectiveProduct.create({
         business: otherBusiness._id,
@@ -452,7 +612,7 @@ describe("Defective Product Warranty System", () => {
       });
 
       const response = await request(app)
-        .put(`/api/defective-products/${otherReport._id}/approve-warranty`)
+        .put(`/api/v2/defective-products/${otherReport._id}/approve-warranty`)
         .set("Authorization", `Bearer ${adminToken}`)
         .set("x-business-id", testBusiness._id.toString())
         .send({});

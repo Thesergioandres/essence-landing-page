@@ -107,6 +107,25 @@ export default function DistributorDashboardLayout() {
               WebkitOverflowScrolling: "touch",
             }}
           >
+            <button
+              onClick={() => setDesktopSidebarOpen(false)}
+              className="mb-2 hidden min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-2 text-xs font-medium text-gray-200 transition hover:border-blue-500/40 hover:bg-blue-600/10 hover:text-blue-300 lg:inline-flex"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+              Ocultar menú
+            </button>
             <NavLink
               to="/distributor/dashboard"
               className={({ isActive }): string => navLinkClasses(isActive)}
@@ -500,27 +519,29 @@ export default function DistributorDashboardLayout() {
         }`}
       >
         <div className="safe-x p-4 sm:p-6 md:p-8 lg:p-10">
-          <div className="mb-4 hidden lg:block">
-            <button
-              onClick={() => setDesktopSidebarOpen(prev => !prev)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-2 text-sm font-medium text-gray-200 transition hover:border-blue-500/40 hover:bg-blue-600/10 hover:text-blue-300"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          {!desktopSidebarOpen && (
+            <div className="mb-4 hidden lg:block">
+              <button
+                onClick={() => setDesktopSidebarOpen(true)}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-2 text-sm font-medium text-gray-200 transition hover:border-blue-500/40 hover:bg-blue-600/10 hover:text-blue-300"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-              {desktopSidebarOpen ? "Ocultar menú" : "Mostrar menú"}
-            </button>
-          </div>
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+                Mostrar menú
+              </button>
+            </div>
+          )}
           <BusinessGate>
             <Outlet />
           </BusinessGate>

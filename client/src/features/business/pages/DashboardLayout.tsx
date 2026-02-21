@@ -143,6 +143,25 @@ export default function DashboardLayout() {
               WebkitOverflowScrolling: "touch",
             }}
           >
+            <button
+              onClick={() => setDesktopSidebarOpen(false)}
+              className="mb-2 hidden min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:border-purple-400/60 hover:text-purple-200 lg:inline-flex"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+              Ocultar menú
+            </button>
             <SectionTitle label="Ventas" />
             <NavLink
               to="/admin/register-sale"
@@ -863,12 +882,14 @@ export default function DashboardLayout() {
               <span className="inline-block h-2 w-2 rounded-full bg-green-400" />
               Multi-negocio activo
             </div>
-            <button
-              onClick={() => setDesktopSidebarOpen(prev => !prev)}
-              className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-gray-200 transition hover:border-purple-400/60 hover:text-white lg:block"
-            >
-              {desktopSidebarOpen ? "Ocultar menú" : "Mostrar menú"}
-            </button>
+            {!desktopSidebarOpen && (
+              <button
+                onClick={() => setDesktopSidebarOpen(true)}
+                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-gray-200 transition hover:border-purple-400/60 hover:text-white lg:block"
+              >
+                Mostrar menú
+              </button>
+            )}
             <button
               onClick={() => setSidebarOpen(true)}
               className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-gray-200 transition hover:border-purple-400/60 hover:text-white lg:hidden"
