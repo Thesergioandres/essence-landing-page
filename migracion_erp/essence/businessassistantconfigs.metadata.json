@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"business":{"$numberInt":"1"}},"name":"business_1","background":true}],"uuid":"68f432f5e4284fb7b8c1ba6c85a6dbed","collectionName":"businessassistantconfigs","type":"collection"}

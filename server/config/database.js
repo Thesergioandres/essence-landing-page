@@ -8,11 +8,26 @@ if (process.env.NODE_ENV === "test") {
   dotenv.config();
 }
 
-// Opciones explícitas para diagnosticar timeouts y limitar pool
-const mongoOptions = {
-  serverSelectionTimeoutMS: 10000, // falla rápido si no se conecta
-  socketTimeoutMS: 45000,
-  maxPoolSize: 10,
+const resolveDbName = (mongoUri) => {
+  const explicitDbName = process.env.MONGO_DB_NAME || process.env.MONGODB_DB_NAME;
+
+  if (explicitDbName) return explicitDbName;
+
+  try {
+    const parsed = new URL(mongoUri);
+    const dbNameFromPath = (parsed.pathname || "").replace(/^\/+/, "");
+    if (dbNameFromPath) return dbNameFromPath;
+  } catch {
+    // no-op: fallback abajo
+  }
+
+  return process.env.NODE_ENV === "test" ? "essence_test" : "essence";
+};
+
+const resolveAutoIndex = () => {
+  if (process.env.MONGO_AUTO_INDEX === "true") return true;
+  if (process.env.MONGO_AUTO_INDEX === "false") return false;
+  return true;
 };
 
 // Loggers de estado de conexión (se ejecutan una sola vez por proceso)
@@ -43,8 +58,15 @@ const connectDB = async () => {
       if (process.env.MONGO_URI_DEV_LOCAL) {
         console.log("📍 Usando base de datos LOCAL (desarrollo)");
       }
+    } else if (process.env.NODE_ENV === "test") {
+      // En test: priorizar URIs de test para aislamiento
+      mongoUri =
+        process.env.MONGODB_URI_TEST ||
+        process.env.MONGO_URI_TEST ||
+        process.env.MONGODB_URI ||
+        process.env.MONGO_URI;
     } else {
-      // En producción/test: usar la URI principal
+      // En producción: usar la URI principal
       mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
     }
 
@@ -54,22 +76,40 @@ const connectDB = async () => {
       );
     }
 
-    // SEGURIDAD: Verificar que en producción no se use la BD de test
-    if (process.env.NODE_ENV === "production" && mongoUri.includes("_test")) {
+    let dbName = resolveDbName(mongoUri);
+
+    if (
+      process.env.NODE_ENV === "production" &&
+      (mongoUri.includes("_test") || dbName.includes("_test"))
+    ) {
       throw new Error(
         "❌ PELIGRO: Intentando usar base de datos de test en producción",
       );
     }
 
     // SEGURIDAD: Verificar que en test no se use la BD de producción
-    if (process.env.NODE_ENV === "test" && !mongoUri.includes("_test")) {
-      throw new Error(
-        "❌ PELIGRO: Los tests deben usar una base de datos separada (essence_test)",
+    if (process.env.NODE_ENV === "test" && !dbName.includes("_test")) {
+      console.warn(
+        "⚠️ URI de test sin sufijo _test detectada. Forzando dbName=essence_test para aislamiento.",
       );
+      dbName = "essence_test";
     }
+
+    const autoIndex = resolveAutoIndex();
+
+    // Opciones explícitas para diagnosticar timeouts y limitar pool
+    const mongoOptions = {
+      dbName,
+      autoIndex,
+      serverSelectionTimeoutMS: 10000, // falla rápido si no se conecta
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+    };
 
     const conn = await mongoose.connect(mongoUri, mongoOptions);
     console.log(`✅ MongoDB conectado: ${conn.connection.host}`);
+    console.log(`🗄️ Base de datos activa: ${conn.connection.name}`);
+    console.log(`🧱 autoIndex: ${autoIndex ? "habilitado" : "deshabilitado"}`);
 
     if (process.env.NODE_ENV === "test") {
       console.log(`🧪 Modo TEST: usando base de datos ${conn.connection.name}`);

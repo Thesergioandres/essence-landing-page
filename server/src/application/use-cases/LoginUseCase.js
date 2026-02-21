@@ -11,18 +11,34 @@ export class LoginUseCase {
       throw new Error("Please provide an email and password");
     }
 
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const rawPassword = String(password);
+
     // 1. Find User (Need password for check + memberships)
-    const user = await this.userRepository.findByEmailWithMethods(email);
+    const user = await this.userRepository.findByEmailWithMethods(
+      normalizedEmail,
+    );
 
     if (!user) {
       throw new Error("Invalid credentials");
     }
 
     // 2. Validate Password
-    const isMatch = await AuthService.validatePassword(password, user.password);
+    const isMatch = await AuthService.validatePassword(rawPassword, user.password);
 
     if (!isMatch) {
-      throw new Error("Invalid credentials");
+      const storedPassword = String(user.password || "");
+      const isLegacyPlaintext = !storedPassword.startsWith("$2");
+
+      if (!isLegacyPlaintext || storedPassword !== rawPassword) {
+        throw new Error("Invalid credentials");
+      }
+
+      user.password = await AuthService.hashPassword(rawPassword);
+      await user.save();
+      console.warn(
+        `[AUTH] Password legacy migrada a bcrypt para ${normalizedEmail}`,
+      );
     }
 
     // 3. Get first active business from memberships (for token)
