@@ -18,8 +18,8 @@ jobs:
 
       - name: Validate Railway deploy hooks
         env:
-          RAILWAY_BACKEND_DEPLOY_HOOK_URL: ${{ secrets.RAILWAY_BACKEND_DEPLOY_HOOK_URL }}
-          RAILWAY_FRONTEND_DEPLOY_HOOK_URL: ${{ secrets.RAILWAY_FRONTEND_DEPLOY_HOOK_URL }}
+          RAILWAY_BACKEND_DEPLOY_HOOK_URL: ${{ secrets[format('RAILWAY_{0}_DEPLOY_HOOK_URL', 'BACKEND')] }}
+          RAILWAY_FRONTEND_DEPLOY_HOOK_URL: ${{ secrets[format('RAILWAY_{0}_DEPLOY_HOOK_URL', 'FRONTEND')] }}
         run: |
           if [ -z "$RAILWAY_BACKEND_DEPLOY_HOOK_URL" ]; then
             echo "Missing secret: RAILWAY_BACKEND_DEPLOY_HOOK_URL"
@@ -33,12 +33,12 @@ jobs:
 
       - name: Trigger backend deployment (Railway)
         env:
-          RAILWAY_BACKEND_DEPLOY_HOOK_URL: ${{ secrets.RAILWAY_BACKEND_DEPLOY_HOOK_URL }}
+          RAILWAY_BACKEND_DEPLOY_HOOK_URL: ${{ secrets[format('RAILWAY_{0}_DEPLOY_HOOK_URL', 'BACKEND')] }}
         run: |
           curl -fsS -X POST "$RAILWAY_BACKEND_DEPLOY_HOOK_URL"
 
       - name: Trigger frontend deployment (Railway)
         env:
-          RAILWAY_FRONTEND_DEPLOY_HOOK_URL: ${{ secrets.RAILWAY_FRONTEND_DEPLOY_HOOK_URL }}
+          RAILWAY_FRONTEND_DEPLOY_HOOK_URL: ${{ secrets[format('RAILWAY_{0}_DEPLOY_HOOK_URL', 'FRONTEND')] }}
         run: |
           curl -fsS -X POST "$RAILWAY_FRONTEND_DEPLOY_HOOK_URL"

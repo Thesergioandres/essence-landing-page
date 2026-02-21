@@ -781,13 +781,7 @@ export default function BusinessAssistant() {
     if (productRecommendations.length > 0) return productRecommendations;
     if (recs.length > 0) return recs;
     return baseRecommendations;
-  }, [
-    data?.recommendations,
-    data?.window,
-    products,
-    baseRecommendations,
-    globalInventory,
-  ]);
+  }, [data?.recommendations, data?.window, products, globalInventory]);
 
   // Cargar memoria del CEO al iniciar
   useEffect(() => {
@@ -1912,7 +1906,7 @@ export default function BusinessAssistant() {
         )}
 
         {/* SECCIÓN 2: ESTRATEGA VIRTUAL (PROJECT CEO) */}
-        <div className="relative mb-10 overflow-hidden rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-gray-950 via-slate-900 to-cyan-900/20 p-6 shadow-2xl md:p-8">
+        <div className="bg-linear-to-br relative mb-10 overflow-hidden rounded-2xl border border-cyan-500/30 from-gray-950 via-slate-900 to-cyan-900/20 p-6 shadow-2xl md:p-8">
           {/* Decorative background element */}
           <div className="pointer-events-none absolute right-0 top-0 -mr-10 -mt-10 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl"></div>
 
@@ -1950,7 +1944,7 @@ export default function BusinessAssistant() {
               >
                 <span className="mr-2 text-lg">🚀</span>
                 {analystLoading ? "Analizando..." : "Generar Análisis Diario"}
-                <div className="absolute inset-0 -z-10 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-shimmer" />
+                <div className="bg-linear-to-r absolute inset-0 -z-10 -translate-x-full from-transparent via-white/20 to-transparent group-hover:animate-shimmer" />
               </button>
             </div>
 
@@ -1980,7 +1974,7 @@ export default function BusinessAssistant() {
               {/* Chat Input */}
               {/* Chat Input */}
               <div className="group relative">
-                <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-r from-cyan-500 to-amber-400 opacity-30 blur transition duration-500 group-hover:opacity-100"></div>
+                <div className="bg-linear-to-r absolute -inset-0.5 rounded-lg from-cyan-500 to-amber-400 opacity-30 blur transition duration-500 group-hover:opacity-100"></div>
                 <div className="relative flex rounded-lg bg-gray-900">
                   <input
                     type="text"
@@ -3314,7 +3308,6 @@ export default function BusinessAssistant() {
                 <div className="space-y-4 md:hidden">
                   {(visibleRecommendations || []).map(item => {
                     const showSales = hasSalesSignal(item);
-                    const showCategoryAvg = item.metrics.categoryAvgPrice > 0;
                     const showPrice = item.metrics.recentAvgPrice > 0;
                     return (
                       <div

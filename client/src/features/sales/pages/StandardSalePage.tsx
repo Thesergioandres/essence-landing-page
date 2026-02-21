@@ -843,13 +843,13 @@ export default function StandardSalePage() {
         <div className="absolute -left-40 top-0 h-[420px] w-[420px] rounded-full bg-teal-500/10 blur-[120px]" />
         <div className="absolute -right-40 top-20 h-[480px] w-[480px] rounded-full bg-amber-400/10 blur-[140px]" />
         <div className="absolute bottom-0 left-1/3 h-[360px] w-[360px] rounded-full bg-cyan-500/10 blur-[120px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.06),_transparent_45%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_45%)]" />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6">
         {/* Header */}
         <div className="mb-6 animate-fade-in">
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-slate-900/80 via-slate-800/70 to-slate-900/80 p-5 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.9)] backdrop-blur">
+          <div className="bg-linear-to-r rounded-2xl border border-white/10 from-slate-900/80 via-slate-800/70 to-slate-900/80 p-5 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.9)] backdrop-blur">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-teal-300">
