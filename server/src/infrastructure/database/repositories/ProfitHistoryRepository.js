@@ -514,6 +514,75 @@ class ProfitHistoryRepository {
           },
         },
         {
+          $lookup: {
+            from: "sales",
+            localField: "saleIdField",
+            foreignField: "saleId",
+            as: "saleInfoBySaleId",
+          },
+        },
+        {
+          $unwind: {
+            path: "$saleInfoBySaleId",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $addFields: {
+            resolvedSaleDistributor: {
+              $ifNull: [
+                "$saleInfo.distributor",
+                "$saleInfoBySaleId.distributor",
+              ],
+            },
+            resolvedSaleIsPromotion: {
+              $ifNull: [
+                "$saleInfo.isPromotion",
+                "$saleInfoBySaleId.isPromotion",
+              ],
+            },
+            saleAdminProfit: {
+              $ifNull: ["$saleAdminProfit", "$saleInfoBySaleId.adminProfit"],
+            },
+            saleDistributorProfit: {
+              $ifNull: [
+                "$saleDistributorProfit",
+                "$saleInfoBySaleId.distributorProfit",
+              ],
+            },
+            saleTotalProfit: {
+              $ifNull: ["$saleTotalProfit", "$saleInfoBySaleId.totalProfit"],
+            },
+            saleNetProfit: {
+              $ifNull: ["$saleNetProfit", "$saleInfoBySaleId.netProfit"],
+            },
+            saleAdditionalCosts: {
+              $ifNull: [
+                "$saleAdditionalCosts",
+                { $ifNull: ["$saleInfoBySaleId.totalAdditionalCosts", 0] },
+              ],
+            },
+            saleDiscount: {
+              $ifNull: [
+                "$saleDiscount",
+                { $ifNull: ["$saleInfoBySaleId.discount", 0] },
+              ],
+            },
+            saleShippingCost: {
+              $ifNull: [
+                "$saleShippingCost",
+                { $ifNull: ["$saleInfoBySaleId.shippingCost", 0] },
+              ],
+            },
+            isPromotionDistributor: {
+              $and: [
+                { $eq: ["$resolvedSaleIsPromotion", true] },
+                { $ne: ["$resolvedSaleDistributor", null] },
+              ],
+            },
+          },
+        },
+        {
           $match: {
             eventNameField: {
               $nin: ["defective_loss", "warranty_profit_adjustment"],
@@ -532,7 +601,7 @@ class ProfitHistoryRepository {
             hasDistributorContext: {
               $or: [
                 "$isDistributorCommission",
-                { $ne: ["$saleInfo.distributor", null] },
+                { $ne: ["$resolvedSaleDistributor", null] },
               ],
             },
             distributorProfit: {
