@@ -30,7 +30,11 @@ export class FinanceService {
    */
   static calculateDistributorPrice(salePrice, profitPercentage) {
     if (salePrice < 0) throw new Error("Sale price cannot be negative");
-    const percentage = profitPercentage || 20; // Default logic
+    const normalizedPercentage =
+      typeof profitPercentage === "number" && Number.isFinite(profitPercentage)
+        ? profitPercentage
+        : 20;
+    const percentage = Math.max(0, Math.min(95, normalizedPercentage));
     // Price for dist = SalePrice * (100 - Commission) / 100
     return salePrice * ((100 - percentage) / 100);
   }

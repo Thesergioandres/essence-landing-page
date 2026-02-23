@@ -247,6 +247,48 @@ export class RegisterSaleUseCase {
           ? "branch"
           : "warehouse";
 
+    const isDistributorUser = user?.role === "distribuidor";
+
+    if (isDistributorUser && distributorId) {
+      const distributorMembership = await Membership.findOne({
+        business: businessId,
+        user: distributorId,
+        role: "distribuidor",
+        status: "active",
+      })
+        .select("allowedBranches")
+        .lean();
+
+      const allowedBranches = Array.isArray(
+        distributorMembership?.allowedBranches,
+      )
+        ? distributorMembership.allowedBranches.map((branch) => String(branch))
+        : [];
+
+      if (resolvedSourceLocation === "branch") {
+        if (!allowedBranches.includes(String(branchId))) {
+          throw new Error(
+            "No tienes permiso para vender desde la sede seleccionada.",
+          );
+        }
+      }
+
+      if (resolvedSourceLocation === "warehouse") {
+        const hasWarehousePermission = await Branch.exists({
+          business: businessId,
+          _id: { $in: allowedBranches },
+          isWarehouse: true,
+          active: true,
+        });
+
+        if (!hasWarehousePermission) {
+          throw new Error(
+            "No tienes permiso para vender desde la bodega central.",
+          );
+        }
+      }
+    }
+
     const resolveStockAvailability = async (productId) => {
       const useDistributorStock =
         Boolean(distributorId) && resolvedSourceLocation === "distributor";
@@ -359,8 +401,16 @@ export class RegisterSaleUseCase {
       // Calculate financials
       const costBasis = product.averageCost || product.purchasePrice || 0;
       const isDistributorSale = Boolean(distributorId);
+      const rawEffectiveDistributorProfitPercentage =
+        baseCommissionPercentage + distributorCommissionBonus;
       const effectiveDistributorProfitPercentage = isDistributorSale
-        ? baseCommissionPercentage + distributorCommissionBonus
+        ? Math.max(0, Math.min(95, rawEffectiveDistributorProfitPercentage))
+        : 0;
+      const appliedCommissionBonus = isDistributorSale
+        ? Math.max(
+            0,
+            effectiveDistributorProfitPercentage - baseCommissionPercentage,
+          )
         : 0;
       let distributorPrice = salePrice;
       if (isDistributorSale) {
@@ -401,9 +451,9 @@ export class RegisterSaleUseCase {
         totalProfit,
         adminNetProfit,
         distributorProfitPercentage: effectiveDistributorProfitPercentage,
-        commissionBonus: distributorCommissionBonus,
+        commissionBonus: appliedCommissionBonus,
         commissionBonusAmount: isDistributorSale
-          ? (salePrice * quantity * distributorCommissionBonus) / 100
+          ? (salePrice * quantity * appliedCommissionBonus) / 100
           : 0,
       });
     }

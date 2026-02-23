@@ -1,202 +1,202 @@
 {
-  "lastSyncDate": "2026-02-22T01:12:06.100Z",
-  "lastSuccessfulSync": "2026-02-22T01:12:06.100Z",
+  "lastSyncDate": "2026-02-22T05:36:51.800Z",
+  "lastSuccessfulSync": "2026-02-22T05:36:51.800Z",
   "collections": {
     "users": {
-      "lastSyncDate": "2026-02-22T01:12:02.451Z",
+      "lastSyncDate": "2026-02-22T05:36:49.062Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
-      "lastDuration": 1224
+      "lastDuration": 1207
     },
     "businesses": {
-      "lastSyncDate": "2026-02-22T01:12:02.451Z",
+      "lastSyncDate": "2026-02-22T05:36:49.062Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
-      "lastDuration": 187
+      "lastDuration": 181
     },
     "categories": {
-      "lastSyncDate": "2026-02-22T01:12:02.451Z",
+      "lastSyncDate": "2026-02-22T05:36:49.062Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
-      "lastDuration": 1213
+      "lastDuration": 1216
     },
     "paymentmethods": {
-      "lastSyncDate": "2026-02-22T01:12:02.451Z",
+      "lastSyncDate": "2026-02-22T05:36:49.062Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
-      "lastDuration": 172
+      "lastDuration": 170
     },
     "deliverymethods": {
-      "lastSyncDate": "2026-02-22T01:12:02.451Z",
+      "lastSyncDate": "2026-02-22T05:36:49.062Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
-      "lastDuration": 1198
+      "lastDuration": 173
     },
     "providers": {
-      "lastSyncDate": "2026-02-22T01:12:02.451Z",
+      "lastSyncDate": "2026-02-22T05:36:49.062Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
-      "lastDuration": 172
+      "lastDuration": 173
     },
     "segments": {
-      "lastSyncDate": "2026-02-22T01:12:02.451Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 175
-    },
-    "gamificationconfigs": {
-      "lastSyncDate": "2026-02-22T01:12:02.451Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 185
-    },
-    "products": {
-      "lastSyncDate": "2026-02-22T01:12:02.968Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 4,
-      "lastDuration": 344
-    },
-    "branches": {
-      "lastSyncDate": "2026-02-22T01:12:02.968Z",
+      "lastSyncDate": "2026-02-22T05:36:49.062Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
       "lastDuration": 172
     },
-    "memberships": {
-      "lastSyncDate": "2026-02-22T01:12:02.968Z",
+    "gamificationconfigs": {
+      "lastSyncDate": "2026-02-22T05:36:49.062Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
       "lastDuration": 170
     },
-    "customers": {
-      "lastSyncDate": "2026-02-22T01:12:02.968Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 170
-    },
-    "promotions": {
-      "lastSyncDate": "2026-02-22T01:12:02.968Z",
+    "products": {
+      "lastSyncDate": "2026-02-22T05:36:50.425Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
       "lastDuration": 171
     },
+    "branches": {
+      "lastSyncDate": "2026-02-22T05:36:50.425Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 170
+    },
+    "memberships": {
+      "lastSyncDate": "2026-02-22T05:36:50.425Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 1190
+    },
+    "customers": {
+      "lastSyncDate": "2026-02-22T05:36:50.425Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 171
+    },
+    "promotions": {
+      "lastSyncDate": "2026-02-22T05:36:50.425Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 172
+    },
     "stocks": {
-      "lastSyncDate": "2026-02-22T01:12:03.484Z",
+      "lastSyncDate": "2026-02-22T05:36:50.765Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
       "lastDuration": 171
     },
     "branchstocks": {
-      "lastSyncDate": "2026-02-22T01:12:03.484Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 170
-    },
-    "distributorstocks": {
-      "lastSyncDate": "2026-02-22T01:12:03.484Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 4,
-      "lastDuration": 341
-    },
-    "distributorsstats": {
-      "lastSyncDate": "2026-02-22T01:12:03.484Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 174
-    },
-    "sales": {
-      "lastSyncDate": "2026-02-22T00:49:51.714Z",
-      "lastNewCount": 4,
-      "lastSkippedCount": 0,
-      "lastDuration": 1754
-    },
-    "specialsales": {
-      "lastSyncDate": "2026-02-22T01:12:05.411Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 172
-    },
-    "credits": {
-      "lastSyncDate": "2026-02-22T01:12:05.411Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 172
-    },
-    "expenses": {
-      "lastSyncDate": "2026-02-22T01:12:05.411Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 172
-    },
-    "inventoryentries": {
-      "lastSyncDate": "2026-02-22T01:12:05.411Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 172
-    },
-    "creditpayments": {
-      "lastSyncDate": "2026-02-22T01:12:05.755Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 170
-    },
-    "stocktransfers": {
-      "lastSyncDate": "2026-02-22T01:12:05.755Z",
+      "lastSyncDate": "2026-02-22T05:36:50.765Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
       "lastDuration": 171
     },
-    "branchtransfers": {
-      "lastSyncDate": "2026-02-22T01:12:05.755Z",
+    "distributorstocks": {
+      "lastSyncDate": "2026-02-22T05:36:50.765Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
       "lastDuration": 170
     },
+    "distributorsstats": {
+      "lastSyncDate": "2026-02-22T05:36:50.765Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 169
+    },
+    "sales": {
+      "lastSyncDate": "2026-02-22T05:36:51.112Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 171
+    },
+    "specialsales": {
+      "lastSyncDate": "2026-02-22T05:36:51.112Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 171
+    },
+    "credits": {
+      "lastSyncDate": "2026-02-22T05:36:51.112Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 173
+    },
+    "expenses": {
+      "lastSyncDate": "2026-02-22T05:36:51.112Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 173
+    },
+    "inventoryentries": {
+      "lastSyncDate": "2026-02-22T05:36:51.112Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 171
+    },
+    "creditpayments": {
+      "lastSyncDate": "2026-02-22T05:36:51.454Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 171
+    },
+    "stocktransfers": {
+      "lastSyncDate": "2026-02-22T05:36:51.454Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 169
+    },
+    "branchtransfers": {
+      "lastSyncDate": "2026-02-22T05:36:51.454Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 171
+    },
     "defectiveproducts": {
-      "lastSyncDate": "2026-02-22T01:12:05.755Z",
+      "lastSyncDate": "2026-02-22T05:36:51.454Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 170
+    },
+    "notifications": {
+      "lastSyncDate": "2026-02-22T05:36:51.800Z",
+      "lastNewCount": 0,
+      "lastSkippedCount": 0,
+      "lastDuration": 173
+    },
+    "auditlogs": {
+      "lastSyncDate": "2026-02-22T05:36:51.800Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
       "lastDuration": 172
     },
-    "notifications": {
-      "lastSyncDate": "2026-02-22T01:12:06.099Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 170
-    },
-    "auditlogs": {
-      "lastSyncDate": "2026-02-22T01:12:06.099Z",
-      "lastNewCount": 0,
-      "lastSkippedCount": 0,
-      "lastDuration": 170
-    },
     "profithistories": {
-      "lastSyncDate": "2026-02-22T01:12:06.099Z",
+      "lastSyncDate": "2026-02-22T05:36:51.800Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
-      "lastDuration": 169
+      "lastDuration": 171
     },
     "periodwinners": {
-      "lastSyncDate": "2026-02-22T01:12:06.099Z",
+      "lastSyncDate": "2026-02-22T05:36:51.800Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
-      "lastDuration": 174
+      "lastDuration": 172
     },
     "pushsubscriptions": {
-      "lastSyncDate": "2026-02-22T01:12:06.099Z",
+      "lastSyncDate": "2026-02-22T05:36:51.800Z",
       "lastNewCount": 0,
       "lastSkippedCount": 0,
-      "lastDuration": 169
+      "lastDuration": 170
     }
   },
   "stats": {
-    "totalSyncs": 795,
-    "totalDocumentsImported": 920,
+    "totalSyncs": 805,
+    "totalDocumentsImported": 922,
     "totalDocumentsSkipped": 930,
     "totalErrors": 0,
-    "averageDuration": 7288
+    "averageDuration": 7273
   },
   "version": "2.0.0",
   "createdAt": "2026-01-26T05:41:25.728Z",
-  "updatedAt": "2026-02-22T01:12:06.100Z"
+  "updatedAt": "2026-02-22T05:36:51.800Z"
 }

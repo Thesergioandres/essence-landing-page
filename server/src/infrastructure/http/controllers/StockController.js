@@ -200,9 +200,15 @@ class StockController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
+      const isDistributor = req.user?.role === "distribuidor";
+
       const allowedBranches = Array.isArray(req.membership?.allowedBranches)
         ? req.membership.allowedBranches
         : [];
+
+      if (isDistributor && allowedBranches.length === 0) {
+        return res.json({ success: true, branches: [] });
+      }
 
       const branches = await StockRepository.getAllowedBranches(
         businessId,

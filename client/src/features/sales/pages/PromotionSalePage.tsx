@@ -24,11 +24,11 @@ import type {
   LevelConfig,
 } from "../../analytics/types/gamification.types";
 import { branchService } from "../../branches/services/branch.service";
-import { businessService } from "../../business/services/business.service";
 import type { Branch } from "../../business/types/business.types";
 import { gamificationService } from "../../common/services";
 import { distributorService } from "../../distributors/services/distributor.service";
 import { productsService } from "../../inventory/api/products.service";
+import { stockService } from "../../inventory/services/inventory.service";
 import type { Product } from "../../inventory/types/product.types";
 import { promotionService } from "../../settings/services";
 import type { Promotion } from "../../settings/types/promotion.types";
@@ -130,28 +130,15 @@ export default function PromotionSalePage() {
           // 1. Fetch Distributor Inventory (Personal Stock)
           // 2. Fetch Allowed Branches (Company Stock)
           console.log("🔍 Fetching Distributor Data...");
-          const [distProductsRes, membershipsRes, allBranches] =
-            await Promise.all([
-              distributorService.getProducts(),
-              businessService.getMyMemberships(),
-              branchService.getAll(),
-            ]);
+          const [distProductsRes, allowedBranchesRes] = await Promise.all([
+            distributorService.getProducts(),
+            stockService
+              .getMyAllowedBranches()
+              .catch(() => ({ branches: [] as Branch[] })),
+          ]);
           console.log("✅ Distributor Products Res:", distProductsRes);
 
-          const activeMembership = membershipsRes.activeMembership;
-          const userAllowedBranches =
-            (user as { allowedBranches?: string[] } | null)?.allowedBranches ||
-            [];
-          const allowedBranchIds = (
-            activeMembership?.allowedBranches ||
-            userAllowedBranches ||
-            []
-          ).map(id => String(id));
-          const activeBranches = allBranches.filter(b => b.active !== false);
-          const distributorBranches =
-            allowedBranchIds.length > 0
-              ? activeBranches.filter(b => allowedBranchIds.includes(b._id))
-              : activeBranches;
+          const distributorBranches = allowedBranchesRes.branches || [];
           setBranches(distributorBranches);
 
           const allProducts = await productsService.getProducts();
@@ -705,6 +692,7 @@ export default function PromotionSalePage() {
           salePrice: item.unitPrice,
           isPromotion: true,
         })),
+        locationType: order.locationType,
         paymentMethodId: order.paymentMethod,
         paymentType: order.paymentMethod,
         notes: order.notes || undefined,
@@ -772,6 +760,7 @@ export default function PromotionSalePage() {
 
         await saleService.registerPromotionBulk({
           items: promotionItems,
+          locationType: payload.locationType,
           branchId: payload.branchId,
           paymentMethodId: payload.paymentMethodId,
           paymentType: payload.paymentType,
@@ -1086,6 +1075,7 @@ export default function PromotionSalePage() {
               locationType={order.locationType}
               locationId={order.locationId}
               branches={branches}
+              isDistributor={isDistributor}
               onLocationChange={handleLocationChange}
             />
 

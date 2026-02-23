@@ -544,8 +544,16 @@ export class RegisterPromotionSaleUseCase {
       // Calculate financials
       const costBasis = product.averageCost || product.purchasePrice || 0;
       const isDistributorSale = Boolean(distributorId);
+      const rawEffectiveDistributorProfitPercentage =
+        baseCommissionPercentage + distributorCommissionBonus;
       const effectiveDistributorProfitPercentage = isDistributorSale
-        ? baseCommissionPercentage + distributorCommissionBonus
+        ? Math.max(0, Math.min(95, rawEffectiveDistributorProfitPercentage))
+        : 0;
+      const appliedCommissionBonus = isDistributorSale
+        ? Math.max(
+            0,
+            effectiveDistributorProfitPercentage - baseCommissionPercentage,
+          )
         : 0;
       const promotionKey = promotionId
         ? String(
@@ -621,9 +629,9 @@ export class RegisterPromotionSaleUseCase {
         isPromotion: true,
         promotionId: promotionId || null,
         distributorProfitPercentage: effectiveDistributorProfitPercentage,
-        commissionBonus: distributorCommissionBonus,
+        commissionBonus: appliedCommissionBonus,
         commissionBonusAmount: isDistributorSale
-          ? (salePrice * quantity * distributorCommissionBonus) / 100
+          ? (salePrice * quantity * appliedCommissionBonus) / 100
           : 0,
       });
     }

@@ -23,6 +23,7 @@
     "check:mongo": "node checkMongoConnection.js",
     "recalc:top1-25": "node recalculateTop1SalesTo25.js",
     "recalc:commissions": "node recalculateTop1SalesTo25.js",
+    "recalc:sales-profits": "node scripts/recalculateSalesProfits.js",
     "db:indexes": "node scripts/createIndexes.js"
   },
   "keywords": [

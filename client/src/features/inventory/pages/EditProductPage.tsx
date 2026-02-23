@@ -159,13 +159,7 @@ export default function EditProduct() {
     // Auto-calcular suggestedPrice cuando cambia purchasePrice
     if (name === "purchasePrice") {
       const purchasePrice = Number(value) || 0;
-      // USAR REGLA DE COSTO PROMEDIO: Si existe costo promedio, úsalo como base. Si no, usa el precio base editado.
-      const costBasis =
-        product?.averageCost && product.averageCost > 0
-          ? product.averageCost
-          : purchasePrice;
-
-      const suggestedPrice = Math.round(costBasis * 1.3);
+      const suggestedPrice = Math.round(purchasePrice * 1.3);
       setFormData(current =>
         current
           ? {
@@ -175,12 +169,24 @@ export default function EditProduct() {
             }
           : current
       );
+      return;
     }
+
     if (name === "distributorPrice") {
       setDistributorManual(true);
+      setFormData(current =>
+        current
+          ? {
+              ...current,
+              distributorPrice: value,
+            }
+          : current
+      );
+      return;
     }
+
     // Auto-calcular distributorPrice cuando cambia clientPrice segun comision base
-    else if (name === "clientPrice" && !distributorManual) {
+    if (name === "clientPrice" && !distributorManual) {
       const clientPrice = Number(value) || 0;
       const distributorPrice = Math.round(
         clientPrice * (1 - (baseCommissionPercentage || 0) / 100)
@@ -194,16 +200,17 @@ export default function EditProduct() {
             }
           : current
       );
-    } else {
-      setFormData(current =>
-        current
-          ? {
-              ...current,
-              [name]: fieldValue,
-            }
-          : current
-      );
+      return;
     }
+
+    setFormData(current =>
+      current
+        ? {
+            ...current,
+            [name]: fieldValue,
+          }
+        : current
+    );
   };
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -403,7 +410,7 @@ export default function EditProduct() {
                     className="w-full rounded-lg border border-green-500 bg-green-900/20 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                   <p className="mt-1 text-xs text-green-600">
-                    Auto-calculado: Costo Base (Promedio/Compra) × 1.3
+                    Auto-calculado: Precio de compra × 1.3
                   </p>
                 </div>
 
