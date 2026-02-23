@@ -8,12 +8,12 @@ const getApiBaseUrl = () => {
 
   if (
     typeof window !== "undefined" &&
-    window.location.hostname.includes("railway.app")
+    ["localhost", "127.0.0.1"].includes(window.location.hostname)
   ) {
-    return "https://essence-backend-production-25b3.up.railway.app/api/v2";
+    return "http://localhost:5000/api";
   }
 
-  return "http://localhost:5000/api";
+  return "https://essence-backend-production-25b3.up.railway.app/api/v2";
 };
 
 const apiBaseUrl = getApiBaseUrl();
