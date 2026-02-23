@@ -298,7 +298,6 @@ class ProfitHistoryRepository {
     };
     const recentEntriesFilter = {
       ...filter,
-      "metadata.eventName": { $ne: "defective_loss" },
     };
 
     // Get distributor user IDs for this business
@@ -515,6 +514,13 @@ class ProfitHistoryRepository {
           },
         },
         {
+          $match: {
+            eventNameField: {
+              $nin: ["defective_loss", "warranty_profit_adjustment"],
+            },
+          },
+        },
+        {
           $addFields: {
             isDistributorCommission: {
               $or: [
@@ -668,6 +674,20 @@ class ProfitHistoryRepository {
                   ],
                 },
                 "$adminProfit",
+              ],
+            },
+          },
+        },
+        {
+          $match: {
+            $expr: {
+              $gt: [
+                {
+                  $abs: {
+                    $ifNull: ["$totalProfit", 0],
+                  },
+                },
+                0.009,
               ],
             },
           },
