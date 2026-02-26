@@ -6,16 +6,16 @@
  * - Todos los productos (catalogo completo)
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useProducts } from "../../inventory/hooks/useProducts";
-import { stockService } from "../../inventory/services/inventory.service";
 import { useBusiness } from "../../../context/BusinessContext";
 import { useBrandLogo } from "../../../hooks/useBrandLogo";
-import AdCard from "../components/AdCard";
-import type { AdProduct, TemplateType } from "../types/advertising.types";
+import { useProducts } from "../../inventory/hooks/useProducts";
+import { stockService } from "../../inventory/services/inventory.service";
 import type {
   DistributorStock,
   Product,
 } from "../../inventory/types/product.types";
+import AdCard from "../components/AdCard";
+import type { AdProduct, TemplateType } from "../types/advertising.types";
 import { templateList } from "../utils/templateThemes";
 
 const TEMPLATES: TemplateType[] = templateList.map(t => t.id);
@@ -28,9 +28,9 @@ function toAdProductFromProduct(
 ): AdProduct {
   const price =
     priceOverride ??
-    product.distributorPrice ??
     product.clientPrice ??
     product.suggestedPrice ??
+    product.distributorPrice ??
     0;
   return {
     _id: product._id,
@@ -91,7 +91,7 @@ export default function DistributorAdvertisingPage() {
         const product =
           typeof item.product === "object" ? (item.product as Product) : null;
         if (!product) return null;
-        return toAdProductFromProduct(product, product.distributorPrice);
+        return toAdProductFromProduct(product, product.clientPrice);
       })
       .filter(Boolean) as AdProduct[];
   }, [myStock]);
@@ -99,7 +99,7 @@ export default function DistributorAdvertisingPage() {
   const allProducts = useMemo(() => {
     return products
       .filter(p => p.active !== false)
-      .map(p => toAdProductFromProduct(p, p.distributorPrice));
+      .map(p => toAdProductFromProduct(p, p.clientPrice));
   }, [products]);
 
   const baseList = tab === "my-stock" ? myProducts : allProducts;

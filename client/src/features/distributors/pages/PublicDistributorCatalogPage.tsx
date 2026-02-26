@@ -54,6 +54,19 @@ export default function PublicDistributorCatalog() {
     }).format(value);
   };
 
+  const getPublicPrice = (product: Product) => {
+    if (typeof product.clientPrice === "number" && product.clientPrice > 0) {
+      return product.clientPrice;
+    }
+    if (
+      typeof product.suggestedPrice === "number" &&
+      product.suggestedPrice > 0
+    ) {
+      return product.suggestedPrice;
+    }
+    return 0;
+  };
+
   const handleShare = async () => {
     if (!shareUrl) return;
     if (navigator.share) {
@@ -207,7 +220,7 @@ export default function PublicDistributorCatalog() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-2xl font-bold text-amber-300">
-                        {formatCurrency(product.clientPrice || 0)}
+                        {formatCurrency(getPublicPrice(product))}
                       </p>
                     </div>
                     {product.totalStock !== undefined && (

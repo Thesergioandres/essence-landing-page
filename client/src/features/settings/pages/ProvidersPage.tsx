@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import api from "../../../api/axios";
+import { providerService } from "../services";
 
 interface Provider {
   _id: string;
@@ -23,7 +24,7 @@ interface Provider {
   address?: string;
   notes?: string;
   isActive: boolean;
-  createdAt: string;
+  createdAt: string | Date;
   totalOrders?: number;
   totalSpent?: number;
 }
@@ -61,11 +62,8 @@ export default function Providers() {
   const fetchProviders = async () => {
     try {
       setLoading(true);
-      const { data } = await api.get<{ providers: Provider[] }>("/providers");
-      setProviders(data.providers || []);
-      console.log("[UI INFO] providers_loaded", {
-        count: data.providers?.length,
-      });
+      const response = await providerService.getAll();
+      setProviders(response.providers || []);
     } catch (err) {
       console.error("[UI ERROR] providers_fetch_failed", err);
       setError("Error al cargar proveedores");
