@@ -54,16 +54,12 @@ export default function PromotionSalePage() {
   const { user, loading: userLoading } = useSession(); // Get user from session
   const isDistributor = user?.role === "distribuidor";
 
-  // Debug: Ver qué rol tiene el usuario
-  console.log("👤 [RegisterSalePage] User:", user);
-  console.log("👤 [RegisterSalePage] User role:", user?.role);
-  console.log("👤 [RegisterSalePage] isDistributor:", isDistributor);
-
   // State: Order managed by reducer
   const [order, dispatch] = useReducer(orderReducer, {
     ...initialOrderState,
     locationType: isDistributor ? "distributor" : "warehouse", // Default start
     locationName: isDistributor ? "Mi Inventario" : "Bodega Principal",
+    paymentMethod: isDistributor ? "transfer" : "cash",
     isDistributorSale: isDistributor,
     distributorProfitPercentage: 20,
   });
@@ -109,19 +105,17 @@ export default function PromotionSalePage() {
       dispatch({
         type: "SET_LOCATION",
         locationType: "distributor",
-        locationId: "",
+        locationId: user?._id || "distributor",
         locationName: "Mi Inventario",
       });
+      dispatch({ type: "SET_PAYMENT_METHOD", method: "transfer" });
     }
   }, [user, isDistributor]);
 
   // ==================== DATA FETCHING ====================
   useEffect(() => {
     // Don't fetch until user session is loaded
-    if (userLoading) {
-      console.log("⏳ Waiting for user to load...");
-      return;
-    }
+    if (userLoading) return;
 
     const fetchData = async () => {
       setDataLoading(true);
@@ -129,14 +123,12 @@ export default function PromotionSalePage() {
         if (isDistributor) {
           // 1. Fetch Distributor Inventory (Personal Stock)
           // 2. Fetch Allowed Branches (Company Stock)
-          console.log("🔍 Fetching Distributor Data...");
           const [distProductsRes, allowedBranchesRes] = await Promise.all([
             distributorService.getProducts(),
             stockService
               .getMyAllowedBranches()
               .catch(() => ({ branches: [] as Branch[] })),
           ]);
-          console.log("✅ Distributor Products Res:", distProductsRes);
 
           const distributorBranches = allowedBranchesRes.branches || [];
           setBranches(distributorBranches);
@@ -148,46 +140,25 @@ export default function PromotionSalePage() {
               distStockMap.set(String(item.product._id), item.quantity);
             }
           });
-          console.log("📦 Map Size:", distStockMap.size);
-          console.log("📦 Map Entries:", Array.from(distStockMap.entries()));
 
-          // Verificar si el distribuidor tiene stock
-          const hasStock =
-            distStockMap.size > 0 &&
-            Array.from(distStockMap.values()).some(qty => qty > 0);
+          const preferredBranch = distributorBranches.find(
+            branch => !branch.isWarehouse
+          );
 
-          // Auto-seleccionar: si tiene stock -> "Mi Inventario", si no -> primera sede
-          if (hasStock) {
-            console.log(
-              "📍 Distribuidor con stock, seleccionando Mi Inventario"
-            );
+          if (preferredBranch) {
+            dispatch({
+              type: "SET_LOCATION",
+              locationType: "branch",
+              locationId: preferredBranch._id,
+              locationName: preferredBranch.name,
+            });
+          } else {
             dispatch({
               type: "SET_LOCATION",
               locationType: "distributor",
-              locationId: user?._id || "",
+              locationId: user?._id || "distributor",
               locationName: "Mi Inventario",
             });
-          } else if (distributorBranches.length > 0) {
-            const firstBranch = distributorBranches[0];
-            console.log(
-              "📍 Distribuidor sin stock, seleccionando sede:",
-              firstBranch.name
-            );
-            if (firstBranch.isWarehouse) {
-              dispatch({
-                type: "SET_LOCATION",
-                locationType: "warehouse",
-                locationId: "warehouse",
-                locationName: "Bodega Central",
-              });
-            } else {
-              dispatch({
-                type: "SET_LOCATION",
-                locationType: "branch",
-                locationId: firstBranch._id,
-                locationName: firstBranch.name,
-              });
-            }
           }
 
           const mappedProducts: ProductWithStock[] = (
@@ -312,7 +283,6 @@ export default function PromotionSalePage() {
       if (order.locationType !== "branch" || !order.locationId) return;
 
       try {
-        console.log("📦 Fetching branch stock for:", order.locationId);
         const branchStockData = await branchService.getBranchStock(
           order.locationId
         );
@@ -323,8 +293,6 @@ export default function PromotionSalePage() {
             stockMap.set(String(item.product._id), item.quantity || 0);
           }
         });
-
-        console.log("📦 Branch stock map size:", stockMap.size);
         setBranchStock(stockMap);
       } catch (error) {
         console.error("Error fetching branch stock:", error);

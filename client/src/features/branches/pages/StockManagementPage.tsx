@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductSelector from "../../../components/ProductSelector";
 import { Button, LoadingSpinner } from "../../../shared/components/ui";
@@ -84,14 +84,6 @@ const StockManagement = () => {
     setSuccess("");
   }, [mode]);
 
-  useEffect(() => {
-    if (originBranchId) {
-      loadOriginBranchStock(originBranchId);
-    } else {
-      setOriginBranchStock([]);
-    }
-  }, [originBranchId]);
-
   const loadData = async () => {
     try {
       const [
@@ -167,63 +159,64 @@ const StockManagement = () => {
     }
   };
 
-  const loadOriginBranchStock = async (branchId: string) => {
-    try {
-      setLoadingOriginStock(true);
-      console.log("[DEBUG] Loading stock for branchId:", branchId);
+  const loadOriginBranchStock = useCallback(
+    async (branchId: string) => {
+      try {
+        setLoadingOriginStock(true);
 
-      // Verificar si es bodega (warehouse)
-      const isWarehouse =
-        branchId === "warehouse" ||
-        branches.find(b => b._id === branchId)?.isWarehouse;
+        // Verificar si es bodega (warehouse)
+        const isWarehouse =
+          branchId === "warehouse" ||
+          branches.find(b => b._id === branchId)?.isWarehouse;
 
-      console.log("[DEBUG] isWarehouse:", isWarehouse);
-
-      if (isWarehouse) {
-        // Para bodega, usar el warehouseStock de los productos
-        const response = await productService.getAll({
-          limit: 1000,
-          excludePromotions: true,
-        });
-        const productsList = Array.isArray(response)
-          ? response
-          : response.data || [];
-        console.log("[DEBUG] Total productos:", productsList.length);
-        const warehouseStock = productsList
-          .filter((p: Product) => (p.warehouseStock || 0) > 0)
-          .map((p: Product) => ({
-            _id: `warehouse-${p._id}`,
-            product: { _id: p._id, name: p.name },
-            quantity: p.warehouseStock || 0,
+        if (isWarehouse) {
+          // Para bodega, usar el warehouseStock de los productos
+          const response = await productService.getAll({
+            limit: 1000,
+            excludePromotions: true,
+          });
+          const productsList = Array.isArray(response)
+            ? response
+            : response.data || [];
+          const warehouseStock = productsList
+            .filter((p: Product) => (p.warehouseStock || 0) > 0)
+            .map((p: Product) => ({
+              _id: `warehouse-${p._id}`,
+              product: { _id: p._id, name: p.name },
+              quantity: p.warehouseStock || 0,
+            }));
+          setOriginBranchStock(warehouseStock);
+        } else {
+          // Para sedes, usar BranchStock
+          const stockData = await stockService.getBranchStock(branchId);
+          const stockList = Array.isArray(stockData) ? stockData : [];
+          const mappedStock = stockList.map(s => ({
+            _id: s._id,
+            product:
+              typeof s.product === "object"
+                ? { _id: s.product._id, name: s.product.name }
+                : { _id: s.product, name: "" },
+            quantity: s.quantity,
           }));
-        console.log(
-          "[DEBUG] Productos con stock en bodega:",
-          warehouseStock.length
-        );
-        console.log("[DEBUG] Warehouse stock:", warehouseStock);
-        setOriginBranchStock(warehouseStock);
-      } else {
-        // Para sedes, usar BranchStock
-        const stockData = await stockService.getBranchStock(branchId);
-        const stockList = Array.isArray(stockData) ? stockData : [];
-        console.log("[DEBUG] Branch stock:", stockList);
-        const mappedStock = stockList.map(s => ({
-          _id: s._id,
-          product:
-            typeof s.product === "object"
-              ? { _id: s.product._id, name: s.product.name }
-              : { _id: s.product, name: "" },
-          quantity: s.quantity,
-        }));
-        setOriginBranchStock(mappedStock);
+          setOriginBranchStock(mappedStock);
+        }
+      } catch (err) {
+        console.error("Error al cargar inventario de la sede:", err);
+        setOriginBranchStock([]);
+      } finally {
+        setLoadingOriginStock(false);
       }
-    } catch (err) {
-      console.error("Error al cargar inventario de la sede:", err);
+    },
+    [branches]
+  );
+
+  useEffect(() => {
+    if (originBranchId) {
+      loadOriginBranchStock(originBranchId);
+    } else {
       setOriginBranchStock([]);
-    } finally {
-      setLoadingOriginStock(false);
     }
-  };
+  }, [originBranchId, loadOriginBranchStock]);
 
   const addItem = () => {
     if (!selectedProductId) {
@@ -537,25 +530,6 @@ const StockManagement = () => {
       };
     })
     .filter(p => p.branchStock > 0);
-
-  // Debug logs
-  console.log("[DEBUG] Total products:", products.length);
-  console.log("[DEBUG] originBranchStock:", originBranchStock.length);
-  console.log(
-    "[DEBUG] availableBranchProducts:",
-    availableBranchProducts.length
-  );
-  if (
-    availableBranchProducts.length === 0 &&
-    originBranchStock.length > 0 &&
-    products.length > 0
-  ) {
-    console.log("[DEBUG] Sample product from products:", products[0]);
-    console.log(
-      "[DEBUG] Sample stock from originBranchStock:",
-      originBranchStock[0]
-    );
-  }
 
   const hasWarehouseBranch = branches.some(branch => branch.isWarehouse);
   const branchOptions: Branch[] = [

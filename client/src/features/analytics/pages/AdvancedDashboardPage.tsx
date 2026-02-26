@@ -35,6 +35,8 @@ import { expenseService } from "../../common/services";
 import type { Expense } from "../../common/types/common.types";
 import { creditService } from "../../credits/services";
 import type { CreditMetrics } from "../../credits/types/credit.types";
+import { stockService } from "../../inventory/services/inventory.service";
+import { saleService } from "../../sales/services/sales.service";
 
 export default function AdvancedDashboard() {
   // Feature flags
@@ -344,8 +346,188 @@ export default function AdvancedDashboard() {
 
   // State for export loading
   const [isExporting, setIsExporting] = useState(false);
+  const [isMasterExporting, setIsMasterExporting] = useState(false);
+  const [masterExportNotice, setMasterExportNotice] = useState("");
+  const [masterExportError, setMasterExportError] = useState("");
   const [fullExportData, setFullExportData] = useState<unknown>(null);
   const [fullExportError, setFullExportError] = useState("");
+
+  const appendSheet = (
+    workbook: any,
+    XLSX: any,
+    sheetName: string,
+    rows: Array<Record<string, unknown>>
+  ) => {
+    const hasRows = Array.isArray(rows) && rows.length > 0;
+    const data = hasRows ? rows : [{ Info: "Sin datos disponibles" }];
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    const headers = Object.keys(data[0] || {});
+    worksheet["!cols"] = headers.map(header => {
+      const maxLength = Math.max(
+        header.length,
+        ...data.map(row => String((row as any)[header] || "").length)
+      );
+      return { wch: Math.min(Math.max(maxLength + 2, 12), 40) };
+    });
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  };
+
+  const handleExportMasterExcel = async () => {
+    try {
+      setIsMasterExporting(true);
+      setMasterExportNotice("");
+      setMasterExportError("");
+
+      const [
+        salesResponse,
+        inventoryResponse,
+        distributorPerf,
+        expensesResult,
+      ] = await Promise.all([
+        saleService.getAllSales({
+          startDate: overviewRange.startDate || undefined,
+          endDate: overviewRange.endDate || undefined,
+          limit: 5000,
+        }),
+        stockService.getGlobalInventory(),
+        analyticsService.getProfitByDistributor({
+          startDate: distributorsRange.startDate || undefined,
+          endDate: distributorsRange.endDate || undefined,
+        }),
+        expenses.length > 0
+          ? Promise.resolve({ expenses })
+          : expenseService.getAll(),
+      ]);
+
+      const salesRows = (salesResponse?.sales || []).map(sale => {
+        const quantity = Number(sale.quantity || 0);
+        const unitPrice = Number(sale.salePrice || 0);
+        const revenue = quantity * unitPrice;
+        const profit = Number(
+          sale.netProfit ?? sale.totalProfit ?? sale.adminProfit ?? 0
+        );
+        const marginPct = revenue > 0 ? (profit / revenue) * 100 : 0;
+
+        return {
+          Fecha: sale.saleDate
+            ? format(new Date(sale.saleDate), "yyyy-MM-dd")
+            : "",
+          Venta: sale.saleId || sale._id,
+          Grupo: sale.saleGroupId || "-",
+          Producto:
+            typeof sale.product === "object" && sale.product !== null
+              ? sale.product.name
+              : sale.productName || "Sin producto",
+          Cantidad: quantity,
+          "Precio Unitario": unitPrice,
+          Ingreso: revenue,
+          "Profit Neto": profit,
+          "Margen %": Number(marginPct.toFixed(2)),
+          Ubicacion: sale.sourceLocation || "-",
+          Estado: sale.paymentStatus || "-",
+        };
+      });
+
+      const inventoryRows = ((inventoryResponse as any)?.inventory || []).map(
+        (item: any) => {
+          const productName =
+            item?.product?.name ||
+            item?.name ||
+            item?.productName ||
+            "Sin producto";
+          const warehouse = Number(
+            item?.warehouse || item?.warehouseStock || 0
+          );
+          const branchTotal = Array.isArray(item?.branches)
+            ? item.branches.reduce(
+                (sum: number, branchItem: any) =>
+                  sum + Number(branchItem?.quantity || branchItem?.stock || 0),
+                0
+              )
+            : Number(item?.branches || item?.branchStock || 0);
+          const distributors = Number(
+            item?.distributors || item?.distributorStock || 0
+          );
+          const total = Number(
+            item?.total || warehouse + branchTotal + distributors
+          );
+          const branchDetail = Array.isArray(item?.branches)
+            ? item.branches
+                .map(
+                  (branchItem: any) =>
+                    `${branchItem?.branch?.name || branchItem?.name || "Sede"}: ${Number(branchItem?.quantity || branchItem?.stock || 0)}`
+                )
+                .join(" | ")
+            : "";
+
+          return {
+            Producto: productName,
+            Bodega: warehouse,
+            Sedes: branchTotal,
+            Distribuidores: distributors,
+            Total: total,
+            "Detalle Sedes": branchDetail,
+          };
+        }
+      );
+
+      const expenseRows = ((expensesResult as any)?.expenses || []).map(
+        (expense: Expense) => {
+          const type = expense.type || expense.category || "Otros";
+          const description = expense.description || "";
+          const isWarrantyLoss = /garant|defect|p[eé]rdida/i.test(
+            `${type} ${description}`
+          );
+          return {
+            Fecha: expense.expenseDate
+              ? format(new Date(expense.expenseDate), "yyyy-MM-dd")
+              : "",
+            Tipo: type,
+            Descripcion: description,
+            Monto: Number(expense.amount || 0),
+            "Perdida Garantia": isWarrantyLoss ? "SI" : "NO",
+          };
+        }
+      );
+
+      const distributorRows = (distributorPerf?.distributors || []).map(
+        dist => ({
+          Distribuidor: dist.distributorName || "Sin nombre",
+          "Total Ventas": Number(dist.totalSales || 0),
+          Ingresos: Number(dist.totalRevenue || 0),
+          "Profit Total": Number(dist.totalProfit || 0),
+          "Profit Admin": Number(dist.adminProfit || 0),
+          "Profit Distribuidor": Number(dist.distributorProfit || 0),
+        })
+      );
+
+      const XLSX = await import("xlsx");
+      const workbook = XLSX.utils.book_new();
+
+      appendSheet(workbook, XLSX, "Ventas Totales", salesRows);
+      appendSheet(workbook, XLSX, "Inventario Actual", inventoryRows);
+      appendSheet(workbook, XLSX, "Gastos y Garantias", expenseRows);
+      appendSheet(workbook, XLSX, "Distribuidores", distributorRows);
+
+      XLSX.writeFile(
+        workbook,
+        `Reporte_Maestro_${format(new Date(), "yyyyMMdd_HHmm")}.xlsx`
+      );
+      setMasterExportNotice(
+        "Reporte maestro generado y descargado correctamente."
+      );
+      setTimeout(() => setMasterExportNotice(""), 3500);
+    } catch (error) {
+      console.error("Error al exportar Reporte Maestro:", error);
+      setMasterExportError(
+        "No se pudo generar el Reporte Maestro. Verifica conexion y permisos."
+      );
+    } finally {
+      setIsMasterExporting(false);
+    }
+  };
 
   /**
    * Export full business data as JSON backup
@@ -373,7 +555,6 @@ export default function AdvancedDashboard() {
       setFullExportError(
         "No se pudo cargar la informacion completa de la empresa. Revisa tu conexion o permisos."
       );
-      alert("Error al exportar los datos. Por favor intente de nuevo.");
     } finally {
       setIsExporting(false);
     }
@@ -389,6 +570,16 @@ export default function AdvancedDashboard() {
           </p>
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={handleExportMasterExcel}
+            disabled={isMasterExporting}
+            className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white transition hover:bg-purple-700 disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" />
+            {isMasterExporting
+              ? "Generando..."
+              : "📥 Descargar Reporte Maestro (Excel)"}
+          </button>
           <button
             onClick={handleReload}
             className="flex items-center gap-2 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-gray-300 transition hover:bg-gray-800"
@@ -411,6 +602,16 @@ export default function AdvancedDashboard() {
       {fullExportError && (
         <div className="rounded-lg border border-red-500 bg-red-500/10 p-4 text-sm text-red-300">
           {fullExportError}
+        </div>
+      )}
+      {masterExportError && (
+        <div className="rounded-lg border border-rose-500 bg-rose-500/10 p-4 text-sm text-rose-300">
+          {masterExportError}
+        </div>
+      )}
+      {masterExportNotice && (
+        <div className="rounded-lg border border-emerald-500 bg-emerald-500/10 p-4 text-sm text-emerald-300">
+          {masterExportNotice}
         </div>
       )}
       {fullExportData && (

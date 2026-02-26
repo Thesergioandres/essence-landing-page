@@ -115,7 +115,11 @@ export default function Catalog() {
           ? productsResponse
           : productsResponse.data || [];
 
-        setProducts(productsList);
+        const inStockProducts = productsList.filter(
+          (product: Product) => (product.totalStock ?? 0) > 0
+        );
+
+        setProducts(inStockProducts);
 
         if (hasToken) {
           const categoriesData = await categoryService.getAll(
@@ -153,7 +157,7 @@ export default function Catalog() {
 
         const maxClientPrice = Math.max(
           0,
-          ...productsList.map((p: Product) => Number(p.clientPrice) || 0)
+          ...inStockProducts.map((p: Product) => Number(p.clientPrice) || 0)
         );
         setMaxPrice(maxClientPrice || 0);
         setPriceRange({ min: 0, max: maxClientPrice || 0 });
@@ -236,6 +240,25 @@ export default function Catalog() {
   };
 
   const getPromotionProducts = (promo: Promotion) => {
+    const promotionItems = Array.isArray((promo as any).items)
+      ? (promo as any).items
+      : [];
+
+    if (promotionItems.length > 0) {
+      return promotionItems
+        .map((item: any) => {
+          const itemProduct = item?.product ?? item;
+          if (!itemProduct) return null;
+          if (typeof itemProduct === "string") {
+            return productIndex.get(itemProduct) || null;
+          }
+          const productId = itemProduct._id;
+          if (!productId) return null;
+          return productIndex.get(productId) || itemProduct;
+        })
+        .filter(Boolean);
+    }
+
     if (promo.comboItems && promo.comboItems.length > 0) {
       return promo.comboItems
         .map(item =>
@@ -650,6 +673,17 @@ export default function Catalog() {
                   const price = getPromotionPrice(promo);
                   const discountLabel = getPromotionDiscountLabel(promo, price);
                   const promoProducts = getPromotionProducts(promo);
+                  const collageImages = promoProducts
+                    .map(product => product.image?.url)
+                    .filter(Boolean)
+                    .slice(0, 4) as string[];
+
+                  const collageGridClass =
+                    collageImages.length <= 1 ? "grid-cols-1" : "grid-cols-2";
+
+                  const collageHeightClass =
+                    collageImages.length <= 1 ? "h-32" : "h-16";
+
                   return (
                     <div
                       key={promo._id}
@@ -687,25 +721,33 @@ export default function Catalog() {
                         </p>
                       )}
                       {promoProducts.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {promoProducts.slice(0, 4).map(product => (
-                            <span
-                              key={product._id}
-                              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold text-white"
-                            >
-                              {product.image?.url ? (
-                                <img
-                                  src={product.image.url}
-                                  alt={product.name}
-                                  className="h-5 w-5 rounded-full object-cover"
-                                  loading="lazy"
-                                />
-                              ) : null}
-                              {product.name}
-                            </span>
-                          ))}
+                        <div className="mt-4 space-y-2">
+                          <div className={`grid gap-2 ${collageGridClass}`}>
+                            {collageImages.length > 0 ? (
+                              collageImages.map((imageUrl, index) => (
+                                <div
+                                  key={`${promo._id}-collage-${index}`}
+                                  className={`overflow-hidden rounded-xl border border-white/10 bg-white/5 ${collageHeightClass}`}
+                                >
+                                  <img
+                                    src={imageUrl}
+                                    alt={`Producto ${index + 1} de ${promo.name}`}
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                  />
+                                </div>
+                              ))
+                            ) : (
+                              <div className="col-span-2 flex h-20 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-xs text-gray-400">
+                                Sin imagenes disponibles
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            Incluye {promoProducts.length} producto(s)
+                          </div>
                           {promoProducts.length > 4 && (
-                            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold text-white">
+                            <span className="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold text-white">
                               +{promoProducts.length - 4} mas
                             </span>
                           )}
