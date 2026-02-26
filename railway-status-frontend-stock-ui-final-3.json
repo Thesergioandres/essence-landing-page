@@ -1,0 +1,472 @@
+﻿{
+  "id": "0f32356d-d5bf-4882-a994-a9466d84cbb6",
+  "name": "Essence ERP",
+  "deletedAt": null,
+  "workspace": {
+    "name": "thesergioandres's Projects"
+  },
+  "environments": {
+    "edges": [
+      {
+        "node": {
+          "id": "6c5f85c3-e1fc-4ad6-a923-dc542f5f075c",
+          "name": "production",
+          "canAccess": true,
+          "deletedAt": null,
+          "serviceInstances": {
+            "edges": [
+              {
+                "node": {
+                  "id": "25355c1e-fcbf-4acc-9e14-a72954a03360",
+                  "serviceId": "3fe4f359-ba42-4630-a9e7-515dc5a7ac8f",
+                  "serviceName": "MongoDB",
+                  "environmentId": "6c5f85c3-e1fc-4ad6-a923-dc542f5f075c",
+                  "latestDeployment": {
+                    "canRedeploy": true,
+                    "id": "72833f75-de88-4af7-b00d-ce8b28dec651",
+                    "meta": {
+                      "image": "mongo:8.0",
+                      "imageDigest": "sha256:7734b622e05c0cae53c8cd57780ed582c9fa7320a85b23a754a507a5b9669add",
+                      "logsV2": true,
+                      "patchId": "35e7d83b-847b-4ff1-947b-e4e021f19584",
+                      "reason": "deploy",
+                      "runtime": "V2",
+                      "serviceManifest": {
+                        "build": {
+                          "buildCommand": null,
+                          "buildEnvironment": null,
+                          "builder": "RAILPACK",
+                          "dockerfilePath": null,
+                          "nixpacksConfigPath": null,
+                          "nixpacksPlan": null,
+                          "watchPatterns": []
+                        },
+                        "deploy": {
+                          "cronSchedule": null,
+                          "drainingSeconds": null,
+                          "healthcheckPath": null,
+                          "healthcheckTimeout": null,
+                          "ipv6EgressEnabled": false,
+                          "limitOverride": null,
+                          "multiRegionConfig": {
+                            "us-east4-eqdc4a": {
+                              "numReplicas": 1
+                            }
+                          },
+                          "numReplicas": 1,
+                          "overlapSeconds": null,
+                          "preDeployCommand": null,
+                          "region": null,
+                          "registryCredentials": null,
+                          "requiredMountPath": "/data/db",
+                          "restartPolicyMaxRetries": 10,
+                          "restartPolicyType": "ON_FAILURE",
+                          "runtime": "V2",
+                          "sleepApplication": false,
+                          "startCommand": "docker-entrypoint.sh mongod --ipv6 --bind_ip ::,0.0.0.0 --setParameter diagnosticDataCollectionEnabled=false",
+                          "useLegacyStacker": false
+                        }
+                      },
+                      "volumeMounts": [
+                        "/data/db"
+                      ]
+                    },
+                    "status": "SUCCESS",
+                    "createdAt": "2026-02-21T03:51:29.037Z",
+                    "deploymentStopped": false
+                  },
+                  "activeDeployments": [
+                    {
+                      "id": "72833f75-de88-4af7-b00d-ce8b28dec651",
+                      "status": "SUCCESS",
+                      "createdAt": "2026-02-21T03:51:29.037Z",
+                      "meta": {
+                        "image": "mongo:8.0",
+                        "imageDigest": "sha256:7734b622e05c0cae53c8cd57780ed582c9fa7320a85b23a754a507a5b9669add",
+                        "logsV2": true,
+                        "patchId": "35e7d83b-847b-4ff1-947b-e4e021f19584",
+                        "reason": "deploy",
+                        "runtime": "V2",
+                        "serviceManifest": {
+                          "build": {
+                            "buildCommand": null,
+                            "buildEnvironment": null,
+                            "builder": "RAILPACK",
+                            "dockerfilePath": null,
+                            "nixpacksConfigPath": null,
+                            "nixpacksPlan": null,
+                            "watchPatterns": []
+                          },
+                          "deploy": {
+                            "cronSchedule": null,
+                            "drainingSeconds": null,
+                            "healthcheckPath": null,
+                            "healthcheckTimeout": null,
+                            "ipv6EgressEnabled": false,
+                            "limitOverride": null,
+                            "multiRegionConfig": {
+                              "us-east4-eqdc4a": {
+                                "numReplicas": 1
+                              }
+                            },
+                            "numReplicas": 1,
+                            "overlapSeconds": null,
+                            "preDeployCommand": null,
+                            "region": null,
+                            "registryCredentials": null,
+                            "requiredMountPath": "/data/db",
+                            "restartPolicyMaxRetries": 10,
+                            "restartPolicyType": "ON_FAILURE",
+                            "runtime": "V2",
+                            "sleepApplication": false,
+                            "startCommand": "docker-entrypoint.sh mongod --ipv6 --bind_ip ::,0.0.0.0 --setParameter diagnosticDataCollectionEnabled=false",
+                            "useLegacyStacker": false
+                          }
+                        },
+                        "volumeMounts": [
+                          "/data/db"
+                        ]
+                      }
+                    }
+                  ],
+                  "source": {
+                    "repo": null,
+                    "image": "mongo:8.0"
+                  },
+                  "domains": {
+                    "serviceDomains": [],
+                    "customDomains": []
+                  },
+                  "cronSchedule": null,
+                  "nextCronRunAt": null,
+                  "startCommand": "docker-entrypoint.sh mongod --ipv6 --bind_ip ::,0.0.0.0 --setParameter diagnosticDataCollectionEnabled=false"
+                }
+              },
+              {
+                "node": {
+                  "id": "3f8770d5-13bc-47dc-85d5-febb0f0dfa50",
+                  "serviceId": "551d7633-82f5-4e90-b6c6-8bae03403000",
+                  "serviceName": "essence-backend",
+                  "environmentId": "6c5f85c3-e1fc-4ad6-a923-dc542f5f075c",
+                  "latestDeployment": {
+                    "canRedeploy": true,
+                    "id": "4907e77a-6491-4e21-a6ea-664355016eea",
+                    "meta": {
+                      "buildOnly": false,
+                      "configFile": null,
+                      "fileServiceManifest": {},
+                      "imageDigest": "sha256:cef2048f4eeee4db326b76e33efacb31f13744dc870dfa19926e12f04b537ab5",
+                      "logsV2": true,
+                      "nixpacksProviders": [
+                        "node"
+                      ],
+                      "propertyFileMapping": {},
+                      "reason": "deploy",
+                      "rootDirectory": null,
+                      "runtime": "V2",
+                      "serviceManifest": {
+                        "build": {
+                          "buildCommand": null,
+                          "buildEnvironment": null,
+                          "builder": "DOCKERFILE",
+                          "dockerfilePath": "Dockerfile",
+                          "nixpacksConfigPath": null,
+                          "nixpacksPlan": null,
+                          "watchPatterns": []
+                        },
+                        "deploy": {
+                          "cronSchedule": null,
+                          "drainingSeconds": null,
+                          "healthcheckPath": null,
+                          "healthcheckTimeout": null,
+                          "ipv6EgressEnabled": false,
+                          "limitOverride": null,
+                          "multiRegionConfig": {
+                            "us-east4-eqdc4a": {
+                              "numReplicas": 1
+                            }
+                          },
+                          "numReplicas": 1,
+                          "overlapSeconds": null,
+                          "preDeployCommand": null,
+                          "region": null,
+                          "registryCredentials": null,
+                          "requiredMountPath": null,
+                          "restartPolicyMaxRetries": 10,
+                          "restartPolicyType": "ON_FAILURE",
+                          "runtime": "V2",
+                          "sleepApplication": false,
+                          "startCommand": null,
+                          "useLegacyStacker": false
+                        }
+                      },
+                      "volumeMounts": []
+                    },
+                    "status": "SUCCESS",
+                    "createdAt": "2026-02-23T18:05:45.139Z",
+                    "deploymentStopped": false
+                  },
+                  "activeDeployments": [
+                    {
+                      "id": "4907e77a-6491-4e21-a6ea-664355016eea",
+                      "status": "SUCCESS",
+                      "createdAt": "2026-02-23T18:05:45.139Z",
+                      "meta": {
+                        "buildOnly": false,
+                        "configFile": null,
+                        "fileServiceManifest": {},
+                        "imageDigest": "sha256:cef2048f4eeee4db326b76e33efacb31f13744dc870dfa19926e12f04b537ab5",
+                        "logsV2": true,
+                        "nixpacksProviders": [
+                          "node"
+                        ],
+                        "propertyFileMapping": {},
+                        "reason": "deploy",
+                        "rootDirectory": null,
+                        "runtime": "V2",
+                        "serviceManifest": {
+                          "build": {
+                            "buildCommand": null,
+                            "buildEnvironment": null,
+                            "builder": "DOCKERFILE",
+                            "dockerfilePath": "Dockerfile",
+                            "nixpacksConfigPath": null,
+                            "nixpacksPlan": null,
+                            "watchPatterns": []
+                          },
+                          "deploy": {
+                            "cronSchedule": null,
+                            "drainingSeconds": null,
+                            "healthcheckPath": null,
+                            "healthcheckTimeout": null,
+                            "ipv6EgressEnabled": false,
+                            "limitOverride": null,
+                            "multiRegionConfig": {
+                              "us-east4-eqdc4a": {
+                                "numReplicas": 1
+                              }
+                            },
+                            "numReplicas": 1,
+                            "overlapSeconds": null,
+                            "preDeployCommand": null,
+                            "region": null,
+                            "registryCredentials": null,
+                            "requiredMountPath": null,
+                            "restartPolicyMaxRetries": 10,
+                            "restartPolicyType": "ON_FAILURE",
+                            "runtime": "V2",
+                            "sleepApplication": false,
+                            "startCommand": null,
+                            "useLegacyStacker": false
+                          }
+                        },
+                        "volumeMounts": []
+                      }
+                    }
+                  ],
+                  "source": {
+                    "repo": null,
+                    "image": null
+                  },
+                  "domains": {
+                    "serviceDomains": [
+                      {
+                        "id": "f6e865bb-5779-4f36-aef4-948a2fe8e8a8",
+                        "domain": "essence-backend-production-25b3.up.railway.app",
+                        "targetPort": null
+                      }
+                    ],
+                    "customDomains": []
+                  },
+                  "cronSchedule": null,
+                  "nextCronRunAt": null,
+                  "startCommand": null
+                }
+              },
+              {
+                "node": {
+                  "id": "92762518-4ea0-4e23-b448-83e11d045a2c",
+                  "serviceId": "2cc18a54-8d98-4b18-99b8-d058127b247f",
+                  "serviceName": "essence-frontend",
+                  "environmentId": "6c5f85c3-e1fc-4ad6-a923-dc542f5f075c",
+                  "latestDeployment": {
+                    "canRedeploy": true,
+                    "id": "cfebbc75-9da4-4ac4-b925-79080434505e",
+                    "meta": {
+                      "buildOnly": false,
+                      "configFile": null,
+                      "fileServiceManifest": {},
+                      "imageDigest": "sha256:d11e5b793c6f70de02f649e05c43c61736ac77eec9cfa39b6e879cd719ee2ca9",
+                      "logsV2": true,
+                      "nixpacksProviders": [
+                        "node"
+                      ],
+                      "propertyFileMapping": {},
+                      "reason": "deploy",
+                      "rootDirectory": "/client",
+                      "runtime": "V2",
+                      "serviceManifest": {
+                        "build": {
+                          "buildCommand": null,
+                          "buildEnvironment": null,
+                          "builder": "DOCKERFILE",
+                          "dockerfilePath": "client/Dockerfile",
+                          "nixpacksConfigPath": null,
+                          "nixpacksPlan": null,
+                          "watchPatterns": []
+                        },
+                        "deploy": {
+                          "cronSchedule": null,
+                          "drainingSeconds": null,
+                          "healthcheckPath": null,
+                          "healthcheckTimeout": null,
+                          "ipv6EgressEnabled": false,
+                          "limitOverride": null,
+                          "multiRegionConfig": {
+                            "us-east4-eqdc4a": {
+                              "numReplicas": 1
+                            }
+                          },
+                          "numReplicas": 1,
+                          "overlapSeconds": null,
+                          "preDeployCommand": null,
+                          "region": null,
+                          "registryCredentials": null,
+                          "requiredMountPath": null,
+                          "restartPolicyMaxRetries": 10,
+                          "restartPolicyType": "ON_FAILURE",
+                          "runtime": "V2",
+                          "sleepApplication": false,
+                          "startCommand": null,
+                          "useLegacyStacker": false
+                        }
+                      },
+                      "volumeMounts": []
+                    },
+                    "status": "SUCCESS",
+                    "createdAt": "2026-02-26T05:21:15.820Z",
+                    "deploymentStopped": false
+                  },
+                  "activeDeployments": [
+                    {
+                      "id": "cfebbc75-9da4-4ac4-b925-79080434505e",
+                      "status": "SUCCESS",
+                      "createdAt": "2026-02-26T05:21:15.820Z",
+                      "meta": {
+                        "buildOnly": false,
+                        "configFile": null,
+                        "fileServiceManifest": {},
+                        "imageDigest": "sha256:d11e5b793c6f70de02f649e05c43c61736ac77eec9cfa39b6e879cd719ee2ca9",
+                        "logsV2": true,
+                        "nixpacksProviders": [
+                          "node"
+                        ],
+                        "propertyFileMapping": {},
+                        "reason": "deploy",
+                        "rootDirectory": "/client",
+                        "runtime": "V2",
+                        "serviceManifest": {
+                          "build": {
+                            "buildCommand": null,
+                            "buildEnvironment": null,
+                            "builder": "DOCKERFILE",
+                            "dockerfilePath": "client/Dockerfile",
+                            "nixpacksConfigPath": null,
+                            "nixpacksPlan": null,
+                            "watchPatterns": []
+                          },
+                          "deploy": {
+                            "cronSchedule": null,
+                            "drainingSeconds": null,
+                            "healthcheckPath": null,
+                            "healthcheckTimeout": null,
+                            "ipv6EgressEnabled": false,
+                            "limitOverride": null,
+                            "multiRegionConfig": {
+                              "us-east4-eqdc4a": {
+                                "numReplicas": 1
+                              }
+                            },
+                            "numReplicas": 1,
+                            "overlapSeconds": null,
+                            "preDeployCommand": null,
+                            "region": null,
+                            "registryCredentials": null,
+                            "requiredMountPath": null,
+                            "restartPolicyMaxRetries": 10,
+                            "restartPolicyType": "ON_FAILURE",
+                            "runtime": "V2",
+                            "sleepApplication": false,
+                            "startCommand": null,
+                            "useLegacyStacker": false
+                          }
+                        },
+                        "volumeMounts": []
+                      }
+                    }
+                  ],
+                  "source": {
+                    "repo": "Thesergioandres/essence-landing-page",
+                    "image": null
+                  },
+                  "domains": {
+                    "serviceDomains": [
+                      {
+                        "id": "e5c2938c-2590-47d1-9873-206655eaae6f",
+                        "domain": "essenceerp.up.railway.app",
+                        "targetPort": null
+                      }
+                    ],
+                    "customDomains": []
+                  },
+                  "cronSchedule": null,
+                  "nextCronRunAt": null,
+                  "startCommand": null
+                }
+              }
+            ]
+          },
+          "volumeInstances": {
+            "edges": [
+              {
+                "node": {
+                  "serviceId": "3fe4f359-ba42-4630-a9e7-515dc5a7ac8f",
+                  "mountPath": "/data/db",
+                  "environmentId": "6c5f85c3-e1fc-4ad6-a923-dc542f5f075c",
+                  "currentSizeMB": 144.949248,
+                  "sizeMB": 500,
+                  "volume": {
+                    "name": "mongodb-volume",
+                    "id": "3b61fe12-8c1e-4075-8dc0-caf12dabfb05"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "services": {
+    "edges": [
+      {
+        "node": {
+          "id": "2cc18a54-8d98-4b18-99b8-d058127b247f",
+          "name": "essence-frontend"
+        }
+      },
+      {
+        "node": {
+          "id": "3fe4f359-ba42-4630-a9e7-515dc5a7ac8f",
+          "name": "MongoDB"
+        }
+      },
+      {
+        "node": {
+          "id": "551d7633-82f5-4e90-b6c6-8bae03403000",
+          "name": "essence-backend"
+        }
+      }
+    ]
+  }
+}

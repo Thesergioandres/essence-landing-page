@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductSelector from "../../../components/ProductSelector";
 import { Button, LoadingSpinner } from "../../../shared/components/ui";
@@ -64,6 +64,8 @@ const StockManagement = () => {
   const [branchLoading, setBranchLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [inventorySearchTerm, setInventorySearchTerm] = useState("");
+  const [inventoryCategory, setInventoryCategory] = useState<string>("all");
 
   useEffect(() => {
     loadData();
@@ -229,17 +231,26 @@ const StockManagement = () => {
       return;
     }
 
-    const product = products.find(p => p._id === selectedProductId);
+    addItemByProductId(selectedProductId);
+  };
+
+  const addItemByProductId = (productId: string) => {
+    if (!productId) {
+      setError("Selecciona un producto");
+      return;
+    }
+
+    const product = selectorProducts.find(p => p._id === productId);
     if (!product) return;
 
     // Verificar si ya está agregado
-    if (items.some(item => item.productId === selectedProductId)) {
+    if (items.some(item => item.productId === productId)) {
       setError("Este producto ya está en la lista");
       return;
     }
 
     const newItem: StockItem = {
-      productId: selectedProductId,
+      productId,
       product,
       quantity: 1,
       warehouseStock: product.warehouseStock || 0,
@@ -478,6 +489,42 @@ const StockManagement = () => {
   const availableProducts = selectorProducts.filter(
     p => !items.some(item => item.productId === p._id)
   );
+
+  const inventoryCategories = useMemo(() => {
+    const cats = new Set<string>();
+    selectorProducts.forEach(product => {
+      const catName =
+        typeof product.category === "object"
+          ? product.category?.name
+          : product.category;
+      if (catName) cats.add(catName);
+    });
+    return Array.from(cats);
+  }, [selectorProducts]);
+
+  const filteredInventoryProducts = useMemo(() => {
+    const normalize = (str: string) =>
+      str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    const term = normalize(inventorySearchTerm);
+
+    return selectorProducts.filter(product => {
+      const name = normalize(product.name || "");
+      const catName =
+        typeof product.category === "object"
+          ? product.category?.name
+          : product.category;
+
+      const matchesSearch = name.includes(term);
+      const matchesCategory =
+        inventoryCategory === "all" || catName === inventoryCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [selectorProducts, inventorySearchTerm, inventoryCategory]);
 
   const availableBranchProducts = products
     .filter(p => !branchItems.some(item => item.productId === p._id))
@@ -775,33 +822,139 @@ const StockManagement = () => {
                 Agregar Productos
               </h2>
 
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  {availableProducts.length === 0 ? (
-                    <div className="rounded-lg border border-gray-700 bg-gray-900/50 px-4 py-4 text-sm text-gray-300">
-                      <p>No tienes productos.</p>
-                      <Button
-                        type="button"
-                        className="mt-3"
-                        onClick={() => navigate("/admin/add-product")}
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+                <input
+                  type="text"
+                  placeholder="Buscar producto..."
+                  value={inventorySearchTerm}
+                  onChange={e => setInventorySearchTerm(e.target.value)}
+                  className="flex-1 rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2 text-white placeholder-gray-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+                <select
+                  value={inventoryCategory}
+                  onChange={e => setInventoryCategory(e.target.value)}
+                  className="rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2 text-white outline-none focus:border-blue-500"
+                >
+                  <option value="all">Todas las categorías</option>
+                  {inventoryCategories.map(cat => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectorProducts.length === 0 ? (
+                <div className="rounded-lg border border-gray-700 bg-gray-900/50 px-4 py-4 text-sm text-gray-300">
+                  <p>No tienes productos.</p>
+                  <Button
+                    type="button"
+                    className="mt-3"
+                    onClick={() => navigate("/admin/add-product")}
+                  >
+                    Añadir producto
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid max-h-[420px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredInventoryProducts.map(product => {
+                    const distQty =
+                      distributorStockByProduct.get(product._id)?.quantity || 0;
+                    const stock =
+                      operation === "withdraw"
+                        ? distQty
+                        : product.warehouseStock || 0;
+                    const alreadyAdded = items.some(
+                      item => item.productId === product._id
+                    );
+                    const isOutOfStock = stock <= 0;
+
+                    return (
+                      <div
+                        key={product._id}
+                        className={`rounded-lg border p-3 transition ${
+                          isOutOfStock
+                            ? "border-gray-700 bg-gray-800/30 opacity-60"
+                            : "border-gray-700 bg-gray-800/60 hover:border-blue-500/60"
+                        }`}
                       >
-                        Añadir producto
-                      </Button>
-                    </div>
-                  ) : (
-                    <ProductSelector
-                      value={selectedProductId}
-                      onChange={id => setSelectedProductId(id)}
-                      placeholder={
-                        operation === "withdraw"
-                          ? "Selecciona un producto del distribuidor"
-                          : "Buscar y seleccionar producto..."
-                      }
-                      showStock={true}
-                      excludeProductIds={items.map(item => item.productId)}
-                      products={selectorProducts}
-                    />
-                  )}
+                        <div className="mb-2 flex items-start justify-between gap-2">
+                          <div className="flex min-w-0 flex-1 items-center gap-2">
+                            {product.image?.url ? (
+                              <img
+                                src={product.image.url}
+                                alt={product.name}
+                                className="h-10 w-10 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-700 text-xs font-semibold text-gray-300">
+                                {product.name.slice(0, 1).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <h4 className="truncate text-sm font-semibold text-white">
+                                {product.name}
+                              </h4>
+                              <p className="truncate text-xs text-gray-400">
+                                {(typeof product.category === "object"
+                                  ? product.category?.name
+                                  : product.category) || "Sin categoría"}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                              stock <= 5
+                                ? "bg-red-500/20 text-red-300"
+                                : "bg-green-500/20 text-green-300"
+                            }`}
+                          >
+                            Stock: {stock}
+                          </span>
+                        </div>
+
+                        <div className="mb-3 text-sm font-semibold text-blue-300">
+                          {formatCurrency(product.distributorPrice || 0)}
+                        </div>
+
+                        <Button
+                          type="button"
+                          onClick={() => addItemByProductId(product._id)}
+                          disabled={isOutOfStock || alreadyAdded}
+                          className="w-full"
+                        >
+                          {alreadyAdded
+                            ? "Ya agregado"
+                            : isOutOfStock
+                              ? "Sin stock"
+                              : "+ Agregar"}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {filteredInventoryProducts.length === 0 && selectorProducts.length > 0 && (
+                <div className="mt-4 rounded-lg border border-gray-700 bg-gray-900/50 px-4 py-4 text-sm text-gray-400">
+                  No se encontraron productos con los filtros actuales.
+                </div>
+              )}
+
+              <div className="mt-4 flex gap-4">
+                <div className="flex-1">
+                  <ProductSelector
+                    value={selectedProductId}
+                    onChange={id => setSelectedProductId(id)}
+                    placeholder={
+                      operation === "withdraw"
+                        ? "Selecciona un producto del distribuidor"
+                        : "Buscar y seleccionar producto..."
+                    }
+                    showStock={true}
+                    excludeProductIds={items.map(item => item.productId)}
+                    products={selectorProducts}
+                  />
                 </div>
                 <Button
                   type="button"

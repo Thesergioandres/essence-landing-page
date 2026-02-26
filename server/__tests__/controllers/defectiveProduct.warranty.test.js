@@ -255,6 +255,80 @@ describe("Defective Product Warranty System", () => {
   });
 
   describe("POST /api/v2/defective-products/:id/reject-warranty", () => {
+    test("debe reflejar en gastos una garantía de cliente marcada como pérdida total", async () => {
+      const originalSale = await Sale.create({
+        business: testBusiness._id,
+        createdBy: adminUser._id,
+        product: testProduct._id,
+        quantity: 1,
+        purchasePrice: 1000,
+        distributorPrice: 1200,
+        salePrice: 1500,
+        paymentStatus: "confirmado",
+      });
+
+      const replacementProduct = await Product.create({
+        name: "Warranty Expense Replacement",
+        description: "Reemplazo para validar gastos",
+        business: testBusiness._id,
+        category: testCategory._id,
+        warehouseStock: 50,
+        totalStock: 50,
+        purchasePrice: 900,
+        distributorPrice: 1200,
+        clientPrice: 1500,
+      });
+
+      const warrantyResponse = await request(app)
+        .post("/api/v2/defective-products/warranty")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .set("x-business-id", testBusiness._id.toString())
+        .send({
+          saleItemId: originalSale._id,
+          quantity: 1,
+          reason: "Garantía pérdida total para gasto",
+          replacementProductId: replacementProduct._id,
+          replacementPrice: 1500,
+          replacementSource: "warehouse",
+        });
+
+      expect(warrantyResponse.status).toBe(201);
+
+      const reportId = warrantyResponse.body?.data?.report?._id;
+      expect(reportId).toBeTruthy();
+
+      const rejectResponse = await request(app)
+        .put(`/api/v2/defective-products/${reportId}/reject-warranty`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .set("x-business-id", testBusiness._id.toString())
+        .send({ adminNotes: "Proveedor rechazó garantía" });
+
+      expect(rejectResponse.status).toBe(200);
+      expect(rejectResponse.body?.report?.warrantyStatus).toBe("rejected");
+      expect(Number(rejectResponse.body?.lossAmount || 0)).toBeGreaterThan(0);
+
+      const expensesResponse = await request(app)
+        .get("/api/v2/expenses")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .set("x-business-id", testBusiness._id.toString());
+
+      expect(expensesResponse.status).toBe(200);
+
+      const expenses =
+        expensesResponse.body?.data?.expenses ||
+        expensesResponse.body?.expenses ||
+        [];
+
+      const defectiveExpense = expenses.find(
+        (expense) =>
+          expense?._id === `defective-${reportId}` &&
+          expense?.type === "Pérdida - Defectuoso",
+      );
+
+      expect(defectiveExpense).toBeTruthy();
+      expect(Number(defectiveExpense.amount || 0)).toBeGreaterThan(0);
+    });
+
     test("debe rechazar garantía y calcular pérdida", async () => {
       const response = await request(app)
         .put(`/api/v2/defective-products/${testReport._id}/reject-warranty`)

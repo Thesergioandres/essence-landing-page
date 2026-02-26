@@ -211,14 +211,12 @@ class ExpenseRepository {
     const defectiveFilter = businessId
       ? {
           business: businessId,
-          status: "confirmado",
+          status: { $in: ["confirmado", "procesado"] },
           lossAmount: { $gt: 0 },
-          origin: { $ne: "customer_warranty" },
         }
       : {
-          status: "confirmado",
+          status: { $in: ["confirmado", "procesado"] },
           lossAmount: { $gt: 0 },
-          origin: { $ne: "customer_warranty" },
         };
 
     const resolvedType =
