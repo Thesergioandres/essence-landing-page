@@ -1,5 +1,5 @@
 import Category from "../../../../models/Category.js";
-import Product from "../../../../models/Product.js";
+import Product from "../models/Product.js";
 
 /**
  * CategoryRepository - Hexagonal Architecture Pattern

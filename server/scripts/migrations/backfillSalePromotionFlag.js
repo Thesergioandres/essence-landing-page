@@ -29,8 +29,8 @@ dotenv.config({ path: path.join(__dirname, "../../.env") });
 let Sale;
 
 async function loadModels() {
-  await import("../../models/Product.js");
-  const saleModule = await import("../../models/Sale.js");
+  await import("../../src/infrastructure/database/models/Product.js");
+  const saleModule = await import("../../src/infrastructure/database/models/Sale.js");
   Sale = saleModule.default;
 }
 

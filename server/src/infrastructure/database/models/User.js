@@ -1,5 +1,18 @@
 import mongoose from "mongoose";
 
+const permissionActionSchema = new mongoose.Schema(
+  {
+    view: { type: Boolean, default: false },
+    read: { type: Boolean, default: false },
+    create: { type: Boolean, default: false },
+    edit: { type: Boolean, default: false },
+    update: { type: Boolean, default: false },
+    delete: { type: Boolean, default: false },
+    view_costs: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -59,6 +72,26 @@ const userSchema = new mongoose.Schema(
     selectedPlanAt: {
       type: Date,
       default: null,
+    },
+    fixedCommissionOnly: {
+      type: Boolean,
+      default: false,
+    },
+    isCommissionFixed: {
+      type: Boolean,
+      default: false,
+    },
+    customCommissionRate: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 95,
+    },
+    // Matriz de permisos modular por usuario (fallback fuera de membership)
+    modularPermissions: {
+      type: Map,
+      of: permissionActionSchema,
+      default: {},
     },
     // Solo para distribuidores
     assignedProducts: [

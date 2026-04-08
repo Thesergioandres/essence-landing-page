@@ -6,8 +6,8 @@ import Branch from "../models/Branch.js";
 import BranchStock from "../models/BranchStock.js";
 import Business from "../models/Business.js";
 import InventoryEntry from "../models/InventoryEntry.js";
-import Product from "../models/Product.js";
-import User from "../models/User.js";
+import Product from "../src/infrastructure/database/models/Product.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 let app;
 

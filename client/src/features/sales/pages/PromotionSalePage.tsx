@@ -15,6 +15,8 @@ import {
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import PromotionSelector from "../../../components/PromotionSelector";
+import type { RegisterPromotionSaleInput } from "../../../core/domain/sales/sales.types";
+import { salesWriteUseCases } from "../../../core/use-cases/sales";
 import { useSession } from "../../../hooks/useSession";
 import { Button, Card } from "../../../shared/components/ui";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -41,10 +43,7 @@ import {
   WarrantySection,
 } from "../components/admin-order";
 import { initialOrderState, orderReducer } from "../reducers/orderReducer";
-import {
-  defectiveProductService,
-  saleService,
-} from "../services/sales.service";
+import { defectiveProductService } from "../services/sales.service";
 import type {
   AdminOrderPayload,
   ProductWithStock,
@@ -681,6 +680,10 @@ export default function PromotionSalePage() {
         payload.branchId = order.locationId;
       }
 
+      if (order.locationType === "distributor" && order.locationId) {
+        payload.distributorId = order.locationId;
+      }
+
       // Add customer if selected
       if (order.customerId) {
         payload.customerId = order.customerId;
@@ -721,13 +724,15 @@ export default function PromotionSalePage() {
           );
         }
 
-        const promotionItems = payload.items.map(item => ({
-          ...item,
-          promotionId: item.promotionId as string,
-        }));
-
-        await saleService.registerPromotionBulk({
-          items: promotionItems,
+        const promotionPayload: RegisterPromotionSaleInput = {
+          items: payload.items.map(item => ({
+            productId: item.productId,
+            promotionId: item.promotionId as string,
+            quantity: item.quantity,
+            salePrice: item.salePrice,
+            isPromotion: true,
+          })),
+          distributorId: payload.distributorId,
           locationType: payload.locationType,
           branchId: payload.branchId,
           paymentMethodId: payload.paymentMethodId,
@@ -738,12 +743,13 @@ export default function PromotionSalePage() {
           saleGroupId: saleGroupId,
           creditDueDate: payload.creditDueDate,
           initialPayment: payload.initialPayment,
-          // Don't send deliveryMethodId - not supported as string
           shippingCost: payload.shippingCost,
           additionalCosts: payload.additionalCosts,
           paymentProof: payload.paymentProof,
           paymentProofMimeType: payload.paymentProofMimeType,
-        });
+        };
+
+        await salesWriteUseCases.registerPromotionBulk(promotionPayload);
 
         totalProcessedItems = payload.items.reduce(
           (sum, item) => sum + item.quantity,
@@ -1023,6 +1029,27 @@ export default function PromotionSalePage() {
                 </span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="mb-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-700/70 bg-slate-900/70 p-3">
+            <p className="text-xs text-slate-400">Paso 1</p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              Elige promociones
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700/70 bg-slate-900/70 p-3">
+            <p className="text-xs text-slate-400">Paso 2</p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              Ajusta pago y entrega
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700/70 bg-slate-900/70 p-3">
+            <p className="text-xs text-slate-400">Paso 3</p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              Confirma la operación
+            </p>
           </div>
         </div>
 

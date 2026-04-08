@@ -7,6 +7,7 @@ import GamificationConfig from "../../../models/GamificationConfig.js";
 import Membership from "../../../models/Membership.js";
 import PaymentMethod from "../../../models/PaymentMethod.js";
 import Promotion from "../../../models/Promotion.js";
+import { getDistributorCommissionInfo } from "../../../utils/distributorPricing.js";
 import { applySaleGamification } from "../../../utils/gamificationEngine.js";
 import { FinanceService } from "../../domain/services/FinanceService.js";
 import { InventoryService } from "../../domain/services/InventoryService.js";
@@ -145,14 +146,28 @@ export class RegisterPromotionSaleUseCase {
 
     // 2. PHASE 1: Validate ALL items BEFORE making any changes
     const validatedItems = [];
-    const distributorCommissionBonus = 0;
+    let distributorCommissionBonus = 0;
     let baseCommissionPercentage = distributorProfitPercentage;
     if (distributorId) {
-      const config = await GamificationConfig.findOne().lean();
-      baseCommissionPercentage = FinanceService.resolveBaseCommissionPercentage(
-        config,
-        distributorProfitPercentage,
+      const commissionInfo = await getDistributorCommissionInfo(
+        distributorId,
+        businessId,
       );
+
+      if (commissionInfo?.isCommissionFixed) {
+        baseCommissionPercentage = Number(commissionInfo.profitPercentage || 0);
+        distributorCommissionBonus = 0;
+      } else {
+        const config = await GamificationConfig.findOne().lean();
+        baseCommissionPercentage =
+          FinanceService.resolveBaseCommissionPercentage(
+            config,
+            distributorProfitPercentage,
+          );
+        distributorCommissionBonus = Number(
+          commissionInfo?.bonusCommission || 0,
+        );
+      }
     }
 
     const discountTotal = Math.max(0, Number(discount || 0));

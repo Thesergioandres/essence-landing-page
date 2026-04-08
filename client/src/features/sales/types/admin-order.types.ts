@@ -185,6 +185,7 @@ export interface AdminOrderPayload {
 
   // Location
   locationType?: LocationType;
+  distributorId?: string;
   branchId?: string; // If selling from branch
 
   // Customer & Payment

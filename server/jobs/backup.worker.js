@@ -31,17 +31,17 @@ import Membership from "../models/Membership.js";
 import Notification from "../models/Notification.js";
 import PaymentMethod from "../models/PaymentMethod.js";
 import PeriodWinner from "../models/PeriodWinner.js";
-import Product from "../models/Product.js";
+import Product from "../src/infrastructure/database/models/Product.js";
 import ProfitHistory from "../models/ProfitHistory.js";
 import Promotion from "../models/Promotion.js";
 import Provider from "../models/Provider.js";
 import RefreshToken from "../models/RefreshToken.js";
-import Sale from "../models/Sale.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
 import Segment from "../models/Segment.js";
 import SpecialSale from "../models/SpecialSale.js";
 import Stock from "../models/Stock.js";
 import StockTransfer from "../models/StockTransfer.js";
-import User from "../models/User.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 dotenv.config();
 

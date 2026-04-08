@@ -1,7 +1,7 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import connectDB from "../config/database.js";
-import Sale from "../models/Sale.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
 
 const business = process.argv[2];
 const startArg = process.argv[3];

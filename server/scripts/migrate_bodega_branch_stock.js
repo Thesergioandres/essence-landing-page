@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 
 import Branch from "../models/Branch.js";
 import BranchStock from "../models/BranchStock.js";
-import Product from "../models/Product.js";
+import Product from "../src/infrastructure/database/models/Product.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

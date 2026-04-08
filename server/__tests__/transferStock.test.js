@@ -15,8 +15,8 @@ import Business from "../models/Business.js";
 import Category from "../models/Category.js";
 import DistributorStock from "../models/DistributorStock.js";
 import Membership from "../models/Membership.js";
-import Product from "../models/Product.js";
-import User from "../models/User.js";
+import Product from "../src/infrastructure/database/models/Product.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 describe("Stock Transfer Between Distributors Tests", () => {
   let app;

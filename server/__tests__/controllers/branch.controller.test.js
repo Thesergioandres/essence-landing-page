@@ -15,7 +15,7 @@ jest.mock("../../config/redis.js", () => ({
 }));
 
 const { default: app } = await import("../../server.js");
-const { default: User } = await import("../../models/User.js");
+const { default: User } = await import("../../src/infrastructure/database/models/User.js");
 const { default: Business } = await import("../../models/Business.js");
 const { default: Branch } = await import("../../models/Branch.js");
 const { default: Membership } = await import("../../models/Membership.js");

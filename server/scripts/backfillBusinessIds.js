@@ -5,13 +5,13 @@ import Category from "../models/Category.js";
 import DistributorStock from "../models/DistributorStock.js";
 import Expense from "../models/Expense.js";
 import Membership from "../models/Membership.js";
-import Product from "../models/Product.js";
+import Product from "../src/infrastructure/database/models/Product.js";
 import ProfitHistory from "../models/ProfitHistory.js";
-import Sale from "../models/Sale.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
 import SpecialSale from "../models/SpecialSale.js";
 import Stock from "../models/Stock.js";
 import StockTransfer from "../models/StockTransfer.js";
-import User from "../models/User.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 dotenv.config();
 

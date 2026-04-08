@@ -1,8 +1,8 @@
 import Membership from "../../../../models/Membership.js";
-import Product from "../../../../models/Product.js";
+import Product from "../../database/models/Product.js";
 import ProfitHistory from "../../../../models/ProfitHistory.js";
 import Promotion from "../../../../models/Promotion.js";
-import Sale from "../../../../models/Sale.js";
+import Sale from "../../database/models/Sale.js";
 import { applySaleGamification } from "../../../../utils/gamificationEngine.js";
 import {
   buildPromotionSalesSummary,

@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../../api/axios";
+import { useBusiness } from "../../../context/BusinessContext";
+import { useBrandLogo } from "../../../hooks/useBrandLogo";
 import { LoadingSpinner } from "../../../shared/components/ui";
+import { exportCatalogToPDF } from "../../../utils/exportUtils";
 import type { Product } from "../../inventory/types/product.types";
 
 interface DistributorInfo {
@@ -11,12 +14,20 @@ interface DistributorInfo {
 }
 
 export default function PublicDistributorCatalog() {
+  const { business } = useBusiness();
+  const brandLogo = useBrandLogo();
+
   const { distributorId } = useParams<{ distributorId: string }>();
   const [products, setProducts] = useState<Product[]>([]);
   const [distributor, setDistributor] = useState<DistributorInfo | null>(null);
+  const [catalogBusiness, setCatalogBusiness] = useState<{
+    name?: string;
+    logoUrl?: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isExportingCatalog, setIsExportingCatalog] = useState(false);
 
   const shareUrl = useMemo(
     () => (typeof window !== "undefined" ? window.location.href : ""),
@@ -33,6 +44,7 @@ export default function PublicDistributorCatalog() {
         );
         setProducts(response.data.products || []);
         setDistributor(response.data.distributor || null);
+        setCatalogBusiness(response.data.business || null);
       } catch (err: any) {
         setError("No se pudo cargar el catálogo");
         console.error(err);
@@ -113,6 +125,55 @@ export default function PublicDistributorCatalog() {
     }
   };
 
+  const resolveProductFlavor = (product: Product) => {
+    const candidate =
+      ((product as any)?.flavor as string | undefined) ||
+      ((product as any)?.sabor as string | undefined) ||
+      ((product as any)?.variant as string | undefined) ||
+      null;
+
+    return candidate?.trim() || null;
+  };
+
+  const handleExportCatalog = async () => {
+    if (products.length === 0) {
+      window.alert("No hay productos disponibles para exportar.");
+      return;
+    }
+
+    setIsExportingCatalog(true);
+    try {
+      await exportCatalogToPDF(
+        products.map(product => ({
+          name: product.name,
+          flavor: resolveProductFlavor(product),
+          description: product.description || "",
+          clientPrice: getPublicPrice(product),
+          image: product.image?.url || null,
+        })),
+        {
+          businessName:
+            catalogBusiness?.name?.trim() ||
+            business?.name ||
+            `Catalogo de ${distributor?.name || "distribuidor"}`,
+          logoUrl:
+            catalogBusiness?.logoUrl?.trim() ||
+            business?.logoUrl?.trim() ||
+            brandLogo,
+          title: "Catalogo de Venta",
+        }
+      );
+    } catch (exportError) {
+      console.error(
+        "Error exporting public distributor catalog PDF",
+        exportError
+      );
+      window.alert("No se pudo generar el catálogo PDF.");
+    } finally {
+      setIsExportingCatalog(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0f1210]">
@@ -161,6 +222,32 @@ export default function PublicDistributorCatalog() {
                 className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-400"
               >
                 Compartir catalogo
+              </button>
+              <button
+                onClick={handleExportCatalog}
+                disabled={isExportingCatalog || products.length === 0}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cyan-400/40 bg-cyan-500/15 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 3h7l5 5v12a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zm7 1v4h4"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 13h6M9 17h6"
+                  />
+                </svg>
+                {isExportingCatalog ? "Generando PDF..." : "Descargar PDF"}
               </button>
               {copiedLink && (
                 <span className="text-xs text-emerald-300">
@@ -240,6 +327,37 @@ export default function PublicDistributorCatalog() {
           </div>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={handleExportCatalog}
+        disabled={isExportingCatalog || products.length === 0}
+        className="fixed bottom-5 right-5 z-40 inline-flex min-h-11 items-center gap-2 rounded-full border border-cyan-300/50 bg-cyan-500/90 px-4 py-3 text-sm font-semibold text-slate-950 shadow-xl shadow-cyan-500/30 backdrop-blur-sm transition hover:scale-[1.02] hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 3h7l5 5v12a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zm7 1v4h4"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 13h6M9 17h6"
+          />
+        </svg>
+        <span className="hidden sm:inline">
+          {isExportingCatalog ? "Generando PDF..." : "Catalogo PDF"}
+        </span>
+        <span className="sm:hidden">PDF</span>
+      </button>
 
       {/* Footer */}
       <div className="border-t border-white/10 bg-white/5 py-6 backdrop-blur-sm">

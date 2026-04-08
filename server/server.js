@@ -8,7 +8,9 @@ import swaggerSpec from "./config/swagger.config.js";
 import { startBackupWorker } from "./jobs/backup.worker.js";
 import { startBusinessAssistantWorker } from "./jobs/businessAssistant.worker.js";
 import { startDebtNotificationWorker } from "./jobs/debtNotification.worker.js";
+import { startDemoCleanupWorker } from "./jobs/demoCleanup.worker.js";
 import { errorHandler } from "./middleware/errorHandler.middleware.js";
+import { financialShield } from "./middleware/financialShield.middleware.js";
 import {
   apiLimiter,
   uploadLimiter,
@@ -66,6 +68,8 @@ import advancedAnalyticsRoutesV2 from "./src/infrastructure/http/routes/advanced
 import auditRoutesV2 from "./src/infrastructure/http/routes/audit.routes.v2.js";
 import branchTransferRoutesV2 from "./src/infrastructure/http/routes/branchTransfer.routes.v2.js";
 import defectiveProductRoutesV2 from "./src/infrastructure/http/routes/defectiveProduct.routes.v2.js";
+import demoRoutesV2 from "./src/infrastructure/http/routes/demo.routes.v2.js";
+import dispatchRoutesV2 from "./src/infrastructure/http/routes/dispatch.routes.v2.js";
 import issueRoutesV2 from "./src/infrastructure/http/routes/issue.routes.v2.js";
 import notificationRoutesV2 from "./src/infrastructure/http/routes/notification.routes.v2.js";
 import promotionRoutesV2 from "./src/infrastructure/http/routes/promotion.routes.v2.js";
@@ -151,6 +155,10 @@ if (
   startBackupWorker();
 }
 
+if (process.env.NODE_ENV !== "test") {
+  startDemoCleanupWorker();
+}
+
 // Compression middleware (debe ir antes de las rutas)
 app.use(
   compression({
@@ -227,6 +235,9 @@ app.options("*", cors());
 // Logging de request/res con requestId
 app.use(requestLogger);
 
+// Blindaje financiero global: nullifica costos sensibles si el usuario no tiene view_costs
+app.use(financialShield);
+
 // Rutas
 app.get("/", (req, res) => {
   res.json({
@@ -272,6 +283,7 @@ app.get("/api/v2/global-settings/public", async (_req, res) => {
 //  V2 ROUTES (Hexagonal Architecture - Production Ready)
 // ============================================================================
 app.use("/api/v2/auth", authRoutesV2);
+app.use("/api/v2/demo", demoRoutesV2);
 app.use("/api/v2/branches", branchRoutesV2);
 app.use("/api/v2/business", businessRoutesV2);
 app.use("/api/v2/business-assistant", businessAssistantRoutesV2);
@@ -298,6 +310,7 @@ app.use("/api/v2/advanced-analytics", advancedAnalyticsRoutesV2);
 app.use("/api/v2/audit", auditRoutesV2);
 app.use("/api/v2/branch-transfers", branchTransferRoutesV2);
 app.use("/api/v2/defective-products", defectiveProductRoutesV2);
+app.use("/api/v2/dispatches", dispatchRoutesV2);
 app.use("/api/v2/issues", issueRoutesV2);
 app.use("/api/v2/notifications", notificationRoutesV2);
 app.use("/api/v2/promotions", promotionRoutesV2);

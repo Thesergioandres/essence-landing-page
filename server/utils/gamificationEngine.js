@@ -1,6 +1,6 @@
 import DistributorStats from "../models/DistributorStats.js";
 import GamificationConfig from "../models/GamificationConfig.js";
-import Sale from "../models/Sale.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
 
 const DEFAULT_LEVELS = [
   { id: 1, name: "Novato", minPoints: 0, benefits: { commissionBonus: 0 } },

@@ -1,6 +1,7 @@
 // Shared UI Components - Generic, domain-agnostic components
 export { Button } from "./Button";
 export { Card, CardContent, CardFooter, CardHeader } from "./Card";
+export { default as ConfidentialBadge } from "./ConfidentialBadge";
 export { default as ErrorBoundary } from "./ErrorBoundary";
 export { Input } from "./Input";
 export { default as LoadingOverlay } from "./LoadingOverlay";

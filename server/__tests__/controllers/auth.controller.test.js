@@ -14,7 +14,7 @@ jest.mock("../../config/redis.js", () => ({
 }));
 
 const { default: app } = await import("../../server.js");
-const { default: User } = await import("../../models/User.js");
+const { default: User } = await import("../../src/infrastructure/database/models/User.js");
 const { default: RefreshToken } = await import("../../models/RefreshToken.js");
 
 describe("Auth Controller", () => {

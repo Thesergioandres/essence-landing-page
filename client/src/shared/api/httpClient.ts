@@ -51,8 +51,15 @@ const logApiError = (error: AxiosError) => {
   const method = error.config?.method;
   const isPublicSettingsEndpoint =
     typeof url === "string" && url.includes("/global-settings/public");
+  const isExpectedForbiddenEndpoint =
+    status === 403 &&
+    typeof url === "string" &&
+    (url.includes("/advanced-analytics/") || url.startsWith("/providers"));
 
   if (status === 401 && isPublicSettingsEndpoint) {
+    return;
+  }
+  if (isExpectedForbiddenEndpoint) {
     return;
   }
   //   const requestId =

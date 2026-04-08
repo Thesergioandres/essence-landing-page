@@ -1,11 +1,12 @@
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
+import Business from "../../../../models/Business.js";
 import DistributorStock from "../../../../models/DistributorStock.js";
 import Membership from "../../../../models/Membership.js";
-import Product from "../../../../models/Product.js";
 import Promotion from "../../../../models/Promotion.js";
-import Sale from "../../../../models/Sale.js";
-import User from "../../../../models/User.js";
+import Product from "../models/Product.js";
+import Sale from "../models/Sale.js";
+import User from "../models/User.js";
 
 export class DistributorRepository {
   async create(data, businessId) {
@@ -418,12 +419,15 @@ export class DistributorRepository {
       throw err;
     }
 
-    const distributor = await User.findOne({
-      _id: distributorId,
-      role: "distribuidor",
-    })
-      .select("name email phone")
-      .lean();
+    const [distributor, business] = await Promise.all([
+      User.findOne({
+        _id: distributorId,
+        role: "distribuidor",
+      })
+        .select("name email phone")
+        .lean(),
+      Business.findById(membership.business).select("name logoUrl").lean(),
+    ]);
 
     if (!distributor) {
       const err = new Error("Distribuidor no encontrado");
@@ -451,6 +455,16 @@ export class DistributorRepository {
         totalStock: entry.quantity,
       }));
 
-    return { distributor, products };
+    return {
+      distributor,
+      products,
+      business: business
+        ? {
+            _id: business._id,
+            name: business.name,
+            logoUrl: business.logoUrl || null,
+          }
+        : null,
+    };
   }
 }

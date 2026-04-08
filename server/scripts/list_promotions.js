@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import "../models/Product.js";
+import "../src/infrastructure/database/models/Product.js";
 import Promotion from "../models/Promotion.js";
 
 const __filename = fileURLToPath(import.meta.url);

@@ -2,8 +2,8 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 
 import ProfitHistory from "../models/ProfitHistory.js";
-import Sale from "../models/Sale.js";
-import User from "../models/User.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
+import User from "../src/infrastructure/database/models/User.js";
 import {
   recalculateUserBalance,
   recordProfitHistory,

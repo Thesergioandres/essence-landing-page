@@ -3,9 +3,9 @@ import BranchStock from "../../../../models/BranchStock.js";
 import DefectiveProduct from "../../../../models/DefectiveProduct.js";
 import DistributorStock from "../../../../models/DistributorStock.js";
 import Membership from "../../../../models/Membership.js";
-import Product from "../../../../models/Product.js";
+import Product from "../models/Product.js";
 import ProfitHistory from "../../../../models/ProfitHistory.js";
-import Sale from "../../../../models/Sale.js";
+import Sale from "../models/Sale.js";
 import expenseRepository from "./ExpenseRepository.js";
 import ProfitHistoryRepository from "./ProfitHistoryRepository.js";
 

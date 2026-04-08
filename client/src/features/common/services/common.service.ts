@@ -101,6 +101,33 @@ interface BusinessSubscriptionRow {
   limits: BusinessPlanSnapshot | null;
 }
 
+const resolveEntityId = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "[object Object]") {
+      return null;
+    }
+    return trimmed;
+  }
+
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as {
+    _id?: unknown;
+    id?: unknown;
+    $oid?: unknown;
+  };
+
+  return (
+    resolveEntityId(candidate._id) ||
+    resolveEntityId(candidate.id) ||
+    resolveEntityId(candidate.$oid) ||
+    null
+  );
+};
+
 // ==================== UPLOAD SERVICE ====================
 export const uploadService = {
   async uploadImage(file: File): Promise<ProductImage> {
@@ -378,8 +405,13 @@ export const gamificationService = {
     distributorId: string,
     params?: { recalculate?: boolean }
   ): Promise<DistributorStatsResponse> {
+    const resolvedDistributorId = resolveEntityId(distributorId);
+    if (!resolvedDistributorId) {
+      throw new Error("Identificador de distribuidor inválido");
+    }
+
     const response = await api.get<DistributorStatsResponse>(
-      `/gamification/stats/${distributorId}`,
+      `/gamification/stats/${resolvedDistributorId}`,
       {
         params: params?.recalculate ? { recalculate: "true" } : undefined,
       }
@@ -443,7 +475,14 @@ export const gamificationService = {
     periodEnd: string;
     totalDistributors: number;
   }> {
-    const response = await api.get(`/gamification/commission/${distributorId}`);
+    const resolvedDistributorId = resolveEntityId(distributorId);
+    if (!resolvedDistributorId) {
+      throw new Error("Identificador de distribuidor inválido");
+    }
+
+    const response = await api.get(
+      `/gamification/commission/${resolvedDistributorId}`
+    );
     return (response.data as any)?.data ?? response.data;
   },
 

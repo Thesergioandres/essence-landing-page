@@ -596,6 +596,9 @@ export const analyticsService = {
 };
 
 // ==================== ADVANCED ANALYTICS SERVICE ====================
+const isForbiddenError = (error: unknown) =>
+  (error as { response?: { status?: number } })?.response?.status === 403;
+
 export const advancedAnalyticsService = {
   // ===== Sales & Revenue Analytics =====
   async getSalesTimeline(params?: {
@@ -618,21 +621,36 @@ export const advancedAnalyticsService = {
       peakSales: number;
     };
   }> {
-    const response = await api.get("/advanced-analytics/sales-timeline", {
-      params,
-    });
-    // El backend retorna {success: true, data: {timeline: [...], summary: {...}}}
-    const data = response.data.data || response.data;
-    return {
-      timeline: data?.timeline || [],
-      summary: data?.summary || {
-        totalSales: 0,
-        totalRevenue: 0,
-        totalProfit: 0,
-        peakDate: "",
-        peakSales: 0,
-      },
-    };
+    try {
+      const response = await api.get("/advanced-analytics/sales-timeline", {
+        params,
+      });
+      const data = response.data.data || response.data;
+      return {
+        timeline: data?.timeline || [],
+        summary: data?.summary || {
+          totalSales: 0,
+          totalRevenue: 0,
+          totalProfit: 0,
+          peakDate: "",
+          peakSales: 0,
+        },
+      };
+    } catch (error) {
+      if (isForbiddenError(error)) {
+        return {
+          timeline: [],
+          summary: {
+            totalSales: 0,
+            totalRevenue: 0,
+            totalProfit: 0,
+            peakDate: "",
+            peakSales: 0,
+          },
+        };
+      }
+      throw error;
+    }
   },
 
   async getSalesByCategory(params?: {
@@ -647,39 +665,46 @@ export const advancedAnalyticsService = {
       quantity: number;
     }>;
   }> {
-    const response = await api.get("/advanced-analytics/sales-by-category", {
-      params,
-    });
-    // El backend retorna {success: true, data: [...]}
-    // Cada item tiene: {category, sales, revenue, profit, quantity}
-    console.log("[getSalesByCategory] response.data:", response.data);
-    const rawData = response.data.data || response.data || [];
-    console.log("[getSalesByCategory] rawData:", rawData);
-    const data = Array.isArray(rawData) ? rawData : [];
+    try {
+      const response = await api.get("/advanced-analytics/sales-by-category", {
+        params,
+      });
+      console.log("[getSalesByCategory] response.data:", response.data);
+      const rawData = response.data.data || response.data || [];
+      console.log("[getSalesByCategory] rawData:", rawData);
+      const data = Array.isArray(rawData) ? rawData : [];
 
-    // Transformar para que coincida con lo que espera el componente
-    const categories = data.map((item: any) => {
-      const transformed = {
-        name: item.category || "Sin categoría",
-        category: item.category || "Sin categoría",
-        totalSales: item.sales || 0,
-        sales: item.sales || 0,
-        totalRevenue: item.revenue || 0,
-        revenue: item.revenue || 0,
-        profit: item.profit || 0,
-        quantity: item.quantity || 0,
-      };
+      const categories = data.map((item: any) => {
+        const transformed = {
+          name: item.category || "Sin categoría",
+          category: item.category || "Sin categoría",
+          totalSales: item.sales || 0,
+          sales: item.sales || 0,
+          totalRevenue: item.revenue || 0,
+          revenue: item.revenue || 0,
+          profit: item.profit || 0,
+          quantity: item.quantity || 0,
+        };
+        console.log(
+          "[getSalesByCategory] item:",
+          item,
+          "-> transformed:",
+          transformed
+        );
+        return transformed;
+      });
+
       console.log(
-        "[getSalesByCategory] item:",
-        item,
-        "-> transformed:",
-        transformed
+        "[getSalesByCategory] categories after transform:",
+        categories
       );
-      return transformed;
-    });
-
-    console.log("[getSalesByCategory] categories after transform:", categories);
-    return { categories };
+      return { categories };
+    } catch (error) {
+      if (isForbiddenError(error)) {
+        return { categories: [] };
+      }
+      throw error;
+    }
   },
 
   async getSalesFunnel(params?: {
@@ -698,10 +723,24 @@ export const advancedAnalyticsService = {
       overallConversionRate: number;
     };
   }> {
-    const response = await api.get("/advanced-analytics/sales-funnel", {
-      params,
-    });
-    return response.data.data;
+    try {
+      const response = await api.get("/advanced-analytics/sales-funnel", {
+        params,
+      });
+      return response.data.data;
+    } catch (error) {
+      if (isForbiddenError(error)) {
+        return {
+          funnel: [],
+          summary: {
+            totalLeads: 0,
+            totalConversions: 0,
+            overallConversionRate: 0,
+          },
+        };
+      }
+      throw error;
+    }
   },
 
   // ===== Product Analytics =====
@@ -721,43 +760,47 @@ export const advancedAnalyticsService = {
       rank: number;
     }>;
   }> {
-    const response = await api.get("/advanced-analytics/top-products", {
-      params,
-    });
-    // El backend retorna {success: true, data: [...]}
-    // Cada item tiene: {_id, totalQuantity, totalRevenue, totalProfit, product: {...}}
-    console.log("[getTopProducts] response.data:", response.data);
-    const rawData = response.data.data || response.data || [];
-    console.log("[getTopProducts] rawData:", rawData);
-    const data = Array.isArray(rawData) ? rawData : [];
-    console.log("[getTopProducts] data after isArray check:", data);
+    try {
+      const response = await api.get("/advanced-analytics/top-products", {
+        params,
+      });
+      console.log("[getTopProducts] response.data:", response.data);
+      const rawData = response.data.data || response.data || [];
+      console.log("[getTopProducts] rawData:", rawData);
+      const data = Array.isArray(rawData) ? rawData : [];
+      console.log("[getTopProducts] data after isArray check:", data);
 
-    // Transformar para que coincida con lo que espera el componente
-    const topProducts = data.map((item: any, index: number) => {
-      const transformed = {
-        productId: item._id || item.productId,
-        name: item.product?.name || item.name || "Sin nombre",
-        category:
-          item.product?.category?.name ||
-          item.product?.category ||
-          item.category ||
-          "Sin categoría",
-        quantity: item.totalQuantity || 0,
-        revenue: item.totalRevenue || 0,
-        rank: index + 1,
-        profit: item.totalProfit || 0,
-      };
-      console.log(
-        "[getTopProducts] item:",
-        item,
-        "-> transformed:",
-        transformed
-      );
-      return transformed;
-    });
+      const topProducts = data.map((item: any, index: number) => {
+        const transformed = {
+          productId: item._id || item.productId,
+          name: item.product?.name || item.name || "Sin nombre",
+          category:
+            item.product?.category?.name ||
+            item.product?.category ||
+            item.category ||
+            "Sin categoría",
+          quantity: item.totalQuantity || 0,
+          revenue: item.totalRevenue || 0,
+          rank: index + 1,
+          profit: item.totalProfit || 0,
+        };
+        console.log(
+          "[getTopProducts] item:",
+          item,
+          "-> transformed:",
+          transformed
+        );
+        return transformed;
+      });
 
-    console.log("[getTopProducts] topProducts after transform:", topProducts);
-    return { topProducts };
+      console.log("[getTopProducts] topProducts after transform:", topProducts);
+      return { topProducts };
+    } catch (error) {
+      if (isForbiddenError(error)) {
+        return { topProducts: [] };
+      }
+      throw error;
+    }
   },
 
   async getProductRotation(params?: {
@@ -775,30 +818,35 @@ export const advancedAnalyticsService = {
       rotationRate: number;
     }>;
   }> {
-    const response = await api.get("/advanced-analytics/product-rotation", {
-      params,
-    });
-    // El backend retorna {success: true, data: [...]}
-    console.log("[getProductRotation] response.data:", response.data);
-    const rawData = response.data.data || response.data || [];
-    console.log("[getProductRotation] rawData:", rawData);
-    const data = Array.isArray(rawData) ? rawData : [];
+    try {
+      const response = await api.get("/advanced-analytics/product-rotation", {
+        params,
+      });
+      console.log("[getProductRotation] response.data:", response.data);
+      const rawData = response.data.data || response.data || [];
+      console.log("[getProductRotation] rawData:", rawData);
+      const data = Array.isArray(rawData) ? rawData : [];
 
-    // Transformar para que coincida con lo que espera el componente
-    const productRotation = data.map((item: any) => ({
-      _id: item.productId || item._id,
-      name: item.productName || item.name || "Sin nombre",
-      totalSold: item.totalQuantity || 0,
-      frequency: item.salesCount || 0,
-      currentStock: 0, // El backend no devuelve esto, necesitamos agregarlo
-      rotationRate: item.rotationRate || 0,
-    }));
+      const productRotation = data.map((item: any) => ({
+        _id: item.productId || item._id,
+        name: item.productName || item.name || "Sin nombre",
+        totalSold: item.totalQuantity || 0,
+        frequency: item.salesCount || 0,
+        currentStock: 0,
+        rotationRate: item.rotationRate || 0,
+      }));
 
-    console.log(
-      "[getProductRotation] productRotation after transform:",
-      productRotation
-    );
-    return { productRotation };
+      console.log(
+        "[getProductRotation] productRotation after transform:",
+        productRotation
+      );
+      return { productRotation };
+    } catch (error) {
+      if (isForbiddenError(error)) {
+        return { productRotation: [] };
+      }
+      throw error;
+    }
   },
 
   /**
@@ -1087,10 +1135,39 @@ export const advancedAnalyticsService = {
       };
     };
   }> {
-    const response = await api.get("/advanced-analytics/financial-kpis", {
-      params,
-    });
-    return response.data.data;
+    try {
+      const response = await api.get("/advanced-analytics/financial-kpis", {
+        params,
+      });
+      return response.data.data;
+    } catch (error) {
+      if (isForbiddenError(error)) {
+        return {
+          kpis: {
+            revenue: 0,
+            profit: 0,
+            profitMargin: 0,
+            averageOrderValue: 0,
+            ordersCount: 0,
+            customersCount: 0,
+            returnRate: 0,
+          },
+          trends: {
+            revenueTrend: 0,
+            profitTrend: 0,
+            ordersTrend: 0,
+          },
+          comparison: {
+            vsPreviousPeriod: {
+              revenue: 0,
+              profit: 0,
+              orders: 0,
+            },
+          },
+        };
+      }
+      throw error;
+    }
   },
 
   async getComparativeAnalysis(): Promise<{
@@ -1119,8 +1196,51 @@ export const advancedAnalyticsService = {
       };
     };
   }> {
-    const response = await api.get("/advanced-analytics/comparative");
-    return response.data.data;
+    try {
+      const response = await api.get("/advanced-analytics/comparative");
+      return response.data.data;
+    } catch (error) {
+      if (isForbiddenError(error)) {
+        return {
+          periods: [],
+          comparison: {
+            currentMonth: {
+              sales: 0,
+              revenue: 0,
+              profit: 0,
+            },
+            previousMonth: {
+              sales: 0,
+              revenue: 0,
+              profit: 0,
+            },
+            growth: {
+              salesGrowth: 0,
+              revenueGrowth: 0,
+              profitGrowth: 0,
+            },
+          },
+          comparisons: {
+            currentMonth: {
+              sales: 0,
+              revenue: 0,
+              profit: 0,
+            },
+            previousMonth: {
+              sales: 0,
+              revenue: 0,
+              profit: 0,
+            },
+            growth: {
+              salesGrowth: 0,
+              revenueGrowth: 0,
+              profitGrowth: 0,
+            },
+          },
+        } as any;
+      }
+      throw error;
+    }
   },
 
   // ===== Distributor Analytics =====
@@ -1147,49 +1267,66 @@ export const advancedAnalyticsService = {
       endDate: string;
     };
   }> {
-    const response = await api.get("/advanced-analytics/distributor-rankings", {
-      params,
-    });
-    const payload =
-      response.data?.data ?? response.data?.rankings ?? response.data;
-    const rawRankings = Array.isArray(payload)
-      ? payload
-      : Array.isArray(payload?.rankings)
-        ? payload.rankings
-        : [];
-
-    const rankings = rawRankings.map((item: any, index: number) => {
-      const totalSales = Number(
-        item.totalSales ?? item.salesCount ?? item.sales ?? 0
+    try {
+      const response = await api.get(
+        "/advanced-analytics/distributor-rankings",
+        {
+          params,
+        }
       );
-      const totalRevenue = Number(item.totalRevenue ?? item.revenue ?? 0);
-      const totalProfit = Number(item.totalProfit ?? item.profit ?? 0);
-      const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
-      const conversionRate = Number(item.conversionRate ?? 0);
+      const payload =
+        response.data?.data ?? response.data?.rankings ?? response.data;
+      const rawRankings = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.rankings)
+          ? payload.rankings
+          : [];
 
-      return {
-        rank: index + 1,
-        distributorId: item.distributorId || item._id,
-        distributorName: item.distributorName || item.name || "Sin nombre",
-        distributorEmail: item.distributorEmail || item.email || "",
-        totalSales,
-        revenue: totalRevenue,
-        profit: totalProfit,
-        conversionRate,
-        averageOrderValue: Number(
-          item.avgOrderValue ?? item.averageOrderValue ?? averageOrderValue
-        ),
-        change: Number(item.change ?? 0) || 0,
-      };
-    });
+      const rankings = rawRankings.map((item: any, index: number) => {
+        const totalSales = Number(
+          item.totalSales ?? item.salesCount ?? item.sales ?? 0
+        );
+        const totalRevenue = Number(item.totalRevenue ?? item.revenue ?? 0);
+        const totalProfit = Number(item.totalProfit ?? item.profit ?? 0);
+        const averageOrderValue =
+          totalSales > 0 ? totalRevenue / totalSales : 0;
+        const conversionRate = Number(item.conversionRate ?? 0);
 
-    const period = response.data?.period ||
-      response.data?.data?.period || {
-        startDate: params?.startDate || "",
-        endDate: params?.endDate || "",
-      };
+        return {
+          rank: index + 1,
+          distributorId: item.distributorId || item._id,
+          distributorName: item.distributorName || item.name || "Sin nombre",
+          distributorEmail: item.distributorEmail || item.email || "",
+          totalSales,
+          revenue: totalRevenue,
+          profit: totalProfit,
+          conversionRate,
+          averageOrderValue: Number(
+            item.avgOrderValue ?? item.averageOrderValue ?? averageOrderValue
+          ),
+          change: Number(item.change ?? 0) || 0,
+        };
+      });
 
-    return { rankings, period };
+      const period = response.data?.period ||
+        response.data?.data?.period || {
+          startDate: params?.startDate || "",
+          endDate: params?.endDate || "",
+        };
+
+      return { rankings, period };
+    } catch (error) {
+      if (isForbiddenError(error)) {
+        return {
+          rankings: [],
+          period: {
+            startDate: params?.startDate || "",
+            endDate: params?.endDate || "",
+          },
+        };
+      }
+      throw error;
+    }
   },
 
   // ===== Inventory Visual Analytics =====
@@ -1208,8 +1345,23 @@ export const advancedAnalyticsService = {
       totalAlerts: number;
     };
   }> {
-    const response = await api.get("/advanced-analytics/low-stock-visual");
-    return response.data;
+    try {
+      const response = await api.get("/advanced-analytics/low-stock-visual");
+      return response.data;
+    } catch (error) {
+      if (isForbiddenError(error)) {
+        return {
+          alerts: [],
+          lowStockProducts: [],
+          summary: {
+            criticalCount: 0,
+            warningCount: 0,
+            totalAlerts: 0,
+          },
+        } as any;
+      }
+      throw error;
+    }
   },
 };
 

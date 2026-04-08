@@ -14,8 +14,8 @@ import Branch from "../models/Branch.js";
 import BranchStock from "../models/BranchStock.js";
 import BranchTransfer from "../models/BranchTransfer.js";
 import Business from "../models/Business.js";
-import Product from "../models/Product.js";
-import User from "../models/User.js";
+import Product from "../src/infrastructure/database/models/Product.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 // Tests de integración para el módulo de transferencias entre sedes
 // Usa MongoMemoryServer para aislar la base de datos.

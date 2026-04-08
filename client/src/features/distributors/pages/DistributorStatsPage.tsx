@@ -1,9 +1,16 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { gsap } from "gsap";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  SalesTimelineChart,
+  TopProductsChart,
+} from "../../../components/charts";
+import { ConfidentialBadge } from "../../../shared/components/ui";
 import { analyticsService } from "../../analytics/services";
 import type {
   GamificationConfig,
   RankingEntry,
 } from "../../analytics/types/gamification.types";
+import { useFinancialPrivacy } from "../../auth/utils/financialPrivacy";
 import { gamificationService } from "../../common/services";
 import { saleService } from "../../sales/services";
 import type { Sale } from "../../sales/types/sales.types";
@@ -30,11 +37,31 @@ interface DistributorEstimate {
   investment: number;
   salesValue: number;
   profitMargin: string;
-  profitability?: number; // Ganancia / Ventas × 100
+  profitability?: number;
   products: EstimatedProfitProduct[];
 }
 
+interface AnimatedReportMetrics {
+  totalSales: number;
+  totalSoldAmount: number;
+  netCommission: number;
+  avgTicket: number;
+}
+
+interface ProductSalesItem {
+  productId: string;
+  productName: string;
+  category: string;
+  quantity: number;
+  revenue: number;
+  profit: number;
+}
+
 export default function DistributorStats() {
+  const { hideFinancialData, isDistributorRole, canViewCosts } =
+    useFinancialPrivacy();
+  const pageRef = useRef<HTMLDivElement | null>(null);
+
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState(() => {
@@ -59,6 +86,14 @@ export default function DistributorStats() {
   const [rankingData, setRankingData] = useState<RankingEntry[]>([]);
   const [gamificationConfig, setGamificationConfig] =
     useState<GamificationConfig | null>(null);
+  const [animatedMetrics, setAnimatedMetrics] = useState<AnimatedReportMetrics>(
+    {
+      totalSales: 0,
+      totalSoldAmount: 0,
+      netCommission: 0,
+      avgTicket: 0,
+    }
+  );
 
   const loadStats = React.useCallback(async () => {
     try {
@@ -121,7 +156,7 @@ export default function DistributorStats() {
     try {
       setLoadingEstimated(true);
       const response = await analyticsService.getDistributorEstimatedProfit();
-      setEstimatedProfit(response.estimatedProfit as any);
+      setEstimatedProfit(response.estimatedProfit as DistributorEstimate);
     } catch (error) {
       console.error("Error al cargar ganancia estimada:", error);
     } finally {
@@ -146,15 +181,15 @@ export default function DistributorStats() {
   }, []);
 
   useEffect(() => {
-    loadStats();
-  }, [dateRange.endDate, dateRange.startDate, loadStats]);
+    void loadStats();
+  }, [loadStats]);
 
   useEffect(() => {
-    loadEstimatedProfit();
+    void loadEstimatedProfit();
   }, [loadEstimatedProfit]);
 
   useEffect(() => {
-    loadRanking();
+    void loadRanking();
   }, [loadRanking]);
 
   const formatCurrency = (value: number) => {
@@ -185,12 +220,12 @@ export default function DistributorStats() {
     });
   };
 
-  // Calcular estadísticas
   const totalSales = sales.length;
   const totalRevenue = sales.reduce(
     (sum, sale) => sum + sale.salePrice * sale.quantity,
     0
   );
+  const totalUnits = sales.reduce((sum, sale) => sum + sale.quantity, 0);
   const totalProfit = sales.reduce(
     (sum, sale) => sum + (sale.distributorProfit || 0),
     0
@@ -213,46 +248,132 @@ export default function DistributorStats() {
     : 0;
   const deltaAvgSale = calculateDelta(avgSaleValue, previousAvgSale);
 
-  // Productos más vendidos
-  const productSales = sales.reduce(
-    (acc, sale) => {
-      const product = typeof sale.product === "object" ? sale.product : null;
-      if (!product) return acc;
+  const canViewOwnDistributorEarnings = isDistributorRole || !hideFinancialData;
+  const canViewOwnMonetaryMetrics = isDistributorRole || !hideFinancialData;
+  const canViewAdminFinancials =
+    !hideFinancialData && canViewCosts && !isDistributorRole;
+
+  useEffect(() => {
+    if (loading) return;
+
+    const counters = {
+      totalSales: 0,
+      totalSoldAmount: 0,
+      netCommission: 0,
+      avgTicket: 0,
+    };
+
+    const context = gsap.context(() => {
+      gsap.fromTo(
+        ".report-glass-card",
+        { autoAlpha: 0, y: 24, scale: 0.98 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.62,
+          ease: "power3.out",
+          stagger: 0.1,
+          overwrite: "auto",
+        }
+      );
+
+      gsap.fromTo(
+        ".report-panel",
+        { autoAlpha: 0, y: 28 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.7,
+          ease: "power3.out",
+          stagger: 0.12,
+          overwrite: "auto",
+        }
+      );
+
+      gsap.to(counters, {
+        totalSales,
+        totalSoldAmount: totalRevenue,
+        netCommission,
+        avgTicket: avgSaleValue,
+        duration: 1.15,
+        ease: "power3.out",
+        onUpdate: () => {
+          setAnimatedMetrics({
+            totalSales: Math.round(counters.totalSales),
+            totalSoldAmount: counters.totalSoldAmount,
+            netCommission: counters.netCommission,
+            avgTicket: counters.avgTicket,
+          });
+        },
+      });
+    }, pageRef);
+
+    return () => {
+      context.revert();
+    };
+  }, [avgSaleValue, loading, netCommission, totalRevenue, totalSales]);
+
+  const productSales = useMemo(() => {
+    return sales.reduce((acc, sale) => {
+      const product =
+        typeof sale.product === "object" && sale.product
+          ? (sale.product as any)
+          : null;
+      if (!product || !product._id) return acc;
+
+      const categoryName =
+        typeof product.category === "object" && product.category
+          ? product.category.name || "Sin categoría"
+          : product.category || "Sin categoría";
 
       const existing = acc.find(item => item.productId === product._id);
       if (existing) {
         existing.quantity += sale.quantity;
         existing.revenue += sale.salePrice * sale.quantity;
-        existing.profit += sale.distributorProfit;
+        existing.profit += sale.distributorProfit || 0;
       } else {
         acc.push({
           productId: product._id,
-          productName: product.name,
-          productImage: product.image?.url,
+          productName: product.name || "Producto",
+          category: categoryName,
           quantity: sale.quantity,
           revenue: sale.salePrice * sale.quantity,
-          profit: sale.distributorProfit,
+          profit: sale.distributorProfit || 0,
         });
       }
+
       return acc;
-    },
-    [] as Array<{
-      productId: string;
-      productName: string;
-      productImage?: string;
-      quantity: number;
-      revenue: number;
-      profit: number;
-    }>
-  );
+    }, [] as ProductSalesItem[]);
+  }, [sales]);
 
-  const topProducts = productSales
-    .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 5);
+  const topProductsVolumeData = useMemo(() => {
+    return [...productSales]
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 8)
+      .map(item => ({
+        productId: item.productId,
+        name: item.productName,
+        category: item.category,
+        totalQuantity: item.quantity,
+        totalRevenue: item.revenue,
+        totalProfit: item.profit,
+      }));
+  }, [productSales]);
 
-  const topProductsByProfit = [...productSales]
-    .sort((a, b) => b.profit - a.profit)
-    .slice(0, 5);
+  const topProductsProfitData = useMemo(() => {
+    return [...productSales]
+      .sort((a, b) => b.profit - a.profit)
+      .slice(0, 8)
+      .map(item => ({
+        productId: item.productId,
+        name: item.productName,
+        category: item.category,
+        totalQuantity: item.quantity,
+        totalRevenue: item.revenue,
+        totalProfit: item.profit,
+      }));
+  }, [productSales]);
 
   const paymentBreakdown = useMemo(() => {
     const map = new Map<string, { count: number; revenue: number }>();
@@ -272,7 +393,7 @@ export default function DistributorStats() {
           : key === "transfer"
             ? "Transferencia"
             : key === "credit"
-              ? "Credito"
+              ? "Crédito"
               : "Otro",
       ...value,
     }));
@@ -284,6 +405,7 @@ export default function DistributorStats() {
       const key = sale.deliveryMethodCode || "sin_entrega";
       map.set(key, (map.get(key) || 0) + 1);
     });
+
     return Array.from(map.entries()).map(([key, count]) => ({
       key,
       label: key === "delivery" ? "Domicilio" : "Retiro",
@@ -296,6 +418,7 @@ export default function DistributorStats() {
       string,
       { name: string; count: number; revenue: number }
     >();
+
     sales.forEach(sale => {
       const customerName =
         sale.customerName ||
@@ -306,308 +429,399 @@ export default function DistributorStats() {
         count: 0,
         revenue: 0,
       };
+
       map.set(customerName, {
         name: customerName,
         count: current.count + 1,
         revenue: current.revenue + sale.salePrice * sale.quantity,
       });
     });
+
     return Array.from(map.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, 6);
   }, [sales]);
 
-  const chartData = useMemo(() => {
+  const timelineData = useMemo(() => {
     const end = new Date(`${dateRange.endDate}T00:00:00`);
     const days = chartRange === "7d" ? 7 : chartRange === "30d" ? 30 : 90;
     const start = new Date(end);
     start.setDate(end.getDate() - (days - 1));
     const dayMs = 24 * 60 * 60 * 1000;
-    const buckets: Array<{ date: string; revenue: number; profit: number }> =
-      [];
+
+    const buckets: Array<{
+      date: string;
+      salesCount: number;
+      quantity: number;
+      revenue: number;
+      netProfit: number;
+    }> = [];
+
     for (let i = 0; i < days; i += 1) {
       const current = new Date(start.getTime() + i * dayMs);
       const key = current.toISOString().slice(0, 10);
-      buckets.push({ date: key, revenue: 0, profit: 0 });
+      buckets.push({
+        date: key,
+        salesCount: 0,
+        quantity: 0,
+        revenue: 0,
+        netProfit: 0,
+      });
     }
+
     const bucketMap = new Map(buckets.map(item => [item.date, item]));
     sales.forEach(sale => {
       const key = sale.saleDate?.slice(0, 10);
+      if (!key) return;
       const bucket = bucketMap.get(key);
       if (!bucket) return;
+      bucket.salesCount += 1;
+      bucket.quantity += sale.quantity;
       bucket.revenue += sale.salePrice * sale.quantity;
-      bucket.profit += sale.distributorProfit || 0;
+      bucket.netProfit += sale.distributorProfit || 0;
     });
+
     return buckets;
   }, [chartRange, dateRange.endDate, sales]);
 
-  const chartWidth = 640;
-  const chartHeight = 160;
-  const chartMax = Math.max(
-    1,
-    ...chartData.map(item => Math.max(item.revenue, item.profit))
-  );
+  const renderShieldedMoney = (
+    canView: boolean,
+    value: number,
+    badgeLabel: string,
+    className: string
+  ) => {
+    if (canView) {
+      return <span className={className}>{formatCurrency(value)}</span>;
+    }
 
-  const buildLinePath = (values: number[]) => {
-    if (values.length === 0) return "";
-    const step = chartWidth / Math.max(values.length - 1, 1);
-    return values
-      .map((value, index) => {
-        const x = index * step;
-        const y = chartHeight - (value / chartMax) * chartHeight;
-        return `${index === 0 ? "M" : "L"} ${x} ${y}`;
-      })
-      .join(" ");
-  };
-
-  const buildAreaPath = (values: number[]) => {
-    if (values.length === 0) return "";
-    const step = chartWidth / Math.max(values.length - 1, 1);
-    const line = values
-      .map((value, index) => {
-        const x = index * step;
-        const y = chartHeight - (value / chartMax) * chartHeight;
-        return `${index === 0 ? "M" : "L"} ${x} ${y}`;
-      })
-      .join(" ");
-    return `${line} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`;
+    return (
+      <span className="inline-flex items-center gap-2">
+        <span className="rounded-lg border border-slate-300/20 bg-slate-900/70 px-2 py-1 text-sm font-semibold text-slate-300 blur-[2px]">
+          COP 000.000
+        </span>
+        <ConfidentialBadge compact label={badgeLabel} />
+      </span>
+    );
   };
 
   if (loading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-500"></div>
+      <div className="flex h-96 items-center justify-center rounded-2xl border border-slate-200/10 bg-[#0A0A0A]/95">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-cyan-400" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-4xl font-bold text-white">Estadísticas</h1>
-          <p className="mt-2 text-gray-400">Análisis de tu desempeño</p>
-        </div>
+    <div ref={pageRef} className="space-y-7 px-0 text-slate-100">
+      <div className="report-panel rounded-2xl border border-slate-200/10 bg-[#0A0A0A]/95 p-4 shadow-[0_24px_95px_rgba(2,6,23,0.6)] backdrop-blur-xl sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-100 sm:text-4xl">
+              Reportes Dark Luxury
+            </h1>
+            <p className="mt-1 text-sm text-slate-400 sm:text-base">
+              Centro de inteligencia de ventas con lectura operativa y blindaje
+              premium.
+            </p>
+          </div>
 
-        {/* Date Range Picker */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-lg border border-gray-700 bg-gray-800/60 px-3 py-2">
-            <label className="text-xs text-gray-400">Inicio</label>
-            <input
-              type="date"
-              value={dateRange.startDate}
-              onChange={e =>
-                setDateRange({ ...dateRange, startDate: e.target.value })
-              }
-              className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-100"
-            />
-          </div>
-          <div className="flex items-center gap-2 rounded-lg border border-gray-700 bg-gray-800/60 px-3 py-2">
-            <label className="text-xs text-gray-400">Fin</label>
-            <input
-              type="date"
-              value={dateRange.endDate}
-              onChange={e =>
-                setDateRange({ ...dateRange, endDate: e.target.value })
-              }
-              className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-100"
-            />
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPresetRange(1)}
-              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-blue-500 hover:text-white"
-            >
-              Hoy
-            </button>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="rounded-xl border border-slate-300/15 bg-slate-950/75 px-3 py-2">
+              <label className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">
+                Inicio
+              </label>
+              <input
+                type="date"
+                value={dateRange.startDate}
+                onChange={e =>
+                  setDateRange({ ...dateRange, startDate: e.target.value })
+                }
+                className="min-h-11 rounded-md border border-slate-700 bg-[#0A0A0A] px-3 py-2 text-sm text-slate-100 sm:text-xs"
+              />
+            </div>
+
+            <div className="rounded-xl border border-slate-300/15 bg-slate-950/75 px-3 py-2">
+              <label className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">
+                Fin
+              </label>
+              <input
+                type="date"
+                value={dateRange.endDate}
+                onChange={e =>
+                  setDateRange({ ...dateRange, endDate: e.target.value })
+                }
+                className="min-h-11 rounded-md border border-slate-700 bg-[#0A0A0A] px-3 py-2 text-sm text-slate-100 sm:text-xs"
+              />
+            </div>
+
             <button
               onClick={() => setPresetRange(7)}
-              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-blue-500 hover:text-white"
+              className="min-h-11 rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-3 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20"
             >
-              Semana
+              7 días
             </button>
             <button
               onClick={() => setPresetRange(30)}
-              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-blue-500 hover:text-white"
+              className="min-h-11 rounded-xl border border-slate-300/20 bg-slate-900/70 px-3 text-xs font-semibold text-slate-200 transition hover:border-cyan-400/35"
             >
-              Mes
+              30 días
             </button>
             <button
               onClick={() => setPresetRange(90)}
-              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-blue-500 hover:text-white"
+              className="min-h-11 rounded-xl border border-slate-300/20 bg-slate-900/70 px-3 text-xs font-semibold text-slate-200 transition hover:border-cyan-400/35"
             >
-              90d
+              90 días
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Stats */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-blue-900/50 to-gray-800/50 p-6">
-          <p className="text-sm text-gray-400">Total Ventas</p>
-          <p className="mt-2 text-3xl font-bold text-white">{totalSales}</p>
-          <p
-            className={`mt-1 text-xs ${
-              deltaSales >= 0 ? "text-emerald-300" : "text-red-300"
-            }`}
-          >
-            {deltaSales >= 0 ? "▲" : "▼"} {formatPercent(deltaSales)}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="report-glass-card w-full rounded-2xl border border-slate-200/10 bg-[linear-gradient(140deg,rgba(8,47,73,0.5),rgba(2,6,23,0.86))] p-4 backdrop-blur-xl sm:p-5">
+          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
+            Total Vendido
           </p>
-        </div>
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-green-900/50 to-gray-800/50 p-6">
-          <p className="text-sm text-gray-400">Ingresos Totales</p>
-          <p className="mt-2 text-2xl font-bold text-white">
-            {formatCurrency(totalRevenue)}
-          </p>
+          <div className="mt-3 text-2xl font-bold text-cyan-200 sm:text-3xl">
+            {renderShieldedMoney(
+              canViewOwnMonetaryMetrics,
+              animatedMetrics.totalSoldAmount,
+              "Monto Protegido",
+              "text-2xl font-bold text-cyan-200 sm:text-3xl"
+            )}
+          </div>
           <p
-            className={`mt-1 text-xs ${
-              deltaRevenue >= 0 ? "text-emerald-300" : "text-red-300"
+            className={`mt-2 text-xs font-semibold ${
+              deltaRevenue >= 0 ? "text-emerald-300" : "text-rose-300"
             }`}
           >
             {deltaRevenue >= 0 ? "▲" : "▼"} {formatPercent(deltaRevenue)}
           </p>
         </div>
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-purple-900/50 to-gray-800/50 p-6">
-          <p className="text-sm text-gray-400">Comision Neta</p>
-          <p className="mt-2 text-2xl font-bold text-white">
-            {formatCurrency(netCommission)}
+
+        <div className="report-glass-card w-full rounded-2xl border border-slate-200/10 bg-[linear-gradient(145deg,rgba(59,7,100,0.52),rgba(2,6,23,0.88))] p-4 backdrop-blur-xl sm:p-5">
+          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
+            Comisión Acumulada
           </p>
+          <div className="mt-3 text-2xl font-bold text-violet-200 sm:text-3xl">
+            {renderShieldedMoney(
+              canViewOwnDistributorEarnings,
+              animatedMetrics.netCommission,
+              "Comisión Protegida",
+              "text-2xl font-bold text-violet-200 sm:text-3xl"
+            )}
+          </div>
           <p
-            className={`mt-1 text-xs ${
-              deltaProfit >= 0 ? "text-emerald-300" : "text-red-300"
+            className={`mt-2 text-xs font-semibold ${
+              deltaProfit >= 0 ? "text-emerald-300" : "text-rose-300"
             }`}
           >
             {deltaProfit >= 0 ? "▲" : "▼"} {formatPercent(deltaProfit)}
           </p>
         </div>
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-yellow-900/50 to-gray-800/50 p-6">
-          <p className="text-sm text-gray-400">Ticket Promedio</p>
-          <p className="mt-2 text-2xl font-bold text-white">
-            {formatCurrency(avgSaleValue)}
+
+        <div className="report-glass-card w-full rounded-2xl border border-slate-200/10 bg-[linear-gradient(140deg,rgba(30,41,59,0.55),rgba(2,6,23,0.9))] p-4 backdrop-blur-xl sm:col-span-2 sm:p-5 xl:col-span-1">
+          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
+            Ticket Promedio
           </p>
+          <div className="mt-3 text-2xl font-bold text-slate-100 sm:text-3xl">
+            {renderShieldedMoney(
+              canViewOwnMonetaryMetrics,
+              animatedMetrics.avgTicket,
+              "Ticket Protegido",
+              "text-2xl font-bold text-slate-100 sm:text-3xl"
+            )}
+          </div>
           <p
-            className={`mt-1 text-xs ${
-              deltaAvgSale >= 0 ? "text-emerald-300" : "text-red-300"
+            className={`mt-2 text-xs font-semibold ${
+              deltaAvgSale >= 0 ? "text-emerald-300" : "text-rose-300"
             }`}
           >
             {deltaAvgSale >= 0 ? "▲" : "▼"} {formatPercent(deltaAvgSale)}
           </p>
         </div>
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-cyan-900/50 to-gray-800/50 p-6">
-          <p className="text-sm text-gray-400">Saldo a entregar al Admin</p>
-          <p className="mt-2 text-2xl font-bold text-white">
-            {formatCurrency(adminDue)}
-          </p>
+      </div>
+
+      <div className="report-panel rounded-2xl border border-slate-200/10 bg-[#0A0A0A]/95 p-4 backdrop-blur-xl sm:p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold text-slate-100">
+            Gráfica de Rendimiento
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "7d", label: "7D" },
+              { key: "30d", label: "30D" },
+              { key: "90d", label: "90D" },
+            ].map(range => (
+              <button
+                key={range.key}
+                onClick={() => setChartRange(range.key as "7d" | "30d" | "90d")}
+                className={`min-h-11 rounded-xl px-3 text-xs font-semibold transition ${
+                  chartRange === range.key
+                    ? "border border-cyan-400/55 bg-cyan-500/15 text-cyan-100"
+                    : "border border-slate-300/20 bg-slate-900/70 text-slate-300 hover:border-cyan-400/40"
+                }`}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-emerald-900/40 to-gray-800/50 p-6">
-          <p className="text-sm text-gray-400">Ganancia Promedio</p>
-          <p className="mt-2 text-2xl font-bold text-white">
-            {formatCurrency(avgProfit)}
-          </p>
+
+        <SalesTimelineChart
+          period="day"
+          data={timelineData}
+          hideFinancialData={hideFinancialData}
+          showOwnDistributorEarnings={canViewOwnDistributorEarnings}
+          showAdminFinancials={canViewAdminFinancials}
+          title="Línea de Ventas y Desempeño"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <div className="report-panel">
+          <TopProductsChart
+            data={topProductsVolumeData}
+            metricMode="quantity"
+            hideFinancialData={hideFinancialData}
+            showOwnDistributorEarnings={canViewOwnDistributorEarnings}
+            showAdminFinancials={canViewAdminFinancials}
+            title="Top Productos por Volumen"
+          />
+        </div>
+        <div className="report-panel">
+          <TopProductsChart
+            data={topProductsProfitData}
+            metricMode="ownProfit"
+            hideFinancialData={hideFinancialData}
+            showOwnDistributorEarnings={canViewOwnDistributorEarnings}
+            showAdminFinancials={canViewAdminFinancials}
+            title="Top Productos por Ganancia"
+          />
         </div>
       </div>
 
-      {/* Ganancia Estimada con Inventario Actual */}
-      <div className="rounded-xl border border-teal-700/50 bg-gradient-to-br from-teal-900/30 to-gray-800/50 p-6">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="report-panel rounded-2xl border border-slate-200/10 bg-[#0A0A0A]/95 p-4 backdrop-blur-xl sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-semibold text-white">
-              📊 Ganancia Estimada
+            <h2 className="text-xl font-semibold text-slate-100">
+              Analítica de Ganancia Estimada
             </h2>
-            <p className="text-sm text-gray-400">
-              Basado en tu inventario actual
+            <p className="mt-1 text-sm text-slate-400">
+              Vista operativa del inventario con caja negra para margen
+              administrativo.
             </p>
           </div>
           {estimatedProfit && estimatedProfit.products.length > 0 && (
             <button
               onClick={() => setShowEstimatedProducts(!showEstimatedProducts)}
-              className="rounded-full bg-teal-500/20 px-3 py-1 text-xs font-semibold text-teal-300 transition hover:bg-teal-500/30"
+              className="min-h-11 rounded-xl border border-teal-300/35 bg-teal-500/10 px-3 text-xs font-semibold text-teal-100 transition hover:bg-teal-500/20"
             >
-              {showEstimatedProducts ? "Ocultar productos" : "Ver productos"}
+              {showEstimatedProducts ? "Ocultar desglose" : "Ver desglose"}
             </button>
           )}
         </div>
 
         {loadingEstimated ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-teal-500"></div>
+          <div className="flex items-center justify-center py-10">
+            <div className="h-9 w-9 animate-spin rounded-full border-b-2 border-teal-400" />
           </div>
         ) : estimatedProfit ? (
           <>
-            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-                <p className="text-xs text-gray-400">Ganancia Bruta Est.</p>
-                <p className="mt-1 text-xl font-bold text-teal-300">
-                  {formatCurrency(estimatedProfit.grossProfit)}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+              <div className="rounded-xl border border-slate-300/15 bg-slate-900/65 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">
+                  Ganancia Neta Est.
                 </p>
+                <div className="mt-2 text-lg font-bold text-emerald-300">
+                  {renderShieldedMoney(
+                    canViewOwnDistributorEarnings,
+                    estimatedProfit.netProfit || estimatedProfit.grossProfit,
+                    "Ganancia Protegida",
+                    "text-lg font-bold text-emerald-300"
+                  )}
+                </div>
               </div>
-              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-                <p className="text-xs text-gray-400">Inversión (tu costo)</p>
-                <p className="mt-1 text-xl font-bold text-amber-300">
-                  {formatCurrency(estimatedProfit.investment)}
+
+              <div className="rounded-xl border border-slate-300/15 bg-slate-900/65 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">
+                  Productos
                 </p>
-              </div>
-              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-                <p className="text-xs text-gray-400">Valor en Ventas</p>
-                <p className="mt-1 text-xl font-bold text-green-300">
-                  {formatCurrency(estimatedProfit.salesValue)}
-                </p>
-              </div>
-              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-                <p className="text-xs text-gray-400">Productos</p>
-                <p className="mt-1 text-xl font-bold text-purple-300">
+                <p className="mt-2 text-2xl font-bold text-violet-200">
                   {estimatedProfit.totalProducts}
                 </p>
               </div>
-              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-                <p className="text-xs text-gray-400">Total Unidades</p>
-                <p className="mt-1 text-xl font-bold text-blue-300">
-                  {estimatedProfit.totalUnits.toLocaleString()}
+
+              <div className="rounded-xl border border-slate-300/15 bg-slate-900/65 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">
+                  Unidades
+                </p>
+                <p className="mt-2 text-2xl font-bold text-cyan-200">
+                  {estimatedProfit.totalUnits.toLocaleString("es-CO")}
                 </p>
               </div>
-              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-                <p className="text-xs text-gray-400">📈 Rentabilidad</p>
-                <p className="mt-1 text-xl font-bold text-teal-300">
-                  {estimatedProfit.profitability ??
+
+              <div className="rounded-xl border border-slate-300/15 bg-slate-900/65 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">
+                  Rentabilidad
+                </p>
+                <p className="mt-2 text-2xl font-bold text-amber-200">
+                  {(
+                    estimatedProfit.profitability ??
                     (estimatedProfit.salesValue > 0
-                      ? (
-                          (estimatedProfit.grossProfit /
-                            estimatedProfit.salesValue) *
-                          100
-                        ).toFixed(1)
-                      : 0)}
+                      ? (estimatedProfit.grossProfit /
+                          estimatedProfit.salesValue) *
+                        100
+                      : 0)
+                  ).toFixed(1)}
                   %
                 </p>
-                <p className="mt-0.5 text-[10px] text-gray-500">
-                  Ganancia / Ventas
-                </p>
               </div>
-              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-                <p className="text-xs text-gray-400">⚡ Multiplicador</p>
-                <p className="mt-1 text-xl font-bold text-amber-300">
-                  {estimatedProfit.profitMargin}%
+
+              <div className="rounded-xl border border-slate-300/20 bg-slate-900/80 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">
+                  Caja Negra Admin
                 </p>
-                <p className="mt-0.5 text-[10px] text-gray-500">
-                  Ganancia / Inversión
-                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <ConfidentialBadge compact label="Margen Admin" />
+                  <span className="rounded bg-slate-800 px-2 py-1 text-[11px] text-slate-300 blur-[1.8px]">
+                    costo real
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Lista de productos con ganancia estimada */}
+            <div className="mt-4 rounded-xl border border-slate-300/15 bg-slate-950/70 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-slate-200">
+                  Blindaje de Utilidad Operativa
+                </p>
+                <div className="flex items-center gap-2">
+                  <ConfidentialBadge compact label="Costo Interno" />
+                  <span className="rounded-lg border border-slate-300/20 bg-slate-900 px-2 py-1 text-[11px] text-slate-300 blur-[2px]">
+                    Margen real administrativo
+                  </span>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-slate-400">
+                Se muestran volúmenes y desempeño comercial; los cálculos que
+                exponen costo de adquisición quedan protegidos automáticamente.
+              </p>
+            </div>
+
             {showEstimatedProducts && estimatedProfit.products.length > 0 && (
-              <div className="mt-4 rounded-lg border border-gray-700 bg-gray-900/30 p-4">
-                <h3 className="mb-3 text-sm font-semibold text-white">
-                  Desglose por Producto
+              <div className="mt-4 rounded-xl border border-slate-300/15 bg-slate-950/70 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-slate-100">
+                  Desglose por producto
                 </h3>
                 <div className="max-h-80 space-y-2 overflow-y-auto">
                   {estimatedProfit.products
+                    .slice()
                     .sort((a, b) => b.estimatedProfit - a.estimatedProfit)
                     .map(product => (
                       <div
                         key={product.productId}
-                        className="flex items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2"
+                        className="flex items-center justify-between rounded-xl border border-slate-300/10 bg-slate-900/55 px-3 py-2"
                       >
                         <div className="flex items-center gap-3">
                           {product.image?.url && (
@@ -618,22 +832,30 @@ export default function DistributorStats() {
                             />
                           )}
                           <div>
-                            <p className="text-sm font-medium text-white">
+                            <p className="text-sm font-medium text-slate-100">
                               {product.name}
                             </p>
-                            <p className="text-xs text-gray-400">
-                              {product.quantity} uds ×{" "}
+                            <p className="text-xs text-slate-400">
+                              {product.quantity} uds x{" "}
                               {formatCurrency(product.clientPrice)}
                             </p>
                           </div>
                         </div>
+
                         <div className="text-right">
-                          <p className="text-sm font-bold text-teal-300">
-                            {formatCurrency(product.estimatedProfit)}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            +{product.profitPercentage}%
-                          </p>
+                          <div className="text-sm font-bold text-emerald-300">
+                            {renderShieldedMoney(
+                              canViewOwnDistributorEarnings,
+                              product.estimatedProfit,
+                              "Ganancia",
+                              "text-sm font-bold text-emerald-300"
+                            )}
+                          </div>
+                          {!canViewAdminFinancials && (
+                            <div className="mt-1 flex justify-end">
+                              <ConfidentialBadge compact label="Costo" />
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -642,146 +864,38 @@ export default function DistributorStats() {
             )}
           </>
         ) : (
-          <div className="py-8 text-center text-gray-400">
-            No tienes inventario disponible para calcular ganancia estimada
+          <div className="py-10 text-center text-slate-400">
+            No hay inventario suficiente para calcular ganancia estimada.
           </div>
         )}
       </div>
 
-      {/* Additional Metrics */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <h2 className="mb-4 text-lg font-semibold text-white">
-            Métricas Adicionales
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-700 pb-3">
-              <span className="text-gray-400">Ganancia promedio por venta</span>
-              <span className="text-lg font-bold text-purple-400">
-                {formatCurrency(avgProfit)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-700 pb-3">
-              <span className="text-gray-400">
-                Productos diferentes vendidos
-              </span>
-              <span className="text-lg font-bold text-blue-400">
-                {productSales.length}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">Margen de ganancia promedio</span>
-              <span className="text-lg font-bold text-green-400">
-                {totalRevenue > 0
-                  ? ((totalProfit / totalRevenue) * 100).toFixed(1)
-                  : 0}
-                %
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-white">Actividad</h2>
-            <div className="flex gap-2">
-              {["7d", "30d", "90d"].map(range => (
-                <button
-                  key={range}
-                  onClick={() => setChartRange(range as "7d" | "30d" | "90d")}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                    chartRange === range
-                      ? "bg-cyan-500/20 text-cyan-200"
-                      : "bg-gray-900/60 text-gray-400 hover:text-white"
-                  }`}
-                >
-                  {range.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
-          {chartData.length === 0 ? (
-            <p className="py-8 text-center text-gray-400">
-              No hay datos de ventas
-            </p>
-          ) : (
-            <div className="space-y-3">
-              <div className="h-44 w-full rounded-lg border border-gray-700 bg-gray-900/60 p-3">
-                <svg
-                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                  className="h-full w-full"
-                >
-                  <defs>
-                    <linearGradient
-                      id="areaRevenue"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#0f172a" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d={buildAreaPath(chartData.map(item => item.revenue))}
-                    fill="url(#areaRevenue)"
-                  />
-                  <path
-                    d={buildLinePath(chartData.map(item => item.revenue))}
-                    fill="none"
-                    stroke="#22d3ee"
-                    strokeWidth="2"
-                  />
-                  <path
-                    d={buildLinePath(chartData.map(item => item.profit))}
-                    fill="none"
-                    stroke="#a855f7"
-                    strokeWidth="2"
-                    strokeDasharray="4 4"
-                  />
-                </svg>
-              </div>
-              <div className="flex flex-wrap items-center justify-between text-xs text-gray-400">
-                <span>{chartData[0]?.date}</span>
-                <span>{chartData[chartData.length - 1]?.date}</span>
-              </div>
-              <div className="flex flex-wrap gap-4 text-xs text-gray-300">
-                <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-cyan-400" />
-                  Ingresos
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-purple-400" />
-                  Comision
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Payment / Delivery / Customers */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <h2 className="mb-4 text-lg font-semibold text-white">
-            Metodos de Pago
-          </h2>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="report-panel rounded-2xl border border-slate-200/10 bg-[#0A0A0A]/95 p-4 backdrop-blur-xl sm:p-5">
+          <h3 className="mb-3 text-lg font-semibold text-slate-100">
+            Métodos de Pago
+          </h3>
           {paymentBreakdown.length === 0 ? (
-            <p className="py-6 text-center text-gray-400">Sin datos</p>
+            <p className="text-sm text-slate-400">Sin datos</p>
           ) : (
             <div className="space-y-3">
               {paymentBreakdown.map(item => (
                 <div
                   key={item.key}
-                  className="flex items-center justify-between text-sm"
+                  className="flex items-center justify-between rounded-lg border border-slate-300/10 bg-slate-900/50 px-3 py-2"
                 >
-                  <span className="text-gray-300">{item.label}</span>
-                  <div className="text-right">
-                    <p className="font-semibold text-white">{item.count}</p>
-                    <p className="text-xs text-gray-400">
-                      {formatCurrency(item.revenue)}
+                  <div>
+                    <p className="text-sm text-slate-200">{item.label}</p>
+                    <p className="text-xs text-slate-500">
+                      {item.count} ventas
                     </p>
+                  </div>
+                  <div className="text-right text-sm font-semibold text-cyan-200">
+                    {canViewOwnMonetaryMetrics ? (
+                      formatCurrency(item.revenue)
+                    ) : (
+                      <ConfidentialBadge compact label="Monto" />
+                    )}
                   </div>
                 </div>
               ))}
@@ -789,168 +903,111 @@ export default function DistributorStats() {
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <h2 className="mb-4 text-lg font-semibold text-white">
-            Metodos de Entrega
-          </h2>
+        <div className="report-panel rounded-2xl border border-slate-200/10 bg-[#0A0A0A]/95 p-4 backdrop-blur-xl sm:p-5">
+          <h3 className="mb-3 text-lg font-semibold text-slate-100">
+            Métodos de Entrega
+          </h3>
           {deliveryBreakdown.length === 0 ? (
-            <p className="py-6 text-center text-gray-400">Sin datos</p>
+            <p className="text-sm text-slate-400">Sin datos</p>
           ) : (
             <div className="space-y-3">
               {deliveryBreakdown.map(item => (
                 <div
                   key={item.key}
-                  className="flex items-center justify-between text-sm"
+                  className="flex items-center justify-between rounded-lg border border-slate-300/10 bg-slate-900/50 px-3 py-2"
                 >
-                  <span className="text-gray-300">{item.label}</span>
-                  <span className="font-semibold text-white">{item.count}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-          <h2 className="mb-4 text-lg font-semibold text-white">
-            Top Clientes
-          </h2>
-          {topCustomers.length === 0 ? (
-            <p className="py-6 text-center text-gray-400">Sin datos</p>
-          ) : (
-            <div className="space-y-3">
-              {topCustomers.map(customer => (
-                <div
-                  key={customer.name}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <div>
-                    <p className="font-semibold text-white">{customer.name}</p>
-                    <p className="text-xs text-gray-400">
-                      {customer.count} compras
-                    </p>
-                  </div>
-                  <span className="font-semibold text-emerald-300">
-                    {formatCurrency(customer.revenue)}
+                  <span className="text-sm text-slate-200">{item.label}</span>
+                  <span className="text-sm font-semibold text-violet-200">
+                    {item.count}
                   </span>
                 </div>
               ))}
             </div>
           )}
         </div>
-      </div>
 
-      {/* Top Products */}
-      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-        <h2 className="mb-4 text-lg font-semibold text-white">
-          Productos Más Vendidos
-        </h2>
-        {topProducts.length === 0 ? (
-          <p className="py-8 text-center text-gray-400">
-            No hay datos de productos
-          </p>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {topProducts.map((product, index) => (
-              <div
-                key={product.productId}
-                className="rounded-lg border border-gray-700 bg-gray-900/50 p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="bg-linear-to-r flex h-10 w-10 items-center justify-center rounded-full from-blue-600 to-cyan-600 font-bold text-white">
-                    {index + 1}
+        <div className="report-panel rounded-2xl border border-slate-200/10 bg-[#0A0A0A]/95 p-4 backdrop-blur-xl sm:p-5">
+          <h3 className="mb-3 text-lg font-semibold text-slate-100">
+            Top Clientes
+          </h3>
+          {topCustomers.length === 0 ? (
+            <p className="text-sm text-slate-400">Sin datos</p>
+          ) : (
+            <div className="space-y-3">
+              {topCustomers.map(customer => (
+                <div
+                  key={customer.name}
+                  className="flex items-center justify-between rounded-lg border border-slate-300/10 bg-slate-900/50 px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm text-slate-200">{customer.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {customer.count} compras
+                    </p>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-white">
-                      {product.productName}
-                    </h3>
-                    <div className="mt-2 space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">
-                          Unidades vendidas:
-                        </span>
-                        <span className="font-semibold text-blue-400">
-                          {product.quantity}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Ingresos:</span>
-                        <span className="font-semibold text-green-400">
-                          {formatCurrency(product.revenue)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Ganancia:</span>
-                        <span className="font-semibold text-purple-400">
-                          {formatCurrency(product.profit)}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="text-right text-sm font-semibold text-emerald-200">
+                    {canViewOwnMonetaryMetrics ? (
+                      formatCurrency(customer.revenue)
+                    ) : (
+                      <ConfidentialBadge compact label="Monto" />
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Top Products by Profit */}
-      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-        <h2 className="mb-4 text-lg font-semibold text-white">
-          Top Productos por Utilidad
-        </h2>
-        {topProductsByProfit.length === 0 ? (
-          <p className="py-8 text-center text-gray-400">
-            No hay datos de productos
-          </p>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {topProductsByProfit.map((product, index) => (
-              <div
-                key={`${product.productId}-profit`}
-                className="rounded-lg border border-gray-700 bg-gray-900/50 p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="bg-linear-to-r flex h-10 w-10 items-center justify-center rounded-full from-purple-600 to-indigo-600 font-bold text-white">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-white">
-                      {product.productName}
-                    </h3>
-                    <div className="mt-2 space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Unidades:</span>
-                        <span className="font-semibold text-blue-400">
-                          {product.quantity}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Ingresos:</span>
-                        <span className="font-semibold text-green-400">
-                          {formatCurrency(product.revenue)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Utilidad:</span>
-                        <span className="font-semibold text-purple-400">
-                          {formatCurrency(product.profit)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+      <div className="report-panel rounded-2xl border border-slate-200/10 bg-[#0A0A0A]/95 p-4 backdrop-blur-xl sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold text-slate-100">
+            Ranking de Distribuidores
+          </h2>
+          <div className="rounded-lg border border-slate-300/20 bg-slate-900/65 px-3 py-1.5 text-xs text-slate-300">
+            Ventas: {animatedMetrics.totalSales.toLocaleString("es-CO")} |
+            Unidades: {totalUnits.toLocaleString("es-CO")}
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Leaderboard */}
-      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-        <h2 className="mb-4 text-lg font-semibold text-white">
-          Ranking Distribuidores
-        </h2>
         <LeaderboardTable rankings={rankingData} config={gamificationConfig} />
+
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-slate-300/10 bg-slate-900/60 px-3 py-2 text-sm">
+            <p className="text-slate-400">Ganancia Promedio</p>
+            <p className="mt-1 font-semibold text-violet-200">
+              {renderShieldedMoney(
+                canViewOwnDistributorEarnings,
+                avgProfit,
+                "Promedio",
+                "text-base font-semibold text-violet-200"
+              )}
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-slate-300/10 bg-slate-900/60 px-3 py-2 text-sm">
+            <p className="text-slate-400">Saldo a Entregar</p>
+            <p className="mt-1 font-semibold text-cyan-200">
+              {renderShieldedMoney(
+                canViewAdminFinancials,
+                adminDue,
+                "Admin",
+                "text-base font-semibold text-cyan-200"
+              )}
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-slate-300/10 bg-slate-900/60 px-3 py-2 text-sm">
+            <p className="text-slate-400">Variación de Ventas</p>
+            <p
+              className={`mt-1 font-semibold ${
+                deltaSales >= 0 ? "text-emerald-300" : "text-rose-300"
+              }`}
+            >
+              {deltaSales >= 0 ? "▲" : "▼"} {formatPercent(deltaSales)}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

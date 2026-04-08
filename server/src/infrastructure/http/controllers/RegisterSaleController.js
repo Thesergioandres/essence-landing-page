@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import { RegisterPromotionSaleUseCase } from "../../../application/use-cases/RegisterPromotionSaleUseCase.js";
-import { RegisterStandardSaleUseCase } from "../../../application/use-cases/RegisterStandardSaleUseCase.js";
+import { RegisterPromotionSaleUseCase } from "../../../application/use-cases/sales/RegisterPromotionSaleUseCase.js";
+import { RegisterStandardSaleUseCase } from "../../../application/use-cases/sales/RegisterStandardSaleUseCase.js";
 
 /**
  * Register Sale Controller
@@ -33,12 +33,17 @@ const buildSaleInput = (req, distributorId) => ({
 });
 
 const resolveDistributorId = (req) => {
-  if (req.user.role === "distribuidor") {
-    return req.user.id;
+  const userId = req.user?.id || req.user?._id;
+  const membershipRole = req.membership?.role;
+
+  if (req.user?.role === "distribuidor" || membershipRole === "distribuidor") {
+    return userId;
   }
+
   if (req.body.distributorId) {
     return req.body.distributorId;
   }
+
   return null;
 };
 

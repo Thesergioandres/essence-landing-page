@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import Sale from "../models/Sale.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
 
 import path from "path";
 import { fileURLToPath } from "url";

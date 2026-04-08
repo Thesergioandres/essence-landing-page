@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import Membership from "../models/Membership.js";
 import ProfitHistory from "../models/ProfitHistory.js";
 import SpecialSale from "../models/SpecialSale.js";
-import User from "../models/User.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 dotenv.config();
 

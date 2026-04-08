@@ -13,6 +13,11 @@ export interface User {
   assignedProducts?: string[];
   selectedPlan?: "starter" | "pro" | "enterprise" | null;
   selectedPlanAt?: string | null;
+  HIDE_FINANCIAL_DATA?: boolean;
+  hideFinancialData?: boolean;
+  fixedCommissionOnly?: boolean;
+  isCommissionFixed?: boolean;
+  customCommissionRate?: number | null;
   token?: string;
 }
 
@@ -31,6 +36,9 @@ export interface Membership {
         _id: string;
         name: string;
         email: string;
+        fixedCommissionOnly?: boolean;
+        isCommissionFixed?: boolean;
+        customCommissionRate?: number | null;
       }
     | string
     | null;
@@ -51,6 +59,8 @@ export interface AuthResponse {
   memberships?: Membership[];
   selectedPlan?: User["selectedPlan"];
   selectedPlanAt?: User["selectedPlanAt"];
+  HIDE_FINANCIAL_DATA?: boolean;
+  hideFinancialData?: boolean;
   token: string;
   refreshToken?: string;
   refreshExpiresAt?: string;

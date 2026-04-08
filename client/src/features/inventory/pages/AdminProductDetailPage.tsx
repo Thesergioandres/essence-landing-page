@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { LoadingSpinner } from "../../../shared/components/ui";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { ConfidentialBadge, LoadingSpinner } from "../../../shared/components/ui";
+import { useFinancialPrivacy } from "../../auth/utils/financialPrivacy";
 import {
   productService,
   stockService,
@@ -41,8 +42,15 @@ const resolveInventoryProductId = (entry: any) => {
 };
 
 export default function AdminProductDetailPage() {
+  const { hideFinancialData } = useFinancialPrivacy();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const firstSegment = location.pathname.split("/").filter(Boolean)[0] || "";
+  const areaBase = firstSegment ? `/${firstSegment}` : "/admin";
+  const productsRoute = `${areaBase}/products`;
+  const productEditRoute = (productId: string) =>
+    `${areaBase}/products/${productId}/edit`;
   const [product, setProduct] = useState<Product | null>(null);
   const [history, setHistory] = useState<ProductHistoryEntry[]>([]);
   const [stockSummary, setStockSummary] = useState<StockSummary>({
@@ -91,6 +99,10 @@ export default function AdminProductDetailPage() {
   }, [id]);
 
   const marginData = useMemo(() => {
+    if (hideFinancialData) {
+      return { value: 0, percent: 0, hasData: false };
+    }
+
     const salePrice = Number(product?.clientPrice || 0);
     const averageCost = Number(product?.averageCost || 0);
     if (!salePrice || !averageCost) {
@@ -99,7 +111,7 @@ export default function AdminProductDetailPage() {
     const value = salePrice - averageCost;
     const percent = (value / salePrice) * 100;
     return { value, percent, hasData: true };
-  }, [product]);
+  }, [hideFinancialData, product]);
 
   if (loading) {
     return (
@@ -114,7 +126,7 @@ export default function AdminProductDetailPage() {
       <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-200">
         <p>{error || "Producto no encontrado"}</p>
         <button
-          onClick={() => navigate("/admin/products")}
+          onClick={() => navigate(productsRoute)}
           className="mt-4 rounded-lg border border-red-400/60 px-4 py-2 text-xs font-semibold text-red-200 transition hover:bg-red-500/10"
         >
           Volver a productos
@@ -124,7 +136,7 @@ export default function AdminProductDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(71,85,105,0.2),rgba(2,6,23,0.97)_42%,rgba(2,6,23,1)_100%)] p-4 shadow-[0_24px_70px_rgba(2,6,23,0.5)] backdrop-blur-[10px] sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-purple-300">
@@ -136,13 +148,13 @@ export default function AdminProductDetailPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => navigate("/admin/products")}
+            onClick={() => navigate(productsRoute)}
             className="rounded-lg border border-gray-700 px-4 py-2 text-xs font-semibold text-gray-300 transition hover:border-purple-400 hover:text-white"
           >
             Volver
           </button>
           <button
-            onClick={() => navigate(`/admin/products/${product._id}/edit`)}
+            onClick={() => navigate(productEditRoute(product._id))}
             className="rounded-lg border border-purple-500/60 px-4 py-2 text-xs font-semibold text-purple-200 transition hover:bg-purple-600/20"
           >
             Editar producto
@@ -151,7 +163,7 @@ export default function AdminProductDetailPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1.9fr]">
-        <section className="rounded-2xl border border-gray-700/60 bg-gray-900/60 p-5 shadow-lg">
+        <section className="rounded-2xl border border-white/10 bg-white/4 p-5 shadow-lg backdrop-blur-[10px]">
           <h2 className="text-base font-semibold text-white">
             Ficha tecnica actual
           </h2>
@@ -160,7 +172,7 @@ export default function AdminProductDetailPage() {
           </p>
 
           <div className="mt-4 space-y-4">
-            <div className="rounded-xl border border-gray-700/60 bg-gray-900/70 p-4">
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-[10px]">
               <p className="text-xs uppercase tracking-[0.18em] text-gray-400">
                 Precios vigentes
               </p>
@@ -179,14 +191,18 @@ export default function AdminProductDetailPage() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">Costo promedio</span>
-                  <span className="font-semibold text-white">
-                    {formatCurrency(Number(product.averageCost || 0))}
-                  </span>
+                  {hideFinancialData ? (
+                    <ConfidentialBadge compact />
+                  ) : (
+                    <span className="font-semibold text-white">
+                      {formatCurrency(Number(product.averageCost || 0))}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-700/60 bg-gray-900/70 p-4">
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-[10px]">
               <p className="text-xs uppercase tracking-[0.18em] text-gray-400">
                 Stock real
               </p>
@@ -220,15 +236,21 @@ export default function AdminProductDetailPage() {
                   </p>
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-gray-400">
-                  Sin datos suficientes para calcular margen.
-                </p>
+                <div className="mt-3">
+                  {hideFinancialData ? (
+                    <ConfidentialBadge label="Margen sellado" />
+                  ) : (
+                    <p className="text-sm text-gray-400">
+                      Sin datos suficientes para calcular margen.
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-700/60 bg-gray-900/60 p-5 shadow-lg">
+        <section className="rounded-2xl border border-white/10 bg-white/4 p-5 shadow-lg backdrop-blur-[10px]">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-base font-semibold text-white">
@@ -286,10 +308,14 @@ export default function AdminProductDetailPage() {
                         <td className="px-4 py-3">{entry.quantity} uds</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-white">
-                              {formatCurrency(currentCost)}
-                            </span>
-                            {hasComparison && trend !== "flat" && (
+                            {hideFinancialData ? (
+                              <ConfidentialBadge compact />
+                            ) : (
+                              <span className="font-semibold text-white">
+                                {formatCurrency(currentCost)}
+                              </span>
+                            )}
+                            {!hideFinancialData && hasComparison && trend !== "flat" && (
                               <span
                                 className={
                                   trend === "up"
@@ -301,14 +327,18 @@ export default function AdminProductDetailPage() {
                               </span>
                             )}
                           </div>
-                          {entry.averageCostAfter ? (
+                          {!hideFinancialData && entry.averageCostAfter ? (
                             <p className="mt-1 text-[11px] text-gray-500">
                               Promedio: {formatCurrency(entry.averageCostAfter)}
                             </p>
                           ) : null}
                         </td>
                         <td className="px-4 py-3 font-semibold text-purple-200">
-                          {formatCurrency(Number(entry.totalCost || 0))}
+                          {hideFinancialData ? (
+                            <ConfidentialBadge compact />
+                          ) : (
+                            formatCurrency(Number(entry.totalCost || 0))
+                          )}
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-400">
                           {resolveNoteLabel(entry)}

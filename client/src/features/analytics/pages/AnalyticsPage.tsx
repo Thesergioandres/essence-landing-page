@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import AnalyticsCharts from "../../../components/analytics/AnalyticsCharts";
 import ProfitHistoryTable from "../../../components/analytics/ProfitHistoryTable";
 import { analyticsService } from "../../analytics/services";
+import { useFinancialPrivacy } from "../../auth/utils/financialPrivacy";
 import type { MonthlyProfitData } from "../types/analytics.types";
 
 const toISO = (d: Date) => d.toISOString().slice(0, 10);
@@ -14,6 +15,7 @@ const currency = (n: number | undefined) =>
   }).format(n || 0);
 
 export default function Analytics() {
+  const { hideFinancialData, scopeDistributorId } = useFinancialPrivacy();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"charts" | "history">("charts");
@@ -68,11 +70,13 @@ export default function Analytics() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm uppercase tracking-wide text-purple-300/70">
-            Centro Financiero
+            {hideFinancialData ? "Mi Rendimiento" : "Centro Financiero"}
           </p>
           <h1 className="text-3xl font-bold text-white">Resultados</h1>
           <p className="text-sm text-gray-400">
-            Visión unificada de ventas, gastos y utilidades.
+            {hideFinancialData
+              ? "Vista privada: solo tus ganancias y volumen de ventas."
+              : "Visión unificada de ventas, gastos y utilidades."}
           </p>
         </div>
 
@@ -120,61 +124,84 @@ export default function Analytics() {
       <div
         className={`grid grid-cols-1 gap-4 transition-opacity lg:grid-cols-4 ${loading ? "opacity-50" : ""}`}
       >
-        <StatCard
-          title="Ingresos Totales"
-          subtitle="Facturación bruta"
-          value={currency(monthly?.currentMonth?.revenue || 0)}
-          tone="neutral"
-        />
-        <StatCard
-          title="Margen Bruto"
-          subtitle="Ventas - Costos"
-          value={currency(monthly?.currentMonth?.totalProfit || 0)}
-          tone="positive"
-        />
-        <StatCard
-          title="Gastos Operativos"
-          subtitle="Recurrentes (OPEX)"
-          value={currency(monthly?.currentMonth?.totalOPEX || 0)}
-          tone="negative"
-        />
-        <StatCard
-          title="Dinero en la Calle"
-          subtitle="Cuentas por Cobrar"
-          value={currency((monthly as any)?.accountsReceivable || 0)}
-          tone="neutral"
-        />
+        {hideFinancialData ? (
+          <>
+            <StatCard
+              title="Mis Ganancias"
+              subtitle="Utilidad de mis ventas"
+              value={currency(monthly?.currentMonth?.totalProfit || 0)}
+              tone="positive"
+            />
+            <StatCard
+              title="Mis Ventas"
+              subtitle="Volumen del periodo"
+              value={String(monthly?.currentMonth?.salesCount || 0)}
+              tone="neutral"
+            />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="Ingresos Totales"
+              subtitle="Facturación bruta"
+              value={currency(monthly?.currentMonth?.revenue || 0)}
+              tone="neutral"
+            />
+            <StatCard
+              title="Margen Bruto"
+              subtitle="Ventas - Costos"
+              value={currency(monthly?.currentMonth?.totalProfit || 0)}
+              tone="positive"
+            />
+            <StatCard
+              title="Gastos Operativos"
+              subtitle="Recurrentes (OPEX)"
+              value={currency(monthly?.currentMonth?.totalOPEX || 0)}
+              tone="negative"
+            />
+            <StatCard
+              title="Dinero en la Calle"
+              subtitle="Cuentas por Cobrar"
+              value={currency((monthly as any)?.accountsReceivable || 0)}
+              tone="neutral"
+            />
+          </>
+        )}
       </div>
 
       {/* EBIT Highlights */}
-      <div className="group relative overflow-hidden rounded-xl border border-gray-800 bg-gray-900/50 p-6 text-center shadow-lg">
-        <div className="bg-linear-to-r absolute inset-x-0 top-0 h-1 from-transparent via-purple-500/50 to-transparent opacity-50" />
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-          Utilidad Neta Operativa (EBIT)
-        </h3>
-        <div
-          className={`text-4xl font-extrabold tracking-tight md:text-5xl ${(monthly?.currentMonth?.netOperationProfit || 0) >= 0 ? "text-emerald-400" : "text-red-500"}`}
-        >
-          {currency(monthly?.currentMonth?.netOperationProfit || 0)}
-        </div>
-        <div className="mt-3 flex items-center justify-center gap-2 text-sm font-medium text-gray-500 opacity-80">
-          <span>
-            Margen {currency(monthly?.currentMonth?.totalProfit || 0)}
-          </span>
-          <span>-</span>
-          <span>Gastos {currency(monthly?.currentMonth?.totalOPEX || 0)}</span>
-          <span>=</span>
-          <span
-            className={
-              (monthly?.currentMonth?.netOperationProfit || 0) >= 0
-                ? "text-emerald-400"
-                : "text-red-400"
-            }
+      {!hideFinancialData && (
+        <div className="group relative overflow-hidden rounded-xl border border-gray-800 bg-gray-900/50 p-6 text-center shadow-lg">
+          <div className="bg-linear-to-r absolute inset-x-0 top-0 h-1 from-transparent via-purple-500/50 to-transparent opacity-50" />
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+            Utilidad Neta Operativa (EBIT)
+          </h3>
+          <div
+            className={`text-4xl font-extrabold tracking-tight md:text-5xl ${(monthly?.currentMonth?.netOperationProfit || 0) >= 0 ? "text-emerald-400" : "text-red-500"}`}
           >
-            Resultado
-          </span>
+            {currency(monthly?.currentMonth?.netOperationProfit || 0)}
+          </div>
+          <div className="mt-3 flex items-center justify-center gap-2 text-sm font-medium text-gray-500 opacity-80">
+            <span>
+              Margen {currency(monthly?.currentMonth?.totalProfit || 0)}
+            </span>
+            <span>-</span>
+            <span>
+              Gastos {currency(monthly?.currentMonth?.totalOPEX || 0)}
+            </span>
+            <span>=</span>
+            <span
+              className={
+                (monthly?.currentMonth?.netOperationProfit || 0) >= 0
+                  ? "text-emerald-400"
+                  : "text-red-400"
+              }
+            >
+              Resultado
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {error && (
         <p className="rounded border border-red-900/50 bg-red-900/10 p-4 text-sm text-red-400">
@@ -217,9 +244,16 @@ export default function Analytics() {
       {/* Tab Content */}
       <div className="min-h-[500px]">
         {activeTab === "charts" ? (
-          <AnalyticsCharts dateRange={dateRange} />
+          <AnalyticsCharts
+            dateRange={dateRange}
+            hideFinancialData={hideFinancialData}
+          />
         ) : (
-          <ProfitHistoryTable dateRange={dateRange} />
+          <ProfitHistoryTable
+            dateRange={dateRange}
+            hideFinancialData={hideFinancialData}
+            scopeDistributorId={scopeDistributorId}
+          />
         )}
       </div>
     </div>

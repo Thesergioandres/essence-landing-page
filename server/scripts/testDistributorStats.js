@@ -4,8 +4,8 @@ import { SaleRepository } from "../src/infrastructure/database/repositories/Sale
 // Import models to register schemas
 import "../models/Branch.js";
 import "../models/PaymentMethod.js";
-import "../models/Product.js";
-import "../models/User.js";
+import "../src/infrastructure/database/models/Product.js";
+import "../src/infrastructure/database/models/User.js";
 
 dotenv.config();
 

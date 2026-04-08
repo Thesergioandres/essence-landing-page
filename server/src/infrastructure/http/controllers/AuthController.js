@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import Membership from "../../../../models/Membership.js";
-import User from "../../../../models/User.js";
+import User from "../../database/models/User.js";
 import { LoginUseCase } from "../../../application/use-cases/LoginUseCase.js";
 import { RegisterUserUseCase } from "../../../application/use-cases/RegisterUserUseCase.js";
 import { AuthService } from "../../../domain/services/AuthService.js";

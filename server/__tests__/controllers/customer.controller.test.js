@@ -11,7 +11,7 @@ import {
 import Business from "../../models/Business.js";
 import Customer from "../../models/Customer.js";
 import Segment from "../../models/Segment.js";
-import User from "../../models/User.js";
+import User from "../../src/infrastructure/database/models/User.js";
 
 let mongoServer;
 let testBusiness;

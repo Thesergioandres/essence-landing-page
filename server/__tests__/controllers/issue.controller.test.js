@@ -19,7 +19,7 @@ import {
 } from "../../controllers/issue.controller.js";
 import Business from "../../models/Business.js";
 import IssueReport from "../../models/IssueReport.js";
-import User from "../../models/User.js";
+import User from "../../src/infrastructure/database/models/User.js";
 
 // Variables de test
 let testBusiness;

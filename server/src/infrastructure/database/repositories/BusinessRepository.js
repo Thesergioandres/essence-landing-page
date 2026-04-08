@@ -1,6 +1,6 @@
 import Business from "../../../../models/Business.js";
 import Membership from "../../../../models/Membership.js";
-import User from "../../../../models/User.js";
+import User from "../models/User.js";
 
 export class BusinessRepository {
   async create(data, creatorId) {
@@ -139,7 +139,10 @@ export class BusinessRepository {
           : {}),
       },
       { new: true },
-    ).populate("user", "name email role active");
+    ).populate(
+      "user",
+      "name email role active fixedCommissionOnly isCommissionFixed customCommissionRate",
+    );
 
     if (!membership) {
       const err = new Error("Miembro no encontrado");
@@ -167,7 +170,10 @@ export class BusinessRepository {
 
   async getMembers(businessId) {
     const members = await Membership.find({ business: businessId })
-      .populate("user", "name email role active")
+      .populate(
+        "user",
+        "name email role active fixedCommissionOnly isCommissionFixed customCommissionRate",
+      )
       .lean();
     return members;
   }

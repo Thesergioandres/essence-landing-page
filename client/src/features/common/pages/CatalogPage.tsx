@@ -1,6 +1,7 @@
 import { m as motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useBusiness } from "../../../context/BusinessContext";
 import {
   categoryService,
   productService,
@@ -10,12 +11,17 @@ import Footer from "../../../components/Footer";
 import Navbar from "../../../components/Navbar";
 import ProductCard from "../../../components/ProductCard";
 import { useDebounce } from "../../../hooks";
+import { useBrandLogo } from "../../../hooks/useBrandLogo";
 import { LoadingSpinner } from "../../../shared/components/ui";
+import { exportCatalogToPDF } from "../../../utils/exportUtils";
 import type { Category, Product } from "../../inventory/types/product.types";
 import { promotionService } from "../../settings/services";
 import type { Promotion } from "../../settings/types/promotion.types";
 
 export default function Catalog() {
+  const { business } = useBusiness();
+  const brandLogo = useBrandLogo();
+
   const staggerContainer = {
     hidden: { opacity: 0 },
     show: {
@@ -56,6 +62,11 @@ export default function Catalog() {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
+  const [isExportingCatalog, setIsExportingCatalog] = useState(false);
+  const [catalogBranding, setCatalogBranding] = useState<{
+    name?: string;
+    logoUrl?: string | null;
+  } | null>(null);
   const publicBusinessId = useMemo(() => {
     const fromQuery = searchParams.get("businessId");
     if (fromQuery) return fromQuery;
@@ -86,6 +97,8 @@ export default function Catalog() {
   );
 
   useEffect(() => {
+    setCatalogBranding(null);
+
     if (!publicBusinessId) {
       setLoadError(
         "Falta el businessId para cargar el catálogo público. Añade ?businessId=... o define VITE_PUBLIC_BUSINESS_ID en el build."
@@ -114,6 +127,14 @@ export default function Catalog() {
         const productsList = Array.isArray(productsResponse)
           ? productsResponse
           : productsResponse.data || [];
+        const responseBranding =
+          !Array.isArray(productsResponse) &&
+          "business" in productsResponse &&
+          productsResponse.business
+            ? productsResponse.business
+            : null;
+
+        setCatalogBranding(responseBranding || null);
 
         const inStockProducts = productsList.filter(
           (product: Product) => (product.totalStock ?? 0) > 0
@@ -396,6 +417,50 @@ export default function Catalog() {
     }
   };
 
+  const resolveProductFlavor = (product: Product) => {
+    const candidate =
+      ((product as any)?.flavor as string | undefined) ||
+      ((product as any)?.sabor as string | undefined) ||
+      ((product as any)?.variant as string | undefined) ||
+      null;
+
+    return candidate?.trim() || null;
+  };
+
+  const handleExportCatalog = async () => {
+    if (loading || filteredProducts.length === 0) {
+      window.alert("No hay productos visibles para exportar en el catálogo.");
+      return;
+    }
+
+    setIsExportingCatalog(true);
+    try {
+      await exportCatalogToPDF(
+        filteredProducts.map(product => ({
+          name: product.name,
+          flavor: resolveProductFlavor(product),
+          description: product.description || "",
+          clientPrice: Number(product.clientPrice || 0),
+          image: product.image?.url || null,
+        })),
+        {
+          businessName:
+            catalogBranding?.name?.trim() || business?.name || "Essence ERP",
+          logoUrl:
+            catalogBranding?.logoUrl?.trim() ||
+            business?.logoUrl?.trim() ||
+            brandLogo,
+          title: "Catalogo de Venta",
+        }
+      );
+    } catch (error) {
+      console.error("Error exporting catalog PDF", error);
+      window.alert("No se pudo generar el catálogo PDF.");
+    } finally {
+      setIsExportingCatalog(false);
+    }
+  };
+
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
 
@@ -597,6 +662,34 @@ export default function Catalog() {
                 className="rounded-lg border border-white/10 bg-gray-950/60 px-4 py-2 text-sm font-semibold text-gray-100 transition hover:bg-white/10"
               >
                 {copiedLink ? "Copiado" : "Copiar link"}
+              </button>
+              <button
+                onClick={handleExportCatalog}
+                disabled={
+                  isExportingCatalog || loading || filteredProducts.length === 0
+                }
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cyan-400/40 bg-cyan-500/15 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 3h7l5 5v12a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zm7 1v4h4"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 13h6M9 17h6"
+                  />
+                </svg>
+                {isExportingCatalog ? "Generando PDF..." : "Descargar PDF"}
               </button>
             </div>
           </div>
@@ -1081,6 +1174,39 @@ export default function Catalog() {
           </div>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={handleExportCatalog}
+        disabled={
+          isExportingCatalog || loading || filteredProducts.length === 0
+        }
+        className="fixed bottom-5 right-5 z-40 inline-flex min-h-11 items-center gap-2 rounded-full border border-cyan-300/50 bg-cyan-500/90 px-4 py-3 text-sm font-semibold text-slate-950 shadow-xl shadow-cyan-500/30 backdrop-blur-sm transition hover:scale-[1.02] hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 3h7l5 5v12a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zm7 1v4h4"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 13h6M9 17h6"
+          />
+        </svg>
+        <span className="hidden sm:inline">
+          {isExportingCatalog ? "Generando PDF..." : "Catalogo PDF"}
+        </span>
+        <span className="sm:hidden">PDF</span>
+      </button>
 
       {selectedPromotion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">

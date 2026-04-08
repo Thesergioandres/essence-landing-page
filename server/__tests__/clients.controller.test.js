@@ -12,10 +12,10 @@ import mongoose from "mongoose";
 import request from "supertest";
 import Business from "../models/Business.js";
 import Customer from "../models/Customer.js";
-import Product from "../models/Product.js";
-import Sale from "../models/Sale.js";
+import Product from "../src/infrastructure/database/models/Product.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
 import Segment from "../models/Segment.js";
-import User from "../models/User.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 // Integration tests for CRM clients and segments
 

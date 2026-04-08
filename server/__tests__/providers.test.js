@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import request from "supertest";
 import Business from "../models/Business.js";
 import Provider from "../models/Provider.js";
-import User from "../models/User.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 let app;
 

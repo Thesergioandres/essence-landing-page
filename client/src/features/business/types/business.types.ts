@@ -117,6 +117,7 @@ export interface Membership {
     | null;
   role: string;
   status: string;
+  allowedBranches?: string[];
   permissions?: Record<string, Record<string, boolean>>;
 }
 

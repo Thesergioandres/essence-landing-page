@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 // Models
-import Product from "../models/Product.js";
+import Product from "../src/infrastructure/database/models/Product.js";
 import Promotion from "../models/Promotion.js";
 
 // Utils

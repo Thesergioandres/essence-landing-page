@@ -3,6 +3,7 @@
  * Handles profit history HTTP requests
  */
 
+import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
 import ProfitHistoryRepository from "../../database/repositories/ProfitHistoryRepository.js";
 
 class ProfitHistoryController {
@@ -114,11 +115,19 @@ class ProfitHistoryController {
   async getAdminOverview(req, res) {
     try {
       const businessId = req.businessId;
-      const { startDate, endDate, limit } = req.query;
+      const { startDate, endDate, limit, distributorId } = req.query;
+      const privacy = resolveFinancialPrivacyContext(req);
+      const scopedDistributorId = privacy.scopeDistributorId || distributorId;
 
       const overview = await ProfitHistoryRepository.getAdminOverview(
         businessId,
-        { startDate, endDate, limit: parseInt(limit) || 150 },
+        {
+          startDate,
+          endDate,
+          limit: parseInt(limit) || 150,
+          distributorId: scopedDistributorId,
+          hideFinancialData: privacy.hideFinancialData,
+        },
       );
 
       res.json({

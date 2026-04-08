@@ -5,7 +5,7 @@ import {
   m,
   MotionConfig,
 } from "framer-motion";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import BusinessGate from "./components/BusinessGate";
 import ImpersonationBanner from "./components/ImpersonationBanner";
@@ -13,6 +13,7 @@ import LoadingProgress from "./components/LoadingProgress";
 import QuickGodAccess from "./components/QuickGodAccess";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { ToastContainer } from "./shared/components/ui";
+import { useMotionProfile } from "./shared/config/motion.config";
 
 const ADMIN_ORIGINAL_TOKEN_KEY = "admin_original_token";
 
@@ -148,11 +149,54 @@ const DistributorCatalog = lazy(
 const DistributorCatalogShare = lazy(
   () => import("./features/distributors/pages/DistributorCatalogSharePage")
 );
+const DistributorShipments = lazy(
+  () => import("./features/distributors/pages/DistributorShipmentsPage")
+);
+const DistributorRequestDispatch = lazy(
+  () => import("./features/distributors/pages/DistributorRequestDispatchPage")
+);
 const PublicDistributorCatalog = lazy(
   () => import("./features/distributors/pages/PublicDistributorCatalogPage")
 );
 const DistributorAdvertising = lazy(
   () => import("./features/advertising/pages/DistributorAdvertisingPage")
+);
+const OperativoStockManagement = lazy(
+  () =>
+    import("./features/distributors/pages/operativo/OperativoStockManagementPage")
+);
+const OperativoGlobalInventory = lazy(
+  () =>
+    import("./features/distributors/pages/operativo/OperativoGlobalInventoryPage")
+);
+const OperativoBranches = lazy(
+  () => import("./features/distributors/pages/operativo/OperativoBranchesPage")
+);
+const OperativoTransferHistory = lazy(
+  () =>
+    import("./features/distributors/pages/operativo/OperativoTransferHistoryPage")
+);
+const OperativoSales = lazy(
+  () => import("./features/distributors/pages/operativo/OperativoSalesPage")
+);
+const OperativoAnalytics = lazy(
+  () => import("./features/distributors/pages/operativo/OperativoAnalyticsPage")
+);
+const OperativoExpenses = lazy(
+  () => import("./features/distributors/pages/operativo/OperativoExpensesPage")
+);
+const OperativoTeam = lazy(
+  () => import("./features/distributors/pages/operativo/OperativoTeamPage")
+);
+const OperativoPromotions = lazy(
+  () =>
+    import("./features/distributors/pages/operativo/OperativoPromotionsPage")
+);
+const OperativoProviders = lazy(
+  () => import("./features/distributors/pages/operativo/OperativoProvidersPage")
+);
+const OperativoCustomers = lazy(
+  () => import("./features/distributors/pages/operativo/OperativoCustomersPage")
 );
 const DemoPage = lazy(() => import("./features/demo/DemoPage"));
 
@@ -202,6 +246,9 @@ const TransferStock = lazy(
 const TransferHistory = lazy(
   () => import("./features/branches/pages/TransferHistoryPage")
 );
+const DispatchCenter = lazy(
+  () => import("./features/branches/pages/DispatchCenterPage")
+);
 
 // Notifications pages
 const Notifications = lazy(
@@ -228,9 +275,17 @@ const Advertising = lazy(
 
 export default function App() {
   const location = useLocation();
+  const { motionProfile } = useMotionProfile();
   const [isImpersonating, setIsImpersonating] = useState(
     typeof window !== "undefined" &&
       Boolean(localStorage.getItem(ADMIN_ORIGINAL_TOKEN_KEY))
+  );
+  const routeTransition = useMemo(
+    () => ({
+      duration: motionProfile.routeDuration,
+      ease: [0.22, 1, 0.36, 1] as const,
+    }),
+    [motionProfile.routeDuration]
   );
 
   useEffect(() => {
@@ -250,7 +305,7 @@ export default function App() {
   }, []);
 
   return (
-    <MotionConfig reducedMotion="never">
+    <MotionConfig reducedMotion="user">
       <LazyMotion features={domAnimation} strict>
         <Suspense fallback={<PageLoader />}>
           <ToastContainer position="top-right" />
@@ -259,11 +314,22 @@ export default function App() {
           <div className={isImpersonating ? "pt-10" : ""}>
             <AnimatePresence mode="wait" initial={false}>
               <m.div
-                key={location.pathname}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 6 }}
-                transition={{ duration: 0.3 }}
+                key={`${location.pathname}${location.search}`}
+                className="essence-route-frame"
+                initial={{
+                  opacity: 0,
+                  y: motionProfile.routeEnterY,
+                  scale: motionProfile.routeEnterScale,
+                  filter: `blur(${motionProfile.routeEnterBlur}px)`,
+                }}
+                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                exit={{
+                  opacity: 0,
+                  y: motionProfile.routeExitY,
+                  scale: motionProfile.routeExitScale,
+                  filter: `blur(${motionProfile.routeExitBlur}px)`,
+                }}
+                transition={routeTransition}
               >
                 <Routes location={location}>
                   {/* Public Routes */}
@@ -324,7 +390,13 @@ export default function App() {
                     path="/admin"
                     element={
                       <ProtectedRoute
-                        allowedRoles={["admin", "super_admin", "god"]}
+                        allowedRoles={[
+                          "admin",
+                          "super_admin",
+                          "god",
+                          "distribuidor",
+                          "viewer",
+                        ]}
                       >
                         <DashboardLayout />
                       </ProtectedRoute>
@@ -555,25 +627,17 @@ export default function App() {
                     <Route
                       path="register-sale"
                       element={
-                        <ProtectedRoute
-                          allowedRoles={["admin", "super_admin", "god"]}
-                        >
-                          <BusinessGate requiredFeature="sales">
-                            <StandardSale />
-                          </BusinessGate>
-                        </ProtectedRoute>
+                        <BusinessGate requiredFeature="sales">
+                          <StandardSale />
+                        </BusinessGate>
                       }
                     />
                     <Route
                       path="register-promotion"
                       element={
-                        <ProtectedRoute
-                          allowedRoles={["admin", "super_admin", "god"]}
-                        >
-                          <BusinessGate requiredFeature="sales">
-                            <PromotionSale />
-                          </BusinessGate>
-                        </ProtectedRoute>
+                        <BusinessGate requiredFeature="sales">
+                          <PromotionSale />
+                        </BusinessGate>
                       }
                     />
                     <Route
@@ -581,6 +645,14 @@ export default function App() {
                       element={
                         <BusinessGate requiredFeature="transfers">
                           <TransferHistory />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="dispatch"
+                      element={
+                        <BusinessGate requiredFeature="transfers">
+                          <DispatchCenter />
                         </BusinessGate>
                       }
                     />
@@ -712,6 +784,22 @@ export default function App() {
                       }
                     />
                     <Route
+                      path="request-dispatch"
+                      element={
+                        <BusinessGate requiredFeature="transfers">
+                          <DistributorRequestDispatch />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="my-shipments"
+                      element={
+                        <BusinessGate requiredFeature="transfers">
+                          <DistributorShipments />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
                       path="register-sale"
                       element={
                         <BusinessGate requiredFeature="sales">
@@ -724,6 +812,94 @@ export default function App() {
                       element={
                         <BusinessGate requiredFeature="sales">
                           <PromotionSale />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="operativo/stock-management"
+                      element={
+                        <BusinessGate requiredFeature="inventory">
+                          <OperativoStockManagement />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="operativo/global-inventory"
+                      element={
+                        <BusinessGate requiredFeature="inventory">
+                          <OperativoGlobalInventory />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="operativo/branches"
+                      element={
+                        <BusinessGate requiredFeature="inventory">
+                          <OperativoBranches />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="operativo/transfer-history"
+                      element={
+                        <BusinessGate requiredFeature="transfers">
+                          <OperativoTransferHistory />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="operativo/sales"
+                      element={
+                        <BusinessGate requiredFeature="sales">
+                          <OperativoSales />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="operativo/analytics"
+                      element={
+                        <BusinessGate requiredFeature="reports">
+                          <OperativoAnalytics />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="operativo/expenses"
+                      element={
+                        <BusinessGate requiredFeature="expenses">
+                          <OperativoExpenses />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="operativo/team"
+                      element={
+                        <BusinessGate>
+                          <OperativoTeam />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="operativo/promotions"
+                      element={
+                        <BusinessGate requiredFeature="promotions">
+                          <OperativoPromotions />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="operativo/providers"
+                      element={
+                        <BusinessGate requiredFeature="inventory">
+                          <OperativoProviders />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="operativo/customers"
+                      element={
+                        <BusinessGate>
+                          <OperativoCustomers />
                         </BusinessGate>
                       }
                     />

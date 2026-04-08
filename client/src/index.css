@@ -5,6 +5,10 @@
   --transition-duration: 0.3s;
   --border-radius: 0.5rem;
   --shadow-color: 0, 0, 0;
+  --motion-reveal-duration: 0.5s;
+  --motion-reveal-step: 0.04s;
+  --motion-reveal-distance: 12px;
+  --motion-interactive-duration: 0.2s;
 
   /* Safe area insets para dispositivos con notch */
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
@@ -24,6 +28,27 @@
   --app-bg-admin-header: rgba(13, 14, 22, 0.8);
   --app-bg-sales-shell: #05060b;
   --app-bg-sales-state: #070910;
+}
+
+:root[data-motion-mode="suave"] {
+  --motion-reveal-duration: 0.35s;
+  --motion-reveal-step: 0.02s;
+  --motion-reveal-distance: 8px;
+  --motion-interactive-duration: 0.12s;
+}
+
+:root[data-motion-mode="estandar"] {
+  --motion-reveal-duration: 0.45s;
+  --motion-reveal-step: 0.03s;
+  --motion-reveal-distance: 10px;
+  --motion-interactive-duration: 0.16s;
+}
+
+:root[data-motion-mode="premium"] {
+  --motion-reveal-duration: 0.55s;
+  --motion-reveal-step: 0.045s;
+  --motion-reveal-distance: 14px;
+  --motion-interactive-duration: 0.22s;
 }
 
 .bg-app-base {
@@ -141,6 +166,66 @@
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradient 3s ease infinite;
+}
+
+@keyframes essenceViewEnter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--motion-reveal-distance));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.essence-route-frame,
+.essence-view-shell {
+  will-change: transform, opacity, filter;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .essence-view-shell > * {
+    animation: essenceViewEnter var(--motion-reveal-duration)
+      cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .essence-view-shell > *:nth-child(2) {
+    animation-delay: calc(var(--motion-reveal-step) * 1);
+  }
+
+  .essence-view-shell > *:nth-child(3) {
+    animation-delay: calc(var(--motion-reveal-step) * 2);
+  }
+
+  .essence-view-shell > *:nth-child(4) {
+    animation-delay: calc(var(--motion-reveal-step) * 3);
+  }
+
+  .essence-view-shell > *:nth-child(5) {
+    animation-delay: calc(var(--motion-reveal-step) * 4);
+  }
+
+  .essence-view-shell > *:nth-child(6) {
+    animation-delay: calc(var(--motion-reveal-step) * 5);
+  }
+
+  .essence-view-shell > *:nth-child(7) {
+    animation-delay: calc(var(--motion-reveal-step) * 6);
+  }
+
+  .essence-view-shell > *:nth-child(8) {
+    animation-delay: calc(var(--motion-reveal-step) * 7);
+  }
+
+  :where(button, a, [role="button"]) {
+    transition:
+      transform var(--motion-interactive-duration) ease,
+      box-shadow var(--motion-interactive-duration) ease,
+      background-color var(--motion-interactive-duration) ease,
+      border-color var(--motion-interactive-duration) ease,
+      color var(--motion-interactive-duration) ease;
+  }
 }
 
 /* Scrollbar personalizado */

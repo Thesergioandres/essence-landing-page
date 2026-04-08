@@ -1,6 +1,6 @@
 import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { gamificationService } from "../../common/services";
 import {
   categoryService,
@@ -26,6 +26,10 @@ interface FormState {
 
 export default function EditProduct() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const firstSegment = location.pathname.split("/").filter(Boolean)[0] || "";
+  const areaBase = firstSegment ? `/${firstSegment}` : "/admin";
+  const productsRoute = `${areaBase}/products`;
   const { id } = useParams<{ id: string }>();
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -282,7 +286,7 @@ export default function EditProduct() {
         imageFile: imageFile || undefined,
       });
 
-      navigate("/admin/products");
+      navigate(productsRoute);
     } catch (err) {
       const message =
         err instanceof Error
@@ -687,7 +691,7 @@ export default function EditProduct() {
         <div className="flex justify-end gap-4">
           <button
             type="button"
-            onClick={() => navigate("/admin/products")}
+            onClick={() => navigate(productsRoute)}
             className="rounded-lg border border-gray-700 px-6 py-3 font-semibold text-gray-300 transition hover:border-purple-500 hover:text-white"
           >
             Cancelar

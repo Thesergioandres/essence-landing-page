@@ -4,8 +4,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import Footer from "../../../components/Footer";
 import Navbar from "../../../components/Navbar";
 import ProductCard from "../../../components/ProductCard";
+import { useBusiness } from "../../../context/BusinessContext";
 import { useDebounce } from "../../../hooks";
+import { useBrandLogo } from "../../../hooks/useBrandLogo";
 import { LoadingSpinner } from "../../../shared/components/ui";
+import { exportCatalogToPDF } from "../../../utils/exportUtils";
 import { productService } from "../../inventory/services/inventory.service";
 import type { Product } from "../../inventory/types/product.types";
 import { promotionService } from "../../settings/services";
@@ -16,6 +19,9 @@ interface ProductWithStock extends Product {
 }
 
 export default function DistributorCatalog() {
+  const { business } = useBusiness();
+  const brandLogo = useBrandLogo();
+
   const staggerContainer = {
     hidden: { opacity: 0 },
     show: {
@@ -46,6 +52,7 @@ export default function DistributorCatalog() {
   const [publicCatalogUrl, setPublicCatalogUrl] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
+  const [isExportingCatalog, setIsExportingCatalog] = useState(false);
   const [searchTerm, setSearchTerm] = useState(
     searchParams.get("search") || ""
   );
@@ -314,6 +321,46 @@ export default function DistributorCatalog() {
     }
   };
 
+  const resolveProductFlavor = (product: ProductWithStock) => {
+    const candidate =
+      ((product as any)?.flavor as string | undefined) ||
+      ((product as any)?.sabor as string | undefined) ||
+      ((product as any)?.variant as string | undefined) ||
+      null;
+
+    return candidate?.trim() || null;
+  };
+
+  const handleExportCatalog = async () => {
+    if (loading || filteredProducts.length === 0) {
+      window.alert("No hay productos visibles para exportar en el catálogo.");
+      return;
+    }
+
+    setIsExportingCatalog(true);
+    try {
+      await exportCatalogToPDF(
+        filteredProducts.map(product => ({
+          name: product.name,
+          flavor: resolveProductFlavor(product),
+          description: product.description || "",
+          clientPrice: Number(product.clientPrice || 0),
+          image: product.image?.url || null,
+        })),
+        {
+          businessName: business?.name || "Catalogo de distribuidor",
+          logoUrl: business?.logoUrl?.trim() || brandLogo,
+          title: "Catalogo de Venta",
+        }
+      );
+    } catch (error) {
+      console.error("Error exporting distributor catalog PDF", error);
+      window.alert("No se pudo generar el catálogo PDF.");
+    } finally {
+      setIsExportingCatalog(false);
+    }
+  };
+
   const filteredProducts = useMemo(() => {
     let list = [...products];
 
@@ -461,7 +508,7 @@ export default function DistributorCatalog() {
                       {products.length}
                     </p>
                   </div>
-                  <div className="rounded-full bg-gradient-to-r from-amber-500 to-emerald-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white">
+                  <div className="bg-linear-to-r rounded-full from-amber-500 to-emerald-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white">
                     Actualizado
                   </div>
                 </div>
@@ -498,7 +545,7 @@ export default function DistributorCatalog() {
         className={`mx-auto max-w-7xl space-y-6 px-4 ${hideChrome ? "py-6" : "py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16"}`}
       >
         {publicCatalogUrl && (
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-white/0 p-5 shadow-2xl backdrop-blur-xl">
+          <div className="bg-linear-to-br rounded-2xl border border-white/10 from-white/10 via-white/5 to-white/0 p-5 shadow-2xl backdrop-blur-xl">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-sm font-semibold text-white">
@@ -526,6 +573,36 @@ export default function DistributorCatalog() {
                   className="rounded-lg border border-white/10 bg-gray-950/60 px-4 py-2 text-sm font-semibold text-gray-100 transition hover:bg-white/10"
                 >
                   Ver opciones
+                </button>
+                <button
+                  onClick={handleExportCatalog}
+                  disabled={
+                    isExportingCatalog ||
+                    loading ||
+                    filteredProducts.length === 0
+                  }
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cyan-400/40 bg-cyan-500/15 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 3h7l5 5v12a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zm7 1v4h4"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 13h6M9 17h6"
+                    />
+                  </svg>
+                  {isExportingCatalog ? "Generando PDF..." : "Descargar PDF"}
                 </button>
               </div>
             </div>
@@ -558,7 +635,7 @@ export default function DistributorCatalog() {
         )}
 
         {(promotionError || activePromotions.length > 0) && (
-          <section className="rounded-3xl border border-emerald-400/20 bg-gradient-to-br from-emerald-500/10 via-transparent to-amber-500/10 p-6 shadow-xl">
+          <section className="bg-linear-to-br rounded-3xl border border-emerald-400/20 from-emerald-500/10 via-transparent to-amber-500/10 p-6 shadow-xl">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-200">
@@ -642,7 +719,7 @@ export default function DistributorCatalog() {
               onClick={() => setSelectedCategory("all")}
               className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-300 sm:px-6 sm:py-3 sm:text-base ${
                 selectedCategory === "all"
-                  ? "scale-105 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/40"
+                  ? "bg-linear-to-r scale-105 from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/40"
                   : "border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white"
               }`}
             >
@@ -654,7 +731,7 @@ export default function DistributorCatalog() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-300 sm:px-6 sm:py-3 sm:text-base ${
                   selectedCategory === cat
-                    ? "scale-105 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/40"
+                    ? "bg-linear-to-r scale-105 from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/40"
                     : "border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white"
                 }`}
               >
@@ -893,6 +970,39 @@ export default function DistributorCatalog() {
           </motion.div>
         )}
       </main>
+
+      <button
+        type="button"
+        onClick={handleExportCatalog}
+        disabled={
+          isExportingCatalog || loading || filteredProducts.length === 0
+        }
+        className="fixed bottom-5 right-5 z-40 inline-flex min-h-11 items-center gap-2 rounded-full border border-cyan-300/50 bg-cyan-500/90 px-4 py-3 text-sm font-semibold text-slate-950 shadow-xl shadow-cyan-500/30 backdrop-blur-sm transition hover:scale-[1.02] hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 3h7l5 5v12a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zm7 1v4h4"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 13h6M9 17h6"
+          />
+        </svg>
+        <span className="hidden sm:inline">
+          {isExportingCatalog ? "Generando PDF..." : "Catalogo PDF"}
+        </span>
+        <span className="sm:hidden">PDF</span>
+      </button>
 
       {!hideChrome && <Footer />}
     </div>

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import AuditLog from "../../../../models/AuditLog.js";
 import Membership from "../../../../models/Membership.js";
-import Product from "../../../../models/Product.js";
+import Product from "../models/Product.js";
 
 export class AuditRepository {
   async getBusinessUserIds(businessId, isSuperAdmin) {

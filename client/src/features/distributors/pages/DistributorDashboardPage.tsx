@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
+import { gsap } from "gsap";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ConfidentialBadge } from "../../../shared/components/ui";
 import { authService } from "../../auth/services";
+import { useFinancialPrivacy } from "../../auth/utils/financialPrivacy";
+import { dispatchService } from "../../branches/services";
 import { gamificationService } from "../../common/services";
 import type { Credit } from "../../credits/types/credit.types";
 import { stockService } from "../../inventory/services/inventory.service";
@@ -12,12 +16,22 @@ interface DashboardStats {
   totalSales: number;
   totalRevenue: number;
   totalProfit: number;
+  todaySalesCount: number;
+  stockAvailableUnits: number;
   productsCount: number;
   lowStockCount: number;
   pendingCreditsAmount: number;
   pendingCreditsCount: number;
   overdueCreditsAmount: number;
   overdueCreditsCount: number;
+}
+
+interface AnimatedDashboardStats {
+  salesToday: number;
+  stockAvailable: number;
+  totalSales: number;
+  totalProfit: number;
+  productsCount: number;
 }
 
 interface RankingInfo {
@@ -30,10 +44,14 @@ interface RankingInfo {
 
 export default function DistributorDashboard() {
   const navigate = useNavigate();
+  const { hideFinancialData } = useFinancialPrivacy();
+  const dashboardRef = useRef<HTMLDivElement | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalSales: 0,
     totalRevenue: 0,
     totalProfit: 0,
+    todaySalesCount: 0,
+    stockAvailableUnits: 0,
     productsCount: 0,
     lowStockCount: 0,
     pendingCreditsAmount: 0,
@@ -41,16 +59,109 @@ export default function DistributorDashboard() {
     overdueCreditsAmount: 0,
     overdueCreditsCount: 0,
   });
+  const [animatedStats, setAnimatedStats] = useState<AnimatedDashboardStats>({
+    salesToday: 0,
+    stockAvailable: 0,
+    totalSales: 0,
+    totalProfit: 0,
+    productsCount: 0,
+  });
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
   const [pendingCredits, setPendingCredits] = useState<Credit[]>([]);
   const [myStock, setMyStock] = useState<DistributorStock[]>([]);
   const [rankingInfo, setRankingInfo] = useState<RankingInfo | null>(null);
+  const [pendingReceptionCount, setPendingReceptionCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const syncPendingReception = async () => {
+      try {
+        const count = await dispatchService.getPendingReceptionCount();
+        if (isActive) {
+          setPendingReceptionCount(Number(count || 0));
+        }
+      } catch {
+        if (isActive) {
+          setPendingReceptionCount(0);
+        }
+      }
+    };
+
+    syncPendingReception();
+    const intervalId = window.setInterval(syncPendingReception, 45000);
+    window.addEventListener("dispatch-updated", syncPendingReception);
+
+    return () => {
+      isActive = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener("dispatch-updated", syncPendingReception);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const counters = {
+      salesToday: 0,
+      stockAvailable: 0,
+      totalSales: 0,
+      totalProfit: 0,
+      productsCount: 0,
+    };
+
+    const context = gsap.context(() => {
+      gsap.fromTo(
+        ".dashboard-stat-card",
+        { autoAlpha: 0, y: 28, scale: 0.97 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.62,
+          ease: "power3.out",
+          stagger: 0.1,
+          overwrite: "auto",
+        }
+      );
+
+      gsap.to(counters, {
+        salesToday: stats.todaySalesCount,
+        stockAvailable: stats.stockAvailableUnits,
+        totalSales: stats.totalSales,
+        totalProfit: stats.totalProfit,
+        productsCount: stats.productsCount,
+        duration: 1.15,
+        ease: "power2.out",
+        onUpdate: () => {
+          setAnimatedStats({
+            salesToday: Math.round(counters.salesToday),
+            stockAvailable: Math.round(counters.stockAvailable),
+            totalSales: Math.round(counters.totalSales),
+            totalProfit: Math.round(counters.totalProfit),
+            productsCount: Math.round(counters.productsCount),
+          });
+        },
+      });
+    }, dashboardRef);
+
+    return () => {
+      context.revert();
+    };
+  }, [
+    loading,
+    stats.productsCount,
+    stats.stockAvailableUnits,
+    stats.todaySalesCount,
+    stats.totalProfit,
+    stats.totalSales,
+  ]);
 
   const loadDashboardData = async () => {
     try {
@@ -64,15 +175,19 @@ export default function DistributorDashboard() {
       }
 
       const userId = authService.getCurrentUser()?._id || "";
-      const [salesData, stockData, commissionData] = await Promise.all([
-        saleService
-          .getDistributorSales(undefined, { limit: 50 })
-          .catch(() => ({ sales: [] })),
-        stockService.getDistributorStock("me").catch(() => []),
-        userId
-          ? gamificationService.getAdjustedCommission(userId).catch(() => null)
-          : Promise.resolve(null),
-      ]);
+      const [salesData, stockData, commissionData, shipmentPendingCount] =
+        await Promise.all([
+          saleService
+            .getDistributorSales(undefined, { limit: 50 })
+            .catch(() => ({ sales: [] })),
+          stockService.getDistributorStock("me").catch(() => []),
+          userId
+            ? gamificationService
+                .getAdjustedCommission(userId)
+                .catch(() => null)
+            : Promise.resolve(null),
+          dispatchService.getPendingReceptionCount().catch(() => 0),
+        ]);
 
       // Filter out promotions from stock data
       const filteredStockData = (stockData || []).filter(item => {
@@ -111,6 +226,18 @@ export default function DistributorDashboard() {
         (sum, sale) => sum + sale.distributorProfit,
         0
       );
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const todaySalesCount = salesList.filter(sale => {
+        const saleDate = new Date(sale.saleDate);
+        return !Number.isNaN(saleDate.getTime()) && saleDate >= startOfDay;
+      }).length;
+
+      const stockAvailableUnits = filteredStockData.reduce(
+        (sum, item) => sum + Number(item.quantity || 0),
+        0
+      );
       const lowStockCount = filteredStockData.filter(
         item => item.quantity <= item.lowStockAlert
       ).length;
@@ -135,6 +262,8 @@ export default function DistributorDashboard() {
         totalSales,
         totalRevenue,
         totalProfit,
+        todaySalesCount,
+        stockAvailableUnits,
         productsCount: filteredStockData.length,
         lowStockCount,
         pendingCreditsAmount,
@@ -155,6 +284,8 @@ export default function DistributorDashboard() {
       if (commissionData) {
         setRankingInfo(commissionData);
       }
+
+      setPendingReceptionCount(Number(shipmentPendingCount || 0));
     } catch (error) {
       console.error("Error al cargar datos del dashboard:", error);
     } finally {
@@ -204,19 +335,89 @@ export default function DistributorDashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-bold text-white">Dashboard</h1>
-        <p className="mt-2 text-gray-400">
-          Bienvenido a tu panel de distribuidor
+    <div ref={dashboardRef} className="space-y-8">
+      <div className="dashboard-stat-card rounded-2xl border border-white/10 bg-gray-900/55 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)] backdrop-blur-xl sm:p-7">
+        <h1 className="bg-linear-to-r from-cyan-300 via-blue-300 to-slate-200 bg-clip-text text-4xl font-bold text-transparent">
+          Distributor Premium Hub
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm text-gray-300 sm:text-base">
+          Dashboard operativo con lectura en tiempo real, navegación fluida y
+          blindaje financiero visual.
         </p>
       </div>
 
-      {/* Ranking Widget - Solo si hay información */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <article className="dashboard-stat-card rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_28px_rgba(2,6,23,0.35)] backdrop-blur-xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200/90">
+            Ventas de Hoy
+          </p>
+          <p className="mt-3 text-4xl font-bold text-white">
+            {animatedStats.salesToday.toLocaleString("es-CO")}
+          </p>
+          <p className="mt-2 text-sm text-gray-300">
+            Registros cerrados durante la jornada actual.
+          </p>
+        </article>
+
+        <article className="dashboard-stat-card rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_28px_rgba(2,6,23,0.35)] backdrop-blur-xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200/90">
+            Stock Disponible
+          </p>
+          <p className="mt-3 text-4xl font-bold text-white">
+            {animatedStats.stockAvailable.toLocaleString("es-CO")}
+          </p>
+          <p className="mt-2 text-sm text-gray-300">
+            Unidades listas para venta inmediata.
+          </p>
+        </article>
+
+        <article className="dashboard-stat-card bg-white/4 rounded-2xl border border-white/10 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_18px_28px_rgba(2,6,23,0.35)] backdrop-blur-xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+            Blindaje de Márgenes
+          </p>
+          <div className="mt-4">
+            {hideFinancialData ? (
+              <ConfidentialBadge
+                label="Margen administrativo"
+                className="pointer-events-none select-none"
+              />
+            ) : (
+              <p className="text-sm font-semibold text-emerald-300">
+                Acceso habilitado por permisos financieros.
+              </p>
+            )}
+          </div>
+          <p className="mt-2 text-sm text-gray-400">
+            Los costos internos permanecen sellados para vista distribuidor.
+          </p>
+        </article>
+      </div>
+
+      {pendingReceptionCount > 0 && (
+        <div className="dashboard-stat-card bg-linear-to-br from-sky-800/22 rounded-2xl border border-sky-400/35 via-blue-900/20 to-gray-900/70 p-5 shadow-[0_14px_30px_rgba(8,47,73,0.3)] backdrop-blur-xl">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-sky-200">
+                Tienes {pendingReceptionCount} pedidos pendientes por recibir
+              </p>
+              <p className="mt-1 text-sm text-gray-300">
+                Confirma recepción para mover unidades de tránsito a stock
+                disponible.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/distributor/my-shipments")}
+              className="min-h-11 rounded-xl border border-sky-300/40 bg-sky-500/20 px-4 py-2 text-sm font-semibold text-sky-50 transition-all duration-300 hover:border-sky-200/70 hover:bg-sky-500/30"
+            >
+              Ver pedidos en camino
+            </button>
+          </div>
+        </div>
+      )}
+
       {rankingInfo && rankingInfo.position && (
-        <div className="bg-linear-to-br rounded-xl border border-yellow-500/50 from-yellow-900/30 to-orange-900/30 p-6 backdrop-blur-lg">
-          <div className="flex items-center justify-between">
+        <div className="dashboard-stat-card bg-linear-to-br from-yellow-900/24 via-orange-900/18 rounded-2xl border border-yellow-500/40 to-gray-900/70 p-6 backdrop-blur-xl">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex-1">
               <div className="mb-2 flex items-center gap-3">
                 <span className="text-4xl">
@@ -239,13 +440,13 @@ export default function DistributorDashboard() {
               </div>
 
               {rankingInfo.bonusCommission > 0 && (
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-green-500/50 bg-green-500/20 px-4 py-2">
+                <div className="bg-emerald-500/16 mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/45 px-4 py-2">
                   <span className="text-xl">💰</span>
                   <div>
-                    <p className="text-xs text-green-300">
+                    <p className="text-xs text-emerald-300">
                       Comisión extra activa
                     </p>
-                    <p className="text-lg font-bold text-green-400">
+                    <p className="text-lg font-bold text-emerald-200">
                       +{rankingInfo.bonusCommission}% en cada venta
                     </p>
                   </div>
@@ -253,7 +454,7 @@ export default function DistributorDashboard() {
               )}
             </div>
 
-            <div className="text-right">
+            <div className="text-left lg:text-right">
               <p className="mb-1 text-xs text-gray-400">Período actual</p>
               <p className="text-sm font-medium text-white">
                 {new Date(rankingInfo.periodStart).toLocaleDateString("es-CO", {
@@ -268,7 +469,7 @@ export default function DistributorDashboard() {
               </p>
               <button
                 onClick={() => navigate("/distributor/stats")}
-                className="mt-3 text-xs text-blue-400 underline hover:text-blue-300"
+                className="mt-3 text-xs text-cyan-300 underline decoration-cyan-400/70 underline-offset-4 hover:text-cyan-200"
               >
                 Ver ranking completo →
               </button>
@@ -276,7 +477,7 @@ export default function DistributorDashboard() {
           </div>
 
           {rankingInfo.position <= 3 && (
-            <div className="mt-4 border-t border-gray-700 pt-4">
+            <div className="mt-4 border-t border-white/10 pt-4">
               <p className="flex items-center gap-2 text-xs text-gray-300">
                 <span>🏆</span>
                 {rankingInfo.position === 1
@@ -288,20 +489,18 @@ export default function DistributorDashboard() {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {/* Total Sales */}
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-blue-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-blue-500">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="dashboard-stat-card bg-linear-to-br rounded-2xl border border-white/10 from-cyan-900/30 to-gray-900/70 p-6 backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/50">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">Ventas Realizadas</p>
+              <p className="text-sm text-gray-300">Ventas Realizadas</p>
               <p className="mt-2 text-3xl font-bold text-white">
-                {stats.totalSales}
+                {animatedStats.totalSales.toLocaleString("es-CO")}
               </p>
             </div>
-            <div className="rounded-full bg-blue-600/20 p-3">
+            <div className="rounded-full border border-cyan-400/30 bg-cyan-500/15 p-3">
               <svg
-                className="h-8 w-8 text-blue-400"
+                className="h-8 w-8 text-cyan-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -317,45 +516,26 @@ export default function DistributorDashboard() {
           </div>
         </div>
 
-        {/* Total Revenue */}
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-green-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-green-500">
+        <div className="dashboard-stat-card bg-linear-to-br from-indigo-900/28 rounded-2xl border border-white/10 to-gray-900/70 p-6 backdrop-blur-xl transition-all duration-300 hover:border-indigo-400/50">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">Ingresos Totales</p>
+              <p className="text-sm text-gray-300">Mis Ganancias</p>
               <p className="mt-2 text-2xl font-bold text-white">
-                {formatCurrency(stats.totalRevenue)}
+                {formatCurrency(animatedStats.totalProfit)}
               </p>
+              {hideFinancialData && (
+                <div className="mt-2">
+                  <ConfidentialBadge
+                    compact
+                    label="Costo base oculto"
+                    className="pointer-events-none select-none"
+                  />
+                </div>
+              )}
             </div>
-            <div className="rounded-full bg-green-600/20 p-3">
+            <div className="rounded-full border border-indigo-400/30 bg-indigo-500/15 p-3">
               <svg
-                className="h-8 w-8 text-green-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Total Profit */}
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-purple-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-purple-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-400">Mis Ganancias</p>
-              <p className="mt-2 text-2xl font-bold text-white">
-                {formatCurrency(stats.totalProfit)}
-              </p>
-            </div>
-            <div className="rounded-full bg-purple-600/20 p-3">
-              <svg
-                className="h-8 w-8 text-purple-400"
+                className="h-8 w-8 text-indigo-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -371,23 +551,22 @@ export default function DistributorDashboard() {
           </div>
         </div>
 
-        {/* Products Count */}
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-yellow-900/50 to-gray-800/50 p-6 backdrop-blur-lg transition hover:border-yellow-500">
+        <div className="dashboard-stat-card bg-linear-to-br from-amber-900/28 rounded-2xl border border-white/10 to-gray-900/70 p-6 backdrop-blur-xl transition-all duration-300 hover:border-amber-400/50">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">Mis Productos</p>
+              <p className="text-sm text-gray-300">Mis Productos</p>
               <p className="mt-2 text-3xl font-bold text-white">
-                {stats.productsCount}
+                {animatedStats.productsCount.toLocaleString("es-CO")}
               </p>
               {stats.lowStockCount > 0 && (
-                <p className="mt-1 text-xs text-red-400">
+                <p className="mt-1 text-xs text-red-300">
                   {stats.lowStockCount} con stock bajo
                 </p>
               )}
             </div>
-            <div className="rounded-full bg-yellow-600/20 p-3">
+            <div className="rounded-full border border-amber-400/30 bg-amber-500/15 p-3">
               <svg
-                className="h-8 w-8 text-yellow-400"
+                className="h-8 w-8 text-amber-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -404,14 +583,12 @@ export default function DistributorDashboard() {
         </div>
       </div>
 
-      {/* Credits Pending Section */}
       {(stats.pendingCreditsCount > 0 || stats.overdueCreditsCount > 0) && (
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Pending Credits Card */}
-          <div className="bg-linear-to-br rounded-xl border border-orange-500/50 from-orange-900/30 to-gray-800/50 p-6 backdrop-blur-lg">
+          <div className="dashboard-stat-card bg-linear-to-br from-orange-900/26 rounded-2xl border border-orange-500/45 to-gray-900/70 p-6 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-orange-300">Pendiente por Cobrar</p>
+                <p className="text-sm text-orange-200">Pendiente por Cobrar</p>
                 <p className="mt-2 text-3xl font-bold text-white">
                   {formatCurrency(stats.pendingCreditsAmount)}
                 </p>
@@ -419,9 +596,9 @@ export default function DistributorDashboard() {
                   {stats.pendingCreditsCount} créditos activos
                 </p>
               </div>
-              <div className="rounded-full bg-orange-600/20 p-3">
+              <div className="rounded-full border border-orange-400/40 bg-orange-500/15 p-3">
                 <svg
-                  className="h-8 w-8 text-orange-400"
+                  className="h-8 w-8 text-orange-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -436,7 +613,7 @@ export default function DistributorDashboard() {
               </div>
             </div>
             {pendingCredits.length > 0 && (
-              <div className="mt-4 space-y-2 border-t border-gray-700 pt-4">
+              <div className="mt-4 space-y-2 border-t border-white/10 pt-4">
                 {pendingCredits.slice(0, 3).map(credit => (
                   <div
                     key={credit._id}
@@ -448,7 +625,7 @@ export default function DistributorDashboard() {
                         ? credit.customer.name
                         : "Cliente"}
                     </span>
-                    <span className="font-medium text-orange-400">
+                    <span className="font-medium text-orange-300">
                       {formatCurrency(
                         (credit.originalAmount || 0) - (credit.paidAmount || 0)
                       )}
@@ -464,22 +641,21 @@ export default function DistributorDashboard() {
             )}
           </div>
 
-          {/* Overdue Credits Warning */}
           {stats.overdueCreditsCount > 0 && (
-            <div className="bg-linear-to-br rounded-xl border border-red-500/50 from-red-900/30 to-gray-800/50 p-6 backdrop-blur-lg">
+            <div className="dashboard-stat-card bg-linear-to-br from-red-900/26 rounded-2xl border border-red-500/45 to-gray-900/70 p-6 backdrop-blur-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-red-300">Créditos Vencidos</p>
-                  <p className="mt-2 text-3xl font-bold text-red-400">
+                  <p className="text-sm text-red-200">Créditos Vencidos</p>
+                  <p className="mt-2 text-3xl font-bold text-red-300">
                     {formatCurrency(stats.overdueCreditsAmount)}
                   </p>
                   <p className="mt-1 text-xs text-gray-400">
                     {stats.overdueCreditsCount} créditos vencidos
                   </p>
                 </div>
-                <div className="rounded-full bg-red-600/20 p-3">
+                <div className="rounded-full border border-red-400/40 bg-red-500/15 p-3">
                   <svg
-                    className="h-8 w-8 text-red-400"
+                    className="h-8 w-8 text-red-300"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -493,8 +669,8 @@ export default function DistributorDashboard() {
                   </svg>
                 </div>
               </div>
-              <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
-                <p className="text-xs text-red-300">
+              <div className="bg-red-500/12 mt-4 rounded-xl border border-red-500/35 p-3">
+                <p className="text-xs text-red-200">
                   ⚠️ Tienes créditos vencidos. Contacta a tus clientes para
                   gestionar el cobro.
                 </p>
@@ -504,16 +680,15 @@ export default function DistributorDashboard() {
         </div>
       )}
 
-      {/* Quick Actions */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <button
           onClick={() => navigate("/distributor/register-sale")}
-          className="bg-linear-to-br rounded-xl border border-gray-700 from-blue-600/20 to-cyan-600/20 p-6 text-left transition hover:border-blue-500 hover:from-blue-600/30 hover:to-cyan-600/30"
+          className="dashboard-stat-card bg-linear-to-br from-cyan-600/18 to-blue-700/18 hover:from-cyan-600/26 hover:to-blue-700/28 rounded-2xl border border-white/10 p-6 text-left transition-all duration-300 hover:border-cyan-400/50"
         >
           <div className="flex items-center gap-4">
-            <div className="rounded-full bg-blue-600/30 p-4">
+            <div className="rounded-full border border-cyan-400/35 bg-cyan-500/20 p-4">
               <svg
-                className="h-8 w-8 text-blue-400"
+                className="h-8 w-8 text-cyan-200"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -528,7 +703,7 @@ export default function DistributorDashboard() {
             </div>
             <div>
               <h3 className="text-xl font-bold text-white">Registrar Venta</h3>
-              <p className="mt-1 text-sm text-gray-400">
+              <p className="mt-1 text-sm text-gray-300">
                 Registra una nueva venta de productos
               </p>
             </div>
@@ -536,13 +711,42 @@ export default function DistributorDashboard() {
         </button>
 
         <button
-          onClick={() => navigate("/distributor/products")}
-          className="bg-linear-to-br rounded-xl border border-gray-700 from-purple-600/20 to-pink-600/20 p-6 text-left transition hover:border-purple-500 hover:from-purple-600/30 hover:to-pink-600/30"
+          onClick={() => navigate("/distributor/request-dispatch")}
+          className="dashboard-stat-card bg-linear-to-br hover:from-amber-600/28 rounded-2xl border border-white/10 from-amber-600/20 to-orange-700/20 p-6 text-left transition-all duration-300 hover:border-amber-400/50 hover:to-orange-700/30"
         >
           <div className="flex items-center gap-4">
-            <div className="rounded-full bg-purple-600/30 p-4">
+            <div className="rounded-full border border-amber-300/30 bg-amber-500/20 p-4">
               <svg
-                className="h-8 w-8 text-purple-400"
+                className="h-8 w-8 text-amber-200"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Solicitar Pedido</h3>
+              <p className="mt-1 text-sm text-gray-300">
+                Pide reposición de unidades a bodega
+              </p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={() => navigate("/distributor/products")}
+          className="dashboard-stat-card bg-linear-to-br hover:from-indigo-600/28 rounded-2xl border border-white/10 from-indigo-600/20 to-violet-700/20 p-6 text-left transition-all duration-300 hover:border-indigo-400/50 hover:to-violet-700/30"
+        >
+          <div className="flex items-center gap-4">
+            <div className="rounded-full border border-indigo-300/30 bg-indigo-500/20 p-4">
+              <svg
+                className="h-8 w-8 text-indigo-200"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -557,7 +761,7 @@ export default function DistributorDashboard() {
             </div>
             <div>
               <h3 className="text-xl font-bold text-white">Ver Productos</h3>
-              <p className="mt-1 text-sm text-gray-400">
+              <p className="mt-1 text-sm text-gray-300">
                 Consulta tu inventario asignado
               </p>
             </div>
@@ -565,19 +769,18 @@ export default function DistributorDashboard() {
         </button>
       </div>
 
-      {/* My Stock */}
-      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6 backdrop-blur-lg">
+      <div className="rounded-2xl border border-white/10 bg-gray-900/55 p-6 backdrop-blur-xl">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-bold text-white">Mi Inventario</h2>
           <button
             onClick={() => navigate("/distributor/products")}
-            className="text-sm text-blue-400 hover:text-blue-300"
+            className="text-sm text-cyan-300 hover:text-cyan-200"
           >
             Ver todos →
           </button>
         </div>
         {myStock.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-600 p-8 text-center">
+          <div className="rounded-xl border border-dashed border-white/15 bg-black/20 p-8 text-center">
             <p className="text-gray-400">No tienes productos asignados aún</p>
           </div>
         ) : (
@@ -590,10 +793,10 @@ export default function DistributorDashboard() {
               return (
                 <div
                   key={item._id}
-                  className={`rounded-lg border p-4 transition ${
+                  className={`rounded-xl border p-4 backdrop-blur-lg transition-all duration-300 ${
                     isLowStock
-                      ? "border-red-500 bg-red-900/20"
-                      : "border-gray-700 bg-gray-900/50 hover:border-blue-500"
+                      ? "bg-red-900/24 border-red-500/45"
+                      : "border-white/12 bg-white/4 hover:border-cyan-400/40"
                   }`}
                 >
                   <div className="flex items-start justify-between">
@@ -601,23 +804,32 @@ export default function DistributorDashboard() {
                       <h3 className="font-semibold text-white">
                         {product?.name || "Producto"}
                       </h3>
-                      <p className="mt-1 text-sm text-gray-400">
+                      <p className="mt-1 text-sm text-gray-300">
                         Precio: {formatCurrency(product?.distributorPrice || 0)}
                       </p>
+                      {hideFinancialData && (
+                        <div className="mt-2">
+                          <ConfidentialBadge
+                            compact
+                            label="Margen interno"
+                            className="pointer-events-none select-none"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-500">Stock disponible</p>
                       <p
-                        className={`text-2xl font-bold ${isLowStock ? "text-red-400" : "text-blue-400"}`}
+                        className={`text-2xl font-bold ${isLowStock ? "text-red-300" : "text-cyan-200"}`}
                       >
                         {item.quantity}
                       </p>
                     </div>
                     {isLowStock && (
-                      <div className="rounded-full bg-red-600/20 px-3 py-1">
-                        <p className="text-xs font-semibold text-red-400">
+                      <div className="rounded-full border border-red-400/40 bg-red-500/20 px-3 py-1">
+                        <p className="text-xs font-semibold text-red-200">
                           Stock Bajo
                         </p>
                       </div>
@@ -630,24 +842,32 @@ export default function DistributorDashboard() {
         )}
       </div>
 
-      {/* Recent Sales */}
-      <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6 backdrop-blur-lg">
-        <div className="mb-6 flex items-center justify-between">
+      <div className="rounded-2xl border border-white/10 bg-gray-900/55 p-6 backdrop-blur-xl">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-bold text-white">Ventas Recientes</h2>
-          <button
-            onClick={() => navigate("/distributor/sales")}
-            className="text-sm text-blue-400 hover:text-blue-300"
-          >
-            Ver todas →
-          </button>
+          <div className="flex items-center gap-3">
+            {hideFinancialData && (
+              <ConfidentialBadge
+                compact
+                label="Márgenes admin"
+                className="pointer-events-none select-none"
+              />
+            )}
+            <button
+              onClick={() => navigate("/distributor/sales")}
+              className="text-sm text-cyan-300 hover:text-cyan-200"
+            >
+              Ver todas →
+            </button>
+          </div>
         </div>
         {recentSales.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-600 p-8 text-center">
+          <div className="rounded-xl border border-dashed border-white/15 bg-black/20 p-8 text-center">
             <p className="text-gray-400">
               No has registrado ventas aún.{" "}
               <button
                 onClick={() => navigate("/distributor/register-sale")}
-                className="font-semibold text-blue-400 hover:text-blue-300"
+                className="font-semibold text-cyan-300 hover:text-cyan-200"
               >
                 Registra tu primera venta
               </button>
@@ -655,7 +875,7 @@ export default function DistributorDashboard() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-700">
+            <table className="min-w-full divide-y divide-white/10">
               <thead>
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-400">
@@ -675,12 +895,12 @@ export default function DistributorDashboard() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-white/10">
                 {recentSales.map(sale => {
                   const product =
                     typeof sale.product === "object" ? sale.product : null;
                   return (
-                    <tr key={sale._id} className="hover:bg-gray-700/30">
+                    <tr key={sale._id} className="transition hover:bg-white/5">
                       <td className="px-4 py-3 text-sm text-gray-300">
                         {formatDate(sale.saleDate)}
                       </td>
@@ -693,7 +913,7 @@ export default function DistributorDashboard() {
                       <td className="px-4 py-3 text-sm text-gray-300">
                         {formatCurrency(sale.salePrice)}
                       </td>
-                      <td className="px-4 py-3 text-sm font-semibold text-green-400">
+                      <td className="px-4 py-3 text-sm font-semibold text-emerald-300">
                         {formatCurrency(sale.distributorProfit)}
                       </td>
                     </tr>

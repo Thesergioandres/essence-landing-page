@@ -1,9 +1,12 @@
 import { Check, Loader2, Pencil, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { gsap } from "gsap";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useFinancialPrivacy } from "../../auth/utils/financialPrivacy";
 import { promotionService } from "../../settings/services";
 import type { Promotion } from "../../settings/types/promotion.types";
 import { productService } from "../services/inventory.service";
 import type { Product } from "../types/product.types";
+import { ConfidentialBadge } from "../../../shared/components/ui";
 
 type RowDraft = {
   price: string;
@@ -27,6 +30,8 @@ const marginPercent = (cost: number, publicPrice: number): number => {
 };
 
 export default function PriceListPage() {
+  const { hideFinancialData } = useFinancialPrivacy();
+  const productRowsRef = useRef<HTMLTableSectionElement | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +78,27 @@ export default function PriceListPage() {
   const sortedProducts = useMemo(() => {
     return [...products].sort((a, b) => a.name.localeCompare(b.name));
   }, [products]);
+
+  useEffect(() => {
+    if (loading || !productRowsRef.current || sortedProducts.length === 0) {
+      return;
+    }
+
+    const rows = productRowsRef.current.querySelectorAll("tr[data-price-row]");
+
+    gsap.fromTo(
+      rows,
+      { autoAlpha: 0, y: 14 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.36,
+        stagger: 0.03,
+        ease: "power2.out",
+        overwrite: "auto",
+      }
+    );
+  }, [loading, sortedProducts]);
 
   const sortedPromotions = useMemo(() => {
     return [...promotions].sort((a, b) => a.name.localeCompare(b.name));
@@ -255,11 +281,12 @@ export default function PriceListPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div className="space-y-6 rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(71,85,105,0.2),rgba(3,7,18,0.96)_42%,rgba(2,6,23,0.99)_100%)] p-4 shadow-[0_24px_70px_rgba(2,6,23,0.55)] backdrop-blur-[10px] sm:p-5">
+      <div className="rounded-2xl border border-white/10 bg-white/4 p-5 backdrop-blur-[10px]">
         <h1 className="text-2xl font-bold text-white">Lista de Precios</h1>
         <p className="mt-2 text-sm text-gray-300">
           Edita precios en línea y controla el margen proyectado por producto.
+          {hideFinancialData ? " Campos de costo protegidos 🔒." : ""}
         </p>
       </div>
 
@@ -269,7 +296,7 @@ export default function PriceListPage() {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/4 backdrop-blur-[10px]">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-white/10 text-sm">
             <thead className="bg-black/20 text-xs uppercase tracking-wide text-gray-300">
@@ -282,7 +309,7 @@ export default function PriceListPage() {
                 <th className="px-4 py-3 text-center">Acción</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody ref={productRowsRef} className="divide-y divide-white/5">
               {loading ? (
                 <tr>
                   <td
@@ -314,16 +341,26 @@ export default function PriceListPage() {
                     ? toSafeNumber(draft.price)
                     : toSafeNumber(item.clientPrice);
 
-                  const projectedMargin = marginPercent(
-                    toSafeNumber(item.purchasePrice),
-                    projectedPrice
-                  );
+                  const projectedMargin = hideFinancialData
+                    ? null
+                    : marginPercent(
+                        toSafeNumber(item.purchasePrice),
+                        projectedPrice
+                      );
 
                   return (
-                    <tr key={item._id} className="hover:bg-white/5">
+                    <tr
+                      key={item._id}
+                      data-price-row
+                      className="hover:bg-white/5"
+                    >
                       <td className="px-4 py-3 text-white">{item.name}</td>
                       <td className="px-4 py-3 text-right text-gray-200">
-                        {currency.format(toSafeNumber(item.purchasePrice))}
+                        {hideFinancialData ? (
+                          <ConfidentialBadge compact />
+                        ) : (
+                          currency.format(toSafeNumber(item.purchasePrice))
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right text-gray-100">
                         {isEditing ? (
@@ -371,17 +408,21 @@ export default function PriceListPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span
-                          className={`font-semibold ${
-                            projectedMargin >= 20
-                              ? "text-emerald-300"
-                              : projectedMargin >= 10
-                                ? "text-yellow-300"
-                                : "text-rose-300"
-                          }`}
-                        >
-                          {projectedMargin.toFixed(1)}%
-                        </span>
+                        {projectedMargin === null ? (
+                          <ConfidentialBadge compact />
+                        ) : (
+                          <span
+                            className={`font-semibold ${
+                              projectedMargin >= 20
+                                ? "text-emerald-300"
+                                : projectedMargin >= 10
+                                  ? "text-yellow-300"
+                                  : "text-rose-300"
+                            }`}
+                          >
+                            {projectedMargin.toFixed(1)}%
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         {isEditing ? (
@@ -428,7 +469,7 @@ export default function PriceListPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="rounded-2xl border border-white/10 bg-white/4 p-5 backdrop-blur-[10px]">
         <h2 className="text-xl font-semibold text-white">
           Información de Promociones
         </h2>
@@ -438,7 +479,7 @@ export default function PriceListPage() {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/4 backdrop-blur-[10px]">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-white/10 text-sm">
             <thead className="bg-black/20 text-xs uppercase tracking-wide text-gray-300">

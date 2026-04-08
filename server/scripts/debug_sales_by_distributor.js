@@ -3,10 +3,10 @@ import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import "../models/Product.js";
+import "../src/infrastructure/database/models/Product.js";
 import "../models/Promotion.js";
-import Sale from "../models/Sale.js";
-import User from "../models/User.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

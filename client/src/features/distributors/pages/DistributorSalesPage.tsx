@@ -251,17 +251,11 @@ export default function DistributorSales() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="bg-linear-to-br rounded-xl border border-gray-700 from-blue-900/50 to-gray-800/50 p-5">
           <p className="text-sm text-gray-400">Total Ventas</p>
           <p className="mt-2 text-3xl font-bold text-white">
             {stats.totalSales}
-          </p>
-        </div>
-        <div className="bg-linear-to-br rounded-xl border border-gray-700 from-green-900/50 to-gray-800/50 p-5">
-          <p className="text-sm text-gray-400">Ingresos Totales</p>
-          <p className="mt-2 text-2xl font-bold text-white">
-            {formatCurrency(stats.totalRevenue)}
           </p>
         </div>
         <div className="bg-linear-to-br rounded-xl border border-gray-700 from-purple-900/50 to-gray-800/50 p-5">

@@ -1,6 +1,15 @@
+import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
 import { AdvancedAnalyticsRepository } from "../../database/repositories/AdvancedAnalyticsRepository.js";
 
 const repository = new AdvancedAnalyticsRepository();
+
+const resolveAnalyticsScope = (req) => {
+  const privacy = resolveFinancialPrivacyContext(req);
+  return {
+    scopeDistributorId: privacy.scopeDistributorId,
+    hideFinancialData: privacy.hideFinancialData,
+  };
+};
 
 export class AdvancedAnalyticsController {
   async getSalesSummary(req, res) {
@@ -13,10 +22,12 @@ export class AdvancedAnalyticsController {
       }
 
       const { startDate, endDate } = req.query;
+      const scope = resolveAnalyticsScope(req);
       const summary = await repository.getSalesSummary(
         businessId,
         startDate,
         endDate,
+        scope,
       );
       res.json({ success: true, data: summary });
     } catch (error) {
@@ -34,10 +45,12 @@ export class AdvancedAnalyticsController {
       }
 
       const { startDate, endDate } = req.query;
+      const scope = resolveAnalyticsScope(req);
       const kpis = await repository.getFinancialKPIs(
         businessId,
         startDate,
         endDate,
+        scope,
       );
       res.json({ success: true, data: kpis });
     } catch (error) {
@@ -55,10 +68,12 @@ export class AdvancedAnalyticsController {
       }
 
       const { startDate, endDate } = req.query;
+      const scope = resolveAnalyticsScope(req);
       const funnel = await repository.getSalesFunnel(
         businessId,
         startDate,
         endDate,
+        scope,
       );
       res.json({ success: true, data: funnel });
     } catch (error) {
@@ -76,11 +91,13 @@ export class AdvancedAnalyticsController {
       }
 
       const { startDate, endDate, groupBy } = req.query;
+      const scope = resolveAnalyticsScope(req);
       const timeline = await repository.getSalesTimeline(
         businessId,
         startDate,
         endDate,
         groupBy || "day",
+        scope,
       );
       res.json({ success: true, data: timeline });
     } catch (error) {
@@ -97,7 +114,11 @@ export class AdvancedAnalyticsController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
-      const analysis = await repository.getComparativeAnalysis(businessId);
+      const scope = resolveAnalyticsScope(req);
+      const analysis = await repository.getComparativeAnalysis(
+        businessId,
+        scope,
+      );
       res.json({ success: true, data: analysis });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -114,11 +135,13 @@ export class AdvancedAnalyticsController {
       }
 
       const { startDate, endDate, limit } = req.query;
+      const scope = resolveAnalyticsScope(req);
       const topProducts = await repository.getTopProducts(
         businessId,
         startDate,
         endDate,
         limit ? parseInt(limit) : 10,
+        scope,
       );
       res.json({ success: true, data: topProducts });
     } catch (error) {
@@ -136,10 +159,12 @@ export class AdvancedAnalyticsController {
       }
 
       const { startDate, endDate } = req.query;
+      const scope = resolveAnalyticsScope(req);
       const performance = await repository.getDistributorPerformance(
         businessId,
         startDate,
         endDate,
+        scope,
       );
       res.json({ success: true, data: performance });
     } catch (error) {
@@ -156,7 +181,8 @@ export class AdvancedAnalyticsController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
-      const status = await repository.getInventoryStatus(businessId);
+      const scope = resolveAnalyticsScope(req);
+      const status = await repository.getInventoryStatus(businessId, scope);
       res.json({ success: true, data: status });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -173,10 +199,12 @@ export class AdvancedAnalyticsController {
       }
 
       const { startDate, endDate } = req.query;
+      const scope = resolveAnalyticsScope(req);
       const summary = await repository.getCreditsSummary(
         businessId,
         startDate,
         endDate,
+        scope,
       );
       res.json({ success: true, data: summary });
     } catch (error) {
@@ -194,10 +222,12 @@ export class AdvancedAnalyticsController {
       }
 
       const { startDate, endDate } = req.query;
+      const scope = resolveAnalyticsScope(req);
       const summary = await repository.getExpensesSummary(
         businessId,
         startDate,
         endDate,
+        scope,
       );
       res.json({ success: true, data: summary });
     } catch (error) {
@@ -215,10 +245,12 @@ export class AdvancedAnalyticsController {
       }
 
       const { startDate, endDate } = req.query;
+      const scope = resolveAnalyticsScope(req);
       const data = await repository.getSalesByCategory(
         businessId,
         startDate,
         endDate,
+        scope,
       );
       res.json({ success: true, data });
     } catch (error) {
@@ -236,9 +268,11 @@ export class AdvancedAnalyticsController {
       }
 
       const { days } = req.query;
+      const scope = resolveAnalyticsScope(req);
       const data = await repository.getProductRotation(
         businessId,
         parseInt(days) || 30,
+        scope,
       );
       res.json({ success: true, data });
     } catch (error) {
@@ -256,10 +290,12 @@ export class AdvancedAnalyticsController {
       }
 
       const { startDate, endDate } = req.query;
+      const scope = resolveAnalyticsScope(req);
       const data = await repository.getDistributorRankings(
         businessId,
         startDate,
         endDate,
+        scope,
       );
       res.json({ success: true, data });
     } catch (error) {
@@ -276,7 +312,8 @@ export class AdvancedAnalyticsController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
-      const data = await repository.getLowStockVisual(businessId);
+      const scope = resolveAnalyticsScope(req);
+      const data = await repository.getLowStockVisual(businessId, scope);
       res.json({ success: true, data });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });

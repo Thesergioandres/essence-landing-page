@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 import Branch from "../../../../models/Branch.js";
 import BranchStock from "../../../../models/BranchStock.js";
-import Product from "../../../../models/Product.js";
-import Sale from "../../../../models/Sale.js";
+import Product from "../models/Product.js";
+import Sale from "../models/Sale.js";
 
 class BranchRepository {
   async findByBusiness(businessId) {

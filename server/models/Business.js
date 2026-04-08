@@ -89,6 +89,16 @@ const businessSchema = new mongoose.Schema(
     metadata: {
       type: mongoose.Schema.Types.Mixed,
     },
+    isDemo: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    demoExpiresAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
     plan: {
       type: String,
       enum: ["starter", "pro", "enterprise"],
@@ -104,6 +114,7 @@ const businessSchema = new mongoose.Schema(
 );
 
 businessSchema.index({ createdBy: 1, status: 1 });
+businessSchema.index({ isDemo: 1, demoExpiresAt: 1 });
 
 const Business =
   mongoose.models.Business || mongoose.model("Business", businessSchema);

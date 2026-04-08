@@ -52,6 +52,7 @@ export interface DistributorStock {
   distributor: unknown | string;
   product: Product | string;
   quantity: number;
+  inTransitQuantity?: number;
   reservedQuantity?: number;
   lowStockAlert?: number;
   lastRestockDate?: string;

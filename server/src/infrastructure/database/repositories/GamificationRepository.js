@@ -3,7 +3,7 @@ import DistributorStats from "../../../../models/DistributorStats.js";
 import GamificationConfig from "../../../../models/GamificationConfig.js";
 import Membership from "../../../../models/Membership.js";
 import PeriodWinner from "../../../../models/PeriodWinner.js";
-import Sale from "../../../../models/Sale.js";
+import Sale from "../models/Sale.js";
 import { getDistributorCommissionInfo } from "../../../../utils/distributorPricing.js";
 import {
   applySaleGamification,

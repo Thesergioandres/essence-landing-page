@@ -10,6 +10,8 @@ import InfoTooltip from "../InfoTooltip";
 
 interface ProfitHistoryTableProps {
   dateRange: { startDate: string; endDate: string };
+  hideFinancialData?: boolean;
+  scopeDistributorId?: string;
 }
 
 const formatCurrency = (amount: number) =>
@@ -33,6 +35,8 @@ const isValidObjectId = (value: string) => /^[a-f\d]{24}$/i.test(value);
 
 export default function ProfitHistoryTable({
   dateRange,
+  hideFinancialData = false,
+  scopeDistributorId = "",
 }: ProfitHistoryTableProps) {
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<ProfitHistoryAdminOverview | null>(
@@ -43,13 +47,23 @@ export default function ProfitHistoryTable({
 
   const distributorsEnabled = useFeature("distributors");
 
+  useEffect(() => {
+    if (scopeDistributorId && selectedDistributor !== scopeDistributorId) {
+      setSelectedDistributor(scopeDistributorId);
+    }
+  }, [scopeDistributorId, selectedDistributor]);
+
   const loadOverview = useCallback(async () => {
     try {
       setLoading(true);
+      const distributorFilter = scopeDistributorId
+        ? scopeDistributorId
+        : selectedDistributor || undefined;
+
       const data = await profitHistoryService.getAdminOverview({
         startDate: dateRange.startDate || undefined,
         endDate: dateRange.endDate || undefined,
-        distributorId: selectedDistributor || undefined,
+        distributorId: distributorFilter,
         limit,
       });
       setOverview(data);
@@ -58,7 +72,7 @@ export default function ProfitHistoryTable({
     } finally {
       setLoading(false);
     }
-  }, [dateRange, selectedDistributor, limit]);
+  }, [dateRange, selectedDistributor, limit, scopeDistributorId]);
 
   useEffect(() => {
     void loadOverview();
@@ -80,11 +94,13 @@ export default function ProfitHistoryTable({
     });
   }, [distributors]);
 
+  const emptyColSpan = hideFinancialData ? 4 : distributorsEnabled ? 7 : 5;
+
   return (
     <div className="space-y-6">
       {/* Filtros Internos de la Tabla (Distribuidor / Límite) */}
       <div className="flex flex-wrap items-end gap-4 rounded-xl border border-gray-800 bg-gray-900/40 p-4">
-        {distributorsEnabled && (
+        {distributorsEnabled && !hideFinancialData && (
           <div className="min-w-[200px] flex-1">
             <label className="mb-1 block text-sm font-medium text-gray-300">
               Filtrar por Distribuidor
@@ -104,6 +120,11 @@ export default function ProfitHistoryTable({
                   </option>
                 ))}
             </select>
+          </div>
+        )}
+        {hideFinancialData && (
+          <div className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-200">
+            Vista privada activa: mostrando solo tus ganancias.
           </div>
         )}
         <div className="w-32">
@@ -142,7 +163,7 @@ export default function ProfitHistoryTable({
                   Venta / Evento
                   <InfoTooltip text="Tipo de transaccion registrada." />
                 </th>
-                {distributorsEnabled && (
+                {distributorsEnabled && !hideFinancialData && (
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Distribuidor
                     <InfoTooltip text="Distribuidor asociado a la venta." />
@@ -152,27 +173,35 @@ export default function ProfitHistoryTable({
                   Producto
                   <InfoTooltip text="Producto o concepto asociado a la transaccion." />
                 </th>
-                {distributorsEnabled && (
+                {distributorsEnabled && !hideFinancialData && (
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Ganancia Dist
                     <InfoTooltip text="Comision del distribuidor en la transaccion." />
                   </th>
                 )}
                 <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Ganancia Admin
-                  <InfoTooltip text="Suma de la utilidad de tus ventas directas + la diferencia del precio B2B de tus distribuidores." />
+                  {hideFinancialData ? "Mis Ganancias" : "Ganancia Admin"}
+                  <InfoTooltip
+                    text={
+                      hideFinancialData
+                        ? "Ganancia personal del usuario actual."
+                        : "Suma de la utilidad de tus ventas directas + la diferencia del precio B2B de tus distribuidores."
+                    }
+                  />
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Total
-                  <InfoTooltip text="Suma de ganancia admin y comision de distribuidor." />
-                </th>
+                {!hideFinancialData && (
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Total
+                    <InfoTooltip text="Suma de ganancia admin y comision de distribuidor." />
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800 bg-gray-900/30">
               {loading && (
                 <tr>
                   <td
-                    colSpan={distributorsEnabled ? 7 : 5}
+                    colSpan={emptyColSpan}
                     className="px-6 py-8 text-center text-gray-400"
                   >
                     <div className="flex items-center justify-center gap-2">
@@ -186,7 +215,7 @@ export default function ProfitHistoryTable({
               {!loading && (!overview || overview.entries.length === 0) && (
                 <tr>
                   <td
-                    colSpan={distributorsEnabled ? 7 : 5}
+                    colSpan={emptyColSpan}
                     className="px-6 py-8 text-center text-gray-400"
                   >
                     No se encontraron transacciones en este rango.
@@ -200,67 +229,91 @@ export default function ProfitHistoryTable({
                     key={entry.id}
                     className="transition-colors hover:bg-gray-800/50"
                   >
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-300">
-                      {formatDateTime(entry.date)}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-white">
-                          {entry.saleId || entry.id}
-                        </span>
-                        {entry.eventName && (
-                          <span className="text-xs text-purple-300">
-                            {entry.eventName}
-                          </span>
-                        )}
-                        <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-gray-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                          <span
-                            className={
-                              entry.source === "special"
-                                ? "text-pink-400"
-                                : "text-emerald-400"
-                            }
+                    {/** En modo privado priorizamos comisión; si no existe, usar admin/total. */}
+                    {(() => {
+                      const ownProfit =
+                        (entry.distributorProfit || 0) > 0
+                          ? entry.distributorProfit
+                          : (entry.adminProfit ?? entry.totalProfit ?? 0);
+
+                      return (
+                        <>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-300">
+                            {formatDateTime(entry.date)}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-white">
+                                {entry.saleId || entry.id}
+                              </span>
+                              {entry.eventName && (
+                                <span className="text-xs text-purple-300">
+                                  {entry.eventName}
+                                </span>
+                              )}
+                              <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-gray-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                <span
+                                  className={
+                                    entry.source === "special"
+                                      ? "text-pink-400"
+                                      : "text-emerald-400"
+                                  }
+                                >
+                                  ●
+                                </span>
+                                {entry.source === "special"
+                                  ? "Especial"
+                                  : "Normal"}
+                              </span>
+                            </div>
+                          </td>
+                          {distributorsEnabled && !hideFinancialData && (
+                            <td className="px-6 py-4 text-sm text-gray-300">
+                              {entry.distributorName ? (
+                                <div className="flex flex-col">
+                                  <span className="text-white">
+                                    {entry.distributorName}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {entry.distributorEmail || "Admin"}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="italic text-gray-500">
+                                  Directo
+                                </span>
+                              )}
+                            </td>
+                          )}
+                          <td className="px-6 py-4 text-sm text-gray-300">
+                            {entry.productName || "-"}
+                          </td>
+                          {distributorsEnabled && !hideFinancialData && (
+                            <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-cyan-400">
+                              {formatCurrency(entry.distributorProfit)}
+                            </td>
+                          )}
+                          <td
+                            className={`whitespace-nowrap px-6 py-4 text-right text-sm font-medium ${hideFinancialData ? "text-cyan-300" : "text-emerald-400"}`}
                           >
-                            ●
-                          </span>
-                          {entry.source === "special" ? "Especial" : "Normal"}
-                        </span>
-                      </div>
-                    </td>
-                    {distributorsEnabled && (
-                      <td className="px-6 py-4 text-sm text-gray-300">
-                        {entry.distributorName ? (
-                          <div className="flex flex-col">
-                            <span className="text-white">
-                              {entry.distributorName}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {entry.distributorEmail || "Admin"}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="italic text-gray-500">Directo</span>
-                        )}
-                      </td>
-                    )}
-                    <td className="px-6 py-4 text-sm text-gray-300">
-                      {entry.productName || "-"}
-                    </td>
-                    {distributorsEnabled && (
-                      <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-cyan-400">
-                        {formatCurrency(entry.distributorProfit)}
-                      </td>
-                    )}
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-emerald-400">
-                      {formatCurrency(entry.adminProfit ?? 0)}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-purple-300">
-                      {formatCurrency(
-                        entry.totalProfit ??
-                          (entry.adminProfit || 0) +
-                            (entry.distributorProfit || 0)
-                      )}
-                    </td>
+                            {formatCurrency(
+                              hideFinancialData
+                                ? ownProfit
+                                : (entry.adminProfit ?? 0)
+                            )}
+                          </td>
+                          {!hideFinancialData && (
+                            <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-purple-300">
+                              {formatCurrency(
+                                entry.totalProfit ??
+                                  (entry.adminProfit || 0) +
+                                    (entry.distributorProfit || 0)
+                              )}
+                            </td>
+                          )}
+                        </>
+                      );
+                    })()}
                   </tr>
                 ))}
             </tbody>

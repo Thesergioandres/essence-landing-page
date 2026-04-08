@@ -8,6 +8,7 @@ import type { ProductProfit } from "../../features/inventory/types/product.types
 
 interface AnalyticsChartsProps {
   dateRange: { startDate: string; endDate: string };
+  hideFinancialData?: boolean;
 }
 
 const currency = (n: number | undefined) =>
@@ -29,7 +30,10 @@ const formatPeriodLabel = (period: string) => {
   return period;
 };
 
-export default function AnalyticsCharts({ dateRange }: AnalyticsChartsProps) {
+export default function AnalyticsCharts({
+  dateRange,
+  hideFinancialData = false,
+}: AnalyticsChartsProps) {
   const [loading, setLoading] = useState(true);
   const [timeline, setTimeline] = useState<TimelineData[]>([]);
   const [products, setProducts] = useState<ProductProfit[]>([]);
@@ -140,6 +144,22 @@ export default function AnalyticsCharts({ dateRange }: AnalyticsChartsProps) {
     [timeline]
   );
 
+  const timelineMaxSales = useMemo(
+    () =>
+      Math.max(
+        1,
+        ...timeline.map(item =>
+          Number(
+            (item as any).ordersCount ??
+              (item as any).salesCount ??
+              (item as any).sales ??
+              0
+          )
+        )
+      ),
+    [timeline]
+  );
+
   return (
     <div className="space-y-6">
       {/* Controles del Gráfico (Periodo / Días) - Si queremos que sean específicos de esta vista */}
@@ -181,18 +201,30 @@ export default function AnalyticsCharts({ dateRange }: AnalyticsChartsProps) {
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-white">
-              Evolución Financiera
+              {hideFinancialData ? "Volumen de Ventas" : "Evolución Financiera"}
             </h2>
-            <p className="text-sm text-gray-400">Ingresos vs Utilidad Neta</p>
+            <p className="text-sm text-gray-400">
+              {hideFinancialData
+                ? "Solo volumen individual de ventas"
+                : "Ingresos vs Utilidad Neta"}
+            </p>
           </div>
           {!loading && timeline.length > 0 && (
             <div className="flex flex-wrap justify-end gap-2 text-xs text-gray-300">
-              <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
-                Ingresos {currency(timelineTotals.revenue)}
-              </span>
-              <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
-                Ganancia {currency(timelineTotals.profit)}
-              </span>
+              {hideFinancialData ? (
+                <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
+                  Ventas {timelineTotals.salesCount.toLocaleString()}
+                </span>
+              ) : (
+                <>
+                  <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
+                    Ingresos {currency(timelineTotals.revenue)}
+                  </span>
+                  <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
+                    Ganancia {currency(timelineTotals.profit)}
+                  </span>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -227,6 +259,10 @@ export default function AnalyticsCharts({ dateRange }: AnalyticsChartsProps) {
                 100,
                 Math.round(((profit || 0) / timelineMaxProfit) * 100)
               );
+              const salesPercent = Math.min(
+                100,
+                Math.round(((salesCount || 0) / timelineMaxSales) * 100)
+              );
 
               return (
                 <div
@@ -245,20 +281,31 @@ export default function AnalyticsCharts({ dateRange }: AnalyticsChartsProps) {
                     </div>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <MetricBar
-                      label="Ingresos"
-                      value={currency(revenue)}
-                      percent={revenuePercent}
-                      color="indigo"
-                    />
-                    <MetricBar
-                      label="Ganancia Operativa"
-                      value={currency(profit)}
-                      percent={profitPercent}
-                      color="green"
-                    />
-                  </div>
+                  {hideFinancialData ? (
+                    <div className="mt-3 grid grid-cols-1 gap-3">
+                      <MetricBar
+                        label="Ventas"
+                        value={`${salesCount.toLocaleString()} ventas`}
+                        percent={salesPercent}
+                        color="indigo"
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <MetricBar
+                        label="Ingresos"
+                        value={currency(revenue)}
+                        percent={revenuePercent}
+                        color="indigo"
+                      />
+                      <MetricBar
+                        label="Ganancia Operativa"
+                        value={currency(profit)}
+                        percent={profitPercent}
+                        color="green"
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -268,7 +315,11 @@ export default function AnalyticsCharts({ dateRange }: AnalyticsChartsProps) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RankingTable
           title="Top Productos"
-          subtitle="Por ganancia generada"
+          subtitle={
+            hideFinancialData
+              ? "Por volumen de ventas"
+              : "Por ganancia generada"
+          }
           rows={visibleProducts.map(p => ({
             name: p.name,
             profit: currency(p.profit || 0),
@@ -279,11 +330,14 @@ export default function AnalyticsCharts({ dateRange }: AnalyticsChartsProps) {
           onSearch={setProductSearch}
           topLimit={topLimit}
           onTopChange={setTopLimit}
+          hideFinancialData={hideFinancialData}
         />
 
         <RankingTable
           title="Top Distribuidores"
-          subtitle="Por ganancia"
+          subtitle={
+            hideFinancialData ? "Por volumen de ventas" : "Por ganancia"
+          }
           rows={visibleDistributors.map(d => ({
             name: d.name,
             profit: currency(d.profit || 0),
@@ -294,6 +348,7 @@ export default function AnalyticsCharts({ dateRange }: AnalyticsChartsProps) {
           onSearch={setDistributorSearch}
           topLimit={topLimit}
           onTopChange={setTopLimit}
+          hideFinancialData={hideFinancialData}
         />
       </div>
     </div>
@@ -342,6 +397,7 @@ function RankingTable({
   onSearch,
   topLimit,
   onTopChange,
+  hideFinancialData = false,
 }: {
   title: string;
   subtitle: string;
@@ -350,6 +406,7 @@ function RankingTable({
   onSearch: (v: string) => void;
   topLimit: number;
   onTopChange: (n: number) => void;
+  hideFinancialData?: boolean;
 }) {
   return (
     <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4">
@@ -388,30 +445,46 @@ function RankingTable({
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Nombre
               </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Ganancia
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Ingresos
-              </th>
+              {hideFinancialData ? (
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Ventas
+                </th>
+              ) : (
+                <>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Ganancia
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Ingresos
+                  </th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-800">
             {rows.map((r, idx) => (
               <tr key={`${r.name}-${idx}`} className="hover:bg-gray-900/40">
                 <td className="px-4 py-2 text-sm text-gray-100">{r.name}</td>
-                <td className="px-4 py-2 text-right text-sm font-semibold text-green-300">
-                  {r.profit}
-                </td>
-                <td className="px-4 py-2 text-right text-sm text-gray-400">
-                  {r.revenue}
-                </td>
+                {hideFinancialData ? (
+                  <td className="px-4 py-2 text-right text-sm font-semibold text-sky-300">
+                    {r.count.toLocaleString()}
+                  </td>
+                ) : (
+                  <>
+                    <td className="px-4 py-2 text-right text-sm font-semibold text-green-300">
+                      {r.profit}
+                    </td>
+                    <td className="px-4 py-2 text-right text-sm text-gray-400">
+                      {r.revenue}
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={hideFinancialData ? 2 : 3}
                   className="px-4 py-6 text-center text-sm text-gray-500"
                 >
                   Sin datos

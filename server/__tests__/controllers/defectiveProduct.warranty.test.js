@@ -15,9 +15,9 @@ jest.mock("../../config/redis.js", () => ({
 }));
 
 const { default: app } = await import("../../server.js");
-const { default: User } = await import("../../models/User.js");
+const { default: User } = await import("../../src/infrastructure/database/models/User.js");
 const { default: Business } = await import("../../models/Business.js");
-const { default: Product } = await import("../../models/Product.js");
+const { default: Product } = await import("../../src/infrastructure/database/models/Product.js");
 const { default: Category } = await import("../../models/Category.js");
 const { default: Membership } = await import("../../models/Membership.js");
 const { default: DefectiveProduct } =
@@ -25,7 +25,7 @@ const { default: DefectiveProduct } =
 const { default: Expense } = await import("../../models/Expense.js");
 const { default: ProfitHistory } =
   await import("../../models/ProfitHistory.js");
-const { default: Sale } = await import("../../models/Sale.js");
+const { default: Sale } = await import("../../src/infrastructure/database/models/Sale.js");
 
 const JWT_SECRET = process.env.JWT_SECRET || "test-secret";
 

@@ -25,7 +25,7 @@ describe("Customer Points Controller", () => {
     const appModule = await import("../../server.js");
     app = appModule.default;
 
-    const UserModule = await import("../../models/User.js");
+    const UserModule = await import("../../src/infrastructure/database/models/User.js");
     User = UserModule.default;
 
     const BusinessModule = await import("../../models/Business.js");

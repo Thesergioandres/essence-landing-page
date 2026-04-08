@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import ProductSelector from "../../../components/ProductSelector";
 import { Button, LoadingSpinner } from "../../../shared/components/ui";
 import type { User } from "../../auth/types/auth.types";
@@ -33,6 +33,19 @@ interface StockItem {
 
 const StockManagement = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const firstSegment = location.pathname.split("/").filter(Boolean)[0] || "";
+  const areaBase = firstSegment ? `/${firstSegment}` : "";
+  const isDistributorView = areaBase === "/distributor";
+  const isOperativoDistributorView = location.pathname.startsWith(
+    "/distributor/operativo/"
+  );
+  const addDistributorRoute = isOperativoDistributorView
+    ? `${areaBase}/operativo/team`
+    : `${areaBase}/distributors/add`;
+  const addProductRoute = isDistributorView
+    ? `${areaBase}/products`
+    : `${areaBase}/add-product`;
   const [mode, setMode] = useState<Mode>("distributor");
   const [products, setProducts] = useState<Product[]>([]);
   const [distributors, setDistributors] = useState<User[]>([]);
@@ -66,6 +79,29 @@ const StockManagement = () => {
   const [success, setSuccess] = useState("");
   const [inventorySearchTerm, setInventorySearchTerm] = useState("");
   const [inventoryCategory, setInventoryCategory] = useState<string>("all");
+
+  const getPermissionAwareMessage = (
+    err: any,
+    fallbackMessage: string,
+    permissionMessage = "No tienes permisos de membresía para gestionar inventario en este negocio"
+  ) => {
+    const status = err?.response?.status;
+    const backendMessage = String(err?.response?.data?.message || "").trim();
+    const rawMessage = String(err?.message || "").trim();
+    const combined = `${backendMessage} ${rawMessage}`.toLowerCase();
+
+    if (
+      status === 403 ||
+      combined.includes("permiso") ||
+      combined.includes("sin permisos") ||
+      combined.includes("acceso denegado") ||
+      combined.includes("forbidden")
+    ) {
+      return permissionMessage;
+    }
+
+    return backendMessage || fallbackMessage;
+  };
 
   useEffect(() => {
     loadData();
@@ -153,6 +189,13 @@ const StockManagement = () => {
       setDistributorStock(stock);
     } catch (err) {
       console.error("Error al cargar inventario del distribuidor:", err);
+      setError(
+        getPermissionAwareMessage(
+          err,
+          "No se pudo cargar el inventario del distribuidor",
+          "No tienes permisos para consultar inventario de distribuidores"
+        )
+      );
       setDistributorStock([]);
     } finally {
       setLoadingDistributorStock(false);
@@ -377,7 +420,9 @@ const StockManagement = () => {
       // Resetear formulario de items
       setItems([]);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Error al procesar la operación");
+      setError(
+        getPermissionAwareMessage(err, "Error al procesar la operación")
+      );
     } finally {
       setLoading(false);
     }
@@ -436,8 +481,10 @@ const StockManagement = () => {
       setBranchNotes("");
     } catch (err: any) {
       setError(
-        err?.response?.data?.message ||
+        getPermissionAwareMessage(
+          err,
           "No se pudo crear la transferencia entre sedes"
+        )
       );
     } finally {
       setBranchLoading(false);
@@ -684,7 +731,7 @@ const StockManagement = () => {
                       <Button
                         type="button"
                         className="mt-3"
-                        onClick={() => navigate("/admin/distributors/add")}
+                        onClick={() => navigate(addDistributorRoute)}
                       >
                         Añadir distribuidor
                       </Button>
@@ -820,7 +867,7 @@ const StockManagement = () => {
                   <Button
                     type="button"
                     className="mt-3"
-                    onClick={() => navigate("/admin/add-product")}
+                    onClick={() => navigate(addProductRoute)}
                   >
                     Añadir producto
                   </Button>
@@ -1221,7 +1268,7 @@ const StockManagement = () => {
                     <Button
                       type="button"
                       className="mt-3"
-                      onClick={() => navigate("/admin/add-product")}
+                      onClick={() => navigate(addProductRoute)}
                     >
                       Añadir producto
                     </Button>

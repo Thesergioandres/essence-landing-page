@@ -1,6 +1,6 @@
 import Business from "../models/Business.js";
 import Membership from "../models/Membership.js";
-import User from "../models/User.js";
+import User from "../src/infrastructure/database/models/User.js";
 import {
   getBusinessUsage,
   resolveBusinessLimits,

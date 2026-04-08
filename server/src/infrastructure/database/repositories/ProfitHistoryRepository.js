@@ -6,9 +6,9 @@
 import mongoose from "mongoose";
 import Membership from "../../../../models/Membership.js";
 import ProfitHistory from "../../../../models/ProfitHistory.js";
-import Sale from "../../../../models/Sale.js";
+import Sale from "../models/Sale.js";
 import SpecialSale from "../../../../models/SpecialSale.js";
-import User from "../../../../models/User.js";
+import User from "../models/User.js";
 
 class ProfitHistoryRepository {
   /**
@@ -293,13 +293,25 @@ class ProfitHistoryRepository {
    * Get admin profit overview
    */
   async getAdminOverview(businessId, options = {}) {
-    const { startDate, endDate, limit = 150 } = options;
+    const {
+      startDate,
+      endDate,
+      limit = 150,
+      distributorId,
+      hideFinancialData = false,
+    } = options;
     const dateRange = this.buildDateRange(startDate, endDate);
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
+    const distributorObjectId =
+      distributorId && mongoose.isValidObjectId(distributorId)
+        ? new mongoose.Types.ObjectId(distributorId)
+        : null;
+    const isScopedDistributorView = Boolean(distributorObjectId);
 
     const filter = {
       business: businessObjectId,
       ...(dateRange ? { date: dateRange } : {}),
+      ...(isScopedDistributorView ? { user: distributorObjectId } : {}),
     };
     const recentEntriesFilter = {
       ...filter,
@@ -327,6 +339,7 @@ class ProfitHistoryRepository {
 
     const commissionMatch = {
       ...filter,
+      ...(isScopedDistributorView ? { user: distributorObjectId } : {}),
       $or: [
         { "metadata.commission": { $gt: 0 } },
         { description: { $regex: /comisi[oó]n/i } },
@@ -335,6 +348,19 @@ class ProfitHistoryRepository {
           : []),
       ],
     };
+
+    const saleScopeMatch = isScopedDistributorView
+      ? {
+          $or: [
+            { distributor: distributorObjectId },
+            { createdBy: distributorObjectId },
+          ],
+        }
+      : {};
+
+    const specialSaleScopeMatch = isScopedDistributorView
+      ? { createdBy: distributorObjectId }
+      : {};
 
     const [
       overview,
@@ -886,6 +912,7 @@ class ProfitHistoryRepository {
             business: businessObjectId,
             paymentStatus: "confirmado",
             ...(dateRange ? { saleDate: dateRange } : {}),
+            ...saleScopeMatch,
           },
         },
         {
@@ -921,6 +948,7 @@ class ProfitHistoryRepository {
             business: businessObjectId,
             status: "active",
             ...(dateRange ? { saleDate: dateRange } : {}),
+            ...specialSaleScopeMatch,
           },
         },
         {
@@ -948,6 +976,35 @@ class ProfitHistoryRepository {
     const specialNetTotal = specialSalesNetProfit?.[0]?.total || 0;
     const adminNetFromSales = salesNetTotal + specialNetTotal;
     const totalAdminProfit = adminNetFromSales;
+
+    if (isScopedDistributorView || hideFinancialData) {
+      const scopedProfit =
+        commissions.total || totals.netProfit || totals.grossProfit || 0;
+
+      return {
+        totalProfit: scopedProfit,
+        grossProfit: scopedProfit,
+        totalExpenses: 0,
+        netProfit: scopedProfit,
+        totalAdminProfit: 0,
+        totalDistributorProfit: scopedProfit,
+        totalEntries: recentEntries.length,
+        totalDistributorCommissions: commissions.total,
+        distributorCommissionEntries: commissions.count,
+        distributors: distributorBreakdown,
+        byType: typeBreakdown,
+        topUsers: byUser,
+        recentEntries,
+        filters: {
+          startDate,
+          endDate,
+          limit,
+          distributorId: distributorObjectId
+            ? String(distributorObjectId)
+            : undefined,
+        },
+      };
+    }
 
     const distributorsWithAdmin = [
       ...distributorBreakdown,

@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 import Branch from "../../../../models/Branch.js";
 import BranchStock from "../../../../models/BranchStock.js";
 import DistributorStock from "../../../../models/DistributorStock.js";
-import Product from "../../../../models/Product.js";
+import Product from "../models/Product.js";
 import StockTransfer from "../../../../models/StockTransfer.js";
-import User from "../../../../models/User.js";
+import User from "../models/User.js";
 
 const normalizeBranchName = (name) =>
   String(name || "")

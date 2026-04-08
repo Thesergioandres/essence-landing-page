@@ -6,10 +6,8 @@ import DistributorStock from "../../../models/DistributorStock.js";
 import GamificationConfig from "../../../models/GamificationConfig.js";
 import Membership from "../../../models/Membership.js";
 import PaymentMethod from "../../../models/PaymentMethod.js";
-import {
-  applySaleGamification,
-  getCommissionBonusForDistributor,
-} from "../../../utils/gamificationEngine.js";
+import { getDistributorCommissionInfo } from "../../../utils/distributorPricing.js";
+import { applySaleGamification } from "../../../utils/gamificationEngine.js";
 import { FinanceService } from "../../domain/services/FinanceService.js";
 import { InventoryService } from "../../domain/services/InventoryService.js";
 import CreditRepository from "../../infrastructure/database/repositories/CreditRepository.js";
@@ -145,13 +143,34 @@ export class RegisterSaleUseCase {
     let distributorCommissionBonus = 0;
     let baseCommissionPercentage = distributorProfitPercentage;
     if (distributorId) {
-      const config = await GamificationConfig.findOne().lean();
-      baseCommissionPercentage = FinanceService.resolveBaseCommissionPercentage(
-        config,
-        distributorProfitPercentage,
+      const commissionInfo = await getDistributorCommissionInfo(
+        distributorId,
+        businessId,
       );
-      const bonusInfo = await getCommissionBonusForDistributor(distributorId);
-      distributorCommissionBonus = bonusInfo.bonusCommission || 0;
+
+      if (commissionInfo?.isCommissionFixed) {
+        const fixedRate = Number(
+          commissionInfo.customCommissionRate ??
+            commissionInfo.profitPercentage,
+        );
+        baseCommissionPercentage = Number.isFinite(fixedRate)
+          ? Math.max(0, Math.min(95, fixedRate))
+          : Math.max(
+              0,
+              Math.min(95, Number(distributorProfitPercentage) || 20),
+            );
+        distributorCommissionBonus = 0;
+      } else {
+        const config = await GamificationConfig.findOne().lean();
+        baseCommissionPercentage =
+          FinanceService.resolveBaseCommissionPercentage(
+            config,
+            distributorProfitPercentage,
+          );
+        distributorCommissionBonus = Number(
+          commissionInfo?.bonusCommission || 0,
+        );
+      }
     }
 
     const discountTotal = Math.max(0, Number(discount || 0));

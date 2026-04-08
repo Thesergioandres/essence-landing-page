@@ -44,14 +44,33 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
-const logApiError = (error: AxiosError) => {
+const logApiError = (error: AxiosError | Error) => {
+  if (error.message === "Debes seleccionar un negocio antes de continuar") {
+    return;
+  }
+
+  if (!axios.isAxiosError(error)) {
+    console.error("[API ERROR]", {
+      message: error.message,
+    });
+    return;
+  }
+
   const status = error.response?.status;
   const url = error.config?.url;
   const method = error.config?.method;
   const isPublicSettingsEndpoint =
     typeof url === "string" && url.includes("/global-settings/public");
+  const isExpectedForbiddenEndpoint =
+    status === 403 &&
+    typeof url === "string" &&
+    (url.includes("/advanced-analytics/") || url.startsWith("/providers"));
 
   if (status === 401 && isPublicSettingsEndpoint) {
+    return;
+  }
+
+  if (isExpectedForbiddenEndpoint) {
     return;
   }
 
@@ -119,11 +138,18 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   response => response,
   async error => {
-    logApiError(error as AxiosError);
+    logApiError(error as AxiosError | Error);
 
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
+    const originalRequest = error.config as
+      | (InternalAxiosRequestConfig & {
+          _retry?: boolean;
+        })
+      | undefined;
+
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
     const code = (error.response?.data as { code?: string } | undefined)?.code;
 
     if (error.response?.status === 403 && code === "owner_inactive") {

@@ -10,13 +10,13 @@ dotenv.config({ path: path.join(__dirname, "../.env") });
 // Models - Dynamic import to ensure order/registration
 async function registerModels() {
   await import("../models/Business.js");
-  await import("../models/Product.js"); // Ensure Product is registered
+  await import("../src/infrastructure/database/models/Product.js"); // Ensure Product is registered
   await import("../models/Branch.js");
   await import("../models/Customer.js");
   await import("../models/PaymentMethod.js");
-  await import("../models/Sale.js");
+  await import("../src/infrastructure/database/models/Sale.js");
   await import("../models/DistributorStock.js");
-  await import("../models/User.js");
+  await import("../src/infrastructure/database/models/User.js");
   await import("../models/Promotion.js");
 }
 

@@ -1,8 +1,6 @@
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Footer from "../../../components/Footer";
-import Navbar from "../../../components/Navbar";
 import { useBusiness } from "../../../context/BusinessContext";
 import { businessService } from "../../business/services";
 import { uploadService } from "../../common/services";
@@ -143,7 +141,6 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-[#070910] text-white">
-      <Navbar />
       <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-6 space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-purple-200">
@@ -446,14 +443,13 @@ export default function Onboarding() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-gradient-to-r from-purple-600 to-fuchsia-600 px-4 py-3 text-base font-semibold text-white transition hover:from-purple-700 hover:to-fuchsia-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[#070910] disabled:cursor-not-allowed disabled:opacity-60"
+              className="bg-linear-to-r w-full rounded-lg from-purple-600 to-fuchsia-600 px-4 py-3 text-base font-semibold text-white transition hover:from-purple-700 hover:to-fuchsia-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[#070910] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Creando negocio..." : "Crear y continuar"}
             </button>
           </form>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

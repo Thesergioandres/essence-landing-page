@@ -1,12 +1,27 @@
 import mongoose from "mongoose";
 import { isCloudinaryConfigured } from "../../../../config/cloudinary.js";
+import Business from "../../../../models/Business.js";
 import DistributorStock from "../../../../models/DistributorStock.js";
 import InventoryEntry from "../../../../models/InventoryEntry.js";
+import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
 import { CreateProductUseCase } from "../../../application/use-cases/CreateProductUseCase.js";
 import { UpdateStockUseCase } from "../../../application/use-cases/UpdateStockUseCase.js";
 import { ProductRepository } from "../../database/repositories/ProductRepository.js";
 
 const productRepository = new ProductRepository();
+
+const sanitizeProductForFinancialPrivacy = (product = {}) => {
+  const {
+    purchasePrice,
+    averageCost,
+    supplierId,
+    supplierPrice,
+    totalInventoryValue,
+    profit,
+    ...safeProduct
+  } = product;
+  return safeProduct;
+};
 
 /**
  * Get All Products for Business
@@ -38,21 +53,11 @@ export const getAllProducts = async (req, res, next) => {
     let products = await productRepository.findAll(businessId, filter);
     console.log("✅ Found products:", products.length);
 
-    // 🛡️ FIX TASK 3: DATA PRIVACY - Hide cost fields from distributors
-    // Check if user is distributor (not admin)
-    const isDistributor = req.user?.role === "distribuidor";
-    if (isDistributor) {
-      // Remove sensitive cost fields from response
-      products = products.map((product) => {
-        const {
-          purchasePrice,
-          averageCost,
-          supplierPrice,
-          totalInventoryValue,
-          ...safeProduct
-        } = product;
-        return safeProduct;
-      });
+    const financialPrivacy = resolveFinancialPrivacyContext(req);
+    if (financialPrivacy.hideFinancialData) {
+      products = products.map((product) =>
+        sanitizeProductForFinancialPrivacy(product),
+      );
       console.log("🛡️ Sensitive cost fields excluded for distributor");
     }
 
@@ -97,13 +102,19 @@ export const getPublicCatalog = async (req, res) => {
     if (req.query.active !== undefined)
       filter.isActive = req.query.active === "true";
 
-    const products = await productRepository.findAll(businessId, filter);
+    const [products, business] = await Promise.all([
+      productRepository.findAll(businessId, filter),
+      Business.findById(businessId).select("name logoUrl").lean(),
+    ]);
+
     const safeProducts = products.map((product) => {
       const {
         purchasePrice,
         averageCost,
+        supplierId,
         supplierPrice,
         totalInventoryValue,
+        profit,
         distributorPrice,
         distributorCommission,
         ...safeProduct
@@ -114,6 +125,13 @@ export const getPublicCatalog = async (req, res) => {
     res.json({
       success: true,
       data: safeProducts,
+      business: business
+        ? {
+            _id: business._id,
+            name: business.name,
+            logoUrl: business.logoUrl || null,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Error in getPublicCatalog:", error);
@@ -135,20 +153,23 @@ export const getMyCatalog = async (req, res) => {
       });
     }
 
+    const businessHeader = Array.isArray(req.headers["x-business-id"])
+      ? req.headers["x-business-id"][0]
+      : req.headers["x-business-id"];
+
     const filter = {
       distributor: req.user.id,
       quantity: { $gt: 0 },
     };
 
-    if (req.businessId) {
-      filter.business = req.businessId;
+    if (req.businessId || businessHeader) {
+      filter.business = req.businessId || businessHeader;
     }
 
     const stockEntries = await DistributorStock.find(filter)
       .populate({
         path: "product",
-        select:
-          "name description purchasePrice distributorPrice clientPrice image category",
+        select: "name description distributorPrice clientPrice image category",
         populate: { path: "category", select: "name slug" },
       })
       .lean();
@@ -156,7 +177,7 @@ export const getMyCatalog = async (req, res) => {
     const products = stockEntries
       .filter((entry) => entry.product)
       .map((entry) => ({
-        ...entry.product,
+        ...sanitizeProductForFinancialPrivacy(entry.product || {}),
         distributorStock: entry.quantity,
       }));
 
@@ -181,17 +202,9 @@ export const getProductById = async (req, res, next) => {
         .json({ success: false, message: "Product not found" });
     }
 
-    // 🛡️ FIX TASK 3: DATA PRIVACY - Hide cost fields from distributors
-    const isDistributor = req.user?.role === "distribuidor";
-    if (isDistributor) {
-      const {
-        purchasePrice,
-        averageCost,
-        supplierPrice,
-        totalInventoryValue,
-        ...safeProduct
-      } = product;
-      product = safeProduct;
+    const financialPrivacy = resolveFinancialPrivacyContext(req);
+    if (financialPrivacy.hideFinancialData) {
+      product = sanitizeProductForFinancialPrivacy(product);
     }
 
     res.json({ success: true, data: product });

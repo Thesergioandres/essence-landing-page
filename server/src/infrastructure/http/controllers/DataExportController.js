@@ -25,14 +25,15 @@ import InventoryEntry from "../../../../models/InventoryEntry.js";
 import Membership from "../../../../models/Membership.js";
 import PaymentMethod from "../../../../models/PaymentMethod.js";
 import PointsHistory from "../../../../models/PointsHistory.js";
-import Product from "../../../../models/Product.js";
+import Product from "../../database/models/Product.js";
 import ProfitHistory from "../../../../models/ProfitHistory.js";
 import Promotion from "../../../../models/Promotion.js";
 import Provider from "../../../../models/Provider.js";
-import Sale from "../../../../models/Sale.js";
+import Sale from "../../database/models/Sale.js";
 import Segment from "../../../../models/Segment.js";
 import SpecialSale from "../../../../models/SpecialSale.js";
 import StockTransfer from "../../../../models/StockTransfer.js";
+import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
 
 export class DataExportController {
   /**
@@ -42,11 +43,20 @@ export class DataExportController {
   async exportFullData(req, res) {
     try {
       const businessId = req.businessId;
+      const privacy = resolveFinancialPrivacyContext(req);
 
       if (!businessId) {
         return res.status(400).json({
           success: false,
           message: "Business ID is required",
+        });
+      }
+
+      if (privacy.hideFinancialData) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "No tienes permisos para exportar datos financieros completos.",
         });
       }
 

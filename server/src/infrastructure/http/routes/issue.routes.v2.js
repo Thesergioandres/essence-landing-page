@@ -9,14 +9,20 @@ const controller = new IssueController();
 router.use(protect);
 
 router.post("/", (req, res) => controller.create(req, res));
-router.get("/", requirePermission("readIssue"), (req, res) =>
-  controller.getAll(req, res),
+router.get(
+  "/",
+  requirePermission({ module: "config", action: "read" }),
+  (req, res) => controller.getAll(req, res),
 );
-router.get("/:id", requirePermission("readIssue"), (req, res) =>
-  controller.getById(req, res),
+router.get(
+  "/:id",
+  requirePermission({ module: "config", action: "read" }),
+  (req, res) => controller.getById(req, res),
 );
-router.put("/:id/status", requirePermission("updateIssue"), (req, res) =>
-  controller.updateStatus(req, res),
+router.put(
+  "/:id/status",
+  requirePermission({ module: "config", action: "update" }),
+  (req, res) => controller.updateStatus(req, res),
 );
 
 export default router;

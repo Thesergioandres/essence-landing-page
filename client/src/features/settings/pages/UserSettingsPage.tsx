@@ -1,8 +1,14 @@
 import { Link } from "react-router-dom";
 import Footer from "../../../components/Footer";
 import Navbar from "../../../components/Navbar";
+import {
+  MOTION_MODE_OPTIONS,
+  useMotionProfile,
+} from "../../../shared/config/motion.config";
 
 export default function UserSettings() {
+  const { mode, motionProfile, setMotionMode } = useMotionProfile();
+
   return (
     <div className="bg-linear-to-br min-h-screen from-gray-900 via-purple-900/20 to-gray-900">
       <Navbar />
@@ -44,6 +50,58 @@ export default function UserSettings() {
             Nota: la página de Usuarios es un placeholder hasta habilitar la
             gestión completa.
           </p>
+        </div>
+
+        <div className="bg-cyan-500/8 mt-6 space-y-4 rounded-xl border border-cyan-500/30 p-6 shadow-xl backdrop-blur">
+          <div>
+            <h2 className="text-xl font-semibold text-white">
+              Intensidad de Animaciones
+            </h2>
+            <p className="mt-1 text-sm text-gray-300">
+              Personaliza la energía visual de toda la aplicación.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {MOTION_MODE_OPTIONS.map(option => {
+              const isActive = mode === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setMotionMode(option.value)}
+                  aria-pressed={isActive}
+                  className={`min-h-11 rounded-xl border px-4 py-4 text-left transition-all duration-300 ${
+                    isActive
+                      ? "bg-cyan-500/18 border-cyan-400/70 text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.25)]"
+                      : "border-white/12 bg-white/5 text-gray-200 hover:border-cyan-400/35 hover:bg-cyan-500/10"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-base font-semibold">
+                      {option.label}
+                    </span>
+                    {isActive && (
+                      <span className="rounded-full border border-cyan-300/50 bg-cyan-400/20 px-2 py-0.5 text-[11px] font-semibold text-cyan-100">
+                        Activo
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-xs text-gray-300">
+                    {option.description}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="rounded-lg border border-white/10 bg-black/20 px-4 py-3 text-xs text-gray-300">
+            <p>
+              Ruta: {motionProfile.routeDuration.toFixed(2)}s | Vista:{" "}
+              {motionProfile.viewDuration.toFixed(2)}s
+            </p>
+          </div>
         </div>
       </main>
       <Footer />

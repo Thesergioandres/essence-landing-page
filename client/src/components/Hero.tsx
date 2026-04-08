@@ -1,7 +1,7 @@
-import { useNavigate } from "react-router-dom";
+import { useSmartLoginEntry } from "../features/auth/hooks/useSmartLoginEntry";
 
 export default function Hero() {
-  const navigate = useNavigate();
+  const { enter, loading } = useSmartLoginEntry();
 
   const scrollToModules = () => {
     document.getElementById("modulos")?.scrollIntoView({ behavior: "smooth" });
@@ -12,7 +12,7 @@ export default function Hero() {
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -left-10 -top-10 h-60 w-60 rounded-full bg-purple-700/20 blur-3xl" />
         <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-pink-600/15 blur-3xl" />
-        <div className="absolute inset-x-0 top-10 h-px bg-gradient-to-r from-transparent via-purple-500/40 to-transparent" />
+        <div className="bg-linear-to-r absolute inset-x-0 top-10 h-px from-transparent via-purple-500/40 to-transparent" />
       </div>
 
       <div className="relative mx-auto flex max-w-6xl flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
@@ -22,7 +22,7 @@ export default function Hero() {
           </div>
 
           <div className="space-y-4">
-            <h1 className="bg-gradient-to-r from-purple-200 via-white to-purple-300 bg-clip-text text-4xl font-extrabold leading-[1.05] text-transparent sm:text-5xl md:text-6xl">
+            <h1 className="bg-linear-to-r from-purple-200 via-white to-purple-300 bg-clip-text text-4xl font-extrabold leading-[1.05] text-transparent sm:text-5xl md:text-6xl">
               Un ERP que opera por negocios.
             </h1>
             <p className="max-w-2xl text-base text-gray-300 sm:text-lg">
@@ -35,13 +35,16 @@ export default function Hero() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <button
               onClick={scrollToModules}
-              className="group relative flex-1 overflow-hidden rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 px-5 py-3.5 text-base font-semibold text-white shadow-lg shadow-purple-700/30 transition hover:shadow-purple-500/40 sm:flex-none sm:px-6"
+              className="bg-linear-to-r group relative flex-1 overflow-hidden rounded-xl from-purple-600 to-fuchsia-600 px-5 py-3.5 text-base font-semibold text-white shadow-lg shadow-purple-700/30 transition hover:shadow-purple-500/40 sm:flex-none sm:px-6"
             >
               <span className="relative z-10">Ver módulos</span>
               <span className="absolute inset-0 translate-y-full bg-white/10 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100" />
             </button>
             <button
-              onClick={() => navigate("/login")}
+              onClick={() => {
+                void enter();
+              }}
+              disabled={loading}
               className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-purple-400/40 bg-white/5 px-5 py-3.5 text-base font-semibold text-purple-100 transition hover:border-purple-300/70 hover:text-white sm:flex-none sm:px-6"
             >
               Entrar al panel

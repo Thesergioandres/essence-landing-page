@@ -135,6 +135,7 @@ export class DistributorController {
         success: true,
         products: result.products,
         distributor: result.distributor,
+        business: result.business || null,
       });
     } catch (error) {
       const status = error.statusCode || 500;

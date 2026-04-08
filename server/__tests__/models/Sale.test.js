@@ -1,8 +1,8 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import Product from "../../models/Product.js";
-import Sale from "../../models/Sale.js";
-import User from "../../models/User.js";
+import Product from "../../src/infrastructure/database/models/Product.js";
+import Sale from "../../src/infrastructure/database/models/Sale.js";
+import User from "../../src/infrastructure/database/models/User.js";
 
 let mongoServer;
 

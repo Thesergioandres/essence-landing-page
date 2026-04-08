@@ -1,19 +1,54 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useBusiness } from "../../../context/BusinessContext";
+import { useBrandLogo } from "../../../hooks/useBrandLogo";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import { exportCatalogToPDF } from "../../../utils/exportUtils";
 import { useProducts } from "../hooks/useProducts";
 
 export default function InventoryPage() {
   const navigate = useNavigate();
+  const { business } = useBusiness();
+  const brandLogo = useBrandLogo();
   const { products, loading, error, refresh } = useProducts();
   // We can expose refresh via a button if needed. For now suppressing unused warning.
   // Or just destructure it to use later.
   void refresh;
   const [search, setSearch] = useState("");
+  const [isExportingCatalog, setIsExportingCatalog] = useState(false);
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleExportCatalog = async () => {
+    if (filteredProducts.length === 0) {
+      window.alert("No hay productos para exportar en el catálogo.");
+      return;
+    }
+
+    setIsExportingCatalog(true);
+    try {
+      await exportCatalogToPDF(
+        filteredProducts.map(product => ({
+          name: product.name,
+          description: product.description || "",
+          clientPrice: product.clientPrice || 0,
+          image: product.image?.url || null,
+        })),
+        {
+          businessName: business?.name || "Essence ERP",
+          logoUrl: business?.logoUrl?.trim() || brandLogo,
+          title: "Catalogo de Venta Pro",
+        }
+      );
+    } catch (err) {
+      console.error(err);
+      window.alert("No se pudo generar el catálogo PDF.");
+    } finally {
+      setIsExportingCatalog(false);
+    }
+  };
 
   return (
     <div className="space-y-6 overflow-hidden p-6 sm:space-y-8">
@@ -26,13 +61,24 @@ export default function InventoryPage() {
             Gestión de productos con Arquitectura Hexagonal.
           </p>
         </div>
-        <button
-          onClick={() => navigate("/admin/v2/products/new")} // Temporary route until refactor complete
-          className="bg-linear-to-r inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg from-purple-600 to-pink-600 px-4 py-3 text-sm font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 active:scale-[0.98] sm:px-5 sm:text-base md:w-auto"
-        >
-          <span className="text-xl leading-none sm:text-2xl">＋</span>
-          Nuevo producto
-        </button>
+        <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
+          <button
+            onClick={handleExportCatalog}
+            disabled={isExportingCatalog}
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-lg border border-cyan-500/60 bg-cyan-600/20 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-600/35 disabled:cursor-not-allowed disabled:opacity-60 sm:px-5 sm:text-base md:w-auto"
+          >
+            {isExportingCatalog
+              ? "Generando catálogo..."
+              : "Descargar catálogo PDF"}
+          </button>
+          <button
+            onClick={() => navigate("/admin/v2/products/new")} // Temporary route until refactor complete
+            className="bg-linear-to-r inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg from-purple-600 to-pink-600 px-4 py-3 text-sm font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 active:scale-[0.98] sm:px-5 sm:text-base md:w-auto"
+          >
+            <span className="text-xl leading-none sm:text-2xl">＋</span>
+            Nuevo producto
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:w-1/2">
@@ -41,7 +87,7 @@ export default function InventoryPage() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar por nombre..."
-          className="min-h-[44px] rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
+          className="min-h-11 rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
         />
       </div>
 
@@ -100,7 +146,7 @@ export default function InventoryPage() {
                 <div className="mt-3">
                   <button
                     onClick={() => console.log("Edit legacy")}
-                    className="min-h-[44px] w-full rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95"
+                    className="min-h-11 w-full rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95"
                   >
                     Editar
                   </button>
@@ -168,7 +214,7 @@ export default function InventoryPage() {
                         <div className="flex justify-end gap-3">
                           <button
                             onClick={() => console.log("Edit legacy")}
-                            className="min-h-[44px] rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95"
+                            className="min-h-11 rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95"
                           >
                             Editar
                           </button>

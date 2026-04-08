@@ -23,6 +23,12 @@ const distributorStockSchema = new mongoose.Schema(
       min: [0, "La cantidad no puede ser negativa"],
       default: 0,
     },
+    inTransitQuantity: {
+      type: Number,
+      required: true,
+      min: [0, "La cantidad en tránsito no puede ser negativa"],
+      default: 0,
+    },
     lowStockAlert: {
       type: Number,
       default: 5,
@@ -30,15 +36,20 @@ const distributorStockSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Índice compuesto para evitar duplicados
 distributorStockSchema.index(
   { business: 1, distributor: 1, product: 1 },
-  { unique: true }
+  { unique: true },
 );
 // Índice adicional para queries por distribuidor
 distributorStockSchema.index({ business: 1, distributor: 1, quantity: 1 });
+distributorStockSchema.index({
+  business: 1,
+  distributor: 1,
+  inTransitQuantity: 1,
+});
 
 export default mongoose.model("DistributorStock", distributorStockSchema);

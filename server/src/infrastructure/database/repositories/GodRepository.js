@@ -27,18 +27,18 @@ import Notification from "../../../../models/Notification.js";
 import PaymentMethod from "../../../../models/PaymentMethod.js";
 import PeriodWinner from "../../../../models/PeriodWinner.js";
 import PointsHistory from "../../../../models/PointsHistory.js";
-import Product from "../../../../models/Product.js";
+import Product from "../models/Product.js";
 import ProfitHistory from "../../../../models/ProfitHistory.js";
 import Promotion from "../../../../models/Promotion.js";
 import Provider from "../../../../models/Provider.js";
 import PushSubscription from "../../../../models/PushSubscription.js";
 import RefreshToken from "../../../../models/RefreshToken.js";
-import Sale from "../../../../models/Sale.js";
+import Sale from "../models/Sale.js";
 import Segment from "../../../../models/Segment.js";
 import SpecialSale from "../../../../models/SpecialSale.js";
 import Stock from "../../../../models/Stock.js";
 import StockTransfer from "../../../../models/StockTransfer.js";
-import User from "../../../../models/User.js";
+import User from "../models/User.js";
 
 class GodRepository {
   /**

@@ -1,4 +1,4 @@
-import User from "../models/User.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 /**
  * Cron job para verificar y expirar suscripciones vencidas

@@ -152,11 +152,13 @@ export const businessService = {
 
   async listMembers(businessId: string): Promise<{
     members: Array<{
+      _id: string;
       user: User;
-      role: "owner" | "admin" | "manager" | "distributor" | "viewer";
-      permissions: string[];
-      branches: string[];
-      joinedAt: Date;
+      role: "admin" | "distribuidor" | "viewer";
+      status: "active" | "invited" | "disabled";
+      permissions?: Record<string, Record<string, boolean>>;
+      branches?: string[];
+      joinedAt?: Date;
       invitedBy?: User;
     }>;
     pendingInvites: Array<{
@@ -202,7 +204,7 @@ export const businessService = {
     data: {
       email?: string;
       userId?: string;
-      role: "admin" | "manager" | "distributor" | "viewer";
+      role: "admin" | "distribuidor" | "viewer";
       permissions?: string[];
       branches?: string[];
     }
@@ -218,13 +220,40 @@ export const businessService = {
     return response.data;
   },
 
+  async findMemberCandidate(
+    businessId: string,
+    email: string
+  ): Promise<{
+    user: User;
+    alreadyMember: boolean;
+    membership?: BusinessMembership | null;
+  }> {
+    const encodedEmail = encodeURIComponent(email.trim());
+    const response = await api.get(
+      `/business/${businessId}/members/find-user/${encodedEmail}`
+    );
+
+    const apiResponse = response.data;
+    const payload = apiResponse?.data || apiResponse;
+
+    return {
+      user: payload.user,
+      alreadyMember: Boolean(payload.alreadyMember),
+      membership: payload.membership || null,
+    };
+  },
+
   async updateMemberPermissions(
     businessId: string,
     userId: string,
     data: {
-      role?: "admin" | "manager" | "distributor" | "viewer";
-      permissions?: string[];
+      role?: "admin" | "distribuidor" | "viewer";
+      permissions?: Record<string, unknown>;
       branches?: string[];
+      commissionSettings?: {
+        fixedCommissionOnly: boolean;
+        customCommissionRate: number | null;
+      };
     }
   ): Promise<{
     message: string;

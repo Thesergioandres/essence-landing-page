@@ -149,7 +149,17 @@ class StockController {
 
       const isAdmin = ["admin", "god", "super_admin"].includes(req.user.role);
       const currentUserId = req.user.userId || req.user.id;
-      if (!isAdmin && currentUserId !== distributorId) {
+      const membershipRole = req.membership?.role;
+      const canManageInventoryByMembership =
+        membershipRole === "admin" ||
+        req.membership?.permissions?.inventory?.update === true ||
+        req.membership?.permissions?.inventory?.create === true;
+
+      if (
+        !isAdmin &&
+        currentUserId !== distributorId &&
+        !canManageInventoryByMembership
+      ) {
         return res.status(403).json({ message: "Sin permisos" });
       }
 

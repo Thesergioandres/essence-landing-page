@@ -1,5 +1,5 @@
 import Business from "../../../../models/Business.js";
-import User from "../../../../models/User.js";
+import User from "../../database/models/User.js";
 import {
   buildBusinessLimitPayload,
   ensureGlobalSettings,

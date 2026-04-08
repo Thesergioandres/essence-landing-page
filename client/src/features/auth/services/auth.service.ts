@@ -15,23 +15,109 @@ import type {
 
 const ADMIN_ORIGINAL_TOKEN_KEY = "admin_original_token";
 
+const resolveEntityId = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "[object Object]") {
+      return null;
+    }
+    return trimmed;
+  }
+
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as {
+    _id?: unknown;
+    id?: unknown;
+    $oid?: unknown;
+  };
+
+  return (
+    resolveEntityId(candidate._id) ||
+    resolveEntityId(candidate.id) ||
+    resolveEntityId(candidate.$oid) ||
+    null
+  );
+};
+
+const normalizeSessionUser = <T extends User | AuthResponse>(user: T): T => {
+  const record = (user || {}) as Record<string, unknown>;
+  const normalizedUserId = resolveEntityId(record._id);
+  const rawMemberships = Array.isArray(record.memberships)
+    ? (record.memberships as Array<Record<string, unknown>>)
+    : [];
+
+  const normalizedMemberships = rawMemberships.map(membership => {
+    const businessId = resolveEntityId(membership.business);
+    const userId = resolveEntityId(membership.user);
+
+    return {
+      ...membership,
+      business:
+        typeof membership.business === "string"
+          ? businessId || membership.business
+          : {
+              ...(membership.business as Record<string, unknown>),
+              ...(businessId ? { _id: businessId } : {}),
+            },
+      user:
+        typeof membership.user === "string"
+          ? userId || membership.user
+          : membership.user && typeof membership.user === "object"
+            ? {
+                ...(membership.user as Record<string, unknown>),
+                ...(userId ? { _id: userId } : {}),
+              }
+            : membership.user,
+    };
+  });
+
+  const normalizedBusinessId =
+    resolveEntityId(record.business) ||
+    resolveEntityId(rawMemberships[0]?.business);
+
+  return {
+    ...(record as T),
+    ...(normalizedUserId ? { _id: normalizedUserId } : {}),
+    ...("business" in record
+      ? {
+          business:
+            typeof record.business === "string"
+              ? normalizedBusinessId || record.business
+              : normalizedBusinessId,
+        }
+      : {}),
+    ...(Array.isArray(record.memberships)
+      ? { memberships: normalizedMemberships }
+      : {}),
+  };
+};
+
 const resolveBusinessIdFromUser = (user?: {
   memberships?: Membership[];
   business?: string;
 }): string | null => {
   if (!user) return null;
-  return user.memberships?.[0]?.business?._id || user.business || null;
+
+  const membershipBusiness = user.memberships?.[0]?.business;
+  return resolveEntityId(membershipBusiness) || resolveEntityId(user.business);
 };
 
 const applySession = (payload: {
   token: string;
   user: User | AuthResponse;
 }) => {
+  const normalizedUser = normalizeSessionUser(payload.user);
+
   localStorage.setItem("token", payload.token);
-  localStorage.setItem("user", JSON.stringify(payload.user));
-  const businessId = resolveBusinessIdFromUser(payload.user);
+  localStorage.setItem("user", JSON.stringify(normalizedUser));
+  const businessId = resolveBusinessIdFromUser(normalizedUser);
   if (businessId) {
     localStorage.setItem("businessId", businessId);
+  } else {
+    localStorage.removeItem("businessId");
   }
 };
 
@@ -51,8 +137,9 @@ async function trySetBusinessForGod(role: string): Promise<void> {
       "/business/me/memberships"
     );
     const memberships = data?.memberships || [];
-    if (memberships.length === 1 && memberships[0]?.business?._id) {
-      localStorage.setItem("businessId", memberships[0].business._id);
+    const resolvedBusinessId = resolveEntityId(memberships[0]?.business);
+    if (memberships.length === 1 && resolvedBusinessId) {
+      localStorage.setItem("businessId", resolvedBusinessId);
     }
   } catch (error) {
     console.warn("No se pudo asignar businessId para god", error);
@@ -69,8 +156,14 @@ export const authService = {
     const response = await api.get<{ success: boolean; data: User }>(
       "/auth/profile"
     );
-    const user = response.data.data;
+    const user = normalizeSessionUser(response.data.data);
     localStorage.setItem("user", JSON.stringify(user));
+
+    const businessId = resolveBusinessIdFromUser(user);
+    if (businessId) {
+      localStorage.setItem("businessId", businessId);
+    }
+
     return user;
   },
 
@@ -158,7 +251,13 @@ export const authService = {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("refreshToken", response.data.refreshToken);
         if (response.data.user) {
-          localStorage.setItem("user", JSON.stringify(response.data.user));
+          const normalizedUser = normalizeSessionUser(response.data.user);
+          localStorage.setItem("user", JSON.stringify(normalizedUser));
+
+          const businessId = resolveBusinessIdFromUser(normalizedUser);
+          if (businessId) {
+            localStorage.setItem("businessId", businessId);
+          }
         }
       }
 
@@ -189,9 +288,7 @@ export const authService = {
     localStorage.removeItem("user");
     localStorage.removeItem("businessId");
     localStorage.removeItem(ADMIN_ORIGINAL_TOKEN_KEY);
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("auth-changed"));
-    }
+    notifySessionChange();
   },
 
   isImpersonating(): boolean {
@@ -259,8 +356,39 @@ export const authService = {
   },
 
   getCurrentUser(): (AuthResponse & { token: string }) | null {
-    const user = localStorage.getItem("user");
-    return user ? (JSON.parse(user) as AuthResponse & { token: string }) : null;
+    const userRaw = localStorage.getItem("user");
+    if (!userRaw) return null;
+
+    try {
+      const parsedUser = JSON.parse(userRaw) as AuthResponse & {
+        token: string;
+      };
+      const normalizedUser = normalizeSessionUser(
+        parsedUser
+      ) as AuthResponse & {
+        token: string;
+      };
+
+      localStorage.setItem("user", JSON.stringify(normalizedUser));
+
+      const resolvedBusinessId = resolveBusinessIdFromUser(normalizedUser);
+      const currentBusinessId = resolveEntityId(
+        localStorage.getItem("businessId")
+      );
+
+      if (resolvedBusinessId && currentBusinessId !== resolvedBusinessId) {
+        localStorage.setItem("businessId", resolvedBusinessId);
+      }
+
+      if (!resolvedBusinessId && !currentBusinessId) {
+        localStorage.removeItem("businessId");
+      }
+
+      return normalizedUser;
+    } catch {
+      localStorage.removeItem("user");
+      return null;
+    }
   },
 
   isAuthenticated(): boolean {
@@ -269,6 +397,18 @@ export const authService = {
 
   hasRefreshToken(): boolean {
     return !!localStorage.getItem("refreshToken");
+  },
+
+  getDashboardRoute(role?: string | null): string {
+    if (role === "distribuidor") {
+      return "/distributor/dashboard";
+    }
+
+    if (role === "admin" || role === "super_admin" || role === "god") {
+      return "/admin/analytics";
+    }
+
+    return "/";
   },
 
   async getProfile(): Promise<User> {

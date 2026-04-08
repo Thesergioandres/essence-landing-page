@@ -18,7 +18,7 @@ const seedProducts = async () => {
     console.log("✅ Connected");
 
     // Dynamic imports to avoid schema issues
-    const User = (await import("../models/User.js")).default;
+    const User = (await import("../src/infrastructure/database/models/User.js")).default;
     const Product = (
       await import("../src/infrastructure/database/models/Product.js")
     ).default;

@@ -10,8 +10,8 @@ import "../models/Customer.js";
 import "../models/DeliveryMethod.js";
 import DistributorStock from "../models/DistributorStock.js";
 import "../models/PaymentMethod.js";
-import Product from "../models/Product.js";
-import Sale from "../models/Sale.js";
+import Product from "../src/infrastructure/database/models/Product.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
 
 // Utils
 import { getDistributorCommissionInfo } from "../utils/distributorPricing.js";

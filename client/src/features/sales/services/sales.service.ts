@@ -5,6 +5,7 @@
  */
 
 import api from "../../../api/axios";
+import { salesReadUseCases } from "../../../core/use-cases/sales";
 import type {
   DefectiveProduct,
   Product,
@@ -242,11 +243,10 @@ export const saleService = {
       statsOnly?: boolean;
     }
   ): Promise<{ sales: Sale[]; stats: SaleStats }> {
-    const url = distributorId
-      ? `/sales/distributor/${distributorId}`
-      : "/sales/distributor";
-    const response = await api.get(url, { params: filters });
-    return response.data;
+    return salesReadUseCases.getDistributorSales<Sale, SaleStats>({
+      distributorId,
+      filters,
+    });
   },
 
   /**
@@ -277,8 +277,7 @@ export const saleService = {
       hasMore: boolean;
     };
   }> {
-    const response = await api.get("/sales", { params: filters });
-    return response.data;
+    return salesReadUseCases.getAllSales<Sale, SaleStats>(filters);
   },
 
   async getSalesByProduct(): Promise<
@@ -663,9 +662,26 @@ export const defectiveProductService = {
     defectiveProducts: DefectiveProduct[];
   }> {
     const response = await api.get(
-      `/defective-products/sale-group/${saleGroupId}`
+      `/defective-products/sale-group/${saleGroupId}`,
+      {
+        // Si no existen reportes para el grupo, backend puede responder 404.
+        // En UI lo tratamos como lista vacia para evitar ruido y errores.
+        validateStatus: status =>
+          (status >= 200 && status < 300) || status === 404,
+      }
     );
-    return response.data;
+
+    if (response.status === 404) {
+      return { defectiveProducts: [] };
+    }
+
+    const payload = response.data || {};
+    const list =
+      payload.defectiveProducts || payload.data || payload.reports || [];
+
+    return {
+      defectiveProducts: Array.isArray(list) ? list : [],
+    };
   },
 
   async approveWarranty(

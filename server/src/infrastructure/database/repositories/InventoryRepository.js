@@ -1,7 +1,7 @@
 import Branch from "../../../../models/Branch.js";
 import BranchStock from "../../../../models/BranchStock.js";
 import InventoryEntry from "../../../../models/InventoryEntry.js";
-import Product from "../../../../models/Product.js";
+import Product from "../models/Product.js";
 import Provider from "../../../../models/Provider.js";
 
 class InventoryRepository {

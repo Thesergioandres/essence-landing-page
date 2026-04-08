@@ -1,6 +1,6 @@
 import { m as motion } from "framer-motion";
 import { FileSpreadsheet, FileText } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useFeature } from "../../../components/FeatureSection";
 import SaleDetailModal from "../../../components/SaleDetailModal";
 import { LoadingSpinner } from "../../../shared/components/ui";
@@ -12,6 +12,7 @@ import {
 } from "../../../utils/requestCache";
 import { authService } from "../../auth/services";
 import type { User } from "../../auth/types/auth.types";
+import { useFinancialPrivacy } from "../../auth/utils/financialPrivacy";
 import { branchService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
 import { distributorService } from "../../distributors/services";
@@ -24,12 +25,17 @@ const SALES_CACHE_TTL_MS = 60 * 1000;
 const ALL_SALES_PAGE_LIMIT = 500;
 const ALL_SALES_MAX_PAGES = 50;
 
-export default function Sales() {
+interface SalesPageProps {
+  hideAdminProfit?: boolean;
+}
+
+export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
   // Hooks para features
   const distributorsEnabled = useFeature("distributors");
   const branchesEnabled = useFeature("branches");
   const gamificationEnabled = useFeature("gamification");
   const creditsEnabled = useFeature("credits");
+  const { hideFinancialData, scopeDistributorId } = useFinancialPrivacy();
 
   const [sales, setSales] = useState<Sale[]>([]);
   const [pagination, setPagination] = useState({
@@ -56,6 +62,9 @@ export default function Sales() {
   const [filter, setFilter] = useState<"all" | "pendiente" | "confirmado">(
     "all"
   );
+  const [saleTypeFilter, setSaleTypeFilter] = useState<
+    "all" | "normal" | "promotion" | "special"
+  >("all");
   const [sortBy, setSortBy] = useState<
     "date-desc" | "date-asc" | "distributor"
   >("date-desc");
@@ -115,6 +124,9 @@ export default function Sales() {
             ? sale.product?.name || sale.productName || "Producto Eliminado"
             : sale.productName || "Producto Eliminado";
         const customerName = sale.customerName || "-";
+        const gainAmount = hideFinancialData
+          ? Number(sale.distributorProfit || 0)
+          : getAdminNetProfit(sale);
 
         return {
           Fecha: new Date(sale.saleDate).toLocaleDateString(),
@@ -124,7 +136,7 @@ export default function Sales() {
           Producto: productName,
           Cantidad: sale.quantity,
           Total: getSaleRevenue(sale),
-          Ganancia: getAdminNetProfit(sale),
+          [hideFinancialData ? "Mis Ganancias" : "Ganancia"]: gainAmount,
           Estado: sale.paymentStatus,
         };
       });
@@ -165,11 +177,39 @@ export default function Sales() {
   };
 
   const currentUser = authService.getCurrentUser();
+  const selectedBusinessId = localStorage.getItem("businessId");
+  const currentMembership = currentUser?.memberships?.find(membership => {
+    const membershipBusinessId =
+      typeof membership.business === "string"
+        ? membership.business
+        : membership.business?._id;
+
+    return (
+      Boolean(selectedBusinessId) &&
+      membershipBusinessId === selectedBusinessId &&
+      membership.status === "active"
+    );
+  });
+
+  const canConfirmSalesByMembership =
+    currentMembership?.permissions?.sales?.update === true;
+  const canDeleteSalesByMembership =
+    currentMembership?.permissions?.sales?.delete === true;
+
+  const canConfirmSales =
+    currentUser?.role === "admin" ||
+    currentUser?.role === "super_admin" ||
+    currentUser?.role === "god" ||
+    canConfirmSalesByMembership;
+
   const canDeleteSales =
     currentUser?.role === "admin" ||
     currentUser?.role === "super_admin" ||
-    currentUser?.role === "god";
+    currentUser?.role === "god" ||
+    canDeleteSalesByMembership;
   const showBranchColumn = false;
+  const showAdminProfit = !hideAdminProfit && !hideFinancialData;
+  const showAmountToDeliver = distributorsEnabled && !hideFinancialData;
 
   useEffect(() => {
     if (!showAllSales) {
@@ -178,7 +218,6 @@ export default function Sales() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     pagination.page,
-    filter,
     sortBy,
     dateFilters,
     branchId,
@@ -238,8 +277,11 @@ export default function Sales() {
     };
     if (branchId) params.branchId = branchId;
     if (productId) params.productId = productId;
-    if (distributorId) params.distributorId = distributorId;
-    if (filter !== "all") params.paymentStatus = filter;
+    if (scopeDistributorId) {
+      params.distributorId = scopeDistributorId;
+    } else if (distributorId) {
+      params.distributorId = distributorId;
+    }
     if (dateFilters.startDate) params.startDate = dateFilters.startDate;
     if (dateFilters.endDate) params.endDate = dateFilters.endDate;
     return params;
@@ -296,6 +338,7 @@ export default function Sales() {
       setProductId("");
       setDistributorId("");
       setFilter("all");
+      setSaleTypeFilter("all");
       setDateFilters({ startDate: "", endDate: "" });
 
       const allSales: Sale[] = [];
@@ -492,7 +535,7 @@ export default function Sales() {
 
     try {
       setConfirmingAll(true);
-      const pendingConfirmableSales = sales.filter(
+      const pendingConfirmableSales = salesForView.filter(
         sale => sale.paymentStatus === "pendiente" && !hasActiveCredit(sale)
       );
 
@@ -559,12 +602,56 @@ export default function Sales() {
     return "Mixto";
   };
 
-  const getGroupSaleTypeLabel = (groupSales: Sale[]) => {
-    const hasPromotion = groupSales.some(sale => sale.isPromotion);
-    const hasNormal = groupSales.some(sale => !sale.isPromotion);
-    if (hasPromotion && hasNormal) return "Mixto";
-    return hasPromotion ? "Promocion" : "Normal";
+  const getSaleType = (sale: Sale): "normal" | "promotion" | "special" => {
+    if (sale.source === "special") return "special";
+    if (sale.isPromotion || Boolean(sale.promotion)) return "promotion";
+    return "normal";
   };
+
+  const getSaleTypeLabel = (type: "normal" | "promotion" | "special") => {
+    if (type === "promotion") return "Promoción";
+    if (type === "special") return "Especial";
+    return "Normal";
+  };
+
+  const getSaleTypeBadgeClass = (label: string) => {
+    if (label === "Promoción") {
+      return "border-violet-400/40 bg-violet-500/15 text-violet-200";
+    }
+    if (label === "Especial") {
+      return "border-amber-400/40 bg-amber-500/15 text-amber-200";
+    }
+    if (label === "Mixto") {
+      return "border-sky-400/40 bg-sky-500/15 text-sky-200";
+    }
+    return "border-slate-500/40 bg-slate-700/30 text-slate-200";
+  };
+
+  const getGroupSaleTypeLabel = (groupSales: Sale[]) => {
+    const saleTypes = new Set(groupSales.map(getSaleType));
+    if (saleTypes.size > 1) return "Mixto";
+    const [singleType] = Array.from(saleTypes);
+    return getSaleTypeLabel(singleType ?? "normal");
+  };
+
+  const salesForView = useMemo(() => {
+    if (!Array.isArray(sales)) return [];
+    let filteredSales = sales;
+
+    if (filter !== "all") {
+      filteredSales = filteredSales.filter(
+        sale => sale.paymentStatus === filter
+      );
+    }
+
+    if (saleTypeFilter !== "all") {
+      filteredSales = filteredSales.filter(
+        sale => getSaleType(sale) === saleTypeFilter
+      );
+    }
+
+    return filteredSales;
+  }, [sales, filter, saleTypeFilter]);
 
   // Agrupar ventas por saleGroupId
   type SaleGroup = {
@@ -585,8 +672,8 @@ export default function Sales() {
 
   const groupSales = (): SaleGroup[] => {
     // Validar que sales sea un array
-    if (!Array.isArray(sales)) {
-      console.error("Sales is not an array:", sales);
+    if (!Array.isArray(salesForView)) {
+      console.error("Sales is not an array:", salesForView);
       return [];
     }
 
@@ -594,7 +681,7 @@ export default function Sales() {
     const individual: Sale[] = [];
 
     // Separar ventas agrupadas vs individuales
-    sales.forEach(sale => {
+    salesForView.forEach(sale => {
       if (sale.saleGroupId) {
         if (!grouped.has(sale.saleGroupId)) {
           grouped.set(sale.saleGroupId, []);
@@ -669,7 +756,7 @@ export default function Sales() {
   };
 
   const saleGroups = groupSales();
-  const pendingConfirmableCount = sales.filter(
+  const pendingConfirmableCount = salesForView.filter(
     sale => sale.paymentStatus === "pendiente" && !hasActiveCredit(sale)
   ).length;
   const groupIds = useMemo(
@@ -699,8 +786,8 @@ export default function Sales() {
 
   // useMemo para evitar recálculos pesados en cada render
   const stats = useMemo(() => {
-    // Validar que sales sea un array
-    if (!Array.isArray(sales)) {
+    // Validar que sales para vista sea un array
+    if (!Array.isArray(salesForView)) {
       return {
         salesWithActiveCredit: [],
         pendingCollectionAmount: 0,
@@ -708,7 +795,7 @@ export default function Sales() {
     }
 
     // Calcular ventas con crédito activo
-    const salesWithActiveCredit = sales.filter(s => hasActiveCredit(s));
+    const salesWithActiveCredit = salesForView.filter(s => hasActiveCredit(s));
     const pendingCollectionAmount = salesWithActiveCredit.reduce((sum, s) => {
       if (
         typeof s.credit === "object" &&
@@ -730,23 +817,34 @@ export default function Sales() {
       pendingCollection: salesWithActiveCredit.length,
       pendingCollectionAmount: pendingCollectionAmount,
       totalRevenue:
-        statsData.totalRevenue ||
-        sales.reduce((sum, s) => sum + getSaleRevenue(s), 0),
+        (saleTypeFilter === "all" && filter === "all"
+          ? statsData.totalRevenue
+          : 0) || salesForView.reduce((sum, s) => sum + getSaleRevenue(s), 0),
       // Ganancia Admin = solo adminProfit - costos que asume la empresa
-      totalProfit: sales.reduce((sum, s) => {
+      totalProfit: salesForView.reduce((sum, s) => {
         return sum + getAdminNetProfit(s);
       }, 0),
       // Total de costos adicionales
-      totalAdditionalCosts: sales.reduce(
+      totalAdditionalCosts: salesForView.reduce(
         (sum, s) => sum + (s.totalAdditionalCosts || 0),
         0
       ),
     };
-  }, [sales, saleGroups, statsData.totalRevenue]);
+  }, [
+    salesForView,
+    saleGroups,
+    saleTypeFilter,
+    filter,
+    statsData.totalRevenue,
+  ]);
 
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
+
+  const handleCloseSaleDetail = useCallback(() => {
+    setSelectedSale(null);
+  }, []);
 
   if (loading) {
     return (
@@ -757,73 +855,110 @@ export default function Sales() {
   }
 
   return (
-    <div className="space-y-6 overflow-hidden">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">Gestión de Ventas</h1>
-        <div className="flex gap-2">
-          {canDeleteSales && pendingConfirmableCount > 0 && (
-            <button
-              onClick={handleConfirmAllSales}
-              disabled={confirmingAll || loading}
-              className="flex items-center gap-2 rounded-lg border border-emerald-600/50 bg-emerald-900/20 px-4 py-2 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-900/40 disabled:opacity-50"
-            >
-              {confirmingAll ? <LoadingSpinner size="sm" /> : <span>✅</span>}
-              <span className="hidden sm:inline">
-                Confirmar todas ({pendingConfirmableCount})
-              </span>
-              <span className="sm:hidden">Confirmar todas</span>
-            </button>
-          )}
-          <button
-            onClick={toggleAllGroups}
-            disabled={groupIds.length === 0}
-            className="flex items-center gap-2 rounded-lg border border-slate-600/50 bg-slate-900/20 px-4 py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-900/40 disabled:opacity-50"
-          >
-            <span>{allGroupsExpanded ? "➖" : "➕"}</span>
-            <span className="hidden sm:inline">
-              {allGroupsExpanded ? "Contraer grupos" : "Desglosar grupos"}
-            </span>
-            <span className="sm:hidden">
-              {allGroupsExpanded ? "Contraer" : "Desglosar"}
-            </span>
-          </button>
-          <button
-            onClick={() => handleExport("excel")}
-            disabled={isExporting || loading || sales.length === 0}
-            className="flex items-center gap-2 rounded-lg border border-green-600/50 bg-green-900/20 px-4 py-2 text-sm font-medium text-green-400 transition-colors hover:bg-green-900/40 disabled:opacity-50"
-          >
-            {isExporting ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              <FileSpreadsheet className="h-4 w-4" />
-            )}
-            <span className="hidden sm:inline">Excel</span>
-          </button>
-          <button
-            onClick={() => handleExport("pdf")}
-            disabled={isExporting || loading || sales.length === 0}
-            className="flex items-center gap-2 rounded-lg border border-red-600/50 bg-red-900/20 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-900/40 disabled:opacity-50"
-          >
-            {isExporting ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              <FileText className="h-4 w-4" />
-            )}
-            <span className="hidden sm:inline">PDF</span>
-          </button>
-          <button
-            onClick={handleShowAllSales}
-            disabled={isLoadingAll || loading}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              showAllSales
-                ? "border border-purple-500 bg-purple-600 text-white"
-                : "border border-purple-600/50 bg-purple-900/20 text-purple-400 hover:bg-purple-900/40"
-            } disabled:opacity-50`}
-          >
-            {isLoadingAll ? <LoadingSpinner size="sm" /> : <span>📊</span>}
-            <span className="hidden sm:inline">Todas las ventas</span>
-            <span className="sm:hidden">Todo</span>
-          </button>
+    <div className="relative space-y-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-20 top-0 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute -right-24 top-20 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
+      </div>
+
+      <div className="relative space-y-6">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/75 p-5 shadow-[0_24px_60px_-45px_rgba(6,182,212,0.55)] backdrop-blur sm:p-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">
+                Auditoría comercial
+              </p>
+              <h1 className="mt-2 text-3xl font-bold text-white">
+                Gestión de Ventas
+              </h1>
+              <p className="mt-2 text-sm text-slate-300">
+                Filtra por estado, vendedor, producto y fechas para validar el
+                desempeño operativo.
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2 text-xs sm:text-sm">
+                <span className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-cyan-200">
+                  Total pedidos: {stats.total}
+                </span>
+                <span className="rounded-full border border-yellow-400/30 bg-yellow-500/10 px-3 py-1 text-yellow-200">
+                  Pendientes: {stats.pendiente}
+                </span>
+                <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-emerald-200">
+                  Confirmadas: {stats.confirmado}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {canConfirmSales && pendingConfirmableCount > 0 && (
+                <button
+                  onClick={handleConfirmAllSales}
+                  disabled={confirmingAll || loading}
+                  className="flex items-center gap-2 rounded-lg border border-emerald-600/50 bg-emerald-900/20 px-4 py-2 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-900/40 disabled:opacity-50"
+                >
+                  {confirmingAll ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <span>✅</span>
+                  )}
+                  <span className="hidden sm:inline">
+                    Confirmar todas ({pendingConfirmableCount})
+                  </span>
+                  <span className="sm:hidden">Confirmar todas</span>
+                </button>
+              )}
+              <button
+                onClick={toggleAllGroups}
+                disabled={groupIds.length === 0}
+                className="flex items-center gap-2 rounded-lg border border-slate-600/50 bg-slate-900/20 px-4 py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-900/40 disabled:opacity-50"
+              >
+                <span>{allGroupsExpanded ? "➖" : "➕"}</span>
+                <span className="hidden sm:inline">
+                  {allGroupsExpanded ? "Contraer grupos" : "Desglosar grupos"}
+                </span>
+                <span className="sm:hidden">
+                  {allGroupsExpanded ? "Contraer" : "Desglosar"}
+                </span>
+              </button>
+              <button
+                onClick={() => handleExport("excel")}
+                disabled={isExporting || loading || sales.length === 0}
+                className="flex items-center gap-2 rounded-lg border border-green-600/50 bg-green-900/20 px-4 py-2 text-sm font-medium text-green-400 transition-colors hover:bg-green-900/40 disabled:opacity-50"
+              >
+                {isExporting ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <FileSpreadsheet className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">Excel</span>
+              </button>
+              <button
+                onClick={() => handleExport("pdf")}
+                disabled={isExporting || loading || sales.length === 0}
+                className="flex items-center gap-2 rounded-lg border border-red-600/50 bg-red-900/20 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-900/40 disabled:opacity-50"
+              >
+                {isExporting ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <FileText className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">PDF</span>
+              </button>
+              <button
+                onClick={handleShowAllSales}
+                disabled={isLoadingAll || loading}
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  showAllSales
+                    ? "border border-purple-500 bg-purple-600 text-white"
+                    : "border border-purple-600/50 bg-purple-900/20 text-purple-400 hover:bg-purple-900/40"
+                } disabled:opacity-50`}
+              >
+                {isLoadingAll ? <LoadingSpinner size="sm" /> : <span>📊</span>}
+                <span className="hidden sm:inline">Todas las ventas</span>
+                <span className="sm:hidden">Todo</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -837,10 +972,19 @@ export default function Sales() {
       {/* Filtros y Ordenamiento */}
       {!loading && (
         <>
-          <div className="space-y-4 rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm">
+          <div className="space-y-4 rounded-2xl border border-slate-700/70 bg-slate-900/75 p-4 shadow-[0_24px_60px_-45px_rgba(6,182,212,0.55)] backdrop-blur sm:p-5">
+            <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-3">
+              <h2 className="text-sm font-semibold text-white sm:text-base">
+                Filtros y ordenamiento
+              </h2>
+              <p className="mt-1 text-xs text-slate-400">
+                Refina la búsqueda por origen, estado, tipo de venta y rango de
+                fechas.
+              </p>
+            </div>
             {/* Filtro por sede */}
             {branchesEnabled && (
-              <div>
+              <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-3">
                 <p className="mb-2 text-sm font-medium text-gray-300">
                   Sede / Bodega:
                 </p>
@@ -852,7 +996,7 @@ export default function Sales() {
                         setBranchId(e.target.value);
                         setPagination(prev => ({ ...prev, page: 1 }));
                       }}
-                      className="min-h-[44px] w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                      className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900/60 px-4 py-2.5 text-sm text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500"
                     >
                       <option value="">Todas las sedes (stock general)</option>
                       {branches.map(branch => (
@@ -866,7 +1010,7 @@ export default function Sales() {
               </div>
             )}
             {/* Filtros de fecha */}
-            <div>
+            <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-3">
               <p className="mb-2 text-sm font-medium text-gray-300">
                 Filtrar por fecha:
               </p>
@@ -888,7 +1032,7 @@ export default function Sales() {
                         startDate: e.target.value,
                       })
                     }
-                    className="min-h-[44px] w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-2.5 text-sm text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500"
                   />
                 </div>
                 <div className="min-w-[180px] flex-1">
@@ -908,7 +1052,7 @@ export default function Sales() {
                         endDate: e.target.value,
                       })
                     }
-                    className="min-h-[44px] w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-2.5 text-sm text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500"
                   />
                 </div>
                 {(dateFilters.startDate || dateFilters.endDate) && (
@@ -917,7 +1061,7 @@ export default function Sales() {
                       onClick={() =>
                         setDateFilters({ startDate: "", endDate: "" })
                       }
-                      className="min-h-[44px] rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-gray-800"
+                      className="min-h-11 rounded-lg border border-slate-600 bg-slate-900/60 px-4 py-2 text-sm text-slate-200 transition-colors hover:border-cyan-400/70 hover:bg-slate-800"
                     >
                       Limpiar fechas
                     </button>
@@ -926,7 +1070,7 @@ export default function Sales() {
               </div>
             </div>
 
-            <div>
+            <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-3">
               <p className="mb-2 text-sm font-medium text-gray-300">
                 Filtrar por producto:
               </p>
@@ -938,7 +1082,7 @@ export default function Sales() {
                       setProductId(e.target.value);
                       setPagination(prev => ({ ...prev, page: 1 }));
                     }}
-                    className="min-h-[44px] w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900/60 px-4 py-2.5 text-sm text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500"
                   >
                     <option value="">Todos los productos</option>
                     {products.map(product => (
@@ -951,8 +1095,8 @@ export default function Sales() {
               </div>
             </div>
 
-            {distributorsEnabled && (
-              <div>
+            {distributorsEnabled && !hideFinancialData && (
+              <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-3">
                 <p className="mb-2 text-sm font-medium text-gray-300">
                   Filtrar por vendedor:
                 </p>
@@ -964,7 +1108,7 @@ export default function Sales() {
                         setDistributorId(e.target.value);
                         setPagination(prev => ({ ...prev, page: 1 }));
                       }}
-                      className="min-h-[44px] w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                      className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900/60 px-4 py-2.5 text-sm text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500"
                     >
                       <option value="">Todos los vendedores</option>
                       {distributors.map(distributor => (
@@ -978,37 +1122,37 @@ export default function Sales() {
               </div>
             )}
 
-            <div>
+            <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-3">
               <p className="mb-2 text-sm font-medium text-gray-300">
                 Filtrar por estado:
               </p>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setFilter("all")}
-                  className={`min-h-[44px] rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
+                  className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
                     filter === "all"
-                      ? "bg-purple-600 text-white"
-                      : "border border-gray-700 text-gray-300 hover:bg-gray-800"
+                      ? "bg-cyan-500 text-slate-950"
+                      : "border border-slate-600 text-slate-300 hover:bg-slate-800"
                   }`}
                 >
                   Todas ({stats.total})
                 </button>
                 <button
                   onClick={() => setFilter("pendiente")}
-                  className={`min-h-[44px] rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
+                  className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
                     filter === "pendiente"
                       ? "bg-yellow-500 text-white"
-                      : "border border-gray-700 text-gray-300 hover:bg-gray-800"
+                      : "border border-slate-600 text-slate-300 hover:bg-slate-800"
                   }`}
                 >
                   Pendientes ({stats.pendiente})
                 </button>
                 <button
                   onClick={() => setFilter("confirmado")}
-                  className={`min-h-[44px] rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
+                  className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
                     filter === "confirmado"
                       ? "bg-green-500 text-white"
-                      : "border border-gray-700 text-gray-300 hover:bg-gray-800"
+                      : "border border-slate-600 text-slate-300 hover:bg-slate-800"
                   }`}
                 >
                   Confirmadas ({stats.confirmado})
@@ -1016,7 +1160,55 @@ export default function Sales() {
               </div>
             </div>
 
-            <div>
+            <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-3">
+              <p className="mb-2 text-sm font-medium text-gray-300">
+                Filtrar por tipo de venta:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSaleTypeFilter("all")}
+                  className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
+                    saleTypeFilter === "all"
+                      ? "bg-cyan-500 text-slate-950"
+                      : "border border-slate-600 text-slate-300 hover:bg-slate-800"
+                  }`}
+                >
+                  Todas
+                </button>
+                <button
+                  onClick={() => setSaleTypeFilter("normal")}
+                  className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
+                    saleTypeFilter === "normal"
+                      ? "bg-slate-200 text-slate-900"
+                      : "border border-slate-600 text-slate-300 hover:bg-slate-800"
+                  }`}
+                >
+                  Normales
+                </button>
+                <button
+                  onClick={() => setSaleTypeFilter("promotion")}
+                  className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
+                    saleTypeFilter === "promotion"
+                      ? "bg-violet-500 text-white"
+                      : "border border-slate-600 text-slate-300 hover:bg-slate-800"
+                  }`}
+                >
+                  Promoción
+                </button>
+                <button
+                  onClick={() => setSaleTypeFilter("special")}
+                  className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
+                    saleTypeFilter === "special"
+                      ? "bg-amber-500 text-slate-950"
+                      : "border border-slate-600 text-slate-300 hover:bg-slate-800"
+                  }`}
+                >
+                  Especiales
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-3">
               <label
                 htmlFor="sortBy"
                 className="mb-2 block text-sm font-medium text-gray-300"
@@ -1027,7 +1219,7 @@ export default function Sales() {
                 id="sortBy"
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as any)}
-                className="min-h-[44px] rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-2.5 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900/60 px-4 py-2.5 text-sm text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500"
               >
                 <option value="date-desc">Fecha (Más reciente primero)</option>
                 <option value="date-asc">Fecha (Más antigua primero)</option>
@@ -1039,7 +1231,7 @@ export default function Sales() {
           </div>
 
           {/* Tabla de ventas */}
-          <div className="overflow-hidden rounded-xl border border-gray-700/50 bg-gray-800/50 shadow-lg backdrop-blur-sm">
+          <div className="overflow-hidden rounded-xl border border-slate-700/70 bg-slate-900/70 shadow-lg backdrop-blur-sm">
             <div className="w-full overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-700">
                 <thead className="bg-gray-900/50">
@@ -1070,7 +1262,7 @@ export default function Sales() {
                     )}
                     {distributorsEnabled && (
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
-                        Comisión
+                        {hideFinancialData ? "Mis Ganancias" : "Comisión"}
                       </th>
                     )}
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
@@ -1093,10 +1285,12 @@ export default function Sales() {
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Total Venta
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
-                      Ganancia Admin
-                    </th>
-                    {distributorsEnabled && (
+                    {showAdminProfit && (
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
+                        Ganancia Admin
+                      </th>
+                    )}
+                    {showAmountToDeliver && (
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                         A Entregar
                       </th>
@@ -1137,6 +1331,9 @@ export default function Sales() {
                     )?.warrantyTicketId;
                     const displayId =
                       warrantyTicketId || firstSale.saleId || firstSale._id;
+                    const saleTypeLabel = group.isGroup
+                      ? getGroupSaleTypeLabel(group.sales)
+                      : getSaleTypeLabel(getSaleType(firstSale));
 
                     // Determinar rango según comisión
                     let rankBadge = {
@@ -1237,15 +1434,17 @@ export default function Sales() {
                               </div>
                             </td>
                           )}
-                          {distributorsEnabled && gamificationEnabled && (
-                            <td className="whitespace-nowrap px-6 py-4">
-                              <span
-                                className={`rounded-full px-2 py-1 text-xs font-semibold ${rankBadge.color}`}
-                              >
-                                {rankBadge.emoji} {rankBadge.text}
-                              </span>
-                            </td>
-                          )}
+                          {distributorsEnabled &&
+                            gamificationEnabled &&
+                            !hideFinancialData && (
+                              <td className="whitespace-nowrap px-6 py-4">
+                                <span
+                                  className={`rounded-full px-2 py-1 text-xs font-semibold ${rankBadge.color}`}
+                                >
+                                  {rankBadge.emoji} {rankBadge.text}
+                                </span>
+                              </td>
+                            )}
                           {distributorsEnabled && (
                             <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-200">
                               {distributor ? (
@@ -1254,12 +1453,14 @@ export default function Sales() {
                                     $
                                     {group.totalDistributorProfit.toLocaleString()}
                                   </span>
-                                  <span className="ml-1 text-xs text-gray-500">
-                                    (
-                                    {firstSale.distributorProfitPercentage ??
-                                      20}
-                                    %)
-                                  </span>
+                                  {!hideFinancialData && (
+                                    <span className="ml-1 text-xs text-gray-500">
+                                      (
+                                      {firstSale.distributorProfitPercentage ??
+                                        20}
+                                      %)
+                                    </span>
+                                  )}
                                 </div>
                               ) : (
                                 "—"
@@ -1293,11 +1494,11 @@ export default function Sales() {
                             )}
                           </td>
                           <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-200">
-                            {group.isGroup
-                              ? getGroupSaleTypeLabel(group.sales)
-                              : firstSale.isPromotion
-                                ? "Promocion"
-                                : "Normal"}
+                            <span
+                              className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${getSaleTypeBadgeClass(saleTypeLabel)}`}
+                            >
+                              {saleTypeLabel}
+                            </span>
                           </td>
                           <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-200">
                             {firstSale.customerName || "-"}
@@ -1336,10 +1537,12 @@ export default function Sales() {
                           <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-200">
                             ${group.totalRevenue.toLocaleString()}
                           </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-green-400">
-                            ${group.totalProfit.toLocaleString()}
-                          </td>
-                          {distributorsEnabled && (
+                          {showAdminProfit && (
+                            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-green-400">
+                              ${group.totalProfit.toLocaleString()}
+                            </td>
+                          )}
+                          {showAmountToDeliver && (
                             <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
                               {distributor &&
                               group.totalDistributorProfit > 0 ? (
@@ -1373,6 +1576,7 @@ export default function Sales() {
                           <td className="whitespace-nowrap px-6 py-4 text-sm">
                             <div className="flex gap-2">
                               {!group.isGroup &&
+                              canConfirmSales &&
                               group.paymentStatus === "pendiente" &&
                               !hasActiveCredit(firstSale) ? (
                                 <button
@@ -1396,6 +1600,7 @@ export default function Sales() {
                                 </span>
                               ) : null}
                               {group.isGroup &&
+                              canConfirmSales &&
                               group.paymentStatus === "pendiente" &&
                               !hasActiveCredit(firstSale) ? (
                                 <button
@@ -1496,11 +1701,13 @@ export default function Sales() {
                                     {/* Vacío */}
                                   </td>
                                 )}
-                                {distributorsEnabled && gamificationEnabled && (
-                                  <td className="whitespace-nowrap px-6 py-3">
-                                    {/* Vacío */}
-                                  </td>
-                                )}
+                                {distributorsEnabled &&
+                                  gamificationEnabled &&
+                                  !hideFinancialData && (
+                                    <td className="whitespace-nowrap px-6 py-3">
+                                      {/* Vacío */}
+                                    </td>
+                                  )}
                                 {distributorsEnabled && (
                                   <td className="whitespace-nowrap px-6 py-3">
                                     {/* Vacío */}
@@ -1523,7 +1730,11 @@ export default function Sales() {
                                   </div>
                                 </td>
                                 <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-400">
-                                  {sale.isPromotion ? "Promocion" : "Normal"}
+                                  <span
+                                    className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${getSaleTypeBadgeClass(getSaleTypeLabel(getSaleType(sale)))}`}
+                                  >
+                                    {getSaleTypeLabel(getSaleType(sale))}
+                                  </span>
                                 </td>
                                 <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-400">
                                   {/* Vacío */}
@@ -1539,10 +1750,12 @@ export default function Sales() {
                                 <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-300">
                                   ${getSaleRevenue(sale).toLocaleString()}
                                 </td>
-                                <td className="whitespace-nowrap px-6 py-3 text-sm text-green-400">
-                                  ${getAdminNetProfit(sale).toLocaleString()}
-                                </td>
-                                {distributorsEnabled && (
+                                {showAdminProfit && (
+                                  <td className="whitespace-nowrap px-6 py-3 text-sm text-green-400">
+                                    ${getAdminNetProfit(sale).toLocaleString()}
+                                  </td>
+                                )}
+                                {showAmountToDeliver && (
                                   <td className="whitespace-nowrap px-6 py-3 text-sm text-yellow-400">
                                     {distributor &&
                                     (sale.distributorProfit || 0) > 0
@@ -1616,10 +1829,9 @@ export default function Sales() {
       )}
 
       {/* Modal de Detalle */}
-      <SaleDetailModal
-        sale={selectedSale}
-        onClose={() => setSelectedSale(null)}
-      />
+      {selectedSale && (
+        <SaleDetailModal sale={selectedSale} onClose={handleCloseSaleDetail} />
+      )}
     </div>
   );
 }

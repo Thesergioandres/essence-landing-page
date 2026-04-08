@@ -1,6 +1,7 @@
 import DistributorStats from "../models/DistributorStats.js";
 import GamificationConfig from "../models/GamificationConfig.js";
-import Sale from "../models/Sale.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
+import User from "../src/infrastructure/database/models/User.js";
 import { resolveLevelForPoints } from "./gamificationEngine.js";
 
 const DEFAULT_BASE_COMMISSION = 20;
@@ -75,6 +76,31 @@ export const getDistributorCommissionInfo = async (
   businessId = null,
 ) => {
   try {
+    const user = await User.findById(distributorId)
+      .select("fixedCommissionOnly isCommissionFixed customCommissionRate")
+      .lean();
+
+    const isCommissionFixed = Boolean(
+      user?.isCommissionFixed || user?.fixedCommissionOnly,
+    );
+    const fixedRate = Number(user?.customCommissionRate);
+    const normalizedFixedRate = Number.isFinite(fixedRate)
+      ? Math.max(0, Math.min(95, fixedRate))
+      : DEFAULT_BASE_COMMISSION;
+
+    if (isCommissionFixed) {
+      return {
+        position: null,
+        bonusCommission: 0,
+        profitPercentage: normalizedFixedRate,
+        periodStart: null,
+        periodEnd: null,
+        totalDistributors: 0,
+        isCommissionFixed: true,
+        customCommissionRate: normalizedFixedRate,
+      };
+    }
+
     const config = await GamificationConfig.findOne();
 
     if (!config) {
@@ -149,6 +175,8 @@ export const getDistributorCommissionInfo = async (
       periodStart: startDate,
       periodEnd: endDate,
       totalDistributors: rankings.length,
+      isCommissionFixed: false,
+      customCommissionRate: null,
     };
   } catch (error) {
     console.error("Error calculando comisión distribuidor:", error);
@@ -159,6 +187,8 @@ export const getDistributorCommissionInfo = async (
       periodStart: null,
       periodEnd: null,
       totalDistributors: 0,
+      isCommissionFixed: false,
+      customCommissionRate: null,
     };
   }
 };

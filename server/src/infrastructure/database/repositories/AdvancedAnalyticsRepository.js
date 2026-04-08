@@ -3,9 +3,9 @@ import Credit from "../../../../models/Credit.js";
 import DefectiveProduct from "../../../../models/DefectiveProduct.js";
 import Expense from "../../../../models/Expense.js";
 import Membership from "../../../../models/Membership.js";
-import Product from "../../../../models/Product.js";
-import Sale from "../../../../models/Sale.js";
 import SpecialSale from "../../../../models/SpecialSale.js";
+import Product from "../models/Product.js";
+import Sale from "../models/Sale.js";
 
 const buildColombiaRange = (startStr, endStr) => {
   if (!startStr && !endStr) return null;
@@ -90,46 +90,138 @@ const buildTotalGroupProfitExpression = () => ({
   ],
 });
 
+const resolveScopedUserObjectId = (options = {}) => {
+  const rawId =
+    options.scopeDistributorId || options.distributorId || options.userId;
+
+  if (!rawId || !mongoose.isValidObjectId(rawId)) {
+    return null;
+  }
+
+  return new mongoose.Types.ObjectId(rawId);
+};
+
+const shouldHideFinancialData = (options = {}) =>
+  options?.hideFinancialData === true;
+
+const withSaleScope = (match, scopedUserObjectId) => {
+  if (!scopedUserObjectId) {
+    return match;
+  }
+
+  return {
+    ...match,
+    $or: [
+      { distributor: scopedUserObjectId },
+      { createdBy: scopedUserObjectId },
+    ],
+  };
+};
+
+const withSpecialSaleScope = (match, scopedUserObjectId) => {
+  if (!scopedUserObjectId) {
+    return match;
+  }
+
+  return {
+    ...match,
+    createdBy: scopedUserObjectId,
+  };
+};
+
 export class AdvancedAnalyticsRepository {
   // Financial KPIs - Main dashboard data
-  async getFinancialKPIs(businessId, startDate, endDate) {
+  async getFinancialKPIs(businessId, startDate, endDate, options = {}) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
+    const scopedUserObjectId = resolveScopedUserObjectId(options);
+    const hideFinancialData = shouldHideFinancialData(options);
+    const isScopedFinancialView = Boolean(
+      scopedUserObjectId || hideFinancialData,
+    );
 
-    const match = {
-      business: businessObjectId,
-      paymentStatus: "confirmado",
-      ...(dateRange ? { saleDate: dateRange } : {}),
-    };
+    const match = withSaleScope(
+      {
+        business: businessObjectId,
+        paymentStatus: "confirmado",
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
 
     // Get today's data
     const today = new Date();
     const todayStart = new Date(today.setHours(0, 0, 0, 0));
     const todayEnd = new Date(today.setHours(23, 59, 59, 999));
 
-    const todayMatch = {
-      business: businessObjectId,
-      paymentStatus: "confirmado",
-      saleDate: { $gte: todayStart, $lte: todayEnd },
-    };
+    const todayMatch = withSaleScope(
+      {
+        business: businessObjectId,
+        paymentStatus: "confirmado",
+        saleDate: { $gte: todayStart, $lte: todayEnd },
+      },
+      scopedUserObjectId,
+    );
 
     // Get this week's data
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - 7);
-    const weekMatch = {
-      business: businessObjectId,
-      paymentStatus: "confirmado",
-      saleDate: { $gte: weekStart, $lte: new Date() },
-    };
+    const weekMatch = withSaleScope(
+      {
+        business: businessObjectId,
+        paymentStatus: "confirmado",
+        saleDate: { $gte: weekStart, $lte: new Date() },
+      },
+      scopedUserObjectId,
+    );
 
     // Get this month's data
     const monthStart = new Date();
     monthStart.setMonth(monthStart.getMonth() - 1);
-    const monthMatch = {
-      business: businessObjectId,
-      paymentStatus: "confirmado",
-      saleDate: { $gte: monthStart, $lte: new Date() },
-    };
+    const monthMatch = withSaleScope(
+      {
+        business: businessObjectId,
+        paymentStatus: "confirmado",
+        saleDate: { $gte: monthStart, $lte: new Date() },
+      },
+      scopedUserObjectId,
+    );
+
+    const specialRangeMatch = withSpecialSaleScope(
+      {
+        business: businessObjectId,
+        status: "active",
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
+
+    const specialTodayMatch = withSpecialSaleScope(
+      {
+        business: businessObjectId,
+        status: "active",
+        saleDate: { $gte: todayStart, $lte: todayEnd },
+      },
+      scopedUserObjectId,
+    );
+
+    const specialWeekMatch = withSpecialSaleScope(
+      {
+        business: businessObjectId,
+        status: "active",
+        saleDate: { $gte: weekStart, $lte: new Date() },
+      },
+      scopedUserObjectId,
+    );
+
+    const specialMonthMatch = withSpecialSaleScope(
+      {
+        business: businessObjectId,
+        status: "active",
+        saleDate: { $gte: monthStart, $lte: new Date() },
+      },
+      scopedUserObjectId,
+    );
 
     const [
       rangeData,
@@ -175,13 +267,7 @@ export class AdvancedAnalyticsRepository {
         },
       ]),
       SpecialSale.aggregate([
-        {
-          $match: {
-            business: businessObjectId,
-            status: "active",
-            ...(dateRange ? { saleDate: dateRange } : {}),
-          },
-        },
+        { $match: specialRangeMatch },
         {
           $group: {
             _id: null,
@@ -212,13 +298,7 @@ export class AdvancedAnalyticsRepository {
         },
       ]),
       SpecialSale.aggregate([
-        {
-          $match: {
-            business: businessObjectId,
-            status: "active",
-            saleDate: { $gte: todayStart, $lte: todayEnd },
-          },
-        },
+        { $match: specialTodayMatch },
         {
           $group: {
             _id: null,
@@ -248,13 +328,7 @@ export class AdvancedAnalyticsRepository {
         },
       ]),
       SpecialSale.aggregate([
-        {
-          $match: {
-            business: businessObjectId,
-            status: "active",
-            saleDate: { $gte: weekStart, $lte: new Date() },
-          },
-        },
+        { $match: specialWeekMatch },
         {
           $group: {
             _id: null,
@@ -284,13 +358,7 @@ export class AdvancedAnalyticsRepository {
         },
       ]),
       SpecialSale.aggregate([
-        {
-          $match: {
-            business: businessObjectId,
-            status: "active",
-            saleDate: { $gte: monthStart, $lte: new Date() },
-          },
-        },
+        { $match: specialMonthMatch },
         {
           $group: {
             _id: null,
@@ -502,27 +570,31 @@ export class AdvancedAnalyticsRepository {
         },
       ]),
       // Count active distributors for this business
-      Membership.countDocuments({
-        business: businessObjectId,
-        role: "distribuidor",
-        status: "active",
-      }),
-      // Get expenses summary
-      Expense.aggregate([
-        {
-          $match: {
+      isScopedFinancialView
+        ? Promise.resolve(1)
+        : Membership.countDocuments({
             business: businessObjectId,
-            ...(dateRange ? { expenseDate: dateRange } : {}),
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            totalExpenses: { $sum: "$amount" },
-            count: { $sum: 1 },
-          },
-        },
-      ]),
+            role: "distribuidor",
+            status: "active",
+          }),
+      // Get expenses summary
+      isScopedFinancialView
+        ? Promise.resolve([{ totalExpenses: 0, count: 0 }])
+        : Expense.aggregate([
+            {
+              $match: {
+                business: businessObjectId,
+                ...(dateRange ? { expenseDate: dateRange } : {}),
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                totalExpenses: { $sum: "$amount" },
+                count: { $sum: 1 },
+              },
+            },
+          ]),
     ]);
 
     const range = rangeData[0] || {
@@ -590,29 +662,55 @@ export class AdvancedAnalyticsRepository {
     const creditMonthly = creditPendingMonthData[0]?.totalAmount || 0;
     const expenses = expensesData[0] || { totalExpenses: 0, count: 0 };
 
+    const scopedWarrantyRange = isScopedFinancialView ? 0 : warrantyRange;
+    const scopedWarrantyDaily = isScopedFinancialView ? 0 : warrantyDaily;
+    const scopedWarrantyWeekly = isScopedFinancialView ? 0 : warrantyWeekly;
+    const scopedWarrantyMonthly = isScopedFinancialView ? 0 : warrantyMonthly;
+
+    const scopedWarrantyRevenueRange = isScopedFinancialView
+      ? 0
+      : warrantyRevenueRange;
+    const scopedWarrantyRevenueDaily = isScopedFinancialView
+      ? 0
+      : warrantyRevenueDaily;
+    const scopedWarrantyRevenueWeekly = isScopedFinancialView
+      ? 0
+      : warrantyRevenueWeekly;
+    const scopedWarrantyRevenueMonthly = isScopedFinancialView
+      ? 0
+      : warrantyRevenueMonthly;
+
+    const scopedCreditRange = isScopedFinancialView ? 0 : creditRange;
+    const scopedCreditDaily = isScopedFinancialView ? 0 : creditDaily;
+    const scopedCreditWeekly = isScopedFinancialView ? 0 : creditWeekly;
+    const scopedCreditMonthly = isScopedFinancialView ? 0 : creditMonthly;
+
     const combinedRange = {
       sales: range.sales + rangeSpecial.sales,
-      revenue: range.revenue + rangeSpecial.revenue + warrantyRevenueRange,
+      revenue:
+        range.revenue + rangeSpecial.revenue + scopedWarrantyRevenueRange,
       profit: range.profit + rangeSpecial.profit,
       netProfit: range.netProfit + rangeSpecial.netProfit,
       quantity: range.quantity + rangeSpecial.quantity,
     };
     const combinedDaily = {
       sales: daily.sales + dailySpecial.sales,
-      revenue: daily.revenue + dailySpecial.revenue + warrantyRevenueDaily,
+      revenue:
+        daily.revenue + dailySpecial.revenue + scopedWarrantyRevenueDaily,
       profit: daily.profit + dailySpecial.profit,
       netProfit: daily.netProfit + dailySpecial.netProfit,
     };
     const combinedWeekly = {
       sales: weekly.sales + weeklySpecial.sales,
-      revenue: weekly.revenue + weeklySpecial.revenue + warrantyRevenueWeekly,
+      revenue:
+        weekly.revenue + weeklySpecial.revenue + scopedWarrantyRevenueWeekly,
       profit: weekly.profit + weeklySpecial.profit,
       netProfit: weekly.netProfit + weeklySpecial.netProfit,
     };
     const combinedMonthly = {
       sales: monthly.sales + monthlySpecial.sales,
       revenue:
-        monthly.revenue + monthlySpecial.revenue + warrantyRevenueMonthly,
+        monthly.revenue + monthlySpecial.revenue + scopedWarrantyRevenueMonthly,
       profit: monthly.profit + monthlySpecial.profit,
       netProfit: monthly.netProfit + monthlySpecial.netProfit,
     };
@@ -620,12 +718,12 @@ export class AdvancedAnalyticsRepository {
     // 🎯 FIX TASK 2: Calculate REAL Net Profit (Admin Profit - Expenses/Losses)
     const rangeExpenses = Math.abs(expenses.totalExpenses || 0);
     const netSalesProfit =
-      combinedRange.netProfit - rangeExpenses - warrantyRange;
-    const dailyNetProfit = combinedDaily.netProfit - warrantyDaily;
-    const weeklyNetProfit = combinedWeekly.netProfit - warrantyWeekly;
-    const monthlyNetProfit = combinedMonthly.netProfit - warrantyMonthly;
+      combinedRange.netProfit - rangeExpenses - scopedWarrantyRange;
+    const dailyNetProfit = combinedDaily.netProfit - scopedWarrantyDaily;
+    const weeklyNetProfit = combinedWeekly.netProfit - scopedWarrantyWeekly;
+    const monthlyNetProfit = combinedMonthly.netProfit - scopedWarrantyMonthly;
 
-    return {
+    const response = {
       kpis: {
         todaySales: combinedDaily.sales,
         todayRevenue: combinedDaily.revenue,
@@ -639,10 +737,10 @@ export class AdvancedAnalyticsRepository {
         monthRevenue: combinedMonthly.revenue,
         monthProfit: combinedMonthly.profit,
         monthNetProfit: monthlyNetProfit, // TODO: Add monthly expense filtering
-        todayAccountsReceivable: creditDaily,
-        weekAccountsReceivable: creditWeekly,
-        monthAccountsReceivable: creditMonthly,
-        accountsReceivable: creditRange,
+        todayAccountsReceivable: scopedCreditDaily,
+        weekAccountsReceivable: scopedCreditWeekly,
+        monthAccountsReceivable: scopedCreditMonthly,
+        accountsReceivable: scopedCreditRange,
         averageTicket:
           combinedRange.sales > 0
             ? combinedRange.revenue / combinedRange.sales
@@ -665,20 +763,54 @@ export class AdvancedAnalyticsRepository {
             ? combinedRange.revenue / combinedRange.sales
             : 0,
         totalExpenses: expenses.totalExpenses,
-        accountsReceivable: creditRange,
+        accountsReceivable: scopedCreditRange,
       },
     };
+
+    if (hideFinancialData) {
+      response.kpis.todayProfit = 0;
+      response.kpis.todayNetProfit = 0;
+      response.kpis.weekProfit = 0;
+      response.kpis.weekNetProfit = 0;
+      response.kpis.monthProfit = 0;
+      response.kpis.monthNetProfit = 0;
+
+      response.daily.profit = 0;
+      response.daily.netProfit = 0;
+      response.weekly.profit = 0;
+      response.weekly.netProfit = 0;
+      response.monthly.profit = 0;
+      response.monthly.netProfit = 0;
+
+      response.range.grossProfit = 0;
+      response.range.netProfit = 0;
+    }
+
+    return response;
   }
 
   // Sales funnel
-  async getSalesFunnel(businessId, startDate, endDate) {
+  async getSalesFunnel(businessId, startDate, endDate, options = {}) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
+    const scopedUserObjectId = resolveScopedUserObjectId(options);
 
-    const match = {
-      business: businessObjectId,
-      ...(dateRange ? { saleDate: dateRange } : {}),
-    };
+    const match = withSaleScope(
+      {
+        business: businessObjectId,
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
+
+    const specialMatch = withSpecialSaleScope(
+      {
+        business: businessObjectId,
+        status: "active",
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
 
     const [funnel, specialFunnel] = await Promise.all([
       Sale.aggregate([
@@ -692,13 +824,7 @@ export class AdvancedAnalyticsRepository {
         },
       ]),
       SpecialSale.aggregate([
-        {
-          $match: {
-            business: businessObjectId,
-            status: "active",
-            ...(dateRange ? { saleDate: dateRange } : {}),
-          },
-        },
+        { $match: specialMatch },
         {
           $group: {
             _id: "confirmed",
@@ -738,15 +864,38 @@ export class AdvancedAnalyticsRepository {
   }
 
   // Sales timeline
-  async getSalesTimeline(businessId, startDate, endDate, groupBy = "day") {
+  async getSalesTimeline(
+    businessId,
+    startDate,
+    endDate,
+    groupBy = "day",
+    options = {},
+  ) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
+    const scopedUserObjectId = resolveScopedUserObjectId(options);
+    const hideFinancialData = shouldHideFinancialData(options);
+    const isScopedFinancialView = Boolean(
+      scopedUserObjectId || hideFinancialData,
+    );
 
-    const match = {
-      business: businessObjectId,
-      paymentStatus: "confirmado",
-      ...(dateRange ? { saleDate: dateRange } : {}),
-    };
+    const match = withSaleScope(
+      {
+        business: businessObjectId,
+        paymentStatus: "confirmado",
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
+
+    const specialTimelineMatch = withSpecialSaleScope(
+      {
+        business: businessObjectId,
+        status: "active",
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
 
     let dateFormat;
     switch (groupBy) {
@@ -780,13 +929,7 @@ export class AdvancedAnalyticsRepository {
         $unionWith: {
           coll: "specialsales",
           pipeline: [
-            {
-              $match: {
-                business: businessObjectId,
-                status: "active",
-                ...(dateRange ? { saleDate: dateRange } : {}),
-              },
-            },
+            { $match: specialTimelineMatch },
             {
               $project: {
                 saleDate: "$saleDate",
@@ -818,62 +961,66 @@ export class AdvancedAnalyticsRepository {
       { $sort: { _id: 1 } },
     ]);
 
-    const warrantyTimeline = await DefectiveProduct.aggregate([
-      {
-        $match: {
-          business: businessObjectId,
-          status: "confirmado",
-          origin: { $ne: "order" },
-          ...(dateRange ? { reportDate: dateRange } : {}),
-        },
-      },
-      {
-        $group: {
-          _id: {
-            $dateToString: {
-              format: dateFormat,
-              date: "$reportDate",
-              timezone: timeZone,
+    const warrantyTimeline = isScopedFinancialView
+      ? []
+      : await DefectiveProduct.aggregate([
+          {
+            $match: {
+              business: businessObjectId,
+              status: "confirmado",
+              origin: { $ne: "order" },
+              ...(dateRange ? { reportDate: dateRange } : {}),
             },
           },
-          totalLoss: { $sum: "$lossAmount" },
-        },
-      },
-    ]);
+          {
+            $group: {
+              _id: {
+                $dateToString: {
+                  format: dateFormat,
+                  date: "$reportDate",
+                  timezone: timeZone,
+                },
+              },
+              totalLoss: { $sum: "$lossAmount" },
+            },
+          },
+        ]);
 
     const warrantyLossByDate = new Map(
       warrantyTimeline.map((item) => [item._id, item.totalLoss || 0]),
     );
 
-    const warrantyRevenueTimeline = await DefectiveProduct.aggregate([
-      {
-        $match: {
-          business: businessObjectId,
-          status: "confirmado",
-          origin: "customer_warranty",
-          ...(dateRange ? { reportDate: dateRange } : {}),
-        },
-      },
-      {
-        $group: {
-          _id: {
-            $dateToString: {
-              format: dateFormat,
-              date: "$reportDate",
-              timezone: timeZone,
+    const warrantyRevenueTimeline = isScopedFinancialView
+      ? []
+      : await DefectiveProduct.aggregate([
+          {
+            $match: {
+              business: businessObjectId,
+              status: "confirmado",
+              origin: "customer_warranty",
+              ...(dateRange ? { reportDate: dateRange } : {}),
             },
           },
-          totalAdjust: {
-            $sum: {
-              $subtract: [
-                { $ifNull: ["$priceDifference", 0] },
-                { $ifNull: ["$cashRefund", 0] },
-              ],
+          {
+            $group: {
+              _id: {
+                $dateToString: {
+                  format: dateFormat,
+                  date: "$reportDate",
+                  timezone: timeZone,
+                },
+              },
+              totalAdjust: {
+                $sum: {
+                  $subtract: [
+                    { $ifNull: ["$priceDifference", 0] },
+                    { $ifNull: ["$cashRefund", 0] },
+                  ],
+                },
+              },
             },
           },
-        },
-      },
-    ]);
+        ]);
 
     const warrantyRevenueByDate = new Map(
       warrantyRevenueTimeline.map((item) => [item._id, item.totalAdjust || 0]),
@@ -903,7 +1050,7 @@ export class AdvancedAnalyticsRepository {
       { _id: "", salesCount: 0 },
     );
 
-    return {
+    const response = {
       timeline: timeline.map((t) => {
         const warrantyLoss = warrantyLossByDate.get(t._id) || 0;
         const warrantyRevenueAdjust = warrantyRevenueByDate.get(t._id) || 0;
@@ -925,12 +1072,26 @@ export class AdvancedAnalyticsRepository {
         peakSales: peak.salesCount,
       },
     };
+
+    if (hideFinancialData) {
+      response.timeline = response.timeline.map((point) => ({
+        ...point,
+        profit: 0,
+        netProfit: 0,
+      }));
+      response.summary.totalProfit = 0;
+      response.summary.totalNetProfit = 0;
+    }
+
+    return response;
   }
 
   // Comparative analysis
-  async getComparativeAnalysis(businessId) {
+  async getComparativeAnalysis(businessId, options = {}) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const now = new Date();
+    const scopedUserObjectId = resolveScopedUserObjectId(options);
+    const hideFinancialData = shouldHideFinancialData(options);
 
     // Current period (this month)
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -958,11 +1119,14 @@ export class AdvancedAnalyticsRepository {
       await Promise.all([
         Sale.aggregate([
           {
-            $match: {
-              business: businessObjectId,
-              paymentStatus: "confirmado",
-              saleDate: { $gte: currentMonthStart, $lte: currentMonthEnd },
-            },
+            $match: withSaleScope(
+              {
+                business: businessObjectId,
+                paymentStatus: "confirmado",
+                saleDate: { $gte: currentMonthStart, $lte: currentMonthEnd },
+              },
+              scopedUserObjectId,
+            ),
           },
           {
             $group: {
@@ -975,11 +1139,14 @@ export class AdvancedAnalyticsRepository {
         ]),
         Sale.aggregate([
           {
-            $match: {
-              business: businessObjectId,
-              paymentStatus: "confirmado",
-              saleDate: { $gte: lastMonthStart, $lte: lastMonthEnd },
-            },
+            $match: withSaleScope(
+              {
+                business: businessObjectId,
+                paymentStatus: "confirmado",
+                saleDate: { $gte: lastMonthStart, $lte: lastMonthEnd },
+              },
+              scopedUserObjectId,
+            ),
           },
           {
             $group: {
@@ -992,11 +1159,14 @@ export class AdvancedAnalyticsRepository {
         ]),
         SpecialSale.aggregate([
           {
-            $match: {
-              business: businessObjectId,
-              status: "active",
-              saleDate: { $gte: currentMonthStart, $lte: currentMonthEnd },
-            },
+            $match: withSpecialSaleScope(
+              {
+                business: businessObjectId,
+                status: "active",
+                saleDate: { $gte: currentMonthStart, $lte: currentMonthEnd },
+              },
+              scopedUserObjectId,
+            ),
           },
           {
             $group: {
@@ -1011,11 +1181,14 @@ export class AdvancedAnalyticsRepository {
         ]),
         SpecialSale.aggregate([
           {
-            $match: {
-              business: businessObjectId,
-              status: "active",
-              saleDate: { $gte: lastMonthStart, $lte: lastMonthEnd },
-            },
+            $match: withSpecialSaleScope(
+              {
+                business: businessObjectId,
+                status: "active",
+                saleDate: { $gte: lastMonthStart, $lte: lastMonthEnd },
+              },
+              scopedUserObjectId,
+            ),
           },
           {
             $group: {
@@ -1057,7 +1230,7 @@ export class AdvancedAnalyticsRepository {
     const calcChange = (curr, prev) =>
       prev > 0 ? ((curr - prev) / prev) * 100 : 0;
 
-    return {
+    const response = {
       periods: [
         {
           period: "Este mes",
@@ -1078,17 +1251,41 @@ export class AdvancedAnalyticsRepository {
         profitChange: calcChange(current.profit, previous.profit),
       },
     };
+
+    if (hideFinancialData) {
+      response.periods = response.periods.map((period) => ({
+        ...period,
+        profit: 0,
+      }));
+      response.changes.profitChange = 0;
+    }
+
+    return response;
   }
 
-  async getSalesSummary(businessId, startDate, endDate) {
+  async getSalesSummary(businessId, startDate, endDate, options = {}) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
+    const scopedUserObjectId = resolveScopedUserObjectId(options);
+    const hideFinancialData = shouldHideFinancialData(options);
 
-    const match = {
-      business: businessObjectId,
-      paymentStatus: "confirmado",
-      ...(dateRange ? { saleDate: dateRange } : {}),
-    };
+    const match = withSaleScope(
+      {
+        business: businessObjectId,
+        paymentStatus: "confirmado",
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
+
+    const specialMatch = withSpecialSaleScope(
+      {
+        business: businessObjectId,
+        status: "active",
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
 
     const [summary, specialSummary] = await Promise.all([
       Sale.aggregate([
@@ -1106,13 +1303,7 @@ export class AdvancedAnalyticsRepository {
         },
       ]),
       SpecialSale.aggregate([
-        {
-          $match: {
-            business: businessObjectId,
-            status: "active",
-            ...(dateRange ? { saleDate: dateRange } : {}),
-          },
-        },
+        { $match: specialMatch },
         {
           $group: {
             _id: null,
@@ -1140,23 +1331,50 @@ export class AdvancedAnalyticsRepository {
       totalCost: 0,
     };
 
-    return {
+    const response = {
       totalSales: baseSummary.totalSales + special.totalSales,
       totalRevenue: baseSummary.totalRevenue + special.totalRevenue,
       totalProfit: baseSummary.totalProfit + special.totalProfit,
       totalCost: baseSummary.totalCost + special.totalCost,
     };
+
+    if (hideFinancialData) {
+      response.totalProfit = 0;
+      response.totalCost = 0;
+    }
+
+    return response;
   }
 
-  async getTopProducts(businessId, startDate, endDate, limit = 10) {
+  async getTopProducts(
+    businessId,
+    startDate,
+    endDate,
+    limit = 10,
+    options = {},
+  ) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
+    const scopedUserObjectId = resolveScopedUserObjectId(options);
 
-    const match = {
-      business: businessObjectId,
-      paymentStatus: "confirmado",
-      ...(dateRange ? { saleDate: dateRange } : {}),
-    };
+    const match = withSaleScope(
+      {
+        business: businessObjectId,
+        paymentStatus: "confirmado",
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
+
+    const specialMatch = withSpecialSaleScope(
+      {
+        business: businessObjectId,
+        status: "active",
+        ...(dateRange ? { saleDate: dateRange } : {}),
+        "product.productId": { $exists: true, $ne: null },
+      },
+      scopedUserObjectId,
+    );
 
     const topProducts = await Sale.aggregate([
       { $match: match },
@@ -1172,14 +1390,7 @@ export class AdvancedAnalyticsRepository {
         $unionWith: {
           coll: "specialsales",
           pipeline: [
-            {
-              $match: {
-                business: businessObjectId,
-                status: "active",
-                ...(dateRange ? { saleDate: dateRange } : {}),
-                "product.productId": { $exists: true, $ne: null },
-              },
-            },
+            { $match: specialMatch },
             {
               $project: {
                 product: "$product.productId",
@@ -1232,18 +1443,34 @@ export class AdvancedAnalyticsRepository {
       },
     ]);
 
+    if (shouldHideFinancialData(options)) {
+      return topProducts.map((item) => ({
+        ...item,
+        totalProfit: 0,
+      }));
+    }
+
     return topProducts;
   }
 
-  async getDistributorPerformance(businessId, startDate, endDate) {
+  async getDistributorPerformance(
+    businessId,
+    startDate,
+    endDate,
+    options = {},
+  ) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
+    const scopedUserObjectId = resolveScopedUserObjectId(options);
 
-    const match = {
-      business: businessObjectId,
-      distributor: { $ne: null },
-      ...(dateRange ? { saleDate: dateRange } : {}),
-    };
+    const match = withSaleScope(
+      {
+        business: businessObjectId,
+        distributor: { $ne: null },
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
 
     const performance = await Sale.aggregate([
       { $match: match },
@@ -1281,24 +1508,39 @@ export class AdvancedAnalyticsRepository {
       { $unwind: { path: "$distributor", preserveNullAndEmptyArrays: true } },
     ]);
 
+    if (shouldHideFinancialData(options)) {
+      return performance.map((item) => ({
+        ...item,
+        totalProfit: 0,
+        distributorProfit: 0,
+      }));
+    }
+
     return performance;
   }
 
-  async getInventoryStatus(businessId) {
+  async getInventoryStatus(businessId, options = {}) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
+    const hideFinancialData = shouldHideFinancialData(options);
 
     const products = await Product.find({
       business: businessObjectId,
       isDeleted: { $ne: true },
     })
-      .select("name warehouseStock stock purchasePrice salePrice")
+      .select(
+        hideFinancialData
+          ? "name warehouseStock stock salePrice"
+          : "name warehouseStock stock purchasePrice salePrice",
+      )
       .lean();
 
     const lowStockProducts = products.filter((p) => p.warehouseStock < 10);
-    const totalInventoryValue = products.reduce(
-      (sum, p) => sum + (p.warehouseStock || 0) * (p.purchasePrice || 0),
-      0,
-    );
+    const totalInventoryValue = hideFinancialData
+      ? 0
+      : products.reduce(
+          (sum, p) => sum + (p.warehouseStock || 0) * (p.purchasePrice || 0),
+          0,
+        );
 
     return {
       totalProducts: products.length,
@@ -1308,7 +1550,19 @@ export class AdvancedAnalyticsRepository {
     };
   }
 
-  async getCreditsSummary(businessId, startDate, endDate) {
+  async getCreditsSummary(businessId, startDate, endDate, options = {}) {
+    if (
+      shouldHideFinancialData(options) ||
+      resolveScopedUserObjectId(options)
+    ) {
+      return {
+        totalCredits: 0,
+        totalAmount: 0,
+        totalPending: 0,
+        totalPaid: 0,
+      };
+    }
+
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
 
@@ -1346,7 +1600,17 @@ export class AdvancedAnalyticsRepository {
     );
   }
 
-  async getExpensesSummary(businessId, startDate, endDate) {
+  async getExpensesSummary(businessId, startDate, endDate, options = {}) {
+    if (
+      shouldHideFinancialData(options) ||
+      resolveScopedUserObjectId(options)
+    ) {
+      return {
+        totalExpenses: 0,
+        totalAmount: 0,
+      };
+    }
+
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
 
@@ -1374,15 +1638,29 @@ export class AdvancedAnalyticsRepository {
     );
   }
 
-  async getSalesByCategory(businessId, startDate, endDate) {
+  async getSalesByCategory(businessId, startDate, endDate, options = {}) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
+    const scopedUserObjectId = resolveScopedUserObjectId(options);
 
-    const match = {
-      business: businessObjectId,
-      paymentStatus: "confirmado",
-      ...(dateRange ? { saleDate: dateRange } : {}),
-    };
+    const match = withSaleScope(
+      {
+        business: businessObjectId,
+        paymentStatus: "confirmado",
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
+
+    const specialMatch = withSpecialSaleScope(
+      {
+        business: businessObjectId,
+        status: "active",
+        ...(dateRange ? { saleDate: dateRange } : {}),
+        "product.productId": { $exists: true, $ne: null },
+      },
+      scopedUserObjectId,
+    );
 
     const salesByCategory = await Sale.aggregate([
       { $match: match },
@@ -1398,14 +1676,7 @@ export class AdvancedAnalyticsRepository {
         $unionWith: {
           coll: "specialsales",
           pipeline: [
-            {
-              $match: {
-                business: businessObjectId,
-                status: "active",
-                ...(dateRange ? { saleDate: dateRange } : {}),
-                "product.productId": { $exists: true, $ne: null },
-              },
-            },
+            { $match: specialMatch },
             {
               $project: {
                 product: "$product.productId",
@@ -1456,28 +1727,51 @@ export class AdvancedAnalyticsRepository {
       },
     ]);
 
-    return salesByCategory.map((cat) => ({
+    const categorySummary = salesByCategory.map((cat) => ({
       category: cat.categoryName || cat._id || "Sin categoría",
       sales: cat.totalSales,
       revenue: cat.totalRevenue,
       profit: cat.totalProfit,
       quantity: cat.totalQuantity,
     }));
+
+    if (shouldHideFinancialData(options)) {
+      return categorySummary.map((item) => ({
+        ...item,
+        profit: 0,
+      }));
+    }
+
+    return categorySummary;
   }
 
-  async getProductRotation(businessId, days = 30) {
+  async getProductRotation(businessId, days = 30, options = {}) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
+    const scopedUserObjectId = resolveScopedUserObjectId(options);
+
+    const saleMatch = withSaleScope(
+      {
+        business: businessObjectId,
+        paymentStatus: "confirmado",
+        saleDate: { $gte: startDate },
+      },
+      scopedUserObjectId,
+    );
+
+    const specialMatch = withSpecialSaleScope(
+      {
+        business: businessObjectId,
+        status: "active",
+        saleDate: { $gte: startDate },
+        "product.productId": { $exists: true, $ne: null },
+      },
+      scopedUserObjectId,
+    );
 
     const rotation = await Sale.aggregate([
-      {
-        $match: {
-          business: businessObjectId,
-          paymentStatus: "confirmado",
-          saleDate: { $gte: startDate },
-        },
-      },
+      { $match: saleMatch },
       {
         $project: {
           product: "$product",
@@ -1489,14 +1783,7 @@ export class AdvancedAnalyticsRepository {
         $unionWith: {
           coll: "specialsales",
           pipeline: [
-            {
-              $match: {
-                business: businessObjectId,
-                status: "active",
-                saleDate: { $gte: startDate },
-                "product.productId": { $exists: true, $ne: null },
-              },
-            },
+            { $match: specialMatch },
             {
               $project: {
                 product: "$product.productId",
@@ -1538,16 +1825,20 @@ export class AdvancedAnalyticsRepository {
     }));
   }
 
-  async getDistributorRankings(businessId, startDate, endDate) {
+  async getDistributorRankings(businessId, startDate, endDate, options = {}) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
+    const scopedUserObjectId = resolveScopedUserObjectId(options);
 
-    const match = {
-      business: businessObjectId,
-      paymentStatus: "confirmado",
-      distributor: { $ne: null },
-      ...(dateRange ? { saleDate: dateRange } : {}),
-    };
+    const match = withSaleScope(
+      {
+        business: businessObjectId,
+        paymentStatus: "confirmado",
+        distributor: { $ne: null },
+        ...(dateRange ? { saleDate: dateRange } : {}),
+      },
+      scopedUserObjectId,
+    );
 
     const rankings = await Sale.aggregate([
       { $match: match },
@@ -1625,7 +1916,7 @@ export class AdvancedAnalyticsRepository {
       },
     ]);
 
-    return rankings.map((r, index) => ({
+    const mappedRankings = rankings.map((r, index) => ({
       rank: index + 1,
       distributorId: r._id,
       distributorName: r.distributorInfo?.name || "Sin nombre",
@@ -1638,16 +1929,31 @@ export class AdvancedAnalyticsRepository {
       conversionRate:
         r.totalSalesAll > 0 ? (r.confirmedSales / r.totalSalesAll) * 100 : 0,
     }));
+
+    if (shouldHideFinancialData(options)) {
+      return mappedRankings.map((item) => ({
+        ...item,
+        totalProfit: 0,
+        distributorProfit: 0,
+      }));
+    }
+
+    return mappedRankings;
   }
 
-  async getLowStockVisual(businessId) {
+  async getLowStockVisual(businessId, options = {}) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
+    const hideFinancialData = shouldHideFinancialData(options);
 
     const products = await Product.find({
       business: businessObjectId,
       warehouseStock: { $lt: 10 },
     })
-      .select("name warehouseStock stock purchasePrice salePrice category")
+      .select(
+        hideFinancialData
+          ? "name warehouseStock stock salePrice category"
+          : "name warehouseStock stock purchasePrice salePrice category",
+      )
       .sort({ warehouseStock: 1 })
       .limit(20)
       .lean();
@@ -1660,7 +1966,9 @@ export class AdvancedAnalyticsRepository {
         stock: p.warehouseStock || 0,
         minStock: 10,
         category: p.category || "Sin categoría",
-        value: (p.warehouseStock || 0) * (p.purchasePrice || 0),
+        value: hideFinancialData
+          ? 0
+          : (p.warehouseStock || 0) * (p.purchasePrice || 0),
       })),
     };
   }

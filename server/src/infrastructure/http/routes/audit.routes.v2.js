@@ -9,7 +9,11 @@ import { AuditController } from "../controllers/AuditController.js";
 const router = Router();
 const controller = new AuditController();
 
-router.use(protect, businessContext, requirePermission("readAudit"));
+router.use(
+  protect,
+  businessContext,
+  requirePermission({ module: "config", action: "read" }),
+);
 
 router.get("/logs", (req, res) => controller.getLogs(req, res));
 router.get("/logs/:id", (req, res) => controller.getLogById(req, res));

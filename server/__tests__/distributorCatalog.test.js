@@ -5,8 +5,8 @@ import mongoose from "mongoose";
 import request from "supertest";
 import Category from "../models/Category.js";
 import DistributorStock from "../models/DistributorStock.js";
-import Product from "../models/Product.js";
-import User from "../models/User.js";
+import Product from "../src/infrastructure/database/models/Product.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 describe("Distributor Catalog Endpoint Tests", () => {
   let app;

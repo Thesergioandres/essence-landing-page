@@ -1,4 +1,18 @@
 import Sale from "../models/Sale.js";
+import User from "../models/User.js";
+
+const resolveSaleRevenue = (sale) => {
+  if (
+    typeof sale?.actualPayment === "number" &&
+    Number.isFinite(sale.actualPayment)
+  ) {
+    return sale.actualPayment;
+  }
+
+  const gross = Number(sale?.salePrice || 0) * Number(sale?.quantity || 0);
+  const discount = Number(sale?.discount || 0);
+  return Math.max(0, gross - discount);
+};
 
 export class SaleRepository {
   /**
@@ -161,6 +175,61 @@ export class SaleRepository {
       ...sale,
       credit: sale.creditId || sale.credit,
     }));
+
+    const distributorIds = [
+      ...new Set(
+        normalizedSales
+          .map((sale) => {
+            const distributor = sale?.distributor;
+            if (!distributor) return null;
+            if (typeof distributor === "object") {
+              return distributor?._id ? String(distributor._id) : null;
+            }
+            return String(distributor);
+          })
+          .filter(Boolean),
+      ),
+    ];
+
+    if (distributorIds.length > 0) {
+      const fixedCommissionUsers = await User.find({
+        _id: { $in: distributorIds },
+        $or: [{ isCommissionFixed: true }, { fixedCommissionOnly: true }],
+      })
+        .select(
+          "_id customCommissionRate fixedCommissionOnly isCommissionFixed",
+        )
+        .lean();
+
+      const fixedRateByUser = new Map(
+        fixedCommissionUsers.map((user) => [
+          String(user._id),
+          Number.isFinite(Number(user.customCommissionRate))
+            ? Math.max(0, Math.min(95, Number(user.customCommissionRate)))
+            : null,
+        ]),
+      );
+
+      for (const sale of normalizedSales) {
+        const distributor = sale?.distributor;
+        const distributorId =
+          typeof distributor === "object"
+            ? String(distributor?._id || "")
+            : String(distributor || "");
+
+        const fixedRate = fixedRateByUser.get(distributorId);
+        if (fixedRate === null || fixedRate === undefined) continue;
+
+        const revenue = resolveSaleRevenue(sale);
+        const distributorProfit = (revenue * fixedRate) / 100;
+
+        sale.distributorProfitPercentage = fixedRate;
+        sale.distributorProfit = distributorProfit;
+        sale.commissionBonus = 0;
+        sale.commissionBonusAmount = 0;
+        sale.isCommissionFixed = true;
+      }
+    }
 
     return {
       sales: normalizedSales,

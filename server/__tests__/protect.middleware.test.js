@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import jwt from "jsonwebtoken";
 import { protect } from "../middleware/auth.middleware.js";
-import User from "../models/User.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 const buildRes = () => {
   const res = {};

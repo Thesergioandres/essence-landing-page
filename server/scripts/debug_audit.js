@@ -29,7 +29,7 @@ const run = async () => {
     console.log("✅ Connected");
 
     console.log("Registering models...");
-    const User = (await import("../models/User.js")).default;
+    const User = (await import("../src/infrastructure/database/models/User.js")).default;
     const Business = (await import("../models/Business.js")).default;
     const AuditLog = (await import("../models/AuditLog.js")).default;
 

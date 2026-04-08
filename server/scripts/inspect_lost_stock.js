@@ -6,9 +6,9 @@ import { fileURLToPath } from "url";
 // Models
 import "../models/Business.js";
 import DistributorStock from "../models/DistributorStock.js";
-import "../models/Product.js";
-import Sale from "../models/Sale.js";
-import User from "../models/User.js";
+import "../src/infrastructure/database/models/Product.js";
+import Sale from "../src/infrastructure/database/models/Sale.js";
+import User from "../src/infrastructure/database/models/User.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

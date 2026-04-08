@@ -1,6 +1,13 @@
-import { SaleRepository } from "../../database/repositories/SaleRepository.js";
+import {
+  resolveFinancialPrivacyContext,
+  sanitizeSaleForFinancialPrivacy,
+  sanitizeSalesStatsForFinancialPrivacy,
+} from "../../../../utils/financialPrivacy.js";
+import ListSalesUseCase from "../../../application/use-cases/sales/ListSalesUseCase.js";
+import SaleReadRepositoryAdapter from "../../adapters/repositories/SaleReadRepositoryAdapter.js";
 
-const saleRepository = new SaleRepository();
+const saleReadRepository = new SaleReadRepositoryAdapter();
+const listSalesUseCase = new ListSalesUseCase(saleReadRepository);
 
 /**
  * GET /api/v2/sales
@@ -26,32 +33,57 @@ export async function listSales(req, res) {
       distributorId: distributorIdQuery,
     } = req.query;
 
+    const financialPrivacy = resolveFinancialPrivacyContext(req);
+
     // Check if this is a distributor-specific query
     // Route: /api/v2/sales/distributor/:distributorId?
-    let distributorId = req.params.distributorId || distributorIdQuery;
+    let distributorId = financialPrivacy.scopeDistributorId
+      ? financialPrivacy.scopeDistributorId
+      : req.params.distributorId || distributorIdQuery;
 
-    // If no distributorId in params, check if current user is distributor
-    // Note: Role is 'distribuidor' in Spanish in the database
-    if (!distributorId && req.user?.role === "distribuidor") {
+    // If no distributorId in params, check effective role (membership first)
+    // so distributor users with admin membership can view team sales.
+    const effectiveRole = req.membership?.role || req.user?.role;
+    const isDistributorRole =
+      effectiveRole === "distribuidor" || effectiveRole === "distributor";
+    const canViewTeamSalesByMembership =
+      req.membership?.role === "admin" ||
+      req.membership?.permissions?.sales?.update === true ||
+      req.membership?.permissions?.sales?.delete === true;
+
+    if (!distributorId && isDistributorRole && !canViewTeamSalesByMembership) {
       distributorId = req.user.id;
     }
 
-    const result = await saleRepository.list(businessId, {
-      page: Number(page),
-      limit: Number(limit),
-      branchId,
-      distributorId, // Pass distributorId to filter
-      productId,
-      startDate,
-      endDate,
-      statsOnly: statsOnly === "true",
+    const result = await listSalesUseCase.execute({
+      businessId,
+      filters: {
+        page: Number(page),
+        limit: Number(limit),
+        branchId,
+        distributorId,
+        productId,
+        startDate,
+        endDate,
+        statsOnly: statsOnly === "true",
+      },
     });
+
+    const sales = financialPrivacy.hideFinancialData
+      ? (result.sales || []).map((sale) =>
+          sanitizeSaleForFinancialPrivacy(sale),
+        )
+      : result.sales;
+
+    const stats = financialPrivacy.hideFinancialData
+      ? sanitizeSalesStatsForFinancialPrivacy(result.stats || {})
+      : result.stats;
 
     const totalPages = result.totalPages;
     res.json({
       success: true,
-      sales: result.sales,
-      stats: result.stats,
+      sales,
+      stats,
       pagination: {
         page: result.page,
         totalPages: totalPages,

@@ -43,13 +43,20 @@ export const productService = {
 
   async getPublicCatalog(
     filters: Record<string, string | boolean | number> = {}
-  ): Promise<{ data: Product[] }> {
+  ): Promise<{
+    data: Product[];
+    business?: { _id?: string; name?: string; logoUrl?: string | null } | null;
+  }> {
     const response = await api.get("/products/public", { params: filters });
     if (response.data?.success && Array.isArray(response.data?.data)) {
-      return { data: response.data.data };
+      return {
+        data: response.data.data,
+        business: response.data.business || null,
+      };
     }
     return {
       data: Array.isArray(response.data) ? response.data : [],
+      business: null,
     };
   },
 
@@ -318,6 +325,7 @@ export const stockService = {
           distributor: distributorId,
           product: item,
           quantity: item.distributorStock ?? item.totalStock ?? 0,
+          inTransitQuantity: item.inTransitQuantity ?? 0,
           lowStockAlert: item.lowStockAlert || 5,
           isLowStock: item.isLowStock,
           createdAt: item.createdAt,

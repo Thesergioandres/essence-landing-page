@@ -8,10 +8,10 @@ import BranchStock from "../../../../models/BranchStock.js";
 import Credit from "../../../../models/Credit.js";
 import DefectiveProduct from "../../../../models/DefectiveProduct.js";
 import DistributorStock from "../../../../models/DistributorStock.js";
-import Product from "../../../../models/Product.js";
+import Product from "../../database/models/Product.js";
 import ProfitHistory from "../../../../models/ProfitHistory.js";
 import Promotion from "../../../../models/Promotion.js";
-import Sale from "../../../../models/Sale.js";
+import Sale from "../../database/models/Sale.js";
 import { rollbackSaleGamification } from "../../../../utils/gamificationEngine.js";
 import {
   buildPromotionSalesSummary,

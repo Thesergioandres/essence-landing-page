@@ -20,7 +20,7 @@ router.get(
   "/export-full-data",
   protect,
   businessContext,
-  requirePermission("updateBusiness"),
+  requirePermission({ module: "config", action: "update" }),
   (req, res) => DataExportController.exportFullData(req, res),
 );
 
@@ -32,35 +32,42 @@ router.put(
   "/:id",
   protect,
   businessContext,
-  requirePermission("updateBusiness"),
+  requirePermission({ module: "config", action: "update" }),
   (req, res) => controller.update(req, res),
 );
 router.put(
   "/:id/features",
   protect,
   businessContext,
-  requirePermission("updateBusiness"),
+  requirePermission({ module: "config", action: "update" }),
   (req, res) => controller.updateFeatures(req, res),
 );
 router.post(
   "/:id/members",
   protect,
   businessContext,
-  requirePermission("manageMemberships"),
+  requirePermission({ module: "config", action: "update" }),
   (req, res) => controller.addMember(req, res),
+);
+router.get(
+  "/:id/members/find-user/:email",
+  protect,
+  businessContext,
+  requirePermission({ module: "config", action: "update" }),
+  (req, res) => controller.findUserByEmail(req, res),
 );
 router.put(
   "/:id/members/:membershipId",
   protect,
   businessContext,
-  requirePermission("manageMemberships"),
+  requirePermission({ module: "config", action: "update" }),
   (req, res) => controller.updateMember(req, res),
 );
 router.delete(
   "/:id/members/:membershipId",
   protect,
   businessContext,
-  requirePermission("manageMemberships"),
+  requirePermission({ module: "config", action: "update" }),
   (req, res) => controller.removeMember(req, res),
 );
 router.get("/:id/members", protect, businessContext, (req, res) =>

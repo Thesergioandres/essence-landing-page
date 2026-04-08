@@ -15,7 +15,7 @@ import request from "supertest";
 
 // Import dinámico de la app y modelos
 const { default: app } = await import("../../server.js");
-const { default: User } = await import("../../models/User.js");
+const { default: User } = await import("../../src/infrastructure/database/models/User.js");
 const { default: Business } = await import("../../models/Business.js");
 const { default: Notification } = await import("../../models/Notification.js");
 const { default: Membership } = await import("../../models/Membership.js");

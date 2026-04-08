@@ -59,6 +59,33 @@ const defaultAssistantByPlan: AssistantPlanMap = {
   enterprise: true,
 };
 
+const getMembershipBusinessId = (membership: Membership): string =>
+  typeof membership.business === "string"
+    ? membership.business
+    : membership.business?._id || "";
+
+const hasSameMembershipSnapshot = (
+  current: Membership[],
+  next: Membership[]
+) => {
+  if (current.length !== next.length) {
+    return false;
+  }
+
+  return current.every((membership, index) => {
+    const nextMembership = next[index];
+    if (!nextMembership) return false;
+
+    return (
+      membership._id === nextMembership._id &&
+      membership.status === nextMembership.status &&
+      membership.role === nextMembership.role &&
+      getMembershipBusinessId(membership) ===
+        getMembershipBusinessId(nextMembership)
+    );
+  });
+};
+
 /**
  * Read memberships from localStorage user object (set by login)
  * This prevents the "amnesia" bug where memberships are empty until API responds
@@ -95,7 +122,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   const retryRef = useRef(0); // Guard for auto-retry
 
   const syncBusinessId = (id: string | null) => {
-    setBusinessId(id);
+    setBusinessId(prev => (prev === id ? prev : id));
     if (id) {
       localStorage.setItem("businessId", id);
     } else {
@@ -112,7 +139,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setMemberships([]);
+      setMemberships(prev => (prev.length > 0 ? [] : prev));
       syncBusinessId(null);
       return;
     }
@@ -142,12 +169,13 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         fetched?.length,
         fetched
       );
-      console.log(
-        "[BusinessContext] Fetched memberships:",
-        fetched?.length,
-        fetched
+
+      const fetchedMemberships = (fetched || []) as Membership[];
+      setMemberships(prev =>
+        hasSameMembershipSnapshot(prev, fetchedMemberships)
+          ? prev
+          : fetchedMemberships
       );
-      setMemberships((fetched || []) as any);
 
       // Safe Retry Logic: Si devuelve vacío y no hemos reintentado, prueba una vez más
       if ((!fetched || fetched.length === 0) && retryRef.current < 1) {
@@ -185,17 +213,17 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         syncBusinessId(null);
-        setMemberships([]);
+        setMemberships(prev => (prev.length > 0 ? [] : prev));
       } else if (status === 403 && !isOwnerInactive && !isPendingUser) {
         // 403 por otras razones (token inválido, etc) - limpiar sesión
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         syncBusinessId(null);
-        setMemberships([]);
+        setMemberships(prev => (prev.length > 0 ? [] : prev));
       }
       // Si es usuario pending (recién registrado), NO limpiar token - solo marcar memberships vacías
       if (isPendingUser || status === 403) {
-        setMemberships([]);
+        setMemberships(prev => (prev.length > 0 ? [] : prev));
       }
 
       console.error("Error fetching memberships", err);
@@ -221,9 +249,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     const handleSessionRefresh = async () => {
       console.log("[BusinessContext] Session refresh triggered");
       tokenRef.current = localStorage.getItem("token");
-      setInitializing(true);
       await refresh();
-      setInitializing(false);
     };
 
     window.addEventListener("session-refresh", handleSessionRefresh);

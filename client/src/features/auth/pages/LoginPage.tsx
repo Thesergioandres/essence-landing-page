@@ -1,10 +1,35 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSession } from "../../../hooks/useSession";
 import { LoginForm } from "../components/LoginForm";
 import { useAuth } from "../hooks/useAuth";
+import { authService } from "../services";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login, isLoading, error } = useAuth();
+  const { user, loading: checkingSession, isAuthenticated } = useSession();
+
+  useEffect(() => {
+    if (checkingSession) return;
+
+    const currentUser = user || authService.getCurrentUser();
+    if (!currentUser || !isAuthenticated) return;
+
+    navigate(authService.getDashboardRoute(currentUser.role), {
+      replace: true,
+    });
+  }, [checkingSession, isAuthenticated, navigate, user]);
+
+  if (checkingSession || (isAuthenticated && user)) {
+    return (
+      <div className="bg-app-base flex min-h-screen items-center justify-center px-4 py-10 text-white sm:px-6 lg:px-12">
+        <div className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-gray-200">
+          Redirigiendo a tu panel...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-app-base min-h-screen px-4 py-10 text-white sm:px-6 lg:px-12">

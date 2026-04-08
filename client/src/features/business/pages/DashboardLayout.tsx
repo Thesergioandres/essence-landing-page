@@ -1,6 +1,14 @@
+import { AnimatePresence, m } from "framer-motion";
+import { gsap } from "gsap";
 import { BarChart3 } from "lucide-react";
-import { type ChangeEvent, useEffect, useState } from "react";
-import { Navigate, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import {
+  Navigate,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import BusinessGate from "../../../components/BusinessGate";
 import BusinessSelector from "../../../components/BusinessSelector";
 import FeatureNavLink from "../../../components/FeatureNavLink";
@@ -8,14 +16,17 @@ import ReportIssueButton from "../../../components/ReportIssueButton";
 import { useBusiness } from "../../../context/BusinessContext";
 import { useBrandLogo } from "../../../hooks/useBrandLogo";
 import { Button } from "../../../shared/components/ui";
+import { useMotionProfile } from "../../../shared/config/motion.config";
 import { authService } from "../../auth/services";
 import type { User } from "../../auth/types/auth.types";
+import { dispatchService } from "../../branches/services";
 import DemoModeTour from "../../demo/DemoModeTour";
+import DemoSandboxBanner from "../../demo/DemoSandboxBanner";
 import { distributorService } from "../../distributors/services";
 
 const navLinkClasses = (isActive: boolean): string =>
   [
-    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+    "magnetic-nav-link group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
     isActive
       ? "bg-purple-600/20 text-white border border-purple-500/50 shadow-lg shadow-purple-700/20"
       : "text-gray-300 hover:bg-white/5 hover:text-purple-200",
@@ -29,9 +40,10 @@ const SectionTitle = ({ label }: { label: string }) => (
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = authService.getCurrentUser();
   const userRole = user?.role;
-  const { business } = useBusiness();
+  const { business, businessId, memberships, features } = useBusiness();
   const logoUrl = useBrandLogo();
   const brandLogo = (
     business?.logoUrl?.trim() ||
@@ -43,10 +55,34 @@ export default function DashboardLayout() {
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [distributors, setDistributors] = useState<User[]>([]);
   const [loadingImpersonation, setLoadingImpersonation] = useState(false);
+  const [pendingDispatchCount, setPendingDispatchCount] = useState(0);
   const isImpersonating = authService.isImpersonating();
+  const viewAnimationKey = `${location.pathname}${location.search}`;
+  const { motionProfile } = useMotionProfile();
+
+  const currentMembership = useMemo(
+    () =>
+      memberships.find(
+        membership =>
+          membership.status === "active" &&
+          membership.business?._id === businessId
+      ) ?? null,
+    [memberships, businessId]
+  );
+
+  const canReadTransfersFromMembership =
+    currentMembership?.permissions?.transfers?.read === true ||
+    currentMembership?.permissions?.transfers?.update === true ||
+    currentMembership?.permissions?.transfers?.create === true;
+
+  const canSyncPendingDispatches =
+    Boolean(business?._id) &&
+    features.transfers !== false &&
+    (["admin", "super_admin", "god"].includes(userRole || "") ||
+      canReadTransfersFromMembership);
 
   useEffect(() => {
-    if (!userRole) {
+    if (!userRole || !businessId) {
       setDistributors([]);
       return;
     }
@@ -71,12 +107,98 @@ export default function DashboardLayout() {
 
     if (["admin", "super_admin", "god"].includes(userRole)) {
       loadDistributors();
+    } else {
+      setDistributors([]);
     }
-  }, [userRole]);
+  }, [userRole, businessId]);
+
+  useEffect(() => {
+    if (!canSyncPendingDispatches) {
+      setPendingDispatchCount(prev => (prev === 0 ? prev : 0));
+      return;
+    }
+
+    let active = true;
+
+    const syncPendingDispatches = async () => {
+      try {
+        const count = Number((await dispatchService.getPendingCount()) || 0);
+        if (active) {
+          setPendingDispatchCount(prev => (prev === count ? prev : count));
+        }
+      } catch {
+        if (active) {
+          setPendingDispatchCount(prev => (prev === 0 ? prev : 0));
+        }
+      }
+    };
+
+    syncPendingDispatches();
+    const intervalId = window.setInterval(syncPendingDispatches, 60000);
+    window.addEventListener("dispatch-updated", syncPendingDispatches);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener("dispatch-updated", syncPendingDispatches);
+    };
+  }, [canSyncPendingDispatches]);
+
+  useEffect(() => {
+    const isFinePointer = window.matchMedia("(pointer:fine)").matches;
+    if (!isFinePointer) return;
+
+    const links = Array.from(
+      document.querySelectorAll<HTMLElement>(".magnetic-nav-link")
+    );
+
+    const cleanups = links.map(link => {
+      const icon = link.querySelector<SVGElement>("svg");
+      if (!icon) return () => undefined;
+
+      const handleMove = (event: MouseEvent) => {
+        const bounds = link.getBoundingClientRect();
+        const offsetX =
+          ((event.clientX - bounds.left) / bounds.width - 0.5) * 8;
+        const offsetY =
+          ((event.clientY - bounds.top) / bounds.height - 0.5) * 8;
+
+        gsap.to(icon, {
+          x: offsetX,
+          y: offsetY,
+          duration: 0.2,
+          ease: "power2.out",
+          overwrite: "auto",
+        });
+      };
+
+      const handleLeave = () => {
+        gsap.to(icon, {
+          x: 0,
+          y: 0,
+          duration: 0.4,
+          ease: "power3.out",
+          overwrite: "auto",
+        });
+      };
+
+      link.addEventListener("mousemove", handleMove);
+      link.addEventListener("mouseleave", handleLeave);
+
+      return () => {
+        link.removeEventListener("mousemove", handleMove);
+        link.removeEventListener("mouseleave", handleLeave);
+      };
+    });
+
+    return () => {
+      cleanups.forEach(cleanup => cleanup());
+    };
+  }, [desktopSidebarOpen, sidebarOpen]);
 
   const handleLogout = () => {
     authService.logout();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   const handleImpersonateDistributor = async (
@@ -103,7 +225,7 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="bg-app-admin-shell max-w-screen min-h-screen overflow-x-hidden">
+    <div className="bg-app-admin-shell max-w-screen h-screen overflow-hidden overflow-x-hidden">
       <DemoModeTour />
       {/* Mobile Overlay */}
       {sidebarOpen && (
@@ -115,7 +237,7 @@ export default function DashboardLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-app-admin-sidebar fixed left-0 z-50 w-72 border-r border-gray-800 backdrop-blur-xl transition-transform duration-300 ${
+        className={`bg-app-admin-sidebar duration-400 fixed left-0 z-50 w-72 border-r border-white/10 shadow-[0_0_42px_rgba(2,6,23,0.55)] backdrop-blur-xl transition-transform ease-in-out ${
           isImpersonating ? "top-10 h-[calc(100vh-2.5rem)]" : "top-0 h-screen"
         } ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -623,6 +745,35 @@ export default function DashboardLayout() {
               Historial de Transferencias
             </FeatureNavLink>
             <FeatureNavLink
+              to="/admin/dispatch"
+              feature="transfers"
+              className={(isActive: boolean): string =>
+                navLinkClasses(isActive)
+              }
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2m-2 4h.01M9 21h6"
+                />
+              </svg>
+              <span className="flex items-center gap-2">
+                Central de Despachos
+                {pendingDispatchCount > 0 && (
+                  <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-gray-900">
+                    {pendingDispatchCount}
+                  </span>
+                )}
+              </span>
+            </FeatureNavLink>
+            <FeatureNavLink
               to="/admin/defective-products"
               feature="defectiveProducts"
               className={(isActive: boolean): string =>
@@ -782,6 +933,31 @@ export default function DashboardLayout() {
               Configurar negocio
             </NavLink>
             <NavLink
+              to="/admin/user-settings"
+              className={({ isActive }): string => navLinkClasses(isActive)}
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l.7 2.155a1 1 0 00.95.69h2.264c.969 0 1.371 1.24.588 1.81l-1.832 1.331a1 1 0 00-.364 1.118l.7 2.155c.3.921-.755 1.688-1.538 1.118l-1.832-1.331a1 1 0 00-1.176 0l-1.832 1.331c-.783.57-1.838-.197-1.538-1.118l.7-2.155a1 1 0 00-.364-1.118L5.347 7.582c-.783-.57-.38-1.81.588-1.81h2.264a1 1 0 00.95-.69l.7-2.155z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 14v7m-3-3h6"
+                />
+              </svg>
+              Preferencias de animación
+            </NavLink>
+            <NavLink
               to="/admin/create-business"
               className={({ isActive }): string => navLinkClasses(isActive)}
             >
@@ -849,7 +1025,7 @@ export default function DashboardLayout() {
         }`}
       >
         <div
-          className={`safe-x flex h-full items-center justify-between px-3 sm:px-5 lg:px-8 ${
+          className={`safe-x duration-400 flex h-full items-center justify-between px-3 transition-[margin] ease-in-out sm:px-5 lg:px-8 ${
             desktopSidebarOpen ? "lg:ml-72" : "lg:ml-0"
           }`}
         >
@@ -934,13 +1110,38 @@ export default function DashboardLayout() {
 
       {/* Main Content */}
       <main
-        className={`content-with-safe-header min-h-screen overflow-x-hidden transition-all duration-300 lg:pt-20 ${
+        className={`content-with-safe-header duration-400 h-screen overflow-y-auto overflow-x-hidden transition-all ease-in-out lg:pt-20 ${
           desktopSidebarOpen ? "lg:ml-72" : "lg:ml-0"
         }`}
       >
         <div className="mx-auto w-full max-w-screen-2xl p-4 md:p-6 lg:p-8">
+          <DemoSandboxBanner />
           <BusinessGate>
-            <Outlet />
+            <AnimatePresence mode="wait" initial={false}>
+              <m.div
+                key={viewAnimationKey}
+                className="essence-view-shell"
+                initial={{
+                  opacity: 0,
+                  y: motionProfile.viewEnterY,
+                  scale: motionProfile.viewEnterScale,
+                  filter: `blur(${motionProfile.viewEnterBlur}px)`,
+                }}
+                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                exit={{
+                  opacity: 0,
+                  y: motionProfile.viewExitY,
+                  scale: motionProfile.viewExitScale,
+                  filter: `blur(${motionProfile.viewExitBlur}px)`,
+                }}
+                transition={{
+                  duration: motionProfile.viewDuration,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+              >
+                <Outlet />
+              </m.div>
+            </AnimatePresence>
           </BusinessGate>
         </div>
       </main>

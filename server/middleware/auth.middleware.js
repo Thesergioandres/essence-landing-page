@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import Business from "../models/Business.js";
 import Membership from "../models/Membership.js";
-import User from "../models/User.js";
+import User from "../src/infrastructure/database/models/User.js";
 import { logAuthError } from "../utils/logger.js";
 
 /**
@@ -115,6 +115,9 @@ export const protect = async (req, res, next) => {
         active: user.active,
         status: user.status,
         subscriptionExpiresAt: user.subscriptionExpiresAt,
+        modularPermissions: user.modularPermissions || {},
+        HIDE_FINANCIAL_DATA: user.HIDE_FINANCIAL_DATA === true,
+        hideFinancialData: user.hideFinancialData === true,
       };
 
       // En entorno de pruebas no bloquear por estado/expiración
@@ -243,6 +246,9 @@ export const protectAllowPending = async (req, res, next) => {
         active: user.active,
         status: user.status,
         subscriptionExpiresAt: user.subscriptionExpiresAt,
+        modularPermissions: user.modularPermissions || {},
+        HIDE_FINANCIAL_DATA: user.HIDE_FINANCIAL_DATA === true,
+        hideFinancialData: user.hideFinancialData === true,
       };
 
       // Si es god, siempre activo

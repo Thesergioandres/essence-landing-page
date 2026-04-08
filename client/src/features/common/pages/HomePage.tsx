@@ -1,17 +1,48 @@
 import { m as motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowUpRight,
+  BarChart3,
+  BookOpen,
+  Building2,
+  Check,
+  Clock3,
+  CreditCard,
+  Megaphone,
+  Package,
+  ShieldCheck,
+  ShoppingCart,
+  Truck,
+  Users,
+  Zap,
+} from "lucide-react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../../../components/Footer";
 import Navbar from "../../../components/Navbar";
 import { Button } from "../../../shared/components/ui";
 import { globalSettingsService } from "../services";
 
+type IconType = ComponentType<{ className?: string }>;
+
+type PricingPlan = {
+  id: "starter" | "pro" | "enterprise";
+  name: string;
+  description?: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  currency: string;
+  limits: {
+    branches: number;
+    distributors: number;
+  };
+};
+
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 22 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: "easeOut" as const },
+    transition: { duration: 0.45, ease: "easeOut" as const },
   },
 };
 
@@ -19,97 +50,203 @@ const staggerContainer = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.08 },
+    transition: { staggerChildren: 0.09, delayChildren: 0.07 },
   },
 };
 
-const liveResults = [
-  { label: "Ventas recuperadas", value: "+22%", tone: "text-emerald-200" },
-  { label: "Tiempo operativo", value: "-30%", tone: "text-cyan-200" },
-  { label: "Margen protegido", value: "+12%", tone: "text-fuchsia-200" },
+const heroSignals = [
+  {
+    label: "Ventas recuperadas",
+    value: "+22%",
+    detail: "Reactivacion medible durante el primer mes.",
+    tone: "text-emerald-200",
+  },
+  {
+    label: "Tiempo operativo",
+    value: "-30%",
+    detail: "Menos tareas manuales y menos reprocesos.",
+    tone: "text-cyan-200",
+  },
+  {
+    label: "Margen protegido",
+    value: "+12%",
+    detail: "Control de precios y costos en tiempo real.",
+    tone: "text-amber-200",
+  },
+];
+
+const trustMetrics = [
+  {
+    title: "Implementacion guiada",
+    value: "7 dias",
+    note: "Equipo listo para operar rapido",
+    icon: Clock3,
+  },
+  {
+    title: "Cobertura operativa",
+    value: "360°",
+    note: "Ventas, inventario, comisiones y reportes",
+    icon: Building2,
+  },
+  {
+    title: "Visibilidad comercial",
+    value: "Tiempo real",
+    note: "Decisiones con datos vivos",
+    icon: BarChart3,
+  },
+  {
+    title: "Escalabilidad",
+    value: "Multi-sede",
+    note: "Listo para crecer por etapas",
+    icon: Users,
+  },
 ];
 
 const painPoints = [
-  "Productos agotados sin aviso y clientes que se van.",
-  "Precios distintos por canal sin control real.",
-  "Comisiones y márgenes que se pierden entre planillas.",
+  "Quiebres de stock inesperados que frenan ventas en hora pico.",
+  "Comisiones y cobros con diferencias al cierre del mes.",
+  "Promociones sin control de margen y sin seguimiento por canal.",
+  "Equipos operando con versiones distintas de la informacion.",
 ];
 
-const solutionPoints = [
-  "Inventario, ventas y comisiones sincronizados en tiempo real.",
-  "Alertas accionables para reponer, promover y vender más rápido.",
-  "Control de rentabilidad por producto, canal y equipo.",
+const solutionOutcomes = [
+  "Inventario unificado por bodega, sede y distribuidor.",
+  "Precios y promociones alineados con rentabilidad real.",
+  "Cobranza, cartera y comisiones bajo un mismo flujo.",
+  "Tablero ejecutivo para actuar el mismo dia.",
 ];
 
-const modules = [
+const operatingPillars: Array<{
+  title: string;
+  description: string;
+  icon: IconType;
+  tag: string;
+  highlights: string[];
+}> = [
   {
-    title: "Inventario inteligente: nunca más una venta perdida",
+    title: "Inventario Anticipativo",
     description:
-      "Detecta quiebres antes de que ocurran, mueve stock rápido y recupera ingresos cada semana.",
-    highlights: ["Alertas de quiebre", "Reposición rápida", "Stock por canal"],
-  },
-  {
-    title: "Ventas omnicanal: cobra más, vende más",
-    description:
-      "Mismo producto, múltiples precios y reglas. Incrementa el ticket con ofertas precisas.",
-    highlights: ["B2B y B2C", "Listas de precio", "Promos inteligentes"],
-  },
-  {
-    title: "Catálogo distribuido: más alcance sin más esfuerzo",
-    description:
-      "Comparte catálogos en minutos, controla comisiones y acelera nuevos pedidos.",
+      "Detecta faltantes antes de perder clientes y prioriza reposicion donde mas vende.",
+    icon: Package,
+    tag: "Inventario",
     highlights: [
-      "Catálogo compartible",
-      "Comisiones claras",
-      "Acceso controlado",
+      "Alertas de quiebre",
+      "Rotacion por sede",
+      "Reabastecimiento rapido",
     ],
   },
   {
-    title: "Finanzas y comisiones: más margen, menos fugas",
+    title: "Ventas Omnicanal",
     description:
-      "Concilia pagos, comisiones y costos sin hojas de cálculo. Protege tu margen.",
-    highlights: ["Margen por SKU", "Pagos conciliados", "Cortes automáticos"],
+      "Gestiona ventas de mostrador, distribuidores y promociones con una sola trazabilidad.",
+    icon: ShoppingCart,
+    tag: "Ventas",
+    highlights: ["Precio por canal", "Carrito agil", "Control de descuentos"],
   },
   {
-    title: "Analítica accionable: decide con datos hoy",
+    title: "Catalogo Comercial",
     description:
-      "Ve qué se vende, qué no, y dónde. Prioriza el stock que sí genera caja.",
-    highlights: ["KPIs vivos", "Alertas de rotación", "Exportables"],
+      "Comparte catalogos listos para WhatsApp y acelera pedidos sin friccion.",
+    icon: Megaphone,
+    tag: "Comercial",
+    highlights: [
+      "Catalogo compartible",
+      "PDF listo para cliente",
+      "Identidad de marca",
+    ],
   },
   {
-    title: "Automatizaciones que bajan costos",
+    title: "Cobranza y Credito",
     description:
-      "Procesos nocturnos para precios y stock. Menos errores, más tiempo vendiendo.",
-    highlights: ["Tareas nocturnas", "Reglas por canal", "APIs abiertas"],
+      "Mantiene visible el dinero por cobrar y evita cartera desordenada.",
+    icon: CreditCard,
+    tag: "Finanzas",
+    highlights: [
+      "Cartera pendiente",
+      "Abonos registrados",
+      "Seguimiento de vencimientos",
+    ],
+  },
+  {
+    title: "Logistica Confiable",
+    description:
+      "Despachos y recepciones con historial completo para evitar descuadres.",
+    icon: Truck,
+    tag: "Logistica",
+    highlights: [
+      "Solicitudes de despacho",
+      "Confirmacion de recepcion",
+      "Trazabilidad total",
+    ],
+  },
+  {
+    title: "Gobierno y Seguridad",
+    description:
+      "Protege datos sensibles y asegura que cada perfil vea solo lo que corresponde.",
+    icon: ShieldCheck,
+    tag: "Control",
+    highlights: [
+      "Privacidad financiera",
+      "Permisos por rol",
+      "Auditoria de acciones",
+    ],
+  },
+];
+
+const rolloutSteps: Array<{
+  title: string;
+  detail: string;
+  icon: IconType;
+}> = [
+  {
+    title: "Diagnostico operativo",
+    detail:
+      "Levantamos tu proceso actual para definir prioridades de impacto inmediato.",
+    icon: BookOpen,
+  },
+  {
+    title: "Configuracion guiada",
+    detail:
+      "Activamos modulos, perfiles y reglas comerciales para tu realidad diaria.",
+    icon: Zap,
+  },
+  {
+    title: "Escalamiento con datos",
+    detail:
+      "Con reportes vivos, ajustas decisiones cada semana y sostienes crecimiento.",
+    icon: ArrowUpRight,
   },
 ];
 
 const testimonials = [
   {
     name: "Ana Gomez",
-    role: "Dueña de tienda",
+    role: "Duena de tienda",
     quote:
-      "En dos semanas dejamos de perder ventas por falta de stock. Ahora todo se ve claro.",
+      "Pasamos de reaccionar tarde a anticiparnos. El inventario ya no nos frena las ventas.",
     metric: "+18% ventas",
   },
   {
     name: "Luis Perez",
     role: "Distribuidor",
     quote:
-      "El catálogo compartido nos ahorró horas y subimos pedidos sin llamadas.",
+      "El catalogo compartible nos ayudo a cerrar pedidos sin llamadas eternas.",
     metric: "-35% tiempo operativo",
   },
   {
     name: "Marcela Ruiz",
     role: "Gerente de operaciones",
     quote:
-      "La conciliación de comisiones ahora es simple. Cerramos mes sin sorpresas.",
+      "El cierre financiero es mas limpio. Hoy tenemos claridad para decidir rapido.",
     metric: "+12% margen",
   },
 ];
 
 export default function Home() {
   const navigate = useNavigate();
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [isYearly, setIsYearly] = useState(false);
+  const [plans, setPlans] = useState<PricingPlan[]>([]);
 
   const scrollToPricing = () => {
     document.getElementById("pricing")?.scrollIntoView({
@@ -117,18 +254,6 @@ export default function Home() {
       block: "start",
     });
   };
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [plans, setPlans] = useState<
-    Array<{
-      id: "starter" | "pro" | "enterprise";
-      name: string;
-      description?: string;
-      monthlyPrice: number;
-      yearlyPrice: number;
-      currency: string;
-      limits: { branches: number; distributors: number };
-    }>
-  >([]);
 
   useEffect(() => {
     globalSettingsService
@@ -144,11 +269,12 @@ export default function Home() {
       .catch(() => null);
   }, []);
 
-  const pricingCards = useMemo(() => {
+  const pricingCards = useMemo<PricingPlan[]>(() => {
     if (plans.length > 0) return plans;
+
     return [
       {
-        id: "starter" as const,
+        id: "starter",
         name: "Starter",
         description: "Para negocios en etapa inicial",
         monthlyPrice: 19,
@@ -157,7 +283,7 @@ export default function Home() {
         limits: { branches: 1, distributors: 2 },
       },
       {
-        id: "pro" as const,
+        id: "pro",
         name: "Pro",
         description: "Para equipos que escalan ventas",
         monthlyPrice: 49,
@@ -166,7 +292,7 @@ export default function Home() {
         limits: { branches: 3, distributors: 10 },
       },
       {
-        id: "enterprise" as const,
+        id: "enterprise",
         name: "Enterprise",
         description: "Para operaciones multi-sede avanzadas",
         monthlyPrice: 99,
@@ -185,74 +311,87 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-app-base min-h-screen">
+    <div
+      className="bg-app-base min-h-screen overflow-x-hidden text-slate-100"
+      style={{
+        fontFamily: "'Space Grotesk', 'Sora', 'Montserrat', sans-serif",
+      }}
+    >
       <Navbar />
 
       {maintenanceMode && (
-        <div className="border-y border-amber-300/30 bg-amber-500/10 px-4 py-2 text-center text-sm text-amber-100">
-          Estamos en modo mantenimiento programado. Puedes explorar planes y
-          solicitar acceso, pero algunos módulos pueden estar temporalmente
-          limitados.
+        <div className="border-y border-amber-300/35 bg-amber-500/10 px-4 py-2.5 text-center text-sm text-amber-100">
+          Estamos en mantenimiento programado. Puedes explorar precios y
+          solicitar acceso, pero algunas funciones podrian verse limitadas de
+          forma temporal.
         </div>
       )}
 
-      <section className="relative overflow-hidden border-b border-white/5">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(236,72,153,0.15),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(56,189,248,0.18),transparent_40%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.12),transparent_45%)]" />
+      <section className="relative overflow-hidden border-b border-white/10">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -left-44 -top-20 h-[420px] w-[420px] rounded-full bg-cyan-400/20 blur-[120px]" />
+          <div className="absolute -top-10 right-[-180px] h-[460px] w-[460px] rounded-full bg-amber-400/15 blur-[140px]" />
+          <div className="absolute bottom-[-220px] left-1/3 h-[460px] w-[460px] rounded-full bg-emerald-500/15 blur-[140px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(130deg,rgba(8,11,20,0.96),rgba(11,17,30,0.9),rgba(7,12,19,0.96))]" />
+          <div className="bg-size-[26px_26px] absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.12)_1px,transparent_1px)] opacity-35" />
+        </div>
+
         <motion.div
           initial="hidden"
           animate="show"
           variants={staggerContainer}
-          className="relative mx-auto max-w-7xl px-3 py-16 sm:px-5 sm:py-20 md:px-8 md:py-24"
+          className="relative mx-auto max-w-7xl px-3 py-14 sm:px-5 sm:py-16 md:px-8 md:py-20"
         >
-          <div className="grid items-center gap-10 lg:grid-cols-[1.15fr,0.85fr]">
+          <div className="grid items-center gap-8 lg:grid-cols-[1.08fr,0.92fr]">
             <motion.div variants={fadeUp}>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-fuchsia-200">
-                Impulsa ventas sin caos
-              </p>
-              <h1 className="mt-4 text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
-                Impulsa tus ventas.
-                <span className="block text-fuchsia-200">
-                  Organiza tu negocio.
+              <span className="inline-flex min-h-9 items-center rounded-full border border-cyan-300/35 bg-cyan-400/10 px-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+                Plataforma comercial de alto rendimiento
+              </span>
+
+              <h1 className="mt-5 text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
+                Convierte operacion en
+                <span className="bg-linear-to-r block from-cyan-200 via-emerald-200 to-amber-200 bg-clip-text text-transparent">
+                  crecimiento predecible
                 </span>
               </h1>
-              <p className="mt-5 max-w-2xl text-base leading-relaxed text-gray-300 sm:text-lg">
-                Controla inventario, precios y comisiones desde un solo tablero.
-                Menos fugas, más pedidos, más margen.
+
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
+                Essence unifica inventario, ventas, logistica y rentabilidad
+                para que tomes decisiones comerciales todos los dias con
+                seguridad.
               </p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Button
-                  type="button"
-                  onClick={() => navigate("/register")}
-                  className="rounded-full bg-fuchsia-500 px-7 text-sm font-semibold text-white hover:bg-fuchsia-400"
-                >
-                  Solicitar demo
-                </Button>
+
+              <div className="mt-8 flex flex-wrap gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleDemoClick}
-                  className="rounded-full border-emerald-400/50 bg-emerald-500/10 px-7 text-sm font-semibold text-emerald-200 hover:border-emerald-300 hover:bg-emerald-500/20"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border-emerald-300/45 bg-emerald-400/10 px-7 text-sm font-semibold text-emerald-100 hover:border-emerald-200 hover:bg-emerald-400/20"
                 >
-                  🚀 Ver Demo Interactiva
+                  Ver demo interactiva
+                  <ArrowUpRight className="h-4 w-4" />
                 </Button>
+
                 <Button
                   type="button"
                   variant="outline"
                   onClick={scrollToPricing}
-                  className="rounded-full border-white/20 px-7 text-sm font-semibold text-gray-100 hover:border-fuchsia-300"
+                  className="min-h-11 rounded-full border-white/25 px-7 text-sm font-semibold text-slate-100 hover:border-cyan-300"
                 >
                   Ver precios
                 </Button>
               </div>
-              <div className="mt-7 flex flex-wrap gap-2">
+
+              <div className="mt-7 flex flex-wrap gap-2 text-xs">
                 {[
-                  "Implementación rápida",
-                  "Panel unificado",
-                  "Escalable por negocio",
+                  "Activacion guiada",
+                  "Control por sedes",
+                  "Reportes ejecutivos",
+                  "Escalable por plan",
                 ].map(badge => (
                   <span
                     key={badge}
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-200"
+                    className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-slate-200"
                   >
                     {badge}
                   </span>
@@ -263,123 +402,104 @@ export default function Home() {
             <motion.div
               variants={fadeUp}
               whileHover={{ y: -4 }}
-              transition={{ type: "spring", stiffness: 220, damping: 24 }}
-              className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-purple-900/30"
+              transition={{ type: "spring", stiffness: 230, damping: 24 }}
+              className="relative rounded-3xl border border-white/15 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-5 shadow-[0_34px_90px_-55px_rgba(34,211,238,0.65)] backdrop-blur-sm sm:p-6"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-purple-200">
-                Resultados en vivo
-              </p>
-              <motion.div
-                variants={staggerContainer}
-                className="mt-4 grid gap-3"
-              >
-                {liveResults.map(item => (
-                  <motion.div
-                    key={item.label}
-                    variants={fadeUp}
-                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-gray-200"
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                  Radar ejecutivo
+                </p>
+                <span className="rounded-full border border-emerald-300/40 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-100">
+                  En vivo
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-2.5">
+                {heroSignals.map(signal => (
+                  <div
+                    key={signal.label}
+                    className="rounded-2xl border border-white/15 bg-black/25 p-3"
                   >
-                    <span>{item.label}</span>
-                    <span className={`font-semibold ${item.tone}`}>
-                      {item.value}
-                    </span>
-                  </motion.div>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-slate-200">{signal.label}</p>
+                      <p className={`text-base font-semibold ${signal.tone}`}>
+                        {signal.value}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {signal.detail}
+                    </p>
+                  </div>
                 ))}
-                <motion.div
-                  variants={fadeUp}
-                  className="rounded-2xl border border-fuchsia-300/20 bg-fuchsia-500/10 px-4 py-3 text-xs text-fuchsia-100"
-                >
-                  Monitorea resultados por canal en tiempo real y ajusta precio,
-                  stock y comisiones sin esperar cierre mensual.
-                </motion.div>
-              </motion.div>
+              </div>
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/15 bg-black/25 p-3">
+                  <p className="text-[11px] uppercase tracking-[0.13em] text-slate-400">
+                    Ticket promedio
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-white">+9.4%</p>
+                </div>
+                <div className="rounded-xl border border-white/15 bg-black/25 p-3">
+                  <p className="text-[11px] uppercase tracking-[0.13em] text-slate-400">
+                    Cumplimiento diario
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-white">94%</p>
+                </div>
+              </div>
             </motion.div>
           </div>
+
+          <motion.div
+            variants={staggerContainer}
+            className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {trustMetrics.map(metric => {
+              const Icon = metric.icon;
+              return (
+                <motion.div
+                  key={metric.title}
+                  variants={fadeUp}
+                  className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm"
+                >
+                  <div className="flex items-center gap-2 text-cyan-100">
+                    <Icon className="h-4 w-4" />
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                      {metric.title}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-xl font-bold text-white">
+                    {metric.value}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400">{metric.note}</p>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         </motion.div>
       </section>
 
       <motion.section
-        id="pricing"
         variants={staggerContainer}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, amount: 0.2 }}
+        viewport={{ once: true, amount: 0.24 }}
         className="mx-auto max-w-7xl px-3 py-12 sm:px-5 sm:py-14 md:px-8 md:py-16"
       >
-        <motion.div variants={fadeUp} className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-200">
-            Planes SaaS
-          </p>
-          <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
-            Precios transparentes para crecer sin fricción
-          </h2>
-          <p className="mt-2 text-sm text-gray-300 sm:text-base">
-            Elige el plan según tu operación y amplíalo cuando tu negocio lo
-            necesite.
-          </p>
-        </motion.div>
-
-        <motion.div
-          variants={staggerContainer}
-          className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {pricingCards.map(plan => (
-            <motion.div
-              key={plan.id}
-              variants={fadeUp}
-              whileHover={{ y: -4 }}
-              transition={{ type: "spring", stiffness: 220, damping: 20 }}
-              className="rounded-2xl border border-white/10 bg-white/5 p-5 text-left"
-            >
-              <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-200">
-                {plan.name}
-              </p>
-              <p className="mt-2 text-3xl font-bold text-white">
-                {plan.currency} {plan.monthlyPrice}
-                <span className="text-sm font-medium text-gray-300">/mes</span>
-              </p>
-              <p className="mt-1 text-xs text-gray-400">
-                {plan.currency} {plan.yearlyPrice} /año
-              </p>
-              <p className="mt-3 text-sm text-gray-300">{plan.description}</p>
-              <ul className="mt-4 space-y-2 text-sm text-gray-200">
-                <li>• {plan.limits.branches} sedes incluidas</li>
-                <li>• {plan.limits.distributors} distribuidores incluidos</li>
-                <li>• Inventario, ventas y comisiones en tiempo real</li>
-              </ul>
-              <Button
-                type="button"
-                onClick={() => navigate("/register")}
-                className="mt-5 w-full rounded-full bg-fuchsia-500 text-sm font-semibold text-white hover:bg-fuchsia-400"
-              >
-                Empezar con {plan.name}
-              </Button>
-            </motion.div>
-          ))}
-        </motion.div>
-      </motion.section>
-
-      <motion.section
-        variants={staggerContainer}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, amount: 0.25 }}
-        className="mx-auto max-w-7xl px-3 py-12 sm:px-5 sm:py-14 md:px-8 md:py-16"
-      >
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-2">
           <motion.div
             variants={fadeUp}
-            className="rounded-2xl border border-rose-300/20 bg-rose-500/5 p-6"
+            className="rounded-3xl border border-rose-300/25 bg-rose-500/10 p-6"
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-200">
-              El problema
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-100">
+              Lo que frena el crecimiento
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">
-              Ventas perdidas, inventario en caos
+            <h2 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">
+              Operacion fragmentada, ventas inestables
             </h2>
-            <ul className="mt-4 space-y-3 text-sm text-gray-300">
+            <ul className="mt-5 space-y-3 text-sm text-slate-200">
               {painPoints.map(item => (
-                <li key={item} className="flex items-start gap-2">
+                <li key={item} className="flex items-start gap-2.5">
                   <span className="mt-1 h-1.5 w-1.5 rounded-full bg-rose-300" />
                   <span>{item}</span>
                 </li>
@@ -389,43 +509,39 @@ export default function Home() {
 
           <motion.div
             variants={fadeUp}
-            className="bg-linear-to-br rounded-2xl border border-white/10 from-fuchsia-500/15 via-transparent to-cyan-500/15 p-6"
+            className="rounded-3xl border border-emerald-300/25 bg-[linear-gradient(150deg,rgba(16,185,129,0.12),rgba(8,12,20,0.72))] p-6"
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200">
-              La solución
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-100">
+              Resultado con Essence
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">
-              Un solo tablero que vende por ti
+            <h2 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">
+              Control diario para vender mejor
             </h2>
-            <p className="mt-3 text-sm text-gray-300">
-              Essence conecta inventario, ventas y comisiones en tiempo real. Te
-              dice qué reponer, qué promocionar y dónde ganar más.
-            </p>
-            <ul className="mt-4 space-y-2 text-sm text-gray-200">
-              {solutionPoints.map(item => (
-                <li key={item} className="flex items-start gap-2">
-                  <span className="mt-0.5 text-emerald-300">✓</span>
+            <ul className="mt-5 space-y-3 text-sm text-slate-100">
+              {solutionOutcomes.map(item => (
+                <li key={item} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-100">
+                    <Check className="h-3 w-3" />
+                  </span>
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Button
                 type="button"
-                size="sm"
                 onClick={() => navigate("/register")}
-                className="rounded-full bg-emerald-500 px-5 text-xs font-semibold text-white hover:bg-emerald-600"
+                className="min-h-11 rounded-full bg-emerald-500 px-6 text-sm font-semibold text-white hover:bg-emerald-400"
               >
-                Solicitar demo
+                Empezar ahora
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 onClick={scrollToPricing}
-                className="rounded-full border-white/20 px-5 text-xs font-semibold text-gray-100 hover:border-fuchsia-300"
+                className="min-h-11 rounded-full border-white/25 px-6 text-sm font-semibold text-slate-100 hover:border-emerald-200"
               >
-                Ver precios
+                Comparar planes
               </Button>
             </div>
           </motion.div>
@@ -442,64 +558,244 @@ export default function Home() {
       >
         <motion.div
           variants={fadeUp}
-          className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+          className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
         >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-purple-200">
-              Módulos de venta
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+              Motor de crecimiento
             </p>
-            <h2 className="bg-linear-to-r from-purple-200 to-pink-200 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">
-              Cada módulo empuja ingresos
+            <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
+              Modulos diseñados para resultados
             </h2>
-            <p className="mt-2 max-w-3xl text-sm text-gray-300 sm:text-base">
-              Diseñados para vender más y gastar menos: desde inventario hasta
-              promociones, todo trabaja para tu margen.
+            <p className="mt-2 max-w-3xl text-sm text-slate-300 sm:text-base">
+              Cada modulo ataca una fuga real de dinero o tiempo en tu negocio.
             </p>
           </div>
-          <div className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-purple-100">
-            Resultados medibles en 30 días
+
+          <span className="inline-flex min-h-10 items-center rounded-full border border-white/15 bg-white/5 px-4 text-xs font-semibold uppercase tracking-[0.14em] text-slate-200">
+            Activacion por etapas
+          </span>
+        </motion.div>
+
+        <motion.div
+          variants={staggerContainer}
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {operatingPillars.map(item => {
+            const Icon = item.icon;
+            return (
+              <motion.article
+                key={item.title}
+                variants={fadeUp}
+                whileHover={{ y: -6 }}
+                transition={{ type: "spring", stiffness: 250, damping: 22 }}
+                className="group rounded-3xl border border-white/10 bg-[linear-gradient(170deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-5"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-300/35 bg-cyan-400/10 text-cyan-100">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="rounded-full border border-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.13em] text-slate-200">
+                    {item.tag}
+                  </span>
+                </div>
+
+                <h3 className="mt-4 text-xl font-semibold text-white">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                  {item.description}
+                </p>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {item.highlights.map(highlight => (
+                    <span
+                      key={highlight}
+                      className="rounded-full border border-white/15 bg-black/30 px-3 py-1 text-xs text-slate-200"
+                    >
+                      {highlight}
+                    </span>
+                  ))}
+                </div>
+              </motion.article>
+            );
+          })}
+        </motion.div>
+      </motion.section>
+
+      <motion.section
+        id="pricing"
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.22 }}
+        className="mx-auto max-w-7xl px-3 py-12 sm:px-5 sm:py-14 md:px-8 md:py-16"
+      >
+        <motion.div variants={fadeUp} className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-200">
+            Planes SaaS
+          </p>
+          <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
+            Escala por etapas, sin pagar de mas
+          </h2>
+          <p className="mx-auto mt-2 max-w-3xl text-sm text-slate-300 sm:text-base">
+            Elige un plan segun tu operacion actual y expande sedes o
+            distribuidores cuando el negocio lo necesite.
+          </p>
+
+          <div className="mt-5 inline-flex rounded-full border border-white/15 bg-white/5 p-1">
+            <button
+              type="button"
+              onClick={() => setIsYearly(false)}
+              className={`min-h-10 rounded-full px-4 text-xs font-semibold uppercase tracking-[0.14em] transition ${
+                !isYearly
+                  ? "bg-cyan-500 text-slate-950"
+                  : "text-slate-200 hover:bg-white/10"
+              }`}
+            >
+              Mensual
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsYearly(true)}
+              className={`min-h-10 rounded-full px-4 text-xs font-semibold uppercase tracking-[0.14em] transition ${
+                isYearly
+                  ? "bg-cyan-500 text-slate-950"
+                  : "text-slate-200 hover:bg-white/10"
+              }`}
+            >
+              Anual
+            </button>
           </div>
         </motion.div>
 
         <motion.div
           variants={staggerContainer}
-          className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
         >
-          {modules.map((mod, index) => (
-            <motion.div
-              key={mod.title}
-              variants={fadeUp}
-              whileHover={{ y: -6 }}
-              transition={{ type: "spring", stiffness: 260, damping: 22 }}
-              className="group flex flex-col gap-3 rounded-2xl border border-white/5 bg-white/5 p-5 shadow-lg shadow-purple-900/20 hover:border-purple-400/40 hover:shadow-purple-800/30"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.14em] text-purple-200">
-                    Módulo {String(index + 1).padStart(2, "0")}
-                  </p>
-                  <h3 className="text-xl font-semibold text-white">
-                    {mod.title}
-                  </h3>
-                </div>
-                <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-gray-200 group-hover:border-purple-300/50">
-                  Actívalo
-                </span>
-              </div>
-              <p className="text-sm text-gray-300">{mod.description}</p>
-              <div className="flex flex-wrap gap-2">
-                {mod.highlights.map(item => (
-                  <span
-                    key={item}
-                    className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs text-gray-200"
-                  >
-                    {item}
+          {pricingCards.map(plan => {
+            const isPro = plan.id === "pro";
+            const amount = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
+            const cycle = isYearly ? "/año" : "/mes";
+            const subLine = isYearly
+              ? `${plan.currency} ${Math.round(plan.yearlyPrice / 12)} /mes equivalente`
+              : `${plan.currency} ${plan.yearlyPrice} al año`;
+
+            return (
+              <motion.article
+                key={plan.id}
+                variants={fadeUp}
+                whileHover={{ y: -5 }}
+                transition={{ type: "spring", stiffness: 240, damping: 22 }}
+                className={`relative rounded-3xl border p-6 text-left ${
+                  isPro
+                    ? "border-cyan-300/45 bg-[linear-gradient(160deg,rgba(34,211,238,0.18),rgba(8,12,20,0.8))] shadow-[0_28px_80px_-55px_rgba(34,211,238,0.9)]"
+                    : "border-white/15 bg-white/5"
+                }`}
+              >
+                {isPro && (
+                  <span className="absolute right-4 top-4 rounded-full border border-cyan-300/40 bg-cyan-400/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
+                    Recomendado
                   </span>
-                ))}
-              </div>
-            </motion.div>
-          ))}
+                )}
+
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-100">
+                  {plan.name}
+                </p>
+                <p className="mt-3 text-4xl font-bold text-white">
+                  {plan.currency} {amount}
+                  <span className="text-sm font-medium text-slate-300">
+                    {cycle}
+                  </span>
+                </p>
+                <p className="mt-1 text-xs text-slate-400">{subLine}</p>
+                <p className="mt-3 text-sm text-slate-200/95">
+                  {plan.description}
+                </p>
+
+                <ul className="mt-5 space-y-2.5 text-sm text-slate-200">
+                  <li className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 text-emerald-300" />
+                    <span>{plan.limits.branches} sedes incluidas</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 text-emerald-300" />
+                    <span>
+                      {plan.limits.distributors} distribuidores incluidos
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 text-emerald-300" />
+                    <span>Inventario, ventas y comisiones en tiempo real</span>
+                  </li>
+                </ul>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/register")}
+                  className={`mt-6 min-h-11 w-full rounded-full text-sm font-semibold ${
+                    isPro
+                      ? "border-cyan-200/65 bg-cyan-500/20 text-cyan-100 hover:bg-cyan-500/30"
+                      : "border-white/25 bg-slate-900/75 text-slate-100 hover:bg-slate-800"
+                  }`}
+                >
+                  Empezar con {plan.name}
+                </Button>
+              </motion.article>
+            );
+          })}
         </motion.div>
+      </motion.section>
+
+      <motion.section
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.22 }}
+        className="bg-app-elevated border-y border-white/10 py-12 sm:py-14 md:py-16"
+      >
+        <div className="mx-auto max-w-7xl px-3 sm:px-5 md:px-8">
+          <motion.div variants={fadeUp} className="text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+              Implementacion
+            </p>
+            <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
+              Arranque ordenado en tres etapas
+            </h2>
+          </motion.div>
+
+          <motion.div
+            variants={staggerContainer}
+            className="mt-8 grid gap-4 md:grid-cols-3"
+          >
+            {rolloutSteps.map((step, index) => {
+              const Icon = step.icon;
+              return (
+                <motion.article
+                  key={step.title}
+                  variants={fadeUp}
+                  className="rounded-3xl border border-white/15 bg-white/5 p-5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                      Etapa {index + 1}
+                    </span>
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-300/35 bg-cyan-400/10 text-cyan-100">
+                      <Icon className="h-4.5 w-4.5" />
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-xl font-semibold text-white">
+                    {step.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                    {step.detail}
+                  </p>
+                </motion.article>
+              );
+            })}
+          </motion.div>
+        </div>
       </motion.section>
 
       <motion.section
@@ -507,131 +803,100 @@ export default function Home() {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, amount: 0.2 }}
-        className="bg-app-elevated border-t border-white/5 py-12 sm:py-14 md:py-16"
+        className="mx-auto max-w-7xl px-3 py-12 sm:px-5 sm:py-14 md:px-8 md:py-16"
       >
-        <div className="mx-auto max-w-6xl px-3 sm:px-5 md:px-8">
-          <motion.div
-            variants={fadeUp}
-            className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"
-          >
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200">
-                Confianza real
-              </p>
-              <h2 className="bg-linear-to-r from-emerald-200 to-cyan-200 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">
-                Negocios que venden más con Essence
-              </h2>
-              <p className="mt-2 max-w-3xl text-sm text-gray-300 sm:text-base">
-                Historias reales de equipos que ordenaron su operación y
-                recuperaron ingresos en semanas.
-              </p>
-            </div>
-            <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-gray-200">
-              Testimonios verificados
-            </span>
-          </motion.div>
+        <motion.div
+          variants={fadeUp}
+          className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"
+        >
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">
+              Confianza real
+            </p>
+            <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
+              Equipos que ya venden con mas control
+            </h2>
+          </div>
+          <span className="inline-flex min-h-10 items-center rounded-full border border-white/15 bg-white/5 px-4 text-xs font-semibold uppercase tracking-[0.14em] text-slate-200">
+            Casos verificados
+          </span>
+        </motion.div>
 
-          <motion.div
-            variants={staggerContainer}
-            className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3"
-          >
-            {testimonials.map(item => (
-              <motion.div
-                key={item.name}
-                variants={fadeUp}
-                whileHover={{ y: -4 }}
-                transition={{ type: "spring", stiffness: 240, damping: 22 }}
-                className="rounded-2xl border border-white/5 bg-white/5 p-5 text-left shadow-sm shadow-emerald-900/20"
-              >
-                <p className="text-sm text-gray-300">“{item.quote}”</p>
-                <div className="mt-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-white">
-                      {item.name}
-                    </p>
-                    <p className="text-xs text-gray-300">{item.role}</p>
-                  </div>
-                  <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs font-semibold text-emerald-200">
-                    {item.metric}
-                  </span>
+        <motion.div
+          variants={staggerContainer}
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {testimonials.map(item => (
+            <motion.article
+              key={item.name}
+              variants={fadeUp}
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 240, damping: 22 }}
+              className="rounded-3xl border border-white/15 bg-white/5 p-5"
+            >
+              <p className="text-sm leading-relaxed text-slate-200">
+                "{item.quote}"
+              </p>
+              <div className="mt-5 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    {item.name}
+                  </p>
+                  <p className="text-xs text-slate-400">{item.role}</p>
                 </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </motion.section>
-
-      <motion.section
-        variants={staggerContainer}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, amount: 0.3 }}
-        className="bg-linear-to-r border-t border-white/5 from-purple-900/30 via-transparent to-fuchsia-900/30 py-10 sm:py-12 md:py-14"
-      >
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 md:px-8">
-          <motion.div variants={fadeUp} className="text-left">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-purple-100">
-              Experiencia Essence
-            </p>
-            <h3 className="text-2xl font-bold text-white sm:text-3xl">
-              Entrega rápida, cambios seguros
-            </h3>
-            <p className="mt-2 max-w-2xl text-sm text-gray-300 sm:text-base">
-              Jobs nocturnos, controles de CORS y despliegues con Docker listos.
-              Ajusta módulos por negocio sin romper producción.
-            </p>
-          </motion.div>
-          <motion.div
-            variants={staggerContainer}
-            className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-3 sm:gap-4"
-          >
-            {[
-              "Configura módulos",
-              "Comparte catálogo",
-              "Escala operaciones",
-            ].map(item => (
-              <motion.div
-                key={item}
-                variants={fadeUp}
-                className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-gray-100 shadow-sm shadow-purple-900/30"
-              >
-                {item}
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
+                <span className="rounded-full border border-emerald-300/35 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100">
+                  {item.metric}
+                </span>
+              </div>
+            </motion.article>
+          ))}
+        </motion.div>
       </motion.section>
 
       <motion.section
         variants={fadeUp}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, amount: 0.4 }}
-        className="mx-auto max-w-6xl px-3 py-10 sm:px-5 sm:py-12 md:px-8 md:py-14"
+        viewport={{ once: true, amount: 0.3 }}
+        className="mx-auto max-w-6xl px-3 pb-12 sm:px-5 sm:pb-14 md:px-8 md:pb-16"
       >
-        <div className="bg-linear-to-br rounded-3xl border border-fuchsia-300/20 from-fuchsia-500/10 via-white/5 to-cyan-500/10 p-6 text-center shadow-xl shadow-fuchsia-900/20 sm:p-8">
-          <h3 className="text-2xl font-semibold text-white sm:text-3xl">
-            Empieza a vender más esta semana
-          </h3>
-          <p className="mt-2 text-sm text-gray-300 sm:text-base">
-            Agenda una demo personalizada o revisa planes en segundos.
-          </p>
-          <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <Button
-              type="button"
-              onClick={() => navigate("/register")}
-              className="rounded-full bg-fuchsia-500 px-6 text-sm font-semibold text-white hover:bg-fuchsia-400"
-            >
-              Solicitar demo
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={scrollToPricing}
-              className="rounded-full border-white/20 px-6 text-sm font-semibold text-gray-100 hover:border-fuchsia-300"
-            >
-              Ver precios
-            </Button>
+        <div className="rounded-4xl relative overflow-hidden border border-cyan-300/25 bg-[linear-gradient(140deg,rgba(6,182,212,0.2),rgba(15,23,42,0.85),rgba(251,191,36,0.16))] p-6 shadow-[0_30px_95px_-60px_rgba(34,211,238,0.9)] sm:p-8">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full border border-cyan-200/30" />
+          <div className="pointer-events-none absolute -bottom-20 left-24 h-44 w-44 rounded-full border border-amber-200/25" />
+
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-100">
+                Listo para acelerar
+              </p>
+              <h3 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
+                Empieza a vender con mas control desde esta semana
+              </h3>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-100/90 sm:text-base">
+                Te ayudamos a configurar el flujo comercial para que el equipo
+                opere rapido, con datos claros y sin improvisaciones.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDemoClick}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border-cyan-200/40 bg-cyan-400/15 px-6 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/25"
+              >
+                Ver demo interactiva
+                <ArrowUpRight className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/login")}
+                className="min-h-11 rounded-full border-white/30 bg-white/10 px-6 text-sm font-semibold text-white hover:border-cyan-200"
+              >
+                Iniciar sesion
+              </Button>
+            </div>
           </div>
         </div>
       </motion.section>

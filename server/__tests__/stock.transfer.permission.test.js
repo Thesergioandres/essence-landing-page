@@ -5,8 +5,8 @@ import request from "supertest";
 import Business from "../models/Business.js";
 import DistributorStock from "../models/DistributorStock.js";
 import Membership from "../models/Membership.js";
-import Product from "../models/Product.js";
-import User from "../models/User.js";
+import Product from "../src/infrastructure/database/models/Product.js";
+import User from "../src/infrastructure/database/models/User.js";
 import app from "../server.js";
 
 const createUser = async ({ email, role }) => {

@@ -8,6 +8,10 @@ import { CheckCircle, FileText, RefreshCcw, ShoppingBag } from "lucide-react";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import ProductSelector from "../../../components/ProductSelector";
+import type {
+  RegisterSaleResponse,
+  RegisterStandardSaleInput,
+} from "../../../core/domain/sales/sales.types";
 import { useSession } from "../../../hooks/useSession";
 import { Button, Card } from "../../../shared/components/ui";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -42,7 +46,17 @@ import type {
   ProductWithStock,
 } from "../types/admin-order.types";
 
-export default function StandardSalePage() {
+type RegisterStandardSaleHandler = (
+  data: RegisterStandardSaleInput
+) => Promise<RegisterSaleResponse>;
+
+interface StandardSalePageProps {
+  registerStandardSale?: RegisterStandardSaleHandler;
+}
+
+export default function StandardSalePage({
+  registerStandardSale,
+}: StandardSalePageProps = {}) {
   const { user, loading: userLoading } = useSession(); // Get user from session
   const isDistributor = user?.role === "distribuidor";
 
@@ -280,6 +294,13 @@ export default function StandardSalePage() {
   }, [order.locationType, order.locationId]);
 
   // Products with correct stock based on location
+  const quantitiesInCartByProduct = useMemo(() => {
+    return order.items.reduce((acc, item) => {
+      acc.set(item.productId, (acc.get(item.productId) || 0) + item.quantity);
+      return acc;
+    }, new Map<string, number>());
+  }, [order.items]);
+
   const productsWithLocationStock = useMemo(() => {
     return products.map(p => {
       let stock = 0;
@@ -292,17 +313,23 @@ export default function StandardSalePage() {
       else if (order.locationType === "distributor")
         stock = p.distributorStock ?? 0;
 
+      const reservedInCart = quantitiesInCartByProduct.get(p._id) || 0;
+      const remainingStock = Math.max(0, stock - reservedInCart);
+
       return {
         ...p,
-        branchStock: order.locationType === "branch" ? stock : undefined,
+        branchStock:
+          order.locationType === "branch" ? remainingStock : undefined,
         distributorStock:
-          order.locationType === "distributor" ? stock : undefined,
+          order.locationType === "distributor" ? remainingStock : undefined,
         // HYBRID MODEL: Distributors CAN see warehouse stock for dropshipping
         warehouseStock:
-          order.locationType === "warehouse" ? stock : p.warehouseStock,
+          order.locationType === "warehouse"
+            ? remainingStock
+            : p.warehouseStock,
       };
     });
-  }, [products, order.locationType, branchStock]);
+  }, [products, order.locationType, branchStock, quantitiesInCartByProduct]);
 
   const selectorProducts = useMemo(
     () =>
@@ -557,7 +584,10 @@ export default function StandardSalePage() {
       let totalAmount = 0;
 
       try {
-        await saleService.registerStandardBulk({
+        const registerStandardSaleHandler =
+          registerStandardSale || saleService.registerStandardBulk;
+
+        await registerStandardSaleHandler({
           items: payload.items,
           locationType: payload.locationType,
           branchId: payload.branchId,
@@ -854,6 +884,27 @@ export default function StandardSalePage() {
                 </span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="mb-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-700/70 bg-slate-900/70 p-3">
+            <p className="text-xs text-slate-400">Paso 1</p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              Origen y productos
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700/70 bg-slate-900/70 p-3">
+            <p className="text-xs text-slate-400">Paso 2</p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              Cliente y condiciones
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700/70 bg-slate-900/70 p-3">
+            <p className="text-xs text-slate-400">Paso 3</p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              Confirmar y cerrar
+            </p>
           </div>
         </div>
 

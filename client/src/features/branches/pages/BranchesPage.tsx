@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useBusiness } from "../../../context/BusinessContext";
 import { Button, PlanLimitModal } from "../../../shared/components/ui";
 import { branchService } from "../../branches/services";
 import type {
@@ -31,7 +32,12 @@ const DEFAULT_FORM: FormState = {
   timezone: "America/Bogota",
 };
 
-export default function Branches() {
+interface BranchesProps {
+  hideFinancialData?: boolean;
+}
+
+export default function Branches({ hideFinancialData = false }: BranchesProps) {
+  const { businessId, memberships } = useBusiness();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,18 +69,44 @@ export default function Branches() {
     [branches]
   );
 
-  useEffect(() => {
-    void loadBranches();
-  }, []);
+  const activeMemberships = useMemo(
+    () => memberships.filter(membership => membership.status === "active"),
+    [memberships]
+  );
 
-  const loadBranches = async () => {
+  const currentMembership = useMemo(
+    () =>
+      activeMemberships.find(
+        membership =>
+          (typeof membership.business === "object"
+            ? membership.business?._id
+            : membership.business) === businessId
+      ) ?? (activeMemberships.length === 1 ? activeMemberships[0] : null),
+    [activeMemberships, businessId]
+  );
+
+  const allowedBranchIds = useMemo(() => {
+    const allowed = Array.isArray(currentMembership?.allowedBranches)
+      ? currentMembership.allowedBranches
+      : [];
+
+    if (allowed.length === 0) return null;
+    return new Set(allowed.map(id => String(id)));
+  }, [currentMembership]);
+
+  const loadBranches = useCallback(async () => {
     try {
       setLoading(true);
       const [data, limits] = await Promise.all([
         branchService.list(),
         globalSettingsService.getBusinessLimits().catch(() => null),
       ]);
-      setBranches(data || []);
+
+      const filteredBranches = (data || []).filter(branch =>
+        allowedBranchIds ? allowedBranchIds.has(String(branch._id)) : true
+      );
+
+      setBranches(filteredBranches);
       if (limits) {
         setPlanSnapshot(limits);
       }
@@ -84,7 +116,11 @@ export default function Branches() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [allowedBranchIds]);
+
+  useEffect(() => {
+    void loadBranches();
+  }, [loadBranches]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -218,6 +254,11 @@ export default function Branches() {
   };
 
   const handleViewInventory = async (branch: Branch) => {
+    if (allowedBranchIds && !allowedBranchIds.has(String(branch._id))) {
+      setError("No tienes acceso al inventario de esta sede");
+      return;
+    }
+
     setSelectedBranchInventory(branch);
     setShowInventoryModal(true);
     setLoadingStock(true);
@@ -577,7 +618,11 @@ export default function Branches() {
 
             {/* Stats */}
             {!loadingStock && (
-              <div className="grid shrink-0 grid-cols-2 gap-2 border-b border-gray-700 p-4 sm:grid-cols-4 sm:gap-4 sm:p-6">
+              <div
+                className={`grid shrink-0 grid-cols-2 gap-2 border-b border-gray-700 p-4 sm:gap-4 sm:p-6 ${
+                  hideFinancialData ? "sm:grid-cols-2" : "sm:grid-cols-4"
+                }`}
+              >
                 <div className="rounded-lg border border-gray-600 bg-gray-900/50 p-2 sm:p-4">
                   <p className="text-[10px] text-gray-400 sm:text-sm">
                     Total Productos
@@ -594,27 +639,31 @@ export default function Branches() {
                     {totalUnits}
                   </p>
                 </div>
-                <div className="rounded-lg border border-orange-600 bg-orange-900/30 p-2 sm:p-4">
-                  <p className="text-[10px] text-orange-400 sm:text-sm">
-                    Valor Invertido
-                  </p>
-                  <p className="mt-0.5 text-lg font-bold text-orange-300 sm:mt-1 sm:text-2xl">
-                    ${totalInvested.toLocaleString()}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-blue-600 bg-blue-900/30 p-2 sm:p-4">
-                  <p className="text-[10px] text-blue-400 sm:text-sm">
-                    Valor de Venta
-                  </p>
-                  <p className="mt-0.5 text-lg font-bold text-blue-300 sm:mt-1 sm:text-2xl">
-                    ${totalSalesValue.toLocaleString()}
-                  </p>
-                </div>
+                {!hideFinancialData && (
+                  <>
+                    <div className="rounded-lg border border-orange-600 bg-orange-900/30 p-2 sm:p-4">
+                      <p className="text-[10px] text-orange-400 sm:text-sm">
+                        Valor Invertido
+                      </p>
+                      <p className="mt-0.5 text-lg font-bold text-orange-300 sm:mt-1 sm:text-2xl">
+                        ${totalInvested.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-blue-600 bg-blue-900/30 p-2 sm:p-4">
+                      <p className="text-[10px] text-blue-400 sm:text-sm">
+                        Valor de Venta
+                      </p>
+                      <p className="mt-0.5 text-lg font-bold text-blue-300 sm:mt-1 sm:text-2xl">
+                        ${totalSalesValue.toLocaleString()}
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
             {/* Ganancia Estimada - Fila adicional */}
-            {!loadingStock && (
+            {!loadingStock && !hideFinancialData && (
               <div className="shrink-0 border-b border-gray-700 px-4 pb-4 sm:px-6 sm:pb-6">
                 <div className="rounded-lg border-2 border-green-600 bg-green-900/40 p-3 sm:p-4">
                   <div className="flex items-center justify-between">
@@ -703,15 +752,28 @@ export default function Branches() {
                         <th className="px-3 py-2.5 text-center text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
                           Cantidad
                         </th>
-                        <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
-                          P. Compra
-                        </th>
-                        <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
-                          P. Venta
-                        </th>
-                        <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-green-400 sm:px-4 sm:py-3 sm:text-xs">
-                          Ganancia Est.
-                        </th>
+                        {hideFinancialData ? (
+                          <>
+                            <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
+                              P. Cliente Final
+                            </th>
+                            <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
+                              P. Distribuidor
+                            </th>
+                          </>
+                        ) : (
+                          <>
+                            <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
+                              P. Compra
+                            </th>
+                            <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
+                              P. Venta
+                            </th>
+                            <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-green-400 sm:px-4 sm:py-3 sm:text-xs">
+                              Ganancia Est.
+                            </th>
+                          </>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-700">
@@ -722,6 +784,8 @@ export default function Branches() {
                             : null;
                         const purchasePrice = product?.purchasePrice || 0;
                         const clientPrice = product?.clientPrice || 0;
+                        const distributorPrice =
+                          product?.distributorPrice || clientPrice;
                         const quantity = item.quantity || 0;
                         const profitPerUnit = clientPrice - purchasePrice;
                         const totalProfit = profitPerUnit * quantity;
@@ -757,20 +821,33 @@ export default function Branches() {
                                 {quantity}
                               </span>
                             </td>
-                            <td className="px-3 py-2.5 text-right text-xs text-gray-400 sm:px-4 sm:py-3 sm:text-sm">
-                              ${purchasePrice.toLocaleString()}
-                            </td>
-                            <td className="px-3 py-2.5 text-right text-xs text-white sm:px-4 sm:py-3 sm:text-sm">
-                              ${clientPrice.toLocaleString()}
-                            </td>
-                            <td className="px-3 py-2.5 text-right text-xs font-semibold text-green-400 sm:px-4 sm:py-3 sm:text-sm">
-                              ${totalProfit.toLocaleString()}
-                              {profitPerUnit > 0 && (
-                                <span className="ml-1 text-[10px] text-green-500 sm:text-xs">
-                                  (+${profitPerUnit.toLocaleString()}/u)
-                                </span>
-                              )}
-                            </td>
+                            {hideFinancialData ? (
+                              <>
+                                <td className="px-3 py-2.5 text-right text-xs text-white sm:px-4 sm:py-3 sm:text-sm">
+                                  ${clientPrice.toLocaleString()}
+                                </td>
+                                <td className="px-3 py-2.5 text-right text-xs text-blue-300 sm:px-4 sm:py-3 sm:text-sm">
+                                  ${distributorPrice.toLocaleString()}
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-3 py-2.5 text-right text-xs text-gray-400 sm:px-4 sm:py-3 sm:text-sm">
+                                  ${purchasePrice.toLocaleString()}
+                                </td>
+                                <td className="px-3 py-2.5 text-right text-xs text-white sm:px-4 sm:py-3 sm:text-sm">
+                                  ${clientPrice.toLocaleString()}
+                                </td>
+                                <td className="px-3 py-2.5 text-right text-xs font-semibold text-green-400 sm:px-4 sm:py-3 sm:text-sm">
+                                  ${totalProfit.toLocaleString()}
+                                  {profitPerUnit > 0 && (
+                                    <span className="ml-1 text-[10px] text-green-500 sm:text-xs">
+                                      (+${profitPerUnit.toLocaleString()}/u)
+                                    </span>
+                                  )}
+                                </td>
+                              </>
+                            )}
                           </tr>
                         );
                       })}

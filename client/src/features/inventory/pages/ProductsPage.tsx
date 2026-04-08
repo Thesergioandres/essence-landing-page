@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { LoadingSpinner } from "../../../shared/components/ui";
 import {
   buildCacheKey,
@@ -14,6 +14,14 @@ const CATEGORIES_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export default function ProductsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const firstSegment = location.pathname.split("/").filter(Boolean)[0] || "";
+  const areaBase = firstSegment ? `/${firstSegment}` : "/admin";
+  const addProductRoute = `${areaBase}/add-product`;
+  const productDetailRoute = (productId: string) =>
+    `${areaBase}/products/${productId}`;
+  const productEditRoute = (productId: string) =>
+    `${areaBase}/products/${productId}/edit`;
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [pagination, setPagination] = useState({
@@ -159,7 +167,7 @@ export default function ProductsPage() {
           </p>
         </div>
         <button
-          onClick={() => navigate("/admin/add-product")}
+          onClick={() => navigate(addProductRoute)}
           className="bg-linear-to-r inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg from-purple-600 to-pink-600 px-4 py-3 text-sm font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 active:scale-[0.98] sm:px-5 sm:text-base md:w-auto"
         >
           <span className="text-xl leading-none sm:text-2xl">＋</span>
@@ -283,7 +291,7 @@ export default function ProductsPage() {
               <div
                 key={product._id}
                 className="cursor-pointer rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 shadow-lg backdrop-blur-sm transition hover:border-purple-500"
-                onClick={() => navigate(`/admin/products/${product._id}`)}
+                onClick={() => navigate(productDetailRoute(product._id))}
               >
                 <div className="flex gap-4">
                   {product.image?.url ? (
@@ -321,7 +329,7 @@ export default function ProductsPage() {
                   <button
                     onClick={event => {
                       event.stopPropagation();
-                      navigate(`/admin/products/${product._id}/edit`);
+                      navigate(productEditRoute(product._id));
                     }}
                     className="min-h-[44px] flex-1 rounded-lg border border-purple-500/60 px-3 py-2 text-xs font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95"
                   >
@@ -396,7 +404,7 @@ export default function ProductsPage() {
                     <tr
                       key={product._id}
                       className="cursor-pointer transition hover:bg-gray-900/60"
-                      onClick={() => navigate(`/admin/products/${product._id}`)}
+                      onClick={() => navigate(productDetailRoute(product._id))}
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
@@ -438,7 +446,7 @@ export default function ProductsPage() {
                           <button
                             onClick={event => {
                               event.stopPropagation();
-                              navigate(`/admin/products/${product._id}/edit`);
+                              navigate(productEditRoute(product._id));
                             }}
                             className="rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20 active:scale-95"
                           >

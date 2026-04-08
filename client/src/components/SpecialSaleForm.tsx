@@ -357,23 +357,54 @@ export default function SpecialSaleForm({
   };
 
   return (
-    <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white sm:text-2xl">
-          {editData ? "Editar" : "Nueva"} Venta Especial
-        </h2>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg px-4 py-2 text-sm text-gray-400 transition hover:bg-gray-700 hover:text-white"
-        >
-          Cancelar
-        </button>
+    <div className="rounded-2xl border border-slate-700/70 bg-slate-900/80 p-4 shadow-[0_28px_70px_-50px_rgba(56,189,248,0.45)] backdrop-blur sm:p-6">
+      <div className="mb-6 rounded-xl border border-slate-700/70 bg-slate-950/40 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">
+              Operación guiada
+            </p>
+            <h2 className="mt-2 text-xl font-bold text-white sm:text-2xl">
+              {editData ? "Editar" : "Nueva"} Venta Especial
+            </h2>
+            <p className="mt-1 text-sm text-slate-300">
+              Completa el formulario por pasos para evitar errores de reparto.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="min-h-11 rounded-lg border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-white"
+          >
+            Cancelar
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-2 sm:grid-cols-4">
+          <div className="rounded-lg border border-slate-700/70 bg-slate-900/70 px-3 py-2 text-xs text-slate-300">
+            1. Contexto de venta
+          </div>
+          <div className="rounded-lg border border-slate-700/70 bg-slate-900/70 px-3 py-2 text-xs text-slate-300">
+            2. Productos y costos
+          </div>
+          <div className="rounded-lg border border-slate-700/70 bg-slate-900/70 px-3 py-2 text-xs text-slate-300">
+            3. Distribución
+          </div>
+          <div className="rounded-lg border border-slate-700/70 bg-slate-900/70 px-3 py-2 text-xs text-slate-300">
+            4. Confirmación
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Nombre del evento */}
-        <div>
+        <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-4 sm:p-5">
+          <label className="mb-2 block text-sm font-medium text-slate-200">
+            Paso 1. Nombre del evento
+          </label>
+          <p className="mb-3 text-xs text-slate-400">
+            Usa una referencia clara para encontrarla rápido en el historial.
+          </p>
           <label className="mb-2 block text-sm font-medium text-gray-300">
             Nombre del evento
           </label>
@@ -382,12 +413,21 @@ export default function SpecialSaleForm({
             value={eventName}
             onChange={e => setEventName(e.target.value)}
             placeholder="Ej: Black Friday 2024"
-            className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-3 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-4 py-3 text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
           />
         </div>
 
         {/* Productos */}
-        <div>
+        <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <label className="text-sm font-medium text-slate-200">
+              Paso 2. Productos *
+            </label>
+            <span className="text-xs text-slate-400">
+              Puedes mezclar varios productos en una sola operación
+            </span>
+          </div>
+
           <div className="mb-3 flex items-center justify-between">
             <label className="text-sm font-medium text-gray-300">
               Productos *
@@ -395,7 +435,7 @@ export default function SpecialSaleForm({
             <button
               type="button"
               onClick={addProductItem}
-              className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-purple-700"
+              className="min-h-10 rounded-lg bg-cyan-500 px-3 py-1 text-xs font-semibold text-slate-950 transition hover:bg-cyan-400"
             >
               + Agregar producto
             </button>
@@ -405,7 +445,7 @@ export default function SpecialSaleForm({
             {productItems.map((item, index) => (
               <div
                 key={index}
-                className="rounded-lg border border-gray-600 bg-gray-700/30 p-4"
+                className="rounded-lg border border-slate-700 bg-slate-900/60 p-4"
               >
                 <div className="mb-3 flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-white">
@@ -415,7 +455,7 @@ export default function SpecialSaleForm({
                     <button
                       type="button"
                       onClick={() => removeProductItem(index)}
-                      className="rounded-lg bg-red-600 p-1.5 text-white transition hover:bg-red-700"
+                      className="rounded-lg bg-red-600/90 p-1.5 text-white transition hover:bg-red-500"
                     >
                       <svg
                         className="h-4 w-4"
@@ -452,7 +492,7 @@ export default function SpecialSaleForm({
                               handleProductSelect(index, e.target.value);
                             }
                           }}
-                          className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
+                          className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-white focus:border-cyan-400 focus:outline-none"
                         >
                           <option value="">Seleccionar producto...</option>
                           <option value="custom">
@@ -479,7 +519,7 @@ export default function SpecialSaleForm({
                             }
                             placeholder="Nombre del producto *"
                             required
-                            className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                            className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none"
                           />
                         )}
                       </div>
@@ -504,7 +544,7 @@ export default function SpecialSaleForm({
                       min="1"
                       required
                       placeholder="1"
-                      className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none"
                     />
                   </div>
 
@@ -527,7 +567,7 @@ export default function SpecialSaleForm({
                       step="0.01"
                       required
                       placeholder="0"
-                      className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none"
                     />
                   </div>
 
@@ -550,7 +590,7 @@ export default function SpecialSaleForm({
                       step="0.01"
                       required
                       placeholder="0"
-                      className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -586,22 +626,22 @@ export default function SpecialSaleForm({
         </div>
 
         {/* Fecha */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-300">
-            Fecha de venta *
+        <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-4 sm:p-5">
+          <label className="mb-2 block text-sm font-medium text-slate-200">
+            Paso 3. Fecha de venta *
           </label>
           <input
             type="date"
             value={saleDate}
             onChange={e => setSaleDate(e.target.value)}
             required
-            className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-3 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-4 py-3 text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
           />
         </div>
 
         {/* Resumen de cálculos */}
-        <div className="rounded-lg border border-gray-600 bg-gray-700/50 p-4">
-          <h3 className="mb-3 text-sm font-semibold text-purple-400">
+        <div className="rounded-xl border border-cyan-400/25 bg-cyan-500/5 p-4 sm:p-5">
+          <h3 className="mb-3 text-sm font-semibold text-cyan-300">
             Resumen de Cálculos
           </h3>
           <div className="space-y-2 text-sm">
@@ -617,8 +657,8 @@ export default function SpecialSaleForm({
                 ${totalCost.toLocaleString()}
               </span>
             </div>
-            <div className="flex justify-between border-t border-gray-600 pt-2">
-              <span className="font-semibold text-gray-300">
+            <div className="flex justify-between border-t border-slate-600 pt-2">
+              <span className="font-semibold text-slate-200">
                 Ganancia total:
               </span>
               <span className="text-lg font-bold text-green-400">
@@ -629,7 +669,16 @@ export default function SpecialSaleForm({
         </div>
 
         {/* Distribución */}
-        <div>
+        <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <label className="text-sm font-medium text-slate-200">
+              Paso 4. Distribución de ganancias *
+            </label>
+            <span className="text-xs text-slate-400">
+              Puedes usar porcentaje o monto
+            </span>
+          </div>
+
           <div className="mb-3 flex items-center justify-between">
             <label className="text-sm font-medium text-gray-300">
               Distribución de ganancias *
@@ -639,14 +688,14 @@ export default function SpecialSaleForm({
                 <button
                   type="button"
                   onClick={autoDistribute}
-                  className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-blue-700"
+                  className="min-h-10 rounded-lg bg-blue-500 px-3 py-1 text-xs font-semibold text-slate-950 transition hover:bg-blue-400"
                 >
                   Distribuir equitativamente
                 </button>
                 <button
                   type="button"
                   onClick={addDistributor}
-                  className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-purple-700"
+                  className="min-h-10 rounded-lg bg-cyan-500 px-3 py-1 text-xs font-semibold text-slate-950 transition hover:bg-cyan-400"
                 >
                   + Agregar
                 </button>
@@ -679,7 +728,7 @@ export default function SpecialSaleForm({
             {distribution.map((dist, index) => (
               <div
                 key={index}
-                className="rounded-lg border border-gray-600 bg-gray-700/30 p-4"
+                className="rounded-lg border border-slate-700 bg-slate-900/60 p-4"
               >
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div>
@@ -702,7 +751,7 @@ export default function SpecialSaleForm({
                               e.target.value
                             );
                           }}
-                          className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
+                          className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-white focus:border-cyan-400 focus:outline-none"
                         >
                           <option value="">Seleccionar distribuidor...</option>
                           <option value="custom">
@@ -735,7 +784,7 @@ export default function SpecialSaleForm({
                             }
                             placeholder="Nombre de la persona *"
                             required
-                            className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                            className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none"
                           />
                         )}
                       </div>
@@ -755,7 +804,7 @@ export default function SpecialSaleForm({
                       min="0"
                       max="100"
                       step="0.01"
-                      className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -777,7 +826,7 @@ export default function SpecialSaleForm({
                         min="0"
                         step="0.01"
                         required
-                        className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                        className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -788,7 +837,7 @@ export default function SpecialSaleForm({
                     <button
                       type="button"
                       onClick={() => removeDistributor(index)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-700"
+                      className="inline-flex min-h-10 items-center gap-1 rounded-lg bg-red-600/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-500"
                     >
                       <svg
                         className="h-4 w-4"
@@ -891,8 +940,8 @@ export default function SpecialSaleForm({
         </div>
 
         {/* Observaciones */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-300">
+        <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-4 sm:p-5">
+          <label className="mb-2 block text-sm font-medium text-slate-200">
             Observaciones
           </label>
           <textarea
@@ -900,7 +949,7 @@ export default function SpecialSaleForm({
             onChange={e => setObservations(e.target.value)}
             rows={3}
             placeholder="Notas adicionales sobre esta venta especial..."
-            className="w-full resize-none rounded-lg border border-gray-600 bg-gray-700 px-4 py-3 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full resize-none rounded-lg border border-slate-600 bg-slate-800/80 px-4 py-3 text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
           />
         </div>
 
@@ -909,7 +958,7 @@ export default function SpecialSaleForm({
           <button
             type="submit"
             disabled={loading || !isValid}
-            className="bg-linear-to-r flex-1 rounded-xl from-purple-600 to-pink-600 px-6 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-linear-to-r min-h-12 flex-1 rounded-xl from-cyan-400 to-emerald-300 px-6 py-3 font-semibold text-slate-950 transition hover:from-cyan-300 hover:to-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading
               ? "Guardando..."
@@ -920,7 +969,7 @@ export default function SpecialSaleForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl border border-gray-600 px-6 py-3 font-semibold text-gray-300 transition hover:bg-gray-700"
+            className="min-h-12 rounded-xl border border-slate-600 px-6 py-3 font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-white"
           >
             Cancelar
           </button>

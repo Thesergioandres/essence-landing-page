@@ -6,6 +6,33 @@ import type {
   RegisterCredentials,
 } from "../types/auth.types";
 
+const resolveEntityId = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "[object Object]") {
+      return null;
+    }
+    return trimmed;
+  }
+
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as {
+    _id?: unknown;
+    id?: unknown;
+    $oid?: unknown;
+  };
+
+  return (
+    resolveEntityId(candidate._id) ||
+    resolveEntityId(candidate.id) ||
+    resolveEntityId(candidate.$oid) ||
+    null
+  );
+};
+
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,25 +47,29 @@ export const useAuth = () => {
       // 🔑 POLYFILL: Map memberships to legacy business field for backward compatibility
       const memberships = response.memberships || [];
       const primaryBusiness = memberships[0]?.business;
-      const businessId = primaryBusiness?._id || response.business;
+      const businessId =
+        resolveEntityId(primaryBusiness) || resolveEntityId(response.business);
+      const userId = resolveEntityId(response._id);
 
       // Save Session
       localStorage.setItem("token", response.token);
       localStorage.setItem(
         "user",
         JSON.stringify({
-          _id: response._id,
+          _id: userId || response._id,
           name: response.name,
           email: response.email,
           role: response.role,
           status: response.status,
-          business: businessId, // Legacy compatibility
+          business: businessId || undefined, // Legacy compatibility
           memberships, // New V2 data
         })
       );
 
       if (businessId) {
         localStorage.setItem("businessId", businessId);
+      } else {
+        localStorage.removeItem("businessId");
       }
 
       // 🔔 Notify BusinessContext that auth changed
@@ -74,20 +105,25 @@ export const useAuth = () => {
       // 🔑 POLYFILL: Map memberships to legacy business field
       const memberships = response.memberships || [];
       const primaryBusiness = memberships[0]?.business;
-      const businessId = primaryBusiness?._id || response.business;
+      const businessId =
+        resolveEntityId(primaryBusiness) || resolveEntityId(response.business);
+      const userId = resolveEntityId(response._id);
 
       localStorage.setItem("token", response.token);
       localStorage.setItem(
         "user",
         JSON.stringify({
           ...response,
-          business: businessId,
+          _id: userId || response._id,
+          business: businessId || undefined,
           memberships,
         })
       );
 
       if (businessId) {
         localStorage.setItem("businessId", businessId);
+      } else {
+        localStorage.removeItem("businessId");
       }
 
       navigate("/"); // Default redirect
@@ -103,7 +139,7 @@ export const useAuth = () => {
 
   const logout = () => {
     authService.logout();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   return {

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Branch from "../../../../models/Branch.js";
 import BranchStock from "../../../../models/BranchStock.js";
 import BranchTransfer from "../../../../models/BranchTransfer.js";
-import Product from "../../../../models/Product.js";
+import Product from "../models/Product.js";
 
 const WAREHOUSE_KEY = "warehouse";
 const normalizeBranchName = (name) =>
@@ -161,7 +161,8 @@ export class BranchTransferRepository {
             originBranch: originBranchId,
             targetBranch: targetBranchId,
             items: transferItems,
-            transferredBy: userId,
+            requestedBy: userId,
+            approvedBy: userId,
             notes: data.notes,
             status: "completed",
           },
@@ -213,7 +214,8 @@ export class BranchTransferRepository {
       BranchTransfer.find(query)
         .populate("originBranch", "name")
         .populate("targetBranch", "name")
-        .populate("transferredBy", "name email")
+        .populate("requestedBy", "name email")
+        .populate("approvedBy", "name email")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -239,7 +241,8 @@ export class BranchTransferRepository {
     })
       .populate("originBranch", "name")
       .populate("targetBranch", "name")
-      .populate("transferredBy", "name email")
+      .populate("requestedBy", "name email")
+      .populate("approvedBy", "name email")
       .lean();
 
     return transfer;

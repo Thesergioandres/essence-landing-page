@@ -31,6 +31,7 @@ import {
   advancedAnalyticsService,
   analyticsService,
 } from "../../analytics/services";
+import { useFinancialPrivacy } from "../../auth/utils/financialPrivacy";
 import { expenseService } from "../../common/services";
 import type { Expense } from "../../common/types/common.types";
 import { creditService } from "../../credits/services";
@@ -39,6 +40,7 @@ import { stockService } from "../../inventory/services/inventory.service";
 import { saleService } from "../../sales/services/sales.service";
 
 export default function AdvancedDashboard() {
+  const { hideFinancialData } = useFinancialPrivacy();
   // Feature flags
   const distributorsEnabled = useFeature("distributors");
   const creditsEnabled = useFeature("credits");
@@ -168,6 +170,12 @@ export default function AdvancedDashboard() {
   const distributorsRangeError = validateRange(distributorsRange);
 
   useEffect(() => {
+    if (hideFinancialData) {
+      setSalesFunnel(null);
+      setFunnelLoading(false);
+      return;
+    }
+
     const fetchFunnel = async () => {
       try {
         setFunnelLoading(true);
@@ -175,7 +183,26 @@ export default function AdvancedDashboard() {
           startDate: overviewRange.startDate || undefined,
           endDate: overviewRange.endDate || undefined,
         });
-        setSalesFunnel(response.funnel as any);
+        const rawFunnel = (response as any)?.funnel;
+        if (rawFunnel && !Array.isArray(rawFunnel)) {
+          setSalesFunnel({
+            pending: {
+              count: Number(rawFunnel.pending?.count) || 0,
+              totalValue: Number(rawFunnel.pending?.totalValue) || 0,
+            },
+            confirmed: {
+              count: Number(rawFunnel.confirmed?.count) || 0,
+              totalValue: Number(rawFunnel.confirmed?.totalValue) || 0,
+            },
+            conversionRate: Number(rawFunnel.conversionRate) || 0,
+          });
+        } else {
+          setSalesFunnel({
+            pending: { count: 0, totalValue: 0 },
+            confirmed: { count: 0, totalValue: 0 },
+            conversionRate: 0,
+          });
+        }
       } catch (error) {
         console.error("Error al cargar funnel:", error);
         setSalesFunnel(null);
@@ -187,9 +214,15 @@ export default function AdvancedDashboard() {
     if (!validateRange(overviewRange)) {
       fetchFunnel();
     }
-  }, [overviewRange, reloadKey]);
+  }, [overviewRange, reloadKey, hideFinancialData]);
 
   useEffect(() => {
+    if (hideFinancialData) {
+      setProductRotation([]);
+      setRotationLoading(false);
+      return;
+    }
+
     const fetchRotation = async () => {
       try {
         setRotationLoading(true);
@@ -211,10 +244,16 @@ export default function AdvancedDashboard() {
 
     fetchRotation();
     // }
-  }, [rotationDays, reloadKey]);
+  }, [rotationDays, reloadKey, hideFinancialData]);
 
   // Cargar métricas de créditos
   useEffect(() => {
+    if (hideFinancialData) {
+      setCreditMetrics(null);
+      setCreditLoading(false);
+      return;
+    }
+
     const fetchCredits = async () => {
       try {
         setCreditLoading(true);
@@ -231,10 +270,22 @@ export default function AdvancedDashboard() {
     if (creditsEnabled) {
       fetchCredits();
     }
-  }, [reloadKey, creditsEnabled]);
+  }, [reloadKey, creditsEnabled, hideFinancialData]);
 
   // Cargar gastos
   useEffect(() => {
+    if (hideFinancialData) {
+      setExpenses([]);
+      setExpenseMetrics({
+        total: 0,
+        thisMonth: 0,
+        lastMonth: 0,
+        byCategory: [],
+      });
+      setExpenseLoading(false);
+      return;
+    }
+
     const fetchExpenses = async () => {
       try {
         setExpenseLoading(true);
@@ -313,7 +364,7 @@ export default function AdvancedDashboard() {
     };
 
     fetchExpenses();
-  }, [reloadKey]);
+  }, [reloadKey, hideFinancialData]);
 
   const handleExportKPIs = async () => {
     try {
@@ -559,6 +610,107 @@ export default function AdvancedDashboard() {
       setIsExporting(false);
     }
   };
+
+  if (hideFinancialData) {
+    return (
+      <div className="min-h-screen bg-gray-950 p-6 md:p-8">
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Panel Privado</h1>
+            <p className="text-gray-400">
+              Solo se muestra tu volumen de ventas para proteger datos
+              financieros globales.
+            </p>
+          </div>
+          <button
+            onClick={handleReload}
+            className="flex items-center gap-2 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-gray-300 transition hover:bg-gray-800"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Actualizar
+          </button>
+        </div>
+
+        <section className="space-y-6 rounded-xl border border-gray-800 bg-gray-900/70 p-4">
+          <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h3 className="text-xl font-semibold text-white">
+                Línea de tiempo de ventas
+              </h3>
+              <p className="text-sm text-gray-400">
+                Vista individual de volumen sin montos financieros globales.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <select
+                value={timelinePeriod}
+                onChange={e =>
+                  setTimelinePeriod(e.target.value as "day" | "week" | "month")
+                }
+                className="rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100 focus:border-purple-500"
+              >
+                <option value="day">Diario</option>
+                <option value="week">Semanal</option>
+                <option value="month">Mensual</option>
+              </select>
+              <input
+                type="date"
+                value={timelineRange.startDate}
+                onChange={e =>
+                  setTimelineRange({
+                    ...timelineRange,
+                    startDate: e.target.value,
+                  })
+                }
+                className="rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100 focus:border-purple-500"
+              />
+              <input
+                type="date"
+                value={timelineRange.endDate}
+                onChange={e =>
+                  setTimelineRange({
+                    ...timelineRange,
+                    endDate: e.target.value,
+                  })
+                }
+                className="rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100 focus:border-purple-500"
+              />
+              <button
+                onClick={() => applyQuickRange(setTimelineRange, 7)}
+                className={rangeBtn(isSameRange(timelineRange, 7))}
+              >
+                7d
+              </button>
+              <button
+                onClick={() => applyQuickRange(setTimelineRange, 30)}
+                className={rangeBtn(isSameRange(timelineRange, 30))}
+              >
+                30d
+              </button>
+              <button
+                onClick={() => applyQuickRange(setTimelineRange, 90)}
+                className={rangeBtn(isSameRange(timelineRange, 90))}
+              >
+                90d
+              </button>
+            </div>
+          </div>
+
+          {timelineRangeError && (
+            <p className="mb-2 text-sm text-red-300">{timelineRangeError}</p>
+          )}
+
+          <SalesTimelineChart
+            period={timelinePeriod}
+            startDate={timelineRange.startDate || undefined}
+            endDate={timelineRange.endDate || undefined}
+            reloadKey={reloadKey}
+            hideFinancialData
+          />
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 p-6 md:p-8">

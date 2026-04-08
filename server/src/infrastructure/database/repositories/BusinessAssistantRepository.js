@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 import BusinessAssistantConfig from "../../../../models/BusinessAssistantConfig.js";
 import Category from "../../../../models/Category.js";
-import Product from "../../../../models/Product.js";
-import Sale from "../../../../models/Sale.js";
+import Product from "../models/Product.js";
+import Sale from "../models/Sale.js";
 import { aiService } from "../../services/ai.service.js";
 import { AdvancedAnalyticsRepository } from "./AdvancedAnalyticsRepository.js";
 import stockRepository from "./StockRepository.js";
