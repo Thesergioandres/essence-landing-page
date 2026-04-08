@@ -41,7 +41,9 @@ const resolveEntityId = (value: unknown): string | null => {
   );
 };
 
-const normalizeProduct = (product: Product | null | undefined): Product | null => {
+const normalizeProduct = (
+  product: Product | null | undefined
+): Product | null => {
   if (!product) return null;
 
   const normalizedId = resolveEntityId(product._id);
