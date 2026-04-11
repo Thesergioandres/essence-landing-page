@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import BusinessAssistantConfig from "../../../../models/BusinessAssistantConfig.js";
-import Category from "../../../../models/Category.js";
+import BusinessAssistantConfig from "../models/BusinessAssistantConfig.js";
+import Category from "../models/Category.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
 import { aiService } from "../../services/ai.service.js";

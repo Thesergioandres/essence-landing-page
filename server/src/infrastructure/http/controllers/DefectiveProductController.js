@@ -1,6 +1,6 @@
-import { DefectiveProductRepository } from "../../database/repositories/DefectiveProductRepository.js";
+import { DefectiveProductPersistenceUseCase } from "../../../application/use-cases/repository-gateways/DefectiveProductPersistenceUseCase.js";
 
-const repository = new DefectiveProductRepository();
+const repository = new DefectiveProductPersistenceUseCase();
 
 export class DefectiveProductController {
   async reportAdmin(req, res) {

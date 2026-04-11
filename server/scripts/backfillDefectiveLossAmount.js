@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 
-import DefectiveProduct from "../models/DefectiveProduct.js";
+import DefectiveProduct from "../src/infrastructure/database/models/DefectiveProduct.js";
 import { DefectiveProductRepository } from "../src/infrastructure/database/repositories/DefectiveProductRepository.js";
 
 dotenv.config();

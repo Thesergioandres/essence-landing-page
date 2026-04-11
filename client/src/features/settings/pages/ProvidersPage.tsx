@@ -12,7 +12,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import api from "../../../api/axios";
 import { providerService } from "../services";
 
 interface Provider {
@@ -79,10 +78,10 @@ export default function Providers() {
 
     try {
       if (editingProvider) {
-        await api.put(`/providers/${editingProvider._id}`, formData);
+        await providerService.update(editingProvider._id, formData);
         console.log("[UI INFO] provider_updated", { id: editingProvider._id });
       } else {
-        await api.post("/providers", formData);
+        await providerService.create(formData);
         console.log("[UI INFO] provider_created");
       }
       setShowModal(false);
@@ -114,7 +113,7 @@ export default function Providers() {
     if (!confirm("¿Estás seguro de eliminar este proveedor?")) return;
 
     try {
-      await api.delete(`/providers/${id}`);
+      await providerService.delete(id);
       console.log("[UI INFO] provider_deleted", { id });
       fetchProviders();
     } catch (err) {

@@ -1,4 +1,4 @@
-import Promotion from "../../../../models/Promotion.js";
+import Promotion from "../models/Promotion.js";
 
 export class PromotionRepository {
   async create(data, businessId) {

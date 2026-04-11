@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import AuditLog from "../models/AuditLog.js";
+import AuditLog from "../src/infrastructure/database/models/AuditLog.js";
 
 dotenv.config();
 

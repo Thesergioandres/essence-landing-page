@@ -1,5 +1,5 @@
-import Business from "../models/Business.js";
-import Membership from "../models/Membership.js";
+import Business from "../src/infrastructure/database/models/Business.js";
+import Membership from "../src/infrastructure/database/models/Membership.js";
 import User from "../src/infrastructure/database/models/User.js";
 import {
   getBusinessUsage,

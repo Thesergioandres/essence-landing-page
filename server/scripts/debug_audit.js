@@ -30,8 +30,8 @@ const run = async () => {
 
     console.log("Registering models...");
     const User = (await import("../src/infrastructure/database/models/User.js")).default;
-    const Business = (await import("../models/Business.js")).default;
-    const AuditLog = (await import("../models/AuditLog.js")).default;
+    const Business = (await import("../src/infrastructure/database/models/Business.js")).default;
+    const AuditLog = (await import("../src/infrastructure/database/models/AuditLog.js")).default;
 
     // Import AuditService
     console.log("Importing AuditService...");

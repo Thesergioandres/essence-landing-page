@@ -6,6 +6,7 @@ export {
   gamificationService,
   globalSettingsService,
   issueService,
+  optimizationTestService,
   profitHistoryService,
   uploadService,
   userAccessService,

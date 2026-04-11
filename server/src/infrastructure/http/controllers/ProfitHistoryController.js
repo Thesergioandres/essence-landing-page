@@ -4,7 +4,7 @@
  */
 
 import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
-import ProfitHistoryRepository from "../../database/repositories/ProfitHistoryRepository.js";
+import profitHistoryPersistenceUseCase from "../../../application/use-cases/repository-gateways/ProfitHistoryPersistenceUseCase.js";
 
 class ProfitHistoryController {
   /**
@@ -18,7 +18,7 @@ class ProfitHistoryController {
       const isGodOrSuper =
         req.user?.role === "god" || req.user?.role === "super_admin";
 
-      const history = await ProfitHistoryRepository.getUserHistory(
+      const history = await profitHistoryPersistenceUseCase.getUserHistory(
         userId,
         businessId,
         req.query,
@@ -56,7 +56,7 @@ class ProfitHistoryController {
       const isGodOrSuper =
         req.user?.role === "god" || req.user?.role === "super_admin";
 
-      const balance = await ProfitHistoryRepository.getUserBalance(
+      const balance = await profitHistoryPersistenceUseCase.getUserBalance(
         userId,
         businessId,
         isGodOrSuper,
@@ -90,7 +90,7 @@ class ProfitHistoryController {
     try {
       const businessId = req.businessId;
 
-      const summary = await ProfitHistoryRepository.getSummary(
+      const summary = await profitHistoryPersistenceUseCase.getSummary(
         businessId,
         req.query,
       );
@@ -119,7 +119,7 @@ class ProfitHistoryController {
       const privacy = resolveFinancialPrivacyContext(req);
       const scopedDistributorId = privacy.scopeDistributorId || distributorId;
 
-      const overview = await ProfitHistoryRepository.getAdminOverview(
+      const overview = await profitHistoryPersistenceUseCase.getAdminOverview(
         businessId,
         {
           startDate,
@@ -159,7 +159,7 @@ class ProfitHistoryController {
         });
       }
 
-      const entry = await ProfitHistoryRepository.create({
+      const entry = await profitHistoryPersistenceUseCase.create({
         business: businessId,
         user,
         type,

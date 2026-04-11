@@ -1,8 +1,8 @@
-import Membership from "../../../../models/Membership.js";
+import { BusinessPersistenceUseCase } from "../../../application/use-cases/repository-gateways/BusinessPersistenceUseCase.js";
+import Membership from "../../database/models/Membership.js";
 import User from "../../database/models/User.js";
-import { BusinessRepository } from "../../database/repositories/BusinessRepository.js";
 
-const repository = new BusinessRepository();
+const repository = new BusinessPersistenceUseCase();
 const ALLOWED_MEMBER_ROLES = new Set(["admin", "distribuidor", "viewer"]);
 const ROLES_AUTORIZADOS_COMISION_FIJA = new Set([
   "admin",
@@ -422,6 +422,12 @@ export class BusinessController {
 
   async getMyMemberships(req, res) {
     try {
+      if (!req.user?.id) {
+        return res
+          .status(401)
+          .json({ success: false, message: "No autorizado" });
+      }
+
       const memberships = await repository.getUserMemberships(req.user.id);
       res.json({ success: true, data: { memberships } });
     } catch (error) {

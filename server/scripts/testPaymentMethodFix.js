@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import Business from "../models/Business.js";
+import { RegisterSaleUseCase } from "../src/application/use-cases/sales/RegisterSaleUseCase.js";
+import Business from "../src/infrastructure/database/models/Business.js";
 import Product from "../src/infrastructure/database/models/Product.js";
 import User from "../src/infrastructure/database/models/User.js";
-import { RegisterSaleUseCase } from "../src/application/use-cases/RegisterSaleUseCase.js";
 
 dotenv.config();
 

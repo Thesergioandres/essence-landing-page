@@ -5,13 +5,13 @@ import { fileURLToPath } from "url";
 
 // Models
 import Product from "../src/infrastructure/database/models/Product.js";
-import Promotion from "../models/Promotion.js";
+import Promotion from "../src/infrastructure/database/models/Promotion.js";
 
 // Utils
 import {
   getDistributorCommissionInfo,
   getDistributorProfitPercentage,
-} from "../utils/distributorPricing.js";
+} from "../src/infrastructure/services/distributorPricing.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

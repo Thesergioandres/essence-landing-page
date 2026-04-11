@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
-import Credit from "../../../../models/Credit.js";
-import CreditPayment from "../../../../models/CreditPayment.js";
-import Customer from "../../../../models/Customer.js";
-import Notification from "../../../../models/Notification.js";
+import Credit from "../models/Credit.js";
+import CreditPayment from "../models/CreditPayment.js";
+import Customer from "../models/Customer.js";
+import Notification from "../models/Notification.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
-import { applySaleGamification } from "../../../../utils/gamificationEngine.js";
+import { applySaleGamification } from "../../services/gamification.service.js";
 
 class CreditRepository {
   async create(businessId, data, userId) {

@@ -1,4 +1,4 @@
-import CategoryRepository from "../../database/repositories/CategoryRepository.js";
+import categoryPersistenceUseCase from "../../../application/use-cases/repository-gateways/CategoryPersistenceUseCase.js";
 import AuditService from "../../services/audit.service.js";
 
 /**
@@ -20,7 +20,7 @@ class CategoryController {
         return res.status(400).json({ message: "Falta x-business-id" });
       }
 
-      const categories = await CategoryRepository.findByBusiness(businessId);
+      const categories = await categoryPersistenceUseCase.findByBusiness(businessId);
 
       res.json({
         success: true,
@@ -49,7 +49,7 @@ class CategoryController {
         return res.status(400).json({ message: "Falta x-business-id" });
       }
 
-      const category = await CategoryRepository.findById(
+      const category = await categoryPersistenceUseCase.findById(
         req.params.id,
         businessId,
       );
@@ -96,7 +96,7 @@ class CategoryController {
       }
 
       // Verificar duplicados
-      const existing = await CategoryRepository.findByName(name, businessId);
+      const existing = await categoryPersistenceUseCase.findByName(name, businessId);
       if (existing) {
         return res.status(400).json({
           success: false,
@@ -105,7 +105,7 @@ class CategoryController {
       }
 
       // Crear categoría
-      const category = await CategoryRepository.create({
+      const category = await categoryPersistenceUseCase.create({
         name: name.trim(),
         description: description?.trim() || "",
         business: businessId,
@@ -154,7 +154,7 @@ class CategoryController {
       }
 
       // Verificar que existe
-      const existing = await CategoryRepository.findById(
+      const existing = await categoryPersistenceUseCase.findById(
         req.params.id,
         businessId,
       );
@@ -167,7 +167,7 @@ class CategoryController {
 
       // Verificar nombre duplicado (si se está cambiando)
       if (name && name !== existing.name) {
-        const hasDuplicate = await CategoryRepository.existsDuplicateName(
+        const hasDuplicate = await categoryPersistenceUseCase.existsDuplicateName(
           name,
           businessId,
           req.params.id,
@@ -186,7 +186,7 @@ class CategoryController {
       if (description !== undefined)
         updates.description = description?.trim() || "";
 
-      const category = await CategoryRepository.update(
+      const category = await categoryPersistenceUseCase.update(
         req.params.id,
         businessId,
         updates,
@@ -235,7 +235,7 @@ class CategoryController {
       }
 
       // Verificar que existe
-      const category = await CategoryRepository.findById(
+      const category = await categoryPersistenceUseCase.findById(
         req.params.id,
         businessId,
       );
@@ -247,7 +247,7 @@ class CategoryController {
       }
 
       // Verificar productos asociados
-      const productsCount = await CategoryRepository.countProductsByCategory(
+      const productsCount = await categoryPersistenceUseCase.countProductsByCategory(
         req.params.id,
         businessId,
       );
@@ -260,7 +260,7 @@ class CategoryController {
       }
 
       // Eliminar
-      await CategoryRepository.delete(req.params.id, businessId);
+      await categoryPersistenceUseCase.delete(req.params.id, businessId);
 
       // Auditoría
       await AuditService.log({

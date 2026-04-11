@@ -16,6 +16,38 @@
 import mongoose from "mongoose";
 import { syncLogger } from "../utils/syncLogger.js";
 
+const safeTrim = (value) =>
+  typeof value === "string" ? value.trim().replace(/^"|"$/g, "") : "";
+
+const normalizeMongoUri = (uri) => {
+  const raw = safeTrim(uri);
+  if (!raw) return "";
+
+  try {
+    const parsed = new URL(raw);
+    const protocol = parsed.protocol.toLowerCase();
+    const host = (parsed.hostname || "").toLowerCase();
+    const port = parsed.port || "27017";
+    const dbName = (parsed.pathname || "").replace(/^\/+/, "") || "admin";
+
+    return `${protocol}//${host}:${port}/${dbName}`;
+  } catch {
+    return "";
+  }
+};
+
+const resolveConfiguredProductionUris = (env = process.env) =>
+  [
+    env.MONGO_URI_PROD,
+    env.MONGODB_URI_PROD,
+    env.MONGO_URI_PROD_READ,
+    env.MONGODB_URI_PROD_READ,
+    env.MONGO_PUBLIC_URL,
+    env.RAILWAY_MONGO_PUBLIC_URL,
+  ]
+    .map(safeTrim)
+    .filter(Boolean);
+
 // ============================================================================
 // CONFIGURACIÓN
 // ============================================================================
@@ -215,6 +247,63 @@ function createAsyncBlockingWrapper(originalFn, operationName) {
 
     return originalFn.apply(this, args);
   };
+}
+
+/**
+ * Determina si una URI corresponde al target de producción configurado.
+ * @param {string} targetUri - URI que se desea verificar
+ * @param {Object} env - Variables de entorno
+ * @returns {boolean}
+ */
+export function isProductionUriTarget(targetUri, env = process.env) {
+  const normalizedTarget = normalizeMongoUri(targetUri);
+  if (!normalizedTarget) return false;
+
+  const prodUris = resolveConfiguredProductionUris(env);
+  if (prodUris.length === 0) return false;
+
+  return prodUris.some((candidate) => {
+    const normalizedCandidate = normalizeMongoUri(candidate);
+    return normalizedCandidate && normalizedCandidate === normalizedTarget;
+  });
+}
+
+/**
+ * En entornos no productivos, si una conexión apunta a producción,
+ * registra protección read-only estricta y bloquea escrituras.
+ * @param {mongoose.Connection} connection
+ * @param {string} targetUri
+ * @param {Object} options
+ * @returns {boolean} true si se aplicó la protección
+ */
+export function enforceReadOnlyForProtectedProductionUri(
+  connection,
+  targetUri,
+  options = {},
+) {
+  const nodeEnv = options.nodeEnv || process.env.NODE_ENV || "development";
+  const env = options.env || process.env;
+  const enableGlobalProtection = options.enableGlobalProtection !== false;
+
+  if (nodeEnv === "production") {
+    return false;
+  }
+
+  if (!isProductionUriTarget(targetUri, env)) {
+    return false;
+  }
+
+  registerProtectedConnection(connection);
+
+  if (enableGlobalProtection && !protectionEnabled) {
+    enableWriteProtection();
+  }
+
+  syncLogger.warn(
+    `Muro de Producción activo en ${nodeEnv}: la URI de producción quedó en modo READ-ONLY estricto.`,
+  );
+
+  return true;
 }
 
 // ============================================================================
@@ -573,6 +662,8 @@ export default {
   enableWriteProtection,
   disableWriteProtection,
   isProtectionEnabled,
+  isProductionUriTarget,
+  enforceReadOnlyForProtectedProductionUri,
   getProtectedConnectionsCount,
   createReadOnlyModel,
   writeProtectionMiddleware,

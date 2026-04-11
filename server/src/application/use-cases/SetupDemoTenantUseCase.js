@@ -1,20 +1,21 @@
-import Branch from "../../../models/Branch.js";
-import BranchStock from "../../../models/BranchStock.js";
-import Business from "../../../models/Business.js";
-import Category from "../../../models/Category.js";
-import Customer from "../../../models/Customer.js";
-import DeliveryMethod from "../../../models/DeliveryMethod.js";
-import DistributorStock from "../../../models/DistributorStock.js";
-import Expense from "../../../models/Expense.js";
-import InventoryEntry from "../../../models/InventoryEntry.js";
-import Membership from "../../../models/Membership.js";
-import PaymentMethod from "../../../models/PaymentMethod.js";
-import ProfitHistory from "../../../models/ProfitHistory.js";
 import { AuthService } from "../../domain/services/AuthService.js";
+import Branch from "../../infrastructure/database/models/Branch.js";
+import BranchStock from "../../infrastructure/database/models/BranchStock.js";
+import Business from "../../infrastructure/database/models/Business.js";
+import Category from "../../infrastructure/database/models/Category.js";
+import Customer from "../../infrastructure/database/models/Customer.js";
+import DeliveryMethod from "../../infrastructure/database/models/DeliveryMethod.js";
+import DistributorStock from "../../infrastructure/database/models/DistributorStock.js";
+import Expense from "../../infrastructure/database/models/Expense.js";
+import InventoryEntry from "../../infrastructure/database/models/InventoryEntry.js";
+import Membership from "../../infrastructure/database/models/Membership.js";
+import PaymentMethod from "../../infrastructure/database/models/PaymentMethod.js";
 import Product from "../../infrastructure/database/models/Product.js";
+import ProfitHistory from "../../infrastructure/database/models/ProfitHistory.js";
 import Sale from "../../infrastructure/database/models/Sale.js";
 import User from "../../infrastructure/database/models/User.js";
-import { UserRepository } from "../../infrastructure/database/repositories/UserRepository.js";
+import { jwtTokenService } from "../../infrastructure/services/jwtToken.service.js";
+import { UserPersistenceUseCase } from "./repository-gateways/UserPersistenceUseCase.js";
 import { TeardownDemoTenantUseCase } from "./TeardownDemoTenantUseCase.js";
 
 const DEFAULT_DEMO_TTL_HOURS = 2;
@@ -140,7 +141,7 @@ const normalizeHours = (value) => {
 
 export class SetupDemoTenantUseCase {
   constructor() {
-    this.userRepository = new UserRepository();
+    this.userRepository = new UserPersistenceUseCase();
     this.teardownUseCase = new TeardownDemoTenantUseCase();
   }
 
@@ -577,7 +578,7 @@ export class SetupDemoTenantUseCase {
       const sessionUser = await this.userRepository.findById(
         setupState.adminUser._id,
       );
-      const token = AuthService.generateToken(
+      const token = jwtTokenService.generateAccessToken(
         setupState.adminUser._id,
         setupState.adminUser.role,
         setupState.business._id,

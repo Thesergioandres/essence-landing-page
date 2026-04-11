@@ -22,10 +22,10 @@ const seedProducts = async () => {
     const Product = (
       await import("../src/infrastructure/database/models/Product.js")
     ).default;
-    const Business = (await import("../models/Business.js")).default;
-    const DistributorStock = (await import("../models/DistributorStock.js"))
+    const Business = (await import("../src/infrastructure/database/models/Business.js")).default;
+    const DistributorStock = (await import("../src/infrastructure/database/models/DistributorStock.js"))
       .default;
-    const Category = (await import("../models/Category.js")).default; // Need category for product
+    const Category = (await import("../src/infrastructure/database/models/Category.js")).default; // Need category for product
 
     // 1. Setup Business & User
     let business = await Business.findOne();

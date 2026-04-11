@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
-import SpecialSale from "../../../../models/SpecialSale.js";
-import { SpecialSaleRepository } from "../../database/repositories/SpecialSaleRepository.js";
+import SpecialSale from "../../database/models/SpecialSale.js";
+import { SpecialSalePersistenceUseCase } from "../../../application/use-cases/repository-gateways/SpecialSalePersistenceUseCase.js";
 
-const repository = new SpecialSaleRepository();
+const repository = new SpecialSalePersistenceUseCase();
 
 export class SpecialSaleController {
   async create(req, res) {

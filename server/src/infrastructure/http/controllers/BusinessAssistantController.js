@@ -1,8 +1,8 @@
 import crypto from "crypto";
 import { getBusinessAssistantQueue } from "../../../../jobs/businessAssistant.queue.js";
-import { BusinessAssistantRepository } from "../../database/repositories/BusinessAssistantRepository.js";
+import { BusinessAssistantPersistenceUseCase } from "../../../application/use-cases/repository-gateways/BusinessAssistantPersistenceUseCase.js";
 
-const repository = new BusinessAssistantRepository();
+const repository = new BusinessAssistantPersistenceUseCase();
 const directJobs = new Map();
 
 export class BusinessAssistantController {

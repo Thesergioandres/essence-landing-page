@@ -3,9 +3,9 @@
  * Cumple con requerimiento: [WORKER JOB STARTED/FINISHED] notify_debt_overdue
  */
 import { Queue, Worker } from "bullmq";
-import Credit from "../models/Credit.js";
-import Customer from "../models/Customer.js";
-import Notification from "../models/Notification.js";
+import Credit from "../src/infrastructure/database/models/Credit.js";
+import Customer from "../src/infrastructure/database/models/Customer.js";
+import Notification from "../src/infrastructure/database/models/Notification.js";
 import {
   logWorkerError,
   logWorkerJobFinished,

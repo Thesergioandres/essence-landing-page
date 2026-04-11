@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import api from "../../../api/axios";
 import { useBusiness } from "../../../context/BusinessContext";
+import { optimizationTestService } from "../services/common.service";
 
 export default function TestOptimization() {
   const { businessId } = useBusiness();
@@ -26,8 +26,8 @@ export default function TestOptimization() {
         url = "/products/test-catalog-optimized";
       }
 
-      const response = await api.get(url);
-      setData(response.data);
+      const response = await optimizationTestService.runByUrl(url);
+      setData(response);
     } catch (err: any) {
       console.error(err);
       setError(

@@ -1,6 +1,6 @@
-import Membership from "../../../../models/Membership.js";
-import ProfitHistory from "../../../../models/ProfitHistory.js";
-import SpecialSale from "../../../../models/SpecialSale.js";
+import Membership from "../models/Membership.js";
+import ProfitHistory from "../models/ProfitHistory.js";
+import SpecialSale from "../models/SpecialSale.js";
 
 export class SpecialSaleRepository {
   async create(data, businessId, userId) {

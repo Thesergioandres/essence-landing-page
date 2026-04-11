@@ -10,6 +10,76 @@ const toFiniteNumber = (value) => {
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 export class CommissionPolicyService {
+  static getDefaultBaseCommission() {
+    return DEFAULT_VARIABLE_COMMISSION_PERCENTAGE;
+  }
+
+  static normalizeCommissionRate(
+    rate,
+    fallback = DEFAULT_VARIABLE_COMMISSION_PERCENTAGE,
+  ) {
+    const candidate = toFiniteNumber(rate);
+    const fallbackValue = toFiniteNumber(fallback);
+    const base = candidate !== null ? candidate : fallbackValue;
+    return clamp(
+      base ?? DEFAULT_VARIABLE_COMMISSION_PERCENTAGE,
+      0,
+      MAX_COMMISSION_PERCENTAGE,
+    );
+  }
+
+  static getEvaluationPeriodRange(config, now = new Date()) {
+    let startDate;
+    let endDate;
+
+    const cycle = config?.cycle?.duration;
+    if (cycle === "quarterly") {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      endDate = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+    } else if (cycle === "annual") {
+      startDate = new Date(now.getFullYear(), 0, 1);
+      endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+    } else if (cycle === "custom" && config?.cycle?.customDays) {
+      startDate = new Date(
+        now.getTime() - config.cycle.customDays * 24 * 60 * 60 * 1000,
+      );
+      endDate = now;
+    } else if (config?.evaluationPeriod === "biweekly") {
+      startDate = config.currentPeriodStart || now;
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 15);
+    } else if (config?.evaluationPeriod === "weekly") {
+      const dayOfWeek = now.getDay();
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - dayOfWeek);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+    }
+
+    return { startDate, endDate };
+  }
+
   static resolveDistributorCommission({
     isCommissionFixed = false,
     customCommissionRate = null,

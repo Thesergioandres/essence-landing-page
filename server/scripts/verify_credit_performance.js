@@ -48,9 +48,9 @@ const runVerification = async () => {
     // Dynamic imports to enforce order
     console.log("🔄 Loading models...");
     const User = (await import("../src/infrastructure/database/models/User.js")).default;
-    const Customer = (await import("../models/Customer.js")).default;
-    const Branch = (await import("../models/Branch.js")).default;
-    const Credit = (await import("../models/Credit.js")).default;
+    const Customer = (await import("../src/infrastructure/database/models/Customer.js")).default;
+    const Branch = (await import("../src/infrastructure/database/models/Branch.js")).default;
+    const Credit = (await import("../src/infrastructure/database/models/Credit.js")).default;
     const { getCredits, getCreditsOptimized } =
       await import("../controllers/credit.controller.js");
 

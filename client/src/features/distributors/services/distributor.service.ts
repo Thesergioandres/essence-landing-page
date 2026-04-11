@@ -201,4 +201,26 @@ export const distributorService = {
     console.log("📦 [distributorService.getProducts] Parsed result:", result);
     return result;
   },
+
+  async getPublicCatalog(distributorId: string): Promise<{
+    products: Array<any>;
+    distributor: {
+      name: string;
+      phone?: string;
+      email?: string;
+    } | null;
+    business: {
+      name?: string;
+      logoUrl?: string | null;
+    } | null;
+  }> {
+    const response = await api.get(`/distributors/${distributorId}/catalog`);
+    const payload = response.data?.data || response.data;
+
+    return {
+      products: payload?.products || response.data?.products || [],
+      distributor: payload?.distributor || response.data?.distributor || null,
+      business: payload?.business || response.data?.business || null,
+    };
+  },
 };

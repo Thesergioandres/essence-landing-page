@@ -4,22 +4,22 @@
  */
 
 import mongoose from "mongoose";
-import BranchStock from "../../../../models/BranchStock.js";
-import Credit from "../../../../models/Credit.js";
-import DefectiveProduct from "../../../../models/DefectiveProduct.js";
-import DistributorStock from "../../../../models/DistributorStock.js";
+import BranchStock from "../../database/models/BranchStock.js";
+import Credit from "../../database/models/Credit.js";
+import DefectiveProduct from "../../database/models/DefectiveProduct.js";
+import DistributorStock from "../../database/models/DistributorStock.js";
 import Product from "../../database/models/Product.js";
-import ProfitHistory from "../../../../models/ProfitHistory.js";
-import Promotion from "../../../../models/Promotion.js";
+import ProfitHistory from "../../database/models/ProfitHistory.js";
+import Promotion from "../../database/models/Promotion.js";
 import Sale from "../../database/models/Sale.js";
-import { rollbackSaleGamification } from "../../../../utils/gamificationEngine.js";
+import { rollbackSaleGamification } from "../../services/gamification.service.js";
 import {
   buildPromotionSalesSummary,
   normalizeId,
 } from "../../../utils/promotionMetrics.js";
-import { SaleRepository } from "../../database/repositories/SaleRepository.js";
+import { SalePersistenceUseCase } from "../../../application/use-cases/repository-gateways/SalePersistenceUseCase.js";
 
-const saleRepository = new SaleRepository();
+const saleRepository = new SalePersistenceUseCase();
 
 /**
  * Restore stock for a deleted sale

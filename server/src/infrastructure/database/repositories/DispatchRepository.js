@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-import DispatchRequest from "../../../../models/DispatchRequest.js";
-import DistributorStock from "../../../../models/DistributorStock.js";
-import InventoryMovement from "../../../../models/InventoryMovement.js";
+import DispatchRequest from "../models/DispatchRequest.js";
+import DistributorStock from "../models/DistributorStock.js";
+import InventoryMovement from "../models/InventoryMovement.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
 

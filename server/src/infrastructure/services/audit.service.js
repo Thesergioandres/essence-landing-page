@@ -1,4 +1,4 @@
-import AuditLog from "../../../models/AuditLog.js";
+import AuditLog from "../database/models/AuditLog.js";
 
 /**
  * Servicio para registrar logs de auditoría

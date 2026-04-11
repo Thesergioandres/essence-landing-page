@@ -4,17 +4,17 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 // Models
-import "../models/Branch.js";
-import "../models/Business.js";
-import "../models/Customer.js";
-import "../models/DeliveryMethod.js";
-import DistributorStock from "../models/DistributorStock.js";
-import "../models/PaymentMethod.js";
+import "../src/infrastructure/database/models/Branch.js";
+import "../src/infrastructure/database/models/Business.js";
+import "../src/infrastructure/database/models/Customer.js";
+import "../src/infrastructure/database/models/DeliveryMethod.js";
+import DistributorStock from "../src/infrastructure/database/models/DistributorStock.js";
+import "../src/infrastructure/database/models/PaymentMethod.js";
 import Product from "../src/infrastructure/database/models/Product.js";
 import Sale from "../src/infrastructure/database/models/Sale.js";
 
 // Utils
-import { getDistributorCommissionInfo } from "../utils/distributorPricing.js";
+import { getDistributorCommissionInfo } from "../src/infrastructure/services/distributorPricing.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

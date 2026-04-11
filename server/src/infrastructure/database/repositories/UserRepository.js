@@ -1,5 +1,5 @@
-import Business from "../../../../models/Business.js";
-import Membership from "../../../../models/Membership.js";
+import Business from "../models/Business.js";
+import Membership from "../models/Membership.js";
 import User from "../models/User.js";
 
 export class UserRepository {

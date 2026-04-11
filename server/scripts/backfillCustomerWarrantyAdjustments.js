@@ -1,10 +1,10 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 
-import DefectiveProduct from "../models/DefectiveProduct.js";
-import Membership from "../models/Membership.js";
+import DefectiveProduct from "../src/infrastructure/database/models/DefectiveProduct.js";
+import Membership from "../src/infrastructure/database/models/Membership.js";
 import Product from "../src/infrastructure/database/models/Product.js";
-import ProfitHistory from "../models/ProfitHistory.js";
+import ProfitHistory from "../src/infrastructure/database/models/ProfitHistory.js";
 import Sale from "../src/infrastructure/database/models/Sale.js";
 
 dotenv.config();

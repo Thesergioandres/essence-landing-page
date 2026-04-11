@@ -1,4 +1,4 @@
-import Business from "../models/Business.js";
+import Business from "../src/infrastructure/database/models/Business.js";
 import { TeardownDemoTenantUseCase } from "../src/application/use-cases/TeardownDemoTenantUseCase.js";
 
 const DEFAULT_SWEEP_MS = 5 * 60 * 1000;

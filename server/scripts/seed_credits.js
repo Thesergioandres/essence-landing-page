@@ -2,9 +2,9 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
-import Business from "../models/Business.js";
-import Credit from "../models/Credit.js";
-import Customer from "../models/Customer.js";
+import Business from "../src/infrastructure/database/models/Business.js";
+import Credit from "../src/infrastructure/database/models/Credit.js";
+import Customer from "../src/infrastructure/database/models/Customer.js";
 import User from "../src/infrastructure/database/models/User.js";
 
 const __filename = fileURLToPath(import.meta.url);

@@ -1,6 +1,6 @@
-import { CustomerRepository } from "../../database/repositories/CustomerRepository.js";
+import { CustomerPersistenceUseCase } from "../../../application/use-cases/repository-gateways/CustomerPersistenceUseCase.js";
 
-const repository = new CustomerRepository();
+const repository = new CustomerPersistenceUseCase();
 
 export class CustomerController {
   async create(req, res) {

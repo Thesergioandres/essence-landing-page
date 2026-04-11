@@ -3,7 +3,7 @@
  * Handles delivery method operations in Hexagonal Architecture
  */
 
-import DeliveryMethod from "../../../../models/DeliveryMethod.js";
+import DeliveryMethod from "../models/DeliveryMethod.js";
 
 class DeliveryMethodRepository {
   /**

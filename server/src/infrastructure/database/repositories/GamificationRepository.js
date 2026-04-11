@@ -1,15 +1,15 @@
 import mongoose from "mongoose";
-import DistributorStats from "../../../../models/DistributorStats.js";
-import GamificationConfig from "../../../../models/GamificationConfig.js";
-import Membership from "../../../../models/Membership.js";
-import PeriodWinner from "../../../../models/PeriodWinner.js";
+import DistributorStats from "../models/DistributorStats.js";
+import GamificationConfig from "../models/GamificationConfig.js";
+import Membership from "../models/Membership.js";
+import PeriodWinner from "../models/PeriodWinner.js";
 import Sale from "../models/Sale.js";
-import { getDistributorCommissionInfo } from "../../../../utils/distributorPricing.js";
+import { getDistributorCommissionInfo } from "../../services/distributorPricing.service.js";
 import {
   applySaleGamification,
   computePointsForSale,
   resolveLevelForPoints,
-} from "../../../../utils/gamificationEngine.js";
+} from "../../services/gamification.service.js";
 
 export class GamificationRepository {
   async getBusinessDistributorIds(businessId) {

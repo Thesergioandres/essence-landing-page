@@ -2,7 +2,7 @@
  * Tareas programadas para notificaciones automáticas
  * Ejecutar estas funciones con un cron job (ej: cada hora o diariamente)
  */
-import Business from "../models/Business.js";
+import Business from "../src/infrastructure/database/models/Business.js";
 import NotificationService from "../services/notification.service.js";
 import { logApiError, logApiInfo } from "../utils/logger.js";
 

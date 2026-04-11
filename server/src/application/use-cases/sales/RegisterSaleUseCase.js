@@ -1,25 +1,26 @@
 import { v4 as uuidv4 } from "uuid";
-import Branch from "../../../../models/Branch.js";
-import BranchStock from "../../../../models/BranchStock.js";
-import DefectiveProduct from "../../../../models/DefectiveProduct.js";
-import DistributorStock from "../../../../models/DistributorStock.js";
-import GamificationConfig from "../../../../models/GamificationConfig.js";
-import Membership from "../../../../models/Membership.js";
-import PaymentMethod from "../../../../models/PaymentMethod.js";
-import { getDistributorCommissionInfo } from "../../../../utils/distributorPricing.js";
-import { applySaleGamification } from "../../../../utils/gamificationEngine.js";
 import { CommissionPolicyService } from "../../../domain/services/CommissionPolicyService.js";
 import { FinanceService } from "../../../domain/services/FinanceService.js";
 import { InventoryService } from "../../../domain/services/InventoryService.js";
 import SaleWriteRepositoryAdapter from "../../../infrastructure/adapters/repositories/SaleWriteRepositoryAdapter.js";
-import CreditRepository from "../../../infrastructure/database/repositories/CreditRepository.js";
-import { ProductRepository } from "../../../infrastructure/database/repositories/ProductRepository.js";
-import ProfitHistoryRepository from "../../../infrastructure/database/repositories/ProfitHistoryRepository.js";
+import Branch from "../../../infrastructure/database/models/Branch.js";
+import BranchStock from "../../../infrastructure/database/models/BranchStock.js";
+import DefectiveProduct from "../../../infrastructure/database/models/DefectiveProduct.js";
+import DistributorStock from "../../../infrastructure/database/models/DistributorStock.js";
+import GamificationConfig from "../../../infrastructure/database/models/GamificationConfig.js";
+import Membership from "../../../infrastructure/database/models/Membership.js";
+import PaymentMethod from "../../../infrastructure/database/models/PaymentMethod.js";
+import { getDistributorCommissionInfo } from "../../../infrastructure/services/distributorPricing.service.js";
+import { applySaleGamification } from "../../../infrastructure/services/gamification.service.js";
+import CreditRepository from "../repository-gateways/CreditPersistenceUseCase.js";
+import { ProductPersistenceUseCase } from "../repository-gateways/ProductPersistenceUseCase.js";
+import ProfitHistoryRepository from "../repository-gateways/ProfitHistoryPersistenceUseCase.js";
 export class RegisterSaleUseCase {
   constructor({ saleWriteRepository, productRepository } = {}) {
     this.saleRepository =
       saleWriteRepository || new SaleWriteRepositoryAdapter();
-    this.productRepository = productRepository || new ProductRepository();
+    this.productRepository =
+      productRepository || new ProductPersistenceUseCase();
   }
 
   /**

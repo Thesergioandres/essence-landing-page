@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import Business from "../models/Business.js";
-import PaymentMethod from "../models/PaymentMethod.js";
+import Business from "../src/infrastructure/database/models/Business.js";
+import PaymentMethod from "../src/infrastructure/database/models/PaymentMethod.js";
 
 dotenv.config();
 

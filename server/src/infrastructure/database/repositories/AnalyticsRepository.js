@@ -19,9 +19,9 @@
 // I will check if Sale.js was moved.
 
 import mongoose from "mongoose";
-import BranchStock from "../../../../models/BranchStock.js";
-import DistributorStock from "../../../../models/DistributorStock.js";
-import Membership from "../../../../models/Membership.js";
+import BranchStock from "../models/BranchStock.js";
+import DistributorStock from "../models/DistributorStock.js";
+import Membership from "../models/Membership.js";
 import Product from "../models/Product.js";
 import SaleModel from "../models/Sale.js";
 

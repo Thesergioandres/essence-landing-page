@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Membership from "../models/Membership.js";
+import Membership from "../src/infrastructure/database/models/Membership.js";
 import User from "../src/infrastructure/database/models/User.js";
 
 const uri = process.env.MONGODB_URI || process.env.MONGO_URI;

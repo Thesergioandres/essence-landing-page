@@ -1,6 +1,6 @@
-import { PromotionRepository } from "../../database/repositories/PromotionRepository.js";
+import { PromotionPersistenceUseCase } from "../../../application/use-cases/repository-gateways/PromotionPersistenceUseCase.js";
 
-const repository = new PromotionRepository();
+const repository = new PromotionPersistenceUseCase();
 
 export class PromotionController {
   async create(req, res) {

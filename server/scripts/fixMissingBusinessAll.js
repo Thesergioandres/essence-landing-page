@@ -1,16 +1,16 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import AuditLog from "../models/AuditLog.js";
-import Category from "../models/Category.js";
-import DefectiveProduct from "../models/DefectiveProduct.js";
-import DistributorStock from "../models/DistributorStock.js";
-import Expense from "../models/Expense.js";
+import AuditLog from "../src/infrastructure/database/models/AuditLog.js";
+import Category from "../src/infrastructure/database/models/Category.js";
+import DefectiveProduct from "../src/infrastructure/database/models/DefectiveProduct.js";
+import DistributorStock from "../src/infrastructure/database/models/DistributorStock.js";
+import Expense from "../src/infrastructure/database/models/Expense.js";
 import Product from "../src/infrastructure/database/models/Product.js";
-import ProfitHistory from "../models/ProfitHistory.js";
+import ProfitHistory from "../src/infrastructure/database/models/ProfitHistory.js";
 import Sale from "../src/infrastructure/database/models/Sale.js";
-import SpecialSale from "../models/SpecialSale.js";
-import Stock from "../models/Stock.js";
-import StockTransfer from "../models/StockTransfer.js";
+import SpecialSale from "../src/infrastructure/database/models/SpecialSale.js";
+import Stock from "../src/infrastructure/database/models/Stock.js";
+import StockTransfer from "../src/infrastructure/database/models/StockTransfer.js";
 
 dotenv.config();
 

@@ -1,6 +1,6 @@
-import { IssueRepository } from "../../database/repositories/IssueRepository.js";
+import { IssuePersistenceUseCase } from "../../../application/use-cases/repository-gateways/IssuePersistenceUseCase.js";
 
-const repository = new IssueRepository();
+const repository = new IssuePersistenceUseCase();
 
 export class IssueController {
   async create(req, res) {

@@ -3,8 +3,8 @@
  * Handles customer points operations in Hexagonal Architecture
  */
 
-import Customer from "../../../../models/Customer.js";
-import PointsHistory from "../../../../models/PointsHistory.js";
+import Customer from "../models/Customer.js";
+import PointsHistory from "../models/PointsHistory.js";
 
 class CustomerPointsRepository {
   /**

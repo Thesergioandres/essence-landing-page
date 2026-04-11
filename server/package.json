@@ -72,6 +72,9 @@
     "setupFiles": [
       "<rootDir>/jest.setup.js"
     ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/__tests__/setup.afterEnv.js"
+    ],
     "transform": {},
     "injectGlobals": true,
     "testMatch": [

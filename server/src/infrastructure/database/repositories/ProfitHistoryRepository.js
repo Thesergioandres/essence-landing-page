@@ -4,10 +4,10 @@
  */
 
 import mongoose from "mongoose";
-import Membership from "../../../../models/Membership.js";
-import ProfitHistory from "../../../../models/ProfitHistory.js";
+import Membership from "../models/Membership.js";
+import ProfitHistory from "../models/ProfitHistory.js";
 import Sale from "../models/Sale.js";
-import SpecialSale from "../../../../models/SpecialSale.js";
+import SpecialSale from "../models/SpecialSale.js";
 import User from "../models/User.js";
 
 class ProfitHistoryRepository {

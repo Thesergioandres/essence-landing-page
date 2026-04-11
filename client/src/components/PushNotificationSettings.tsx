@@ -1,7 +1,6 @@
 import { Bell, BellOff, Check, Settings, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import api from "../api/axios";
-import { useBusiness } from "../context/BusinessContext";
+import { pushSubscriptionService } from "../features/notifications/services";
 
 interface PushPreferences {
   sales: boolean;
@@ -12,7 +11,6 @@ interface PushPreferences {
 }
 
 export default function PushNotificationSettings() {
-  const { businessId } = useBusiness();
   const [supported, setSupported] = useState(false);
   const [permission, setPermission] =
     useState<NotificationPermission>("default");
@@ -78,7 +76,7 @@ export default function PushNotificationSettings() {
       await navigator.serviceWorker.ready;
 
       // Obtener la clave pública VAPID del servidor
-      const { data: config } = await api.get("/push/vapid-key");
+      const config = await pushSubscriptionService.getVapidPublicKey();
 
       // Crear suscripción push
       const subscription = await registration.pushManager.subscribe({
@@ -87,14 +85,11 @@ export default function PushNotificationSettings() {
       });
 
       // Enviar suscripción al servidor
-      await api.post(
-        "/push/subscribe",
-        {
-          subscription: subscription.toJSON(),
-          preferences,
-        },
-        { headers: { "x-business-id": businessId } }
-      );
+      await pushSubscriptionService.subscribe({
+        subscription: subscription.toJSON(),
+        preferences,
+        userAgent: navigator.userAgent,
+      });
 
       setSubscribed(true);
       console.log("[UI INFO] push_subscribed");
@@ -113,11 +108,7 @@ export default function PushNotificationSettings() {
 
       if (subscription) {
         await subscription.unsubscribe();
-        await api.post(
-          "/push/unsubscribe",
-          { endpoint: subscription.endpoint },
-          { headers: { "x-business-id": businessId } }
-        );
+        await pushSubscriptionService.unsubscribe(subscription.endpoint);
       }
 
       setSubscribed(false);
@@ -135,11 +126,14 @@ export default function PushNotificationSettings() {
 
     if (subscribed) {
       try {
-        await api.patch(
-          "/push/preferences",
-          { preferences: updated },
-          { headers: { "x-business-id": businessId } }
-        );
+        const subscriptions = await pushSubscriptionService.getSubscriptions();
+        const activeSubscriptionId = subscriptions?.[0]?._id;
+        if (activeSubscriptionId) {
+          await pushSubscriptionService.updatePreferences(
+            activeSubscriptionId,
+            updated
+          );
+        }
         console.log("[UI INFO] push_preferences_updated");
       } catch (error) {
         console.error("[UI ERROR] push_preferences_update_failed", error);

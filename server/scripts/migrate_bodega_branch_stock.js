@@ -3,8 +3,8 @@ import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import Branch from "../models/Branch.js";
-import BranchStock from "../models/BranchStock.js";
+import Branch from "../src/infrastructure/database/models/Branch.js";
+import BranchStock from "../src/infrastructure/database/models/BranchStock.js";
 import Product from "../src/infrastructure/database/models/Product.js";
 
 const __filename = fileURLToPath(import.meta.url);

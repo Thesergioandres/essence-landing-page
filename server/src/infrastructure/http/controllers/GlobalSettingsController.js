@@ -1,4 +1,4 @@
-import Business from "../../../../models/Business.js";
+import Business from "../../database/models/Business.js";
 import User from "../../database/models/User.js";
 import {
   buildBusinessLimitPayload,

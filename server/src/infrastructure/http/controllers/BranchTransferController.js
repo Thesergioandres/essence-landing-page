@@ -1,6 +1,6 @@
-import { BranchTransferRepository } from "../../database/repositories/BranchTransferRepository.js";
+import { BranchTransferPersistenceUseCase } from "../../../application/use-cases/repository-gateways/BranchTransferPersistenceUseCase.js";
 
-const repository = new BranchTransferRepository();
+const repository = new BranchTransferPersistenceUseCase();
 
 export class BranchTransferController {
   async create(req, res) {

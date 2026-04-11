@@ -3,11 +3,7 @@ import {
   sanitizeSaleForFinancialPrivacy,
   sanitizeSalesStatsForFinancialPrivacy,
 } from "../../../../utils/financialPrivacy.js";
-import ListSalesUseCase from "../../../application/use-cases/sales/ListSalesUseCase.js";
-import SaleReadRepositoryAdapter from "../../adapters/repositories/SaleReadRepositoryAdapter.js";
-
-const saleReadRepository = new SaleReadRepositoryAdapter();
-const listSalesUseCase = new ListSalesUseCase(saleReadRepository);
+import { listSalesUseCase } from "../../../application/use-cases/sales/buildListSalesUseCase.js";
 
 /**
  * GET /api/v2/sales

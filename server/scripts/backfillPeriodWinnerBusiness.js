@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import connectDB from "../config/database.js";
-import Membership from "../models/Membership.js";
-import PeriodWinner from "../models/PeriodWinner.js";
+import Membership from "../src/infrastructure/database/models/Membership.js";
+import PeriodWinner from "../src/infrastructure/database/models/PeriodWinner.js";
 
 dotenv.config();
 

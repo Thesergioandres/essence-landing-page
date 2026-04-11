@@ -20,6 +20,8 @@ import fs from "fs";
 import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
+import { installFullProtection } from "../../../security/mongooseWriteProtector.js";
+import { resolveProductionMongoSource } from "../database/utils/resolveProductionMongoUri.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,13 +34,20 @@ dotenv.config({ path: path.join(SERVER_DIR, ".env") });
 // CONFIGURACIÓN
 // ============================================================================
 
+const prodMongoSource = resolveProductionMongoSource(process.env);
+
 const CONFIG = {
-  PROD_URI: process.env.MONGO_URI_PROD_READ,
+  PROD_URI: prodMongoSource.uri,
+  PROD_URI_SOURCE: prodMongoSource.source,
+  PROD_URI_WARNINGS: prodMongoSource.warnings,
   LOCAL_URI:
+    process.env.MONGO_URI_DEV ||
     process.env.MONGO_URI_DEV_LOCAL ||
     "mongodb://localhost:27017/essence_local",
   SKIP_SYNC: process.env.DEV_SKIP_SYNC === "true",
   SKIP_VALIDATION: process.env.DEV_SKIP_VALIDATION === "true",
+  ALLOW_DANGEROUS_PROD_CREDENTIALS:
+    process.env.DEV_ALLOW_DANGEROUS_PROD_CREDENTIALS !== "false",
   FORCE_SYNC: process.env.DEV_FORCE_SYNC !== "false",
   FAST_START_MINUTES: parseInt(process.env.DEV_FAST_START_MINUTES, 10) || 0,
   NODE_ENV: "development",
@@ -99,14 +108,26 @@ function logInfo(message) {
 async function validateProductionPermissions() {
   logSection("PASO 1: VALIDACIÓN DE PERMISOS READ-ONLY");
 
+  if (Array.isArray(CONFIG.PROD_URI_WARNINGS)) {
+    for (const warning of CONFIG.PROD_URI_WARNINGS) {
+      logWarning(warning);
+    }
+  }
+
   if (CONFIG.SKIP_VALIDATION) {
     logWarning("Validación de permisos omitida (DEV_SKIP_VALIDATION=true)");
     return true;
   }
 
   if (!CONFIG.PROD_URI) {
-    logWarning("MONGO_URI_PROD_READ no configurada. Omitiendo validación.");
+    logWarning(
+      "No se encontró URI de producción (MONGO_URI_PROD / MONGO_PUBLIC_URL / RAILWAY_TCP_PROXY_* / MONGO_URI_PROD_READ). Omitiendo validación.",
+    );
     return true;
+  }
+
+  if (CONFIG.PROD_URI_SOURCE) {
+    logInfo(`Fuente de mirror producción detectada: ${CONFIG.PROD_URI_SOURCE}`);
   }
 
   logInfo("Conectando a producción para validar permisos...");
@@ -128,9 +149,13 @@ async function validateProductionPermissions() {
       .asPromise();
 
     try {
+      installFullProtection(connection, { enableGlobalProtection: false });
+
       const result = await validateProdReadOnlyPermissions(connection, {
         strictMode: true,
         exitOnFail: false,
+        allowDangerousRolesIfWriteBlocked:
+          CONFIG.ALLOW_DANGEROUS_PROD_CREDENTIALS,
       });
 
       if (result.isValid) {
@@ -176,7 +201,7 @@ async function runSyncV2() {
   }
 
   if (!CONFIG.PROD_URI) {
-    logWarning("MONGO_URI_PROD_READ no configurada. Omitiendo sincronización.");
+    logWarning("MONGO_URI_PROD no configurada. Omitiendo sincronización.");
     return true;
   }
 

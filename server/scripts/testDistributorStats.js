@@ -2,8 +2,8 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import { SaleRepository } from "../src/infrastructure/database/repositories/SaleRepository.js";
 // Import models to register schemas
-import "../models/Branch.js";
-import "../models/PaymentMethod.js";
+import "../src/infrastructure/database/models/Branch.js";
+import "../src/infrastructure/database/models/PaymentMethod.js";
 import "../src/infrastructure/database/models/Product.js";
 import "../src/infrastructure/database/models/User.js";
 

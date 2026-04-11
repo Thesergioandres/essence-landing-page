@@ -1,4 +1,4 @@
-import Notification from "../../../../models/Notification.js";
+import Notification from "../models/Notification.js";
 
 export class NotificationRepository {
   async findByUser(businessId, userId, userRole, filters = {}) {

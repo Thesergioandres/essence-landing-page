@@ -1,9 +1,9 @@
-import Membership from "../../../../models/Membership.js";
+import Membership from "../../database/models/Membership.js";
 import Product from "../../database/models/Product.js";
-import ProfitHistory from "../../../../models/ProfitHistory.js";
-import Promotion from "../../../../models/Promotion.js";
+import ProfitHistory from "../../database/models/ProfitHistory.js";
+import Promotion from "../../database/models/Promotion.js";
 import Sale from "../../database/models/Sale.js";
-import { applySaleGamification } from "../../../../utils/gamificationEngine.js";
+import { applySaleGamification } from "../../services/gamification.service.js";
 import {
   buildPromotionSalesSummary,
   normalizeId,

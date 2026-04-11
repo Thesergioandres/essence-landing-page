@@ -4,10 +4,10 @@
  */
 
 import { logApiError, logApiInfo } from "../../../../utils/logger.js";
-import GodRepository from "../../database/repositories/GodRepository.js";
-import { SaleRepository } from "../../database/repositories/SaleRepository.js";
+import godPersistenceUseCase from "../../../application/use-cases/repository-gateways/GodPersistenceUseCase.js";
+import { SalePersistenceUseCase } from "../../../application/use-cases/repository-gateways/SalePersistenceUseCase.js";
 
-const saleRepository = new SaleRepository();
+const saleRepository = new SalePersistenceUseCase();
 
 class GodController {
   /**
@@ -16,7 +16,7 @@ class GodController {
    */
   async getMetrics(req, res) {
     try {
-      const metrics = await GodRepository.getGlobalMetrics();
+      const metrics = await godPersistenceUseCase.getGlobalMetrics();
 
       res.json({
         success: true,
@@ -37,7 +37,7 @@ class GodController {
    */
   async getSubscriptions(req, res) {
     try {
-      const subscriptions = await GodRepository.getSubscriptionsSummary();
+      const subscriptions = await godPersistenceUseCase.getSubscriptionsSummary();
 
       res.json({
         success: true,
@@ -58,7 +58,7 @@ class GodController {
    */
   async listUsers(req, res) {
     try {
-      const users = await GodRepository.listUsers();
+      const users = await godPersistenceUseCase.listUsers();
 
       res.json({
         success: true,
@@ -80,7 +80,7 @@ class GodController {
   async findUserByEmail(req, res) {
     try {
       const { email } = req.params;
-      const user = await GodRepository.findUserByEmail(email);
+      const user = await godPersistenceUseCase.findUserByEmail(email);
 
       if (!user) {
         return res.status(404).json({
@@ -111,7 +111,7 @@ class GodController {
       const { id } = req.params;
       const { days = 30, months = 0, years = 0 } = req.body || {};
 
-      const user = await GodRepository.activateUser(id, {
+      const user = await godPersistenceUseCase.activateUser(id, {
         days,
         months,
         years,
@@ -146,7 +146,7 @@ class GodController {
     try {
       const { id } = req.params;
 
-      const user = await GodRepository.suspendUser(id);
+      const user = await godPersistenceUseCase.suspendUser(id);
 
       if (!user) {
         return res.status(404).json({
@@ -179,7 +179,7 @@ class GodController {
     try {
       const { id } = req.params;
 
-      const result = await GodRepository.deleteUser(id, req.user.id);
+      const result = await godPersistenceUseCase.deleteUser(id, req.user.id);
 
       if (!result) {
         return res.status(404).json({
@@ -244,7 +244,7 @@ class GodController {
       const { id } = req.params;
       const { days = 0, months = 0, years = 0 } = req.body || {};
 
-      const user = await GodRepository.extendSubscription(id, {
+      const user = await godPersistenceUseCase.extendSubscription(id, {
         days,
         months,
         years,
@@ -279,7 +279,7 @@ class GodController {
     try {
       const { id } = req.params;
 
-      const user = await GodRepository.pauseSubscription(id);
+      const user = await godPersistenceUseCase.pauseSubscription(id);
 
       if (!user) {
         return res.status(404).json({
@@ -310,7 +310,7 @@ class GodController {
     try {
       const { id } = req.params;
 
-      const user = await GodRepository.resumeSubscription(id);
+      const user = await godPersistenceUseCase.resumeSubscription(id);
 
       if (!user) {
         return res.status(404).json({

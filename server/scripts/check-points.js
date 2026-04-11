@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import DistributorStats from "../models/DistributorStats.js";
+import DistributorStats from "../src/infrastructure/database/models/DistributorStats.js";
 import { userSchema } from "../src/infrastructure/database/models/User.js";
 
 dotenv.config();

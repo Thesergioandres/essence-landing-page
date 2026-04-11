@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import fs from "fs";
 import mongoose from "mongoose";
-import DistributorStats from "../models/DistributorStats.js";
+import DistributorStats from "../src/infrastructure/database/models/DistributorStats.js";
 import Sale from "../src/infrastructure/database/models/Sale.js";
 import { productSchema } from "../src/infrastructure/database/models/Product.js";
 import { GamificationRepository } from "../src/infrastructure/database/repositories/GamificationRepository.js";

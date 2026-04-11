@@ -4,7 +4,7 @@ import {
   isPushSupported,
   showLocalNotification,
   unsubscribeFromPush,
-} from "../services/pushNotification.service";
+} from "../features/notifications/services/pushNotification.service";
 
 interface UsePushNotificationsResult {
   isSupported: boolean;

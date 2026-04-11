@@ -1,7 +1,7 @@
-import Branch from "../../../../models/Branch.js";
-import BranchStock from "../../../../models/BranchStock.js";
-import DistributorStock from "../../../../models/DistributorStock.js";
-import InventoryEntry from "../../../../models/InventoryEntry.js";
+import Branch from "../models/Branch.js";
+import BranchStock from "../models/BranchStock.js";
+import DistributorStock from "../models/DistributorStock.js";
+import InventoryEntry from "../models/InventoryEntry.js";
 import User from "../models/User.js";
 import Product from "../models/Product.js";
 

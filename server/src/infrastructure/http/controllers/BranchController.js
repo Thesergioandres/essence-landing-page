@@ -1,4 +1,4 @@
-import BranchRepository from "../../database/repositories/BranchRepository.js";
+import branchPersistenceUseCase from "../../../application/use-cases/repository-gateways/BranchPersistenceUseCase.js";
 
 class BranchController {
   async getAll(req, res) {
@@ -7,8 +7,8 @@ class BranchController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      await BranchRepository.ensureWarehouse(businessId);
-      const branches = await BranchRepository.findByBusiness(businessId);
+      await branchPersistenceUseCase.ensureWarehouse(businessId);
+      const branches = await branchPersistenceUseCase.findByBusiness(businessId);
       res.json({ success: true, data: branches });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -21,7 +21,7 @@ class BranchController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const branch = await BranchRepository.findById(req.params.id, businessId);
+      const branch = await branchPersistenceUseCase.findById(req.params.id, businessId);
       if (!branch)
         return res
           .status(404)
@@ -51,7 +51,7 @@ class BranchController {
       if (!name?.trim())
         return res.status(400).json({ message: "El nombre es obligatorio" });
 
-      const branch = await BranchRepository.create({
+      const branch = await branchPersistenceUseCase.create({
         business: businessId,
         name: name.trim(),
         address,
@@ -94,7 +94,7 @@ class BranchController {
       if (config !== undefined) updates.config = config;
       if (active !== undefined) updates.active = active;
 
-      const branch = await BranchRepository.update(
+      const branch = await branchPersistenceUseCase.update(
         req.params.id,
         businessId,
         updates,
@@ -116,7 +116,7 @@ class BranchController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const branch = await BranchRepository.delete(req.params.id, businessId);
+      const branch = await branchPersistenceUseCase.delete(req.params.id, businessId);
       if (!branch)
         return res
           .status(404)

@@ -189,6 +189,115 @@ export const segmentService = {
 
 // ==================== CUSTOMER POINTS SERVICE ====================
 export const customerPointsService = {
+  async getCustomerPoints(customerId: string): Promise<{
+    customerId: string;
+    name?: string;
+    currentPoints: number;
+    totalEarned: number;
+    totalRedeemed: number;
+    pointValue: number;
+    monetaryValue: number;
+  }> {
+    const response = await api.get(`/customers/${customerId}/points`);
+    const payload = response.data?.data || response.data;
+
+    return {
+      customerId: payload?.customerId || customerId,
+      name: payload?.name,
+      currentPoints: Number(payload?.currentPoints || 0),
+      totalEarned: Number(payload?.totalEarned || 0),
+      totalRedeemed: Number(payload?.totalRedeemed || 0),
+      pointValue: Number(payload?.pointValue || 0),
+      monetaryValue: Number(payload?.monetaryValue || 0),
+    };
+  },
+
+  async getCustomerPointsHistory(
+    customerId: string,
+    params?: { limit?: number; skip?: number }
+  ): Promise<{
+    history: Array<{
+      type: "earned" | "redeemed" | "bonus" | "adjustment" | "expired";
+      amount: number;
+      balance: number;
+      description: string;
+      createdAt: string;
+    }>;
+    totalRecords: number;
+  }> {
+    const response = await api.get(`/customers/${customerId}/points/history`, {
+      params,
+    });
+    const payload = response.data?.data || response.data;
+
+    return {
+      history: Array.isArray(payload?.records)
+        ? payload.records
+        : Array.isArray(payload?.history)
+          ? payload.history
+          : [],
+      totalRecords: Number(payload?.totalRecords || payload?.total || 0),
+    };
+  },
+
+  async adjustCustomerPoints(
+    customerId: string,
+    data: { amount: number; description: string }
+  ): Promise<{
+    customerId: string;
+    previousPoints: number;
+    adjustment: number;
+    newBalance: number;
+  }> {
+    const response = await api.post(`/customers/${customerId}/points/adjust`, {
+      amount: data.amount,
+      description: data.description,
+      // Compatibilidad hacia atrás con payload legacy
+      points: data.amount,
+      reason: data.description,
+    });
+
+    return response.data?.data || response.data;
+  },
+
+  async validateCustomerRedemption(
+    customerId: string,
+    data: { pointsToRedeem: number; saleTotal?: number }
+  ): Promise<{
+    valid: boolean;
+    errors: string[];
+    redemptionValue: number;
+    customerPoints: number;
+  }> {
+    const response = await api.post(
+      `/customers/${customerId}/points/validate-redemption`,
+      {
+        pointsToRedeem: data.pointsToRedeem,
+        // Compatibilidad hacia atrás con payload legacy
+        points: data.pointsToRedeem,
+        saleTotal: data.saleTotal,
+      }
+    );
+
+    const payload = response.data?.data || response.data;
+    const valid = payload?.valid === true;
+
+    return {
+      valid,
+      errors: valid
+        ? []
+        : Array.isArray(payload?.errors)
+          ? payload.errors
+          : [payload?.message || "No se pudo validar la redención"],
+      redemptionValue: Number(
+        payload?.redemptionValue || data.pointsToRedeem * 0.01 || 0
+      ),
+      customerPoints: Number(
+        payload?.customerPoints || payload?.currentPoints || 0
+      ),
+    };
+  },
+
   async getBalance(customerId: string): Promise<{
     balance: number;
     history: Array<{

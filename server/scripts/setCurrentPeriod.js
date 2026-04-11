@@ -1,6 +1,6 @@
 import "dotenv/config";
 import connectDB from "../config/database.js";
-import GamificationConfig from "../models/GamificationConfig.js";
+import GamificationConfig from "../src/infrastructure/database/models/GamificationConfig.js";
 
 const startArg = process.argv[2];
 if (!startArg) {

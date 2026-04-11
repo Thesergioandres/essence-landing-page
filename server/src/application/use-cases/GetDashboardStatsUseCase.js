@@ -1,9 +1,9 @@
 import { AnalyticsService } from "../../domain/services/AnalyticsService.js";
-import { AnalyticsRepository } from "../../infrastructure/database/repositories/AnalyticsRepository.js";
+import { AnalyticsPersistenceUseCase } from "./repository-gateways/AnalyticsPersistenceUseCase.js";
 
 export class GetDashboardStatsUseCase {
   constructor() {
-    this.repository = new AnalyticsRepository();
+    this.repository = new AnalyticsPersistenceUseCase();
   }
 
   async execute(businessId, startDateStr, endDateStr) {

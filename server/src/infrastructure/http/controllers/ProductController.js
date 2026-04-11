@@ -1,14 +1,14 @@
 import mongoose from "mongoose";
 import { isCloudinaryConfigured } from "../../../../config/cloudinary.js";
-import Business from "../../../../models/Business.js";
-import DistributorStock from "../../../../models/DistributorStock.js";
-import InventoryEntry from "../../../../models/InventoryEntry.js";
+import Business from "../../database/models/Business.js";
+import DistributorStock from "../../database/models/DistributorStock.js";
+import InventoryEntry from "../../database/models/InventoryEntry.js";
 import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
 import { CreateProductUseCase } from "../../../application/use-cases/CreateProductUseCase.js";
 import { UpdateStockUseCase } from "../../../application/use-cases/UpdateStockUseCase.js";
-import { ProductRepository } from "../../database/repositories/ProductRepository.js";
+import { ProductPersistenceUseCase } from "../../../application/use-cases/repository-gateways/ProductPersistenceUseCase.js";
 
-const productRepository = new ProductRepository();
+const productRepository = new ProductPersistenceUseCase();
 
 const sanitizeProductForFinancialPrivacy = (product = {}) => {
   const {
@@ -452,7 +452,7 @@ export const updateProduct = async (req, res, next) => {
 
     console.log("📤 Updating product in database...");
 
-    const repository = new ProductRepository();
+    const repository = new ProductPersistenceUseCase();
     const updatedProduct = await repository.updateWithManualStock(
       id,
       businessId,

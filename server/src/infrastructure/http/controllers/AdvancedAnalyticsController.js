@@ -1,7 +1,7 @@
 import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
-import { AdvancedAnalyticsRepository } from "../../database/repositories/AdvancedAnalyticsRepository.js";
+import { AdvancedAnalyticsPersistenceUseCase } from "../../../application/use-cases/repository-gateways/AdvancedAnalyticsPersistenceUseCase.js";
 
-const repository = new AdvancedAnalyticsRepository();
+const repository = new AdvancedAnalyticsPersistenceUseCase();
 
 const resolveAnalyticsScope = (req) => {
   const privacy = resolveFinancialPrivacyContext(req);

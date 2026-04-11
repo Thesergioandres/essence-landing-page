@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import Expense from "../models/Expense.js";
+import Expense from "../src/infrastructure/database/models/Expense.js";
 
 dotenv.config();
 

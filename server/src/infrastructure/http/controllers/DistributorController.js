@@ -1,6 +1,6 @@
-import { DistributorRepository } from "../../database/repositories/DistributorRepository.js";
+import { DistributorPersistenceUseCase } from "../../../application/use-cases/repository-gateways/DistributorPersistenceUseCase.js";
 
-const repository = new DistributorRepository();
+const repository = new DistributorPersistenceUseCase();
 
 export class DistributorController {
   async create(req, res) {

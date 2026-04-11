@@ -342,6 +342,13 @@ export const globalSettingsService = {
   },
 };
 
+export const optimizationTestService = {
+  async runByUrl(url: string): Promise<any> {
+    const response = await api.get(url);
+    return response.data;
+  },
+};
+
 // ==================== GAMIFICATION SERVICE ====================
 export const gamificationService = {
   async getConfig(): Promise<GamificationConfig> {

@@ -49,14 +49,24 @@ const logApiError = (error: AxiosError) => {
   const status = error.response?.status;
   const url = error.config?.url;
   const method = error.config?.method;
+  const isSessionBootstrapEndpoint =
+    typeof url === "string" &&
+    (url.startsWith("/business/my-memberships") ||
+      url.startsWith("/business/me/memberships") ||
+      url.startsWith("/auth/profile"));
   const isPublicSettingsEndpoint =
     typeof url === "string" && url.includes("/global-settings/public");
   const isExpectedForbiddenEndpoint =
     status === 403 &&
     typeof url === "string" &&
     (url.includes("/advanced-analytics/") || url.startsWith("/providers"));
+  const isExpectedSessionBootstrapAuthError =
+    (status === 401 || status === 403) && isSessionBootstrapEndpoint;
 
   if (status === 401 && isPublicSettingsEndpoint) {
+    return;
+  }
+  if (isExpectedSessionBootstrapAuthError) {
     return;
   }
   if (isExpectedForbiddenEndpoint) {

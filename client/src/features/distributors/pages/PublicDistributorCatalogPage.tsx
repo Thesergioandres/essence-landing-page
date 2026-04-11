@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import api from "../../../api/axios";
 import { useBusiness } from "../../../context/BusinessContext";
 import { useBrandLogo } from "../../../hooks/useBrandLogo";
 import { LoadingSpinner } from "../../../shared/components/ui";
 import { exportCatalogToPDF } from "../../../utils/exportUtils";
+import { distributorService } from "../services/distributor.service";
 import type { Product } from "../../inventory/types/product.types";
 
 interface DistributorInfo {
@@ -38,13 +38,12 @@ export default function PublicDistributorCatalog() {
     const loadCatalog = async () => {
       try {
         setLoading(true);
-        // Obtener productos del distribuidor
-        const response = await api.get(
-          `/distributors/${distributorId}/catalog`
+        const response = await distributorService.getPublicCatalog(
+          distributorId || ""
         );
-        setProducts(response.data.products || []);
-        setDistributor(response.data.distributor || null);
-        setCatalogBusiness(response.data.business || null);
+        setProducts(response.products || []);
+        setDistributor(response.distributor || null);
+        setCatalogBusiness(response.business || null);
       } catch (err: any) {
         setError("No se pudo cargar el catálogo");
         console.error(err);

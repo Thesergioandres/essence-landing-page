@@ -1,4 +1,4 @@
-import ExpenseRepository from "../../database/repositories/ExpenseRepository.js";
+import expensePersistenceUseCase from "../../../application/use-cases/repository-gateways/ExpensePersistenceUseCase.js";
 
 class ExpenseController {
   async create(req, res) {
@@ -8,7 +8,7 @@ class ExpenseController {
         return res.status(400).json({ message: "Falta x-business-id" });
       }
 
-      const expense = await ExpenseRepository.create(
+      const expense = await expensePersistenceUseCase.create(
         businessId,
         req.body,
         req.user.id,
@@ -27,7 +27,7 @@ class ExpenseController {
       }
 
       const { startDate, endDate, type, category } = req.query;
-      const expenses = await ExpenseRepository.findByBusiness(businessId, {
+      const expenses = await expensePersistenceUseCase.findByBusiness(businessId, {
         startDate,
         endDate,
         type,
@@ -54,7 +54,7 @@ class ExpenseController {
           .json({ message: "No autorizado para retirar inventario" });
       }
 
-      const expense = await ExpenseRepository.createInventoryWithdrawal(
+      const expense = await expensePersistenceUseCase.createInventoryWithdrawal(
         businessId,
         req.body,
         req.user.id,
@@ -76,7 +76,7 @@ class ExpenseController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const expense = await ExpenseRepository.update(
+      const expense = await expensePersistenceUseCase.update(
         req.params.id,
         businessId,
         req.body,
@@ -98,7 +98,7 @@ class ExpenseController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const expense = await ExpenseRepository.delete(req.params.id, businessId);
+      const expense = await expensePersistenceUseCase.delete(req.params.id, businessId);
       if (!expense)
         return res
           .status(404)
@@ -117,7 +117,7 @@ class ExpenseController {
         return res.status(400).json({ message: "Falta x-business-id" });
 
       const result =
-        await ExpenseRepository.cleanupOrphanProfitHistory(businessId);
+        await expensePersistenceUseCase.cleanupOrphanProfitHistory(businessId);
       res.json({ success: true, data: result });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });

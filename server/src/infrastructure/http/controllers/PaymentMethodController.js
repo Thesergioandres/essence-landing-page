@@ -3,7 +3,7 @@
  * Handles payment method HTTP requests
  */
 
-import PaymentMethodRepository from "../../database/repositories/PaymentMethodRepository.js";
+import paymentMethodPersistenceUseCase from "../../../application/use-cases/repository-gateways/PaymentMethodPersistenceUseCase.js";
 
 class PaymentMethodController {
   /**
@@ -15,7 +15,7 @@ class PaymentMethodController {
       const businessId = req.businessId;
       const { includeInactive } = req.query;
 
-      const methods = await PaymentMethodRepository.findByBusiness(
+      const methods = await paymentMethodPersistenceUseCase.findByBusiness(
         businessId,
         includeInactive === "true",
       );
@@ -42,7 +42,7 @@ class PaymentMethodController {
       const { id } = req.params;
       const businessId = req.businessId;
 
-      const method = await PaymentMethodRepository.findById(id, businessId);
+      const method = await paymentMethodPersistenceUseCase.findById(id, businessId);
 
       if (!method) {
         return res.status(404).json({
@@ -80,7 +80,7 @@ class PaymentMethodController {
         });
       }
 
-      const method = await PaymentMethodRepository.create(
+      const method = await paymentMethodPersistenceUseCase.create(
         businessId,
         req.body,
         req.user._id,
@@ -109,7 +109,7 @@ class PaymentMethodController {
       const { id } = req.params;
       const businessId = req.businessId;
 
-      const method = await PaymentMethodRepository.update(
+      const method = await paymentMethodPersistenceUseCase.update(
         id,
         businessId,
         req.body,
@@ -146,7 +146,7 @@ class PaymentMethodController {
       const { id } = req.params;
       const businessId = req.businessId;
 
-      const deleted = await PaymentMethodRepository.delete(id, businessId);
+      const deleted = await paymentMethodPersistenceUseCase.delete(id, businessId);
 
       if (!deleted) {
         return res.status(404).json({
@@ -184,7 +184,7 @@ class PaymentMethodController {
         });
       }
 
-      await PaymentMethodRepository.reorder(businessId, order);
+      await paymentMethodPersistenceUseCase.reorder(businessId, order);
 
       res.json({
         success: true,
@@ -207,7 +207,7 @@ class PaymentMethodController {
     try {
       const businessId = req.businessId;
 
-      const methods = await PaymentMethodRepository.initializeDefaults(
+      const methods = await paymentMethodPersistenceUseCase.initializeDefaults(
         businessId,
         req.user._id,
       );

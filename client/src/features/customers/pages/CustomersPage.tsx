@@ -16,7 +16,6 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import api from "../../../api/axios";
 import CustomerPointsCard from "../../../components/CustomerPointsCard";
 import { authService } from "../../auth/services";
 import { customerService } from "../services/customer.service";
@@ -182,7 +181,7 @@ export default function Customers() {
     if (!confirm("¿Estás seguro de eliminar este cliente?")) return;
 
     try {
-      await api.delete(`/customers/${id}`);
+      await customerService.delete(id);
       console.log("[UI INFO] customer_deleted", { id });
       fetchCustomers();
     } catch (err) {
@@ -236,7 +235,7 @@ export default function Customers() {
             setEditingCustomer(null);
             setShowModal(true);
           }}
-          className="flex min-h-[48px] items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white transition hover:bg-purple-700 active:scale-[0.98]"
+          className="flex min-h-12 items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white transition hover:bg-purple-700 active:scale-[0.98]"
         >
           <Plus className="h-5 w-5" />
           Nuevo Cliente

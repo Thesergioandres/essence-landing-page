@@ -1,6 +1,6 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import Category from "../../models/Category.js";
+import Category from "../../src/infrastructure/database/models/Category.js";
 import Product from "../../src/infrastructure/database/models/Product.js";
 
 let mongoServer;

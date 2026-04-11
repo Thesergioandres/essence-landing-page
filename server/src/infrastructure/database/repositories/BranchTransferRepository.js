@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-import Branch from "../../../../models/Branch.js";
-import BranchStock from "../../../../models/BranchStock.js";
-import BranchTransfer from "../../../../models/BranchTransfer.js";
+import Branch from "../models/Branch.js";
+import BranchStock from "../models/BranchStock.js";
+import BranchTransfer from "../models/BranchTransfer.js";
 import Product from "../models/Product.js";
 
 const WAREHOUSE_KEY = "warehouse";

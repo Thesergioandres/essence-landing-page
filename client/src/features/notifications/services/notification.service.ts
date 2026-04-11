@@ -92,10 +92,20 @@ export const notificationService = {
 
 // ==================== PUSH SUBSCRIPTION SERVICE ====================
 export const pushSubscriptionService = {
-  async subscribe(subscription: PushSubscriptionJSON): Promise<{
+  async subscribe(payload: {
+    subscription: PushSubscriptionJSON;
+    preferences?: {
+      sales?: boolean;
+      stock?: boolean;
+      credits?: boolean;
+      subscriptions?: boolean;
+      gamification?: boolean;
+    };
+    userAgent?: string;
+  }): Promise<{
     message: string;
   }> {
-    const response = await api.post("/push/subscribe", subscription);
+    const response = await api.post("/push/subscribe", payload);
     return response.data;
   },
 
@@ -109,7 +119,40 @@ export const pushSubscriptionService = {
   async getVapidPublicKey(): Promise<{
     publicKey: string;
   }> {
-    const response = await api.get("/push/vapid-public-key");
+    const response = await api.get("/push/vapid-key");
+    return response.data?.data || response.data;
+  },
+
+  async getSubscriptions(): Promise<
+    Array<{
+      _id: string;
+      preferences?: {
+        sales?: boolean;
+        stock?: boolean;
+        credits?: boolean;
+        subscriptions?: boolean;
+        gamification?: boolean;
+      };
+    }>
+  > {
+    const response = await api.get("/push/subscriptions");
+    return response.data?.data?.subscriptions || [];
+  },
+
+  async updatePreferences(
+    subscriptionId: string,
+    preferences: {
+      sales?: boolean;
+      stock?: boolean;
+      credits?: boolean;
+      subscriptions?: boolean;
+      gamification?: boolean;
+    }
+  ): Promise<{ message: string }> {
+    const response = await api.put(
+      `/push/subscriptions/${subscriptionId}/preferences`,
+      preferences
+    );
     return response.data;
   },
 

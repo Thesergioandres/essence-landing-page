@@ -1,4 +1,4 @@
-import StockRepository from "../../database/repositories/StockRepository.js";
+import stockPersistenceUseCase from "../../../application/use-cases/repository-gateways/StockPersistenceUseCase.js";
 
 class StockController {
   async assignToDistributor(req, res) {
@@ -8,7 +8,7 @@ class StockController {
         return res.status(400).json({ message: "Falta x-business-id" });
 
       const { distributorId, productId, quantity } = req.body;
-      const result = await StockRepository.assignToDistributor(
+      const result = await stockPersistenceUseCase.assignToDistributor(
         businessId,
         distributorId,
         productId,
@@ -39,7 +39,7 @@ class StockController {
         return res.status(400).json({ message: "Falta x-business-id" });
 
       const { distributorId, productId, quantity } = req.body;
-      const result = await StockRepository.withdrawFromDistributor(
+      const result = await stockPersistenceUseCase.withdrawFromDistributor(
         businessId,
         distributorId,
         productId,
@@ -77,7 +77,7 @@ class StockController {
         return res.status(400).json({ message: "Datos incompletos" });
       }
 
-      const result = await StockRepository.transferBetweenDistributors(
+      const result = await stockPersistenceUseCase.transferBetweenDistributors(
         businessId,
         fromDistributorId,
         toDistributorId,
@@ -120,7 +120,7 @@ class StockController {
         return res.status(400).json({ message: "Datos incompletos" });
       }
 
-      await StockRepository.transferToBranchFromDistributor(
+      await stockPersistenceUseCase.transferToBranchFromDistributor(
         businessId,
         fromDistributorId,
         toBranchId,
@@ -163,7 +163,7 @@ class StockController {
         return res.status(403).json({ message: "Sin permisos" });
       }
 
-      const stock = await StockRepository.getDistributorStock(
+      const stock = await stockPersistenceUseCase.getDistributorStock(
         businessId,
         distributorId,
       );
@@ -181,7 +181,7 @@ class StockController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const stock = await StockRepository.getBranchStock(
+      const stock = await stockPersistenceUseCase.getBranchStock(
         businessId,
         req.params.branchId,
       );
@@ -197,7 +197,7 @@ class StockController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const alerts = await StockRepository.getAlerts(businessId);
+      const alerts = await stockPersistenceUseCase.getAlerts(businessId);
       res.json({ success: true, data: alerts });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -220,7 +220,7 @@ class StockController {
         return res.json({ success: true, branches: [] });
       }
 
-      const branches = await StockRepository.getAllowedBranches(
+      const branches = await stockPersistenceUseCase.getAllowedBranches(
         businessId,
         allowedBranches,
       );
@@ -238,7 +238,7 @@ class StockController {
         return res.status(400).json({ message: "Falta x-business-id" });
 
       // Usar el método dedicado para inventario global (Agregado)
-      const stock = await StockRepository.getGlobalInventory(businessId);
+      const stock = await stockPersistenceUseCase.getGlobalInventory(businessId);
       res.json({ success: true, inventory: stock });
     } catch (error) {
       console.error("Error in getGlobalStock:", error);
@@ -256,7 +256,7 @@ class StockController {
       if (!productId)
         return res.status(400).json({ message: "productId requerido" });
 
-      const result = await StockRepository.reconcileStock(
+      const result = await stockPersistenceUseCase.reconcileStock(
         businessId,
         productId,
       );
@@ -281,7 +281,7 @@ class StockController {
       if (!productId)
         return res.status(400).json({ message: "productId requerido" });
 
-      const result = await StockRepository.syncProductStock(
+      const result = await stockPersistenceUseCase.syncProductStock(
         businessId,
         productId,
       );
@@ -303,7 +303,7 @@ class StockController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const result = await StockRepository.getTransferHistory(
+      const result = await stockPersistenceUseCase.getTransferHistory(
         businessId,
         req.query,
       );

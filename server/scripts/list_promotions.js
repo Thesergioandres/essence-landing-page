@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import "../src/infrastructure/database/models/Product.js";
-import Promotion from "../models/Promotion.js";
+import Promotion from "../src/infrastructure/database/models/Promotion.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

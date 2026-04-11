@@ -1,7 +1,7 @@
 import { AlertCircle, Clock, Gift, Star, TrendingUp } from "lucide-react";
 import { useState } from "react";
-import api from "../api/axios";
 import { useBusiness } from "../context/BusinessContext";
+import { customerPointsService } from "../features/customers/services/customer.service";
 
 interface PointsHistory {
   type: "earned" | "redeemed" | "bonus" | "adjustment" | "expired";
@@ -45,10 +45,9 @@ export default function CustomerPointsCard({
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/customers/${customerId}/points`, {
-        headers: { "x-business-id": businessId },
-      });
-      setPointsData(response.data);
+      const response =
+        await customerPointsService.getCustomerPoints(customerId);
+      setPointsData(response);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Error al cargar puntos";
@@ -61,14 +60,10 @@ export default function CustomerPointsCard({
   const fetchHistory = async () => {
     if (!customerId || !businessId) return;
     try {
-      const response = await api.get(
-        `/customers/${customerId}/points/history`,
-        {
-          headers: { "x-business-id": businessId },
-        }
-      );
+      const response =
+        await customerPointsService.getCustomerPointsHistory(customerId);
       setPointsData(prev =>
-        prev ? { ...prev, history: response.data.history } : null
+        prev ? { ...prev, history: response.history } : null
       );
       setShowHistory(true);
     } catch (err: unknown) {
@@ -84,11 +79,10 @@ export default function CustomerPointsCard({
     setLoading(true);
     setError(null);
     try {
-      await api.post(
-        `/customers/${customerId}/points/adjust`,
-        { points: adjustPoints, reason: adjustReason.trim() },
-        { headers: { "x-business-id": businessId } }
-      );
+      await customerPointsService.adjustCustomerPoints(customerId, {
+        amount: adjustPoints,
+        description: adjustReason.trim(),
+      });
       await fetchPoints();
       setShowAdjust(false);
       setAdjustPoints(0);

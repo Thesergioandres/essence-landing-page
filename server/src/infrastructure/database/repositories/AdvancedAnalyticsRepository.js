@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
-import Credit from "../../../../models/Credit.js";
-import DefectiveProduct from "../../../../models/DefectiveProduct.js";
-import Expense from "../../../../models/Expense.js";
-import Membership from "../../../../models/Membership.js";
-import SpecialSale from "../../../../models/SpecialSale.js";
+import Credit from "../models/Credit.js";
+import DefectiveProduct from "../models/DefectiveProduct.js";
+import Expense from "../models/Expense.js";
+import Membership from "../models/Membership.js";
+import SpecialSale from "../models/SpecialSale.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
 

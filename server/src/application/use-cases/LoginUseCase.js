@@ -1,9 +1,10 @@
 import { AuthService } from "../../domain/services/AuthService.js";
-import { UserRepository } from "../../infrastructure/database/repositories/UserRepository.js";
+import { jwtTokenService } from "../../infrastructure/services/jwtToken.service.js";
+import { UserPersistenceUseCase } from "./repository-gateways/UserPersistenceUseCase.js";
 
 export class LoginUseCase {
   constructor() {
-    this.userRepository = new UserRepository();
+    this.userRepository = new UserPersistenceUseCase();
   }
 
   async execute(email, password) {
@@ -49,8 +50,12 @@ export class LoginUseCase {
     const businessId = primaryMembership?.business?._id || null;
 
     // 4. Generate Token
-    const token = AuthService.generateToken(user._id, user.role, businessId);
-    const refreshToken = AuthService.generateRefreshToken(
+    const token = jwtTokenService.generateAccessToken(
+      user._id,
+      user.role,
+      businessId,
+    );
+    const refreshToken = jwtTokenService.generateRefreshToken(
       user._id,
       user.role,
       businessId,
@@ -68,7 +73,7 @@ export class LoginUseCase {
       memberships, // 🔑 Frontend needs this to know user has businesses
       token,
       refreshToken,
-      refreshExpiresAt: AuthService.getTokenExpirationIso(refreshToken),
+      refreshExpiresAt: jwtTokenService.getTokenExpirationIso(refreshToken),
     };
   }
 }

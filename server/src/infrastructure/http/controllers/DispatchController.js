@@ -1,12 +1,5 @@
 import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
-import ConfirmDispatchReceptionUseCase from "../../../application/use-cases/dispatch/ConfirmDispatchReceptionUseCase.js";
-import CreateDispatchRequestUseCase from "../../../application/use-cases/dispatch/CreateDispatchRequestUseCase.js";
-import GetDispatchByIdUseCase from "../../../application/use-cases/dispatch/GetDispatchByIdUseCase.js";
-import GetDispatchHotSectorsUseCase from "../../../application/use-cases/dispatch/GetDispatchHotSectorsUseCase.js";
-import GetPendingDispatchCountUseCase from "../../../application/use-cases/dispatch/GetPendingDispatchCountUseCase.js";
-import ListDispatchRequestsUseCase from "../../../application/use-cases/dispatch/ListDispatchRequestsUseCase.js";
-import MarkDispatchAsDispatchedUseCase from "../../../application/use-cases/dispatch/MarkDispatchAsDispatchedUseCase.js";
-import DispatchRepositoryAdapter from "../../adapters/repositories/DispatchRepositoryAdapter.js";
+import { dispatchUseCases } from "../../../application/use-cases/dispatch/buildDispatchUseCases.js";
 
 const isDistributorRole = (role) =>
   role === "distribuidor" || role === "distributor";
@@ -23,26 +16,15 @@ const resolveErrorStatus = (error) => {
   return 400;
 };
 
-const dispatchRepository = new DispatchRepositoryAdapter();
-const createDispatchRequestUseCase = new CreateDispatchRequestUseCase(
-  dispatchRepository,
-);
-const listDispatchRequestsUseCase = new ListDispatchRequestsUseCase(
-  dispatchRepository,
-);
-const getDispatchByIdUseCase = new GetDispatchByIdUseCase(dispatchRepository);
-const markDispatchAsDispatchedUseCase = new MarkDispatchAsDispatchedUseCase(
-  dispatchRepository,
-);
-const confirmDispatchReceptionUseCase = new ConfirmDispatchReceptionUseCase(
-  dispatchRepository,
-);
-const getPendingDispatchCountUseCase = new GetPendingDispatchCountUseCase(
-  dispatchRepository,
-);
-const getDispatchHotSectorsUseCase = new GetDispatchHotSectorsUseCase(
-  dispatchRepository,
-);
+const {
+  createDispatchRequestUseCase,
+  listDispatchRequestsUseCase,
+  getDispatchByIdUseCase,
+  markDispatchAsDispatchedUseCase,
+  confirmDispatchReceptionUseCase,
+  getPendingDispatchCountUseCase,
+  getDispatchHotSectorsUseCase,
+} = dispatchUseCases;
 
 export class DispatchController {
   async createRequest(req, res) {
@@ -125,12 +107,10 @@ export class DispatchController {
       });
 
       if (!request) {
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: "Solicitud de despacho no encontrada",
-          });
+        return res.status(404).json({
+          success: false,
+          message: "Solicitud de despacho no encontrada",
+        });
       }
 
       const effectiveRole = req.membership?.role || req.user?.role;
@@ -139,12 +119,10 @@ export class DispatchController {
         String(request.distributor?._id || request.distributor) !==
           String(req.user?._id || req.user?.id)
       ) {
-        return res
-          .status(403)
-          .json({
-            success: false,
-            message: "No tienes acceso a este despacho",
-          });
+        return res.status(403).json({
+          success: false,
+          message: "No tienes acceso a este despacho",
+        });
       }
 
       return res.json({ success: true, data: request });

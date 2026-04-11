@@ -1,8 +1,8 @@
-import { ProductRepository } from "../../infrastructure/database/repositories/ProductRepository.js";
+import { ProductPersistenceUseCase } from "./repository-gateways/ProductPersistenceUseCase.js";
 
 export class CreateProductUseCase {
   constructor() {
-    this.productRepository = new ProductRepository();
+    this.productRepository = new ProductPersistenceUseCase();
   }
 
   /**

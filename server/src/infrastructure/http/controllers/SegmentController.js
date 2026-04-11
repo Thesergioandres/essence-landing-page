@@ -3,7 +3,7 @@
  * Handles customer segment HTTP requests
  */
 
-import SegmentRepository from "../../database/repositories/SegmentRepository.js";
+import segmentPersistenceUseCase from "../../../application/use-cases/repository-gateways/SegmentPersistenceUseCase.js";
 
 class SegmentController {
   /**
@@ -14,7 +14,7 @@ class SegmentController {
     try {
       const businessId = req.businessId;
 
-      const segment = await SegmentRepository.create(
+      const segment = await segmentPersistenceUseCase.create(
         businessId,
         req.body,
         req.user,
@@ -50,7 +50,7 @@ class SegmentController {
     try {
       const businessId = req.businessId;
 
-      const segments = await SegmentRepository.findByBusiness(businessId);
+      const segments = await segmentPersistenceUseCase.findByBusiness(businessId);
 
       res.json({
         success: true,
@@ -74,7 +74,7 @@ class SegmentController {
       const { id } = req.params;
       const businessId = req.businessId;
 
-      const segment = await SegmentRepository.findById(id, businessId);
+      const segment = await segmentPersistenceUseCase.findById(id, businessId);
 
       if (!segment) {
         return res.status(404).json({
@@ -105,7 +105,7 @@ class SegmentController {
       const { id } = req.params;
       const businessId = req.businessId;
 
-      const segment = await SegmentRepository.update(
+      const segment = await segmentPersistenceUseCase.update(
         id,
         businessId,
         req.body,
@@ -142,7 +142,7 @@ class SegmentController {
       const { id } = req.params;
       const businessId = req.businessId;
 
-      const deleted = await SegmentRepository.delete(id, businessId, req.user);
+      const deleted = await segmentPersistenceUseCase.delete(id, businessId, req.user);
 
       if (!deleted) {
         return res.status(404).json({

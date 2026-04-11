@@ -84,6 +84,7 @@ import paymentMethodRoutesV2 from "./src/infrastructure/http/routes/paymentMetho
 import profitHistoryRoutesV2 from "./src/infrastructure/http/routes/profitHistory.routes.v2.js";
 import pushSubscriptionRoutesV2 from "./src/infrastructure/http/routes/pushSubscription.routes.v2.js";
 import segmentRoutesV2 from "./src/infrastructure/http/routes/segment.routes.v2.js";
+import { startProductionBackupWorker } from "./src/infrastructure/jobs/productionBackup.job.js";
 
 // ============================================================================
 // � V2 BATCH 5 - FINAL BOSS (Hexagonal Architecture - 100% Migration)
@@ -153,6 +154,25 @@ if (
   process.env.BACKUP_WORKER_DISABLED !== "true"
 ) {
   startBackupWorker();
+}
+
+// Worker para backup de produccion en local (solo lectura, cada 8h, retencion 15 dias)
+if (
+  process.env.NODE_ENV !== "test" &&
+  process.env.PRODUCTION_BACKUP_WORKER_DISABLED !== "true"
+) {
+  const hasProductionSource = Boolean(
+    process.env.MONGO_URI_PROD ||
+      process.env.MONGODB_URI_PROD ||
+      process.env.MONGO_URI_PROD_READ ||
+      process.env.MONGODB_URI_PROD_READ ||
+      process.env.MONGO_PUBLIC_URL ||
+      process.env.RAILWAY_MONGO_PUBLIC_URL,
+  );
+
+  if (hasProductionSource) {
+    startProductionBackupWorker();
+  }
 }
 
 if (process.env.NODE_ENV !== "test") {

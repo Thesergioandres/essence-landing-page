@@ -3,7 +3,7 @@
  * Handles delivery method HTTP requests
  */
 
-import DeliveryMethodRepository from "../../database/repositories/DeliveryMethodRepository.js";
+import deliveryMethodPersistenceUseCase from "../../../application/use-cases/repository-gateways/DeliveryMethodPersistenceUseCase.js";
 
 class DeliveryMethodController {
   /**
@@ -15,7 +15,7 @@ class DeliveryMethodController {
       const businessId = req.businessId;
       const { includeInactive } = req.query;
 
-      const methods = await DeliveryMethodRepository.findByBusiness(
+      const methods = await deliveryMethodPersistenceUseCase.findByBusiness(
         businessId,
         includeInactive === "true",
       );
@@ -42,7 +42,7 @@ class DeliveryMethodController {
       const { id } = req.params;
       const businessId = req.businessId;
 
-      const method = await DeliveryMethodRepository.findById(id, businessId);
+      const method = await deliveryMethodPersistenceUseCase.findById(id, businessId);
 
       if (!method) {
         return res.status(404).json({
@@ -80,7 +80,7 @@ class DeliveryMethodController {
         });
       }
 
-      const method = await DeliveryMethodRepository.create(
+      const method = await deliveryMethodPersistenceUseCase.create(
         businessId,
         req.body,
         req.user._id,
@@ -109,7 +109,7 @@ class DeliveryMethodController {
       const { id } = req.params;
       const businessId = req.businessId;
 
-      const method = await DeliveryMethodRepository.update(
+      const method = await deliveryMethodPersistenceUseCase.update(
         id,
         businessId,
         req.body,
@@ -146,7 +146,7 @@ class DeliveryMethodController {
       const { id } = req.params;
       const businessId = req.businessId;
 
-      const deleted = await DeliveryMethodRepository.delete(id, businessId);
+      const deleted = await deliveryMethodPersistenceUseCase.delete(id, businessId);
 
       if (!deleted) {
         return res.status(404).json({
@@ -184,7 +184,7 @@ class DeliveryMethodController {
         });
       }
 
-      await DeliveryMethodRepository.reorder(businessId, order);
+      await deliveryMethodPersistenceUseCase.reorder(businessId, order);
 
       res.json({
         success: true,
@@ -207,7 +207,7 @@ class DeliveryMethodController {
     try {
       const businessId = req.businessId;
 
-      const methods = await DeliveryMethodRepository.initializeDefaults(
+      const methods = await deliveryMethodPersistenceUseCase.initializeDefaults(
         businessId,
         req.user._id,
       );

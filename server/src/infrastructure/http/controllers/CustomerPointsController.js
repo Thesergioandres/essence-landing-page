@@ -3,7 +3,7 @@
  * Handles customer points HTTP requests
  */
 
-import CustomerPointsRepository from "../../database/repositories/CustomerPointsRepository.js";
+import customerPointsPersistenceUseCase from "../../../application/use-cases/repository-gateways/CustomerPointsPersistenceUseCase.js";
 
 // Default points configuration
 const DEFAULT_POINTS_CONFIG = {
@@ -22,7 +22,7 @@ class CustomerPointsController {
       const { customerId } = req.params;
       const businessId = req.businessId;
 
-      const balance = await CustomerPointsRepository.getBalance(
+      const balance = await customerPointsPersistenceUseCase.getBalance(
         customerId,
         businessId,
       );
@@ -65,7 +65,7 @@ class CustomerPointsController {
       const businessId = req.businessId;
       const { limit = 50, skip = 0 } = req.query;
 
-      const history = await CustomerPointsRepository.getHistory(
+      const history = await customerPointsPersistenceUseCase.getHistory(
         customerId,
         businessId,
         {
@@ -118,7 +118,7 @@ class CustomerPointsController {
         });
       }
 
-      const result = await CustomerPointsRepository.adjustPoints(
+      const result = await customerPointsPersistenceUseCase.adjustPoints(
         customerId,
         businessId,
         amount,
@@ -171,7 +171,7 @@ class CustomerPointsController {
         });
       }
 
-      const validation = await CustomerPointsRepository.validateRedemption(
+      const validation = await customerPointsPersistenceUseCase.validateRedemption(
         customerId,
         businessId,
         pointsToRedeem,
@@ -200,7 +200,7 @@ class CustomerPointsController {
       const businessId = req.businessId;
       const { daysOld = 365 } = req.body;
 
-      const result = await CustomerPointsRepository.expirePoints(
+      const result = await customerPointsPersistenceUseCase.expirePoints(
         businessId,
         daysOld,
       );

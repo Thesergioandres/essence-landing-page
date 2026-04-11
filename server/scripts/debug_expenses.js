@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
-import Expense from "../models/Expense.js";
+import Expense from "../src/infrastructure/database/models/Expense.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

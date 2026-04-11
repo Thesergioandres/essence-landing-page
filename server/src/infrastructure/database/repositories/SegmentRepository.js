@@ -3,8 +3,8 @@
  * Handles customer segment operations in Hexagonal Architecture
  */
 
-import AuditLog from "../../../../models/AuditLog.js";
-import Segment from "../../../../models/Segment.js";
+import AuditLog from "../models/AuditLog.js";
+import Segment from "../models/Segment.js";
 
 class SegmentRepository {
   /**

@@ -1,6 +1,6 @@
-import { ProviderRepository } from "../../database/repositories/ProviderRepository.js";
+import { ProviderPersistenceUseCase } from "../../../application/use-cases/repository-gateways/ProviderPersistenceUseCase.js";
 
-const repository = new ProviderRepository();
+const repository = new ProviderPersistenceUseCase();
 
 export class ProviderController {
   async create(req, res) {

@@ -7,7 +7,12 @@
 
 import mongoose from "mongoose";
 
-const PROD_URI = process.env.MONGO_URI_PROD_READ;
+const PROD_URI =
+  process.env.MONGO_URI_PROD ||
+  process.env.MONGODB_URI_PROD ||
+  process.env.MONGO_URI_PROD_READ ||
+  process.env.MONGODB_URI_PROD_READ ||
+  "";
 
 /**
  * Lista de métodos HTTP que implican escritura
@@ -81,8 +86,11 @@ export const databaseOperationLogger = (req, res, next) => {
 export const validateDatabaseSecurity = () => {
   console.log("\n🛡️  Validando seguridad de base de datos...\n");
 
-  const localUri = process.env.MONGO_URI_DEV_LOCAL || process.env.MONGODB_URI;
-  const prodUri = process.env.MONGO_URI_PROD_READ;
+  const localUri =
+    process.env.MONGO_URI_DEV ||
+    process.env.MONGO_URI_DEV_LOCAL ||
+    process.env.MONGODB_URI;
+  const prodUri = PROD_URI;
 
   // 1. Verificar que existe URI local
   if (!localUri) {
@@ -98,8 +106,8 @@ export const validateDatabaseSecurity = () => {
       "❌ PELIGRO: Las URIs de producción y local son iguales.\n" +
         "   Esto podría causar escrituras accidentales en producción.\n" +
         "   Configura bases de datos separadas en .env:\n" +
-        "   - MONGO_URI_PROD_READ (solo lectura)\n" +
-        "   - MONGO_URI_DEV_LOCAL (lectura + escritura)",
+        "   - MONGO_URI_PROD (solo lectura en entornos no productivos)\n" +
+        "   - MONGO_URI_DEV (lectura + escritura)",
     );
   }
 

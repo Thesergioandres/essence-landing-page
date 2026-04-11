@@ -1,67 +1,7 @@
 import jwt from "jsonwebtoken";
-import Business from "../models/Business.js";
-import Membership from "../models/Membership.js";
 import User from "../src/infrastructure/database/models/User.js";
+import { checkBusinessOwnerAccess } from "../src/infrastructure/services/authBusinessAccess.service.js";
 import { logAuthError } from "../utils/logger.js";
-
-/**
- * Verifica si el owner del negocio tiene acceso activo.
- * Los distribuidores heredan el acceso del owner de su negocio.
- */
-const checkBusinessOwnerAccess = async (userId) => {
-  try {
-    // Buscar membresía activa del usuario como distribuidor
-    const membership = await Membership.findOne({
-      user: userId,
-      role: "distribuidor",
-      status: "active",
-    }).populate("business");
-
-    if (!membership || !membership.business) {
-      return { hasAccess: true }; // No es distribuidor de ningún negocio, no aplicar restricción
-    }
-
-    // Obtener el owner del negocio
-    const business = await Business.findById(membership.business._id);
-    if (!business || !business.createdBy) {
-      return { hasAccess: true };
-    }
-
-    // Obtener el owner del negocio
-    const owner = await User.findById(business.createdBy);
-    if (!owner) {
-      return { hasAccess: true };
-    }
-
-    // ⭐ GOD BYPASS: Si el dueño del negocio es GOD, permitir acceso siempre
-    console.log(
-      `🔍 Checking Owner Access: OwnerID=${owner._id}, Role=${owner.role}, Status=${owner.status}`,
-    );
-    if (owner.role === "god") {
-      console.log("✅ GOD BYPASS ACTIVATED");
-      return { hasAccess: true };
-    }
-
-    // Verificar estado del owner
-    const ownerExpired =
-      owner.subscriptionExpiresAt &&
-      new Date(owner.subscriptionExpiresAt).getTime() < Date.now();
-
-    if (owner.status !== "active" || ownerExpired) {
-      return {
-        hasAccess: false,
-        reason: ownerExpired ? "owner_expired" : "owner_inactive",
-        ownerStatus: owner.status,
-        ownerExpiresAt: owner.subscriptionExpiresAt,
-      };
-    }
-
-    return { hasAccess: true };
-  } catch (error) {
-    console.error("Error checking business owner access:", error);
-    return { hasAccess: true }; // En caso de error, permitir acceso para no bloquear
-  }
-};
 
 // Proteger rutas - verificar JWT
 export const protect = async (req, res, next) => {

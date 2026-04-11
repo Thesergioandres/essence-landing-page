@@ -53,15 +53,15 @@ const runVerification = async () => {
 
     console.log("Registering models...");
     const User = (await import("../src/infrastructure/database/models/User.js")).default;
-    const Business = (await import("../models/Business.js")).default;
-    const Category = (await import("../models/Category.js")).default;
+    const Business = (await import("../src/infrastructure/database/models/Business.js")).default;
+    const Category = (await import("../src/infrastructure/database/models/Category.js")).default;
     const Product = (await import("../src/infrastructure/database/models/Product.js")).default;
-    const DistributorStock = (await import("../models/DistributorStock.js"))
+    const DistributorStock = (await import("../src/infrastructure/database/models/DistributorStock.js"))
       .default;
     const Sale = (await import("../src/infrastructure/database/models/Sale.js")).default;
-    const GamificationConfig = (await import("../models/GamificationConfig.js"))
+    const GamificationConfig = (await import("../src/infrastructure/database/models/GamificationConfig.js"))
       .default;
-    const AuditLog = (await import("../models/AuditLog.js")).default;
+    const AuditLog = (await import("../src/infrastructure/database/models/AuditLog.js")).default;
     console.log("Models registered.");
 
     // Removed controller import to prevent side-effect crashes

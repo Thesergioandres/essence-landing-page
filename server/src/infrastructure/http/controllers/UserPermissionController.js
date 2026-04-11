@@ -11,9 +11,9 @@ import {
   ResumeSubscriptionUseCase,
   SuspendUserUseCase,
 } from "../../../application/use-cases/UserPermissionUseCases.js";
-import { UserRepository } from "../../database/repositories/UserRepository.js";
+import { UserPersistenceUseCase } from "../../../application/use-cases/repository-gateways/UserPersistenceUseCase.js";
 
-const userRepository = new UserRepository();
+const userRepository = new UserPersistenceUseCase();
 
 /**
  * GET /api/v2/users

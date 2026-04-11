@@ -1,7 +1,7 @@
 import { CheckCircle, Gift, Star, XCircle } from "lucide-react";
 import { useState } from "react";
-import api from "../api/axios";
 import { useBusiness } from "../context/BusinessContext";
+import { customerPointsService } from "../features/customers/services/customer.service";
 
 interface RedemptionValidation {
   valid: boolean;
@@ -39,10 +39,9 @@ export default function PointsRedemption({
   const fetchCustomerPoints = async () => {
     if (!customerId || !businessId) return;
     try {
-      const response = await api.get(`/customers/${customerId}/points`, {
-        headers: { "x-business-id": businessId },
-      });
-      setCustomerPoints(response.data.currentPoints);
+      const response =
+        await customerPointsService.getCustomerPoints(customerId);
+      setCustomerPoints(response.currentPoints);
     } catch {
       setCustomerPoints(0);
     }
@@ -58,16 +57,18 @@ export default function PointsRedemption({
 
     setLoading(true);
     try {
-      const response = await api.post(
-        `/customers/${customerId}/points/validate-redemption`,
-        { points, saleTotal },
-        { headers: { "x-business-id": businessId } }
+      const response = await customerPointsService.validateCustomerRedemption(
+        customerId,
+        {
+          pointsToRedeem: points,
+          saleTotal,
+        }
       );
-      setValidation(response.data);
-      if (response.data.valid) {
+      setValidation(response);
+      if (response.valid) {
         onRedemptionChange({
           points,
-          discountAmount: response.data.redemptionValue,
+          discountAmount: response.redemptionValue,
         });
       } else {
         onRedemptionChange({ points: 0, discountAmount: 0 });
@@ -118,7 +119,7 @@ export default function PointsRedemption({
   }
 
   return (
-    <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-blue-50 p-4 dark:from-purple-900/20 dark:to-blue-900/20">
+    <div className="bg-linear-to-r rounded-lg border from-purple-50 to-blue-50 p-4 dark:from-purple-900/20 dark:to-blue-900/20">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="flex items-center gap-2 font-medium text-purple-700 dark:text-purple-300">
           <Gift className="h-5 w-5" />

@@ -298,6 +298,7 @@ async function testInsertBlocked(connection) {
  * @param {Object} options - Opciones de validación
  * @param {boolean} options.strictMode - Si true, también ejecuta tests de escritura reales
  * @param {boolean} options.exitOnFail - Si true, ejecuta process.exit(1) en caso de fallo
+ * @param {boolean} options.allowDangerousRolesIfWriteBlocked - Permite roles amplios solo si tests de escritura quedan bloqueados por el protector
  * @returns {Promise<Object>} Resultado de la validación
  * @throws {Error} Si se detectan permisos de escritura
  */
@@ -305,7 +306,11 @@ export async function validateProdReadOnlyPermissions(
   prodConnection,
   options = {},
 ) {
-  const { strictMode = true, exitOnFail = true } = options;
+  const {
+    strictMode = true,
+    exitOnFail = true,
+    allowDangerousRolesIfWriteBlocked = false,
+  } = options;
 
   syncLogger.section("VALIDACIÓN DE PERMISOS READ-ONLY");
   syncLogger.info("Verificando permisos de la conexión de producción...");
@@ -319,6 +324,7 @@ export async function validateProdReadOnlyPermissions(
     writeTestPassed: false,
     insertTestPassed: false,
     errors: [],
+    warnings: [],
   };
 
   try {
@@ -343,8 +349,14 @@ export async function validateProdReadOnlyPermissions(
 
     if (roleCheck.hasDangerous) {
       const errorMsg = `🚨 ROLES PELIGROSOS DETECTADOS: ${roleCheck.dangerousRoles.join(", ")}`;
-      syncLogger.error(errorMsg);
-      validationResult.errors.push(errorMsg);
+      if (allowDangerousRolesIfWriteBlocked && strictMode) {
+        const warningMsg = `${errorMsg} (tolerado temporalmente porque se exige bloqueo de escritura por protector)`;
+        syncLogger.warn(warningMsg);
+        validationResult.warnings.push(warningMsg);
+      } else {
+        syncLogger.error(errorMsg);
+        validationResult.errors.push(errorMsg);
+      }
     } else {
       syncLogger.success("No se detectaron roles peligrosos");
     }
@@ -357,8 +369,14 @@ export async function validateProdReadOnlyPermissions(
 
     if (privilegeCheck.hasDangerous) {
       const errorMsg = `🚨 PRIVILEGIOS PELIGROSOS DETECTADOS: ${privilegeCheck.dangerousPrivileges.join(", ")}`;
-      syncLogger.error(errorMsg);
-      validationResult.errors.push(errorMsg);
+      if (allowDangerousRolesIfWriteBlocked && strictMode) {
+        const warningMsg = `${errorMsg} (tolerado temporalmente porque se exige bloqueo de escritura por protector)`;
+        syncLogger.warn(warningMsg);
+        validationResult.warnings.push(warningMsg);
+      } else {
+        syncLogger.error(errorMsg);
+        validationResult.errors.push(errorMsg);
+      }
     } else {
       syncLogger.success("No se detectaron privilegios peligrosos");
     }
@@ -391,8 +409,12 @@ export async function validateProdReadOnlyPermissions(
 
     // 6. Determinar resultado final
     const hasErrors = validationResult.errors.length > 0;
-    const rolesOk = !roleCheck.hasDangerous;
-    const privilegesOk = !privilegeCheck.hasDangerous;
+    const rolesOk =
+      !roleCheck.hasDangerous ||
+      (allowDangerousRolesIfWriteBlocked && strictMode);
+    const privilegesOk =
+      !privilegeCheck.hasDangerous ||
+      (allowDangerousRolesIfWriteBlocked && strictMode);
     const testsOk =
       !strictMode ||
       (validationResult.writeTestPassed && validationResult.insertTestPassed);

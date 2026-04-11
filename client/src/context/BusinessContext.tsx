@@ -203,6 +203,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         ?.response?.status;
       const code = (err as { response?: { status?: number; data?: any } })
         ?.response?.data?.code;
+      const isSessionBootstrapError =
+        status === 401 || status === 403 || status === 404;
 
       // Si el token quedó viejo/ilegal y el backend responde 401, limpia sesión
       // Para 403, solo limpiar si NO es "owner_inactive" ni "pending" (usuario recién registrado)
@@ -226,8 +228,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         setMemberships(prev => (prev.length > 0 ? [] : prev));
       }
 
-      console.error("Error fetching memberships", err);
-      if (!isPendingUser) {
+      if (!isSessionBootstrapError && !isPendingUser) {
+        console.error("Error fetching memberships", err);
         setError("No se pudieron cargar tus negocios");
       }
     } finally {

@@ -1,4 +1,4 @@
-import IssueReport from "../../../../models/IssueReport.js";
+import IssueReport from "../models/IssueReport.js";
 
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
 

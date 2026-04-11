@@ -22,18 +22,57 @@ if (process.env.NODE_ENV !== "test") {
 }
 
 // 2. Verificar base de datos
-const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
-if (!mongoUri) {
-  console.error("❌ ERROR: MONGODB_URI no está definida");
+const safeTrim = (value) =>
+  typeof value === "string" ? value.trim().replace(/^"|"$/g, "") : "";
+
+const normalizeUri = (uri) => {
+  const raw = safeTrim(uri);
+  if (!raw) return "";
+
+  try {
+    const parsed = new URL(raw);
+    const host = (parsed.hostname || "").toLowerCase();
+    const port = parsed.port || "27017";
+    const db = (parsed.pathname || "").replace(/^\/+/, "") || "admin";
+    return `${host}:${port}/${db}`;
+  } catch {
+    return "";
+  }
+};
+
+const testUri =
+  process.env.MONGO_URI_TEST ||
+  process.env.MONGODB_URI_TEST ||
+  process.env.MONGODB_URI ||
+  process.env.MONGO_URI;
+const devUri = process.env.MONGO_URI_DEV || process.env.MONGO_URI_DEV_LOCAL;
+const prodUri =
+  process.env.MONGO_URI_PROD ||
+  process.env.MONGODB_URI_PROD ||
+  process.env.MONGO_URI_PROD_READ ||
+  process.env.MONGODB_URI_PROD_READ;
+
+if (!testUri) {
+  console.error("❌ ERROR: MONGO_URI_TEST no está definida");
   errors++;
-} else if (!mongoUri.includes("_test") && !mongoUri.includes("localhost")) {
+} else if (!testUri.includes("_test") && !testUri.includes("localhost")) {
   console.error(
     "❌ ERROR: Base de datos debe contener '_test' o ser localhost"
   );
-  console.error(`   URI actual: ${mongoUri.substring(0, 60)}...`);
+  console.error(`   URI actual: ${testUri.substring(0, 60)}...`);
+  errors++;
+} else if (prodUri && normalizeUri(prodUri) === normalizeUri(testUri)) {
+  console.error(
+    "❌ ERROR: MONGO_URI_TEST coincide con URI de producción (bloqueado)"
+  );
+  errors++;
+} else if (devUri && normalizeUri(devUri) === normalizeUri(testUri)) {
+  console.error(
+    "❌ ERROR: MONGO_URI_TEST coincide con URI de desarrollo (bloqueado)"
+  );
   errors++;
 } else {
-  console.log("✅ Base de datos correcta: usa '_test'");
+  console.log("✅ Base de datos de test aislada correctamente");
 }
 
 // 3. Verificar puerto diferente

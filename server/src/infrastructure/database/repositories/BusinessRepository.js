@@ -1,5 +1,5 @@
-import Business from "../../../../models/Business.js";
-import Membership from "../../../../models/Membership.js";
+import Business from "../models/Business.js";
+import Membership from "../models/Membership.js";
 import User from "../models/User.js";
 
 export class BusinessRepository {
@@ -179,6 +179,10 @@ export class BusinessRepository {
   }
 
   async getUserMemberships(userId) {
+    if (!userId) {
+      return [];
+    }
+
     const memberships = await Membership.find({
       user: userId,
       status: "active",

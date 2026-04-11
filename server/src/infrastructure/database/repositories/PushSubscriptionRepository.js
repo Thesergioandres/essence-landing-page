@@ -3,7 +3,7 @@
  * Handles push notification subscription operations in Hexagonal Architecture
  */
 
-import PushSubscription from "../../../../models/PushSubscription.js";
+import PushSubscription from "../models/PushSubscription.js";
 
 class PushSubscriptionRepository {
   /**

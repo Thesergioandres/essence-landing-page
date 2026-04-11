@@ -25,6 +25,14 @@ const featureFlagsSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const customLimitsSchema = new mongoose.Schema(
+  {
+    branches: { type: Number, min: 1 },
+    distributors: { type: Number, min: 1 },
+  },
+  { _id: false },
+);
+
 const businessSchema = new mongoose.Schema(
   {
     name: {
@@ -90,6 +98,16 @@ const businessSchema = new mongoose.Schema(
       type: Date,
       default: null,
       index: true,
+    },
+    plan: {
+      type: String,
+      enum: ["starter", "pro", "enterprise"],
+      default: "starter",
+      index: true,
+    },
+    customLimits: {
+      type: customLimitsSchema,
+      default: undefined,
     },
   },
   { timestamps: true },

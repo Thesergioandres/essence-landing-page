@@ -24,8 +24,8 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, "../../.env") });
 
 // Import models
-import Membership from "../../models/Membership.js";
-import ProfitHistory from "../../models/ProfitHistory.js";
+import Membership from "../../src/infrastructure/database/models/Membership.js";
+import ProfitHistory from "../../src/infrastructure/database/models/ProfitHistory.js";
 import Sale from "../../src/infrastructure/database/models/Sale.js";
 
 const DRY_RUN = process.argv.includes("--dry-run");

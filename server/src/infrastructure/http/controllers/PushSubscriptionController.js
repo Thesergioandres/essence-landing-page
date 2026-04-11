@@ -3,7 +3,7 @@
  * Handles push subscription HTTP requests
  */
 
-import PushSubscriptionRepository from "../../database/repositories/PushSubscriptionRepository.js";
+import pushSubscriptionPersistenceUseCase from "../../../application/use-cases/repository-gateways/PushSubscriptionPersistenceUseCase.js";
 
 class PushSubscriptionController {
   /**
@@ -16,7 +16,7 @@ class PushSubscriptionController {
       const userId = req.user._id;
       const businessId = req.businessId;
 
-      const pushSub = await PushSubscriptionRepository.subscribe(
+      const pushSub = await pushSubscriptionPersistenceUseCase.subscribe(
         userId,
         businessId,
         subscription,
@@ -55,7 +55,7 @@ class PushSubscriptionController {
       const { endpoint } = req.body;
       const userId = req.user._id;
 
-      const result = await PushSubscriptionRepository.unsubscribe(
+      const result = await pushSubscriptionPersistenceUseCase.unsubscribe(
         userId,
         endpoint,
       );
@@ -90,7 +90,7 @@ class PushSubscriptionController {
       const businessId = req.businessId;
 
       const subscriptions =
-        await PushSubscriptionRepository.getUserSubscriptions(
+        await pushSubscriptionPersistenceUseCase.getUserSubscriptions(
           userId,
           businessId,
         );
@@ -118,7 +118,7 @@ class PushSubscriptionController {
       const userId = req.user._id;
       const preferences = req.body;
 
-      const subscription = await PushSubscriptionRepository.updatePreferences(
+      const subscription = await pushSubscriptionPersistenceUseCase.updatePreferences(
         userId,
         id,
         preferences,
@@ -154,7 +154,7 @@ class PushSubscriptionController {
       const { id } = req.params;
       const userId = req.user._id;
 
-      const deleted = await PushSubscriptionRepository.delete(userId, id);
+      const deleted = await pushSubscriptionPersistenceUseCase.delete(userId, id);
 
       if (!deleted) {
         return res.status(404).json({
@@ -182,7 +182,7 @@ class PushSubscriptionController {
    */
   async getVapidKey(req, res) {
     try {
-      const publicKey = PushSubscriptionRepository.getVapidPublicKey();
+      const publicKey = pushSubscriptionPersistenceUseCase.getVapidPublicKey();
 
       if (!publicKey) {
         return res.status(500).json({

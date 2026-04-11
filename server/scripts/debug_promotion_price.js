@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import Promotion from "../models/Promotion.js";
+import Promotion from "../src/infrastructure/database/models/Promotion.js";
 
 dotenv.config({ path: "./.env" });
 

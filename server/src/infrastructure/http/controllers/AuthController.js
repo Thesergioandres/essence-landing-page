@@ -1,19 +1,22 @@
-import jwt from "jsonwebtoken";
-import Membership from "../../../../models/Membership.js";
 import { LoginUseCase } from "../../../application/use-cases/LoginUseCase.js";
 import { RegisterUserUseCase } from "../../../application/use-cases/RegisterUserUseCase.js";
-import { AuthService } from "../../../domain/services/AuthService.js";
+import { UserPersistenceUseCase } from "../../../application/use-cases/repository-gateways/UserPersistenceUseCase.js";
+import Membership from "../../database/models/Membership.js";
 import User from "../../database/models/User.js";
-import { UserRepository } from "../../database/repositories/UserRepository.js";
+import { jwtTokenService } from "../../services/jwtToken.service.js";
 import { VALID_BUSINESS_PLANS } from "../../services/planLimits.service.js";
 
-const userRepository = new UserRepository();
+const userRepository = new UserPersistenceUseCase();
 
 /**
  * Get current user profile
  */
 export const getProfile = async (req, res) => {
   try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: "No autorizado" });
+    }
+
     const user = await User.findById(req.user.id).select("-password").lean();
     if (!user) {
       return res
@@ -80,7 +83,7 @@ export const refreshAccessToken = async (req, res) => {
 
     let decoded;
     try {
-      decoded = AuthService.verifyRefreshToken(refreshToken);
+      decoded = jwtTokenService.verifyRefreshToken(refreshToken);
     } catch {
       return res.status(401).json({ message: "Refresh token inválido" });
     }
@@ -104,8 +107,12 @@ export const refreshAccessToken = async (req, res) => {
 
     const businessId = decoded?.businessId || membershipBusinessId || null;
 
-    const token = AuthService.generateToken(user._id, user.role, businessId);
-    const nextRefreshToken = AuthService.generateRefreshToken(
+    const token = jwtTokenService.generateAccessToken(
+      user._id,
+      user.role,
+      businessId,
+    );
+    const nextRefreshToken = jwtTokenService.generateRefreshToken(
       user._id,
       user.role,
       businessId,
@@ -114,7 +121,7 @@ export const refreshAccessToken = async (req, res) => {
     return res.json({
       token,
       refreshToken: nextRefreshToken,
-      refreshExpiresAt: AuthService.getTokenExpirationIso(nextRefreshToken),
+      refreshExpiresAt: jwtTokenService.getTokenExpirationIso(nextRefreshToken),
       user,
     });
   } catch (error) {
@@ -222,7 +229,7 @@ export const impersonateDistributor = async (req, res) => {
       )
       .lean();
 
-    const token = AuthService.generateToken(
+    const token = jwtTokenService.generateAccessToken(
       distributor._id,
       distributor.role,
       businessId,
@@ -265,7 +272,7 @@ export const revertImpersonation = async (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(adminOriginalToken, process.env.JWT_SECRET);
+    const decoded = jwtTokenService.verifyAccessToken(adminOriginalToken);
     const adminId = decoded?.id || decoded?.userId;
     const businessId = decoded?.businessId || req.businessId || null;
 
@@ -300,7 +307,7 @@ export const revertImpersonation = async (req, res) => {
       )
       .lean();
 
-    const restoredToken = AuthService.generateToken(
+    const restoredToken = jwtTokenService.generateAccessToken(
       adminUser._id,
       adminUser.role,
       businessId,

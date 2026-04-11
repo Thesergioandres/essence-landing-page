@@ -9,15 +9,15 @@ dotenv.config({ path: path.join(__dirname, "../.env") });
 
 // Models - Dynamic import to ensure order/registration
 async function registerModels() {
-  await import("../models/Business.js");
+  await import("../src/infrastructure/database/models/Business.js");
   await import("../src/infrastructure/database/models/Product.js"); // Ensure Product is registered
-  await import("../models/Branch.js");
-  await import("../models/Customer.js");
-  await import("../models/PaymentMethod.js");
+  await import("../src/infrastructure/database/models/Branch.js");
+  await import("../src/infrastructure/database/models/Customer.js");
+  await import("../src/infrastructure/database/models/PaymentMethod.js");
   await import("../src/infrastructure/database/models/Sale.js");
-  await import("../models/DistributorStock.js");
+  await import("../src/infrastructure/database/models/DistributorStock.js");
   await import("../src/infrastructure/database/models/User.js");
-  await import("../models/Promotion.js");
+  await import("../src/infrastructure/database/models/Promotion.js");
 }
 
 async function run() {
@@ -35,7 +35,7 @@ async function run() {
     }
 
     const { getDistributorCommissionInfo } =
-      await import("../utils/distributorPricing.js");
+      await import("../src/infrastructure/services/distributorPricing.service.js");
     const Sale = mongoose.model("Sale");
     const Promotion = mongoose.model("Promotion");
     const DistributorStockModel = mongoose.model("DistributorStock");

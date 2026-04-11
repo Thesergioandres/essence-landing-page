@@ -1,9 +1,10 @@
 import { AuthService } from "../../domain/services/AuthService.js";
-import { UserRepository } from "../../infrastructure/database/repositories/UserRepository.js";
+import { jwtTokenService } from "../../infrastructure/services/jwtToken.service.js";
+import { UserPersistenceUseCase } from "./repository-gateways/UserPersistenceUseCase.js";
 
 export class RegisterUserUseCase {
   constructor() {
-    this.userRepository = new UserRepository();
+    this.userRepository = new UserPersistenceUseCase();
   }
 
   async execute(userData) {
@@ -41,12 +42,12 @@ export class RegisterUserUseCase {
     });
 
     // 4. Generate Token (Auto-login after register?)
-    const token = AuthService.generateToken(
+    const token = jwtTokenService.generateAccessToken(
       newUser._id,
       newUser.role,
       newUser.business,
     );
-    const refreshToken = AuthService.generateRefreshToken(
+    const refreshToken = jwtTokenService.generateRefreshToken(
       newUser._id,
       newUser.role,
       newUser.business,
@@ -63,7 +64,7 @@ export class RegisterUserUseCase {
       business: newUser.business,
       token,
       refreshToken,
-      refreshExpiresAt: AuthService.getTokenExpirationIso(refreshToken),
+      refreshExpiresAt: jwtTokenService.getTokenExpirationIso(refreshToken),
     };
   }
 }

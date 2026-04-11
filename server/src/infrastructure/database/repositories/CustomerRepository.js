@@ -1,5 +1,5 @@
-import AuditLog from "../../../../models/AuditLog.js";
-import Customer from "../../../../models/Customer.js";
+import AuditLog from "../models/AuditLog.js";
+import Customer from "../models/Customer.js";
 
 const normalizeEmail = (email) =>
   typeof email === "string" && email.trim()

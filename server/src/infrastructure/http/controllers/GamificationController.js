@@ -1,6 +1,6 @@
-import { GamificationRepository } from "../../database/repositories/GamificationRepository.js";
+import { GamificationPersistenceUseCase } from "../../../application/use-cases/repository-gateways/GamificationPersistenceUseCase.js";
 
-const repository = new GamificationRepository();
+const repository = new GamificationPersistenceUseCase();
 
 export class GamificationController {
   async getAdjustedCommission(req, res) {

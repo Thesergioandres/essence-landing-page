@@ -1,4 +1,4 @@
-import InventoryRepository from "../../database/repositories/InventoryRepository.js";
+import inventoryPersistenceUseCase from "../../../application/use-cases/repository-gateways/InventoryPersistenceUseCase.js";
 
 class InventoryController {
   async createEntry(req, res) {
@@ -7,7 +7,7 @@ class InventoryController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const result = await InventoryRepository.createEntry(
+      const result = await inventoryPersistenceUseCase.createEntry(
         businessId,
         req.body,
         req.user.id,
@@ -25,7 +25,7 @@ class InventoryController {
         return res.status(400).json({ message: "Falta x-business-id" });
 
       const { page, limit, ...filters } = req.query;
-      const result = await InventoryRepository.listEntries(
+      const result = await inventoryPersistenceUseCase.listEntries(
         businessId,
         filters,
         page,
@@ -43,7 +43,7 @@ class InventoryController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const result = await InventoryRepository.updateEntry(
+      const result = await inventoryPersistenceUseCase.updateEntry(
         businessId,
         req.params.id,
         req.body,
@@ -60,7 +60,7 @@ class InventoryController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const result = await InventoryRepository.deleteEntry(
+      const result = await inventoryPersistenceUseCase.deleteEntry(
         businessId,
         req.params.id,
         req.user?.id,

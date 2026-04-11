@@ -25,6 +25,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { validateProdReadOnlyPermissions } from "../../../config/validateProdReadOnlyPermissions.js";
 import { installFullProtection } from "../../../security/mongooseWriteProtector.js";
+import { resolveProductionMongoSource } from "../database/utils/resolveProductionMongoUri.js";
 import { syncLogger } from "../../../utils/syncLogger.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,10 +38,15 @@ dotenv.config({ path: path.join(__dirname, "../../..", ".env") });
 // CONFIGURACIÓN
 // ============================================================================
 
+const prodMongoSource = resolveProductionMongoSource(process.env);
+
 const CONFIG = {
   // URIs de bases de datos
-  PROD_URI: process.env.MONGO_URI_PROD_READ,
+  PROD_URI: prodMongoSource.uri,
+  PROD_URI_SOURCE: prodMongoSource.source,
+  PROD_URI_WARNINGS: prodMongoSource.warnings,
   LOCAL_URI:
+    process.env.MONGO_URI_DEV ||
     process.env.MONGO_URI_DEV_LOCAL ||
     "mongodb://localhost:27017/essence_local",
 
@@ -67,6 +73,8 @@ const CONFIG = {
   FORCE_FULL_SYNC: process.env.SYNC_FORCE_FULL === "true",
   DRY_RUN: process.env.SYNC_DRY_RUN === "true",
   SKIP_VALIDATION: process.env.SYNC_SKIP_VALIDATION === "true",
+  ALLOW_DANGEROUS_PROD_CREDENTIALS:
+    process.env.SYNC_ALLOW_DANGEROUS_PROD_CREDENTIALS !== "false",
 };
 
 /**
@@ -130,7 +138,15 @@ let localConnection = null;
  */
 async function connectToProd() {
   if (!CONFIG.PROD_URI) {
-    throw new Error("MONGO_URI_PROD_READ no está configurada");
+    throw new Error(
+      "No se encontró URI de producción (MONGO_URI_PROD / MONGO_PUBLIC_URL / RAILWAY_TCP_PROXY_* / MONGO_URI_PROD_READ)",
+    );
+  }
+
+  if (CONFIG.PROD_URI_SOURCE) {
+    syncLogger.info(
+      `Fuente de mirror producción detectada: ${CONFIG.PROD_URI_SOURCE}`,
+    );
   }
 
   syncLogger.info("Conectando a producción (read-only)...");
@@ -162,7 +178,7 @@ async function connectToProd() {
  */
 async function connectToLocal() {
   if (!CONFIG.LOCAL_URI) {
-    throw new Error("MONGO_URI_DEV_LOCAL no está configurada");
+    throw new Error("MONGO_URI_DEV no está configurada");
   }
 
   // Validar que no sea la misma URI que producción
@@ -492,6 +508,12 @@ async function runSync() {
     syncLogger.warn("SINCRONIZACIÓN COMPLETA FORZADA: Ignorando timestamps");
   }
 
+  if (Array.isArray(CONFIG.PROD_URI_WARNINGS)) {
+    for (const warning of CONFIG.PROD_URI_WARNINGS) {
+      syncLogger.warn(warning);
+    }
+  }
+
   // Cargar estado
   const state = loadSyncState();
   syncLogger.lastSyncStatus(state.lastSuccessfulSync);
@@ -508,6 +530,8 @@ async function runSync() {
       await validateProdReadOnlyPermissions(prodConnection, {
         strictMode: true,
         exitOnFail: true,
+        allowDangerousRolesIfWriteBlocked:
+          CONFIG.ALLOW_DANGEROUS_PROD_CREDENTIALS,
       });
     } else {
       syncLogger.warn(

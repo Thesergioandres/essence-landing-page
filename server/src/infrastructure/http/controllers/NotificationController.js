@@ -1,6 +1,6 @@
-import { NotificationRepository } from "../../database/repositories/NotificationRepository.js";
+import { NotificationPersistenceUseCase } from "../../../application/use-cases/repository-gateways/NotificationPersistenceUseCase.js";
 
-const repository = new NotificationRepository();
+const repository = new NotificationPersistenceUseCase();
 
 export class NotificationController {
   async getAll(req, res) {

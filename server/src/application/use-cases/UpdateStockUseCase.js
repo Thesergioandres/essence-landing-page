@@ -1,9 +1,9 @@
 import { InventoryService } from "../../domain/services/InventoryService.js";
-import { ProductRepository } from "../../infrastructure/database/repositories/ProductRepository.js";
+import { ProductPersistenceUseCase } from "./repository-gateways/ProductPersistenceUseCase.js";
 
 export class UpdateStockUseCase {
   constructor() {
-    this.productRepository = new ProductRepository();
+    this.productRepository = new ProductPersistenceUseCase();
   }
 
   /**

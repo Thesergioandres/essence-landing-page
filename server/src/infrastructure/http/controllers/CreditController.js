@@ -1,4 +1,4 @@
-import CreditRepository from "../../database/repositories/CreditRepository.js";
+import creditPersistenceUseCase from "../../../application/use-cases/repository-gateways/CreditPersistenceUseCase.js";
 
 class CreditController {
   async create(req, res) {
@@ -7,7 +7,7 @@ class CreditController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const credit = await CreditRepository.create(
+      const credit = await creditPersistenceUseCase.create(
         businessId,
         req.body,
         req.user.id,
@@ -32,7 +32,7 @@ class CreditController {
         page = 1,
         limit = 50,
       } = req.query;
-      const result = await CreditRepository.findByBusiness(
+      const result = await creditPersistenceUseCase.findByBusiness(
         businessId,
         { status, customerId, branchId, overdue },
         page,
@@ -62,13 +62,13 @@ class CreditController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const credit = await CreditRepository.findById(req.params.id, businessId);
+      const credit = await creditPersistenceUseCase.findById(req.params.id, businessId);
       if (!credit)
         return res
           .status(404)
           .json({ success: false, message: "Crédito no encontrado" });
 
-      const payments = await CreditRepository.findPayments(credit._id);
+      const payments = await creditPersistenceUseCase.findPayments(credit._id);
 
       let profitInfo = null;
       if (credit.sale) {
@@ -132,7 +132,7 @@ class CreditController {
         return res.status(400).json({ message: "Falta x-business-id" });
 
       const { amount, notes } = req.body;
-      const result = await CreditRepository.registerPayment(
+      const result = await creditPersistenceUseCase.registerPayment(
         req.params.id,
         amount,
         notes,
@@ -151,7 +151,7 @@ class CreditController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const metrics = await CreditRepository.getMetrics(businessId);
+      const metrics = await creditPersistenceUseCase.getMetrics(businessId);
       res.json({ success: true, data: metrics });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });

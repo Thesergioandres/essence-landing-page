@@ -1,4 +1,4 @@
-import Provider from "../../../../models/Provider.js";
+import Provider from "../models/Provider.js";
 
 export class ProviderRepository {
   async create(data) {

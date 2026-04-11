@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const connectDB =
   require("../config/database.js").default || require("../config/database.js");
 const GamificationConfig =
-  require("../models/GamificationConfig.js").default ||
-  require("../models/GamificationConfig.js");
+  require("../src/infrastructure/database/models/GamificationConfig.js").default ||
+  require("../src/infrastructure/database/models/GamificationConfig.js");
 
 const startArg = process.argv[2];
 if (!startArg) {

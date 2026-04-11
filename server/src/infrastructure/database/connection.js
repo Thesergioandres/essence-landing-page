@@ -2,10 +2,56 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
+import {
+  enforceReadOnlyForProtectedProductionUri,
+  isProductionUriTarget,
+} from "../../../security/mongooseWriteProtector.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_ROOT = path.resolve(__dirname, "../../../");
+
+const safeTrim = (value) =>
+  typeof value === "string" ? value.trim().replace(/^"|"$/g, "") : "";
+
+const resolveFirstMongoUri = (...candidates) => {
+  for (const candidate of candidates) {
+    const value = safeTrim(candidate);
+    if (value) {
+      return value;
+    }
+  }
+  return "";
+};
+
+const resolveMongoUris = () => {
+  const prodUri = resolveFirstMongoUri(
+    process.env.MONGO_URI_PROD,
+    process.env.MONGODB_URI_PROD,
+    process.env.MONGO_URI_PROD_READ,
+    process.env.MONGODB_URI_PROD_READ,
+    process.env.MONGO_PUBLIC_URL,
+    process.env.RAILWAY_MONGO_PUBLIC_URL,
+  );
+
+  const devUri = resolveFirstMongoUri(
+    process.env.MONGO_URI_DEV,
+    process.env.MONGO_URI_DEV_LOCAL,
+    process.env.MONGODB_URI,
+    process.env.MONGO_URI,
+    "mongodb://127.0.0.1:27017/essence_local",
+  );
+
+  const testUri = resolveFirstMongoUri(
+    process.env.MONGO_URI_TEST,
+    process.env.MONGODB_URI_TEST,
+    process.env.MONGODB_URI,
+    process.env.MONGO_URI,
+    "mongodb://127.0.0.1:27017/essence_test",
+  );
+
+  return { prodUri, devUri, testUri };
+};
 
 // Cargar el .env correcto según el entorno
 // Ajustamos paths para que busque en la raiz del servidor
@@ -53,51 +99,52 @@ mongoose.connection.on("error", (err) => {
 
 export const connectDB = async () => {
   try {
-    // En desarrollo, preferir la BD local; en producción usar MONGODB_URI
-    let mongoUri;
+    const { prodUri, devUri, testUri } = resolveMongoUris();
+    const nodeEnv = process.env.NODE_ENV || "development";
+    let mongoUri = "";
 
-    if (process.env.NODE_ENV === "development") {
-      // Prioridad: MONGO_URI_DEV_LOCAL > MONGODB_URI > MONGO_URI
-      mongoUri =
-        process.env.MONGO_URI_DEV_LOCAL ||
-        process.env.MONGODB_URI ||
-        process.env.MONGO_URI;
+    if (nodeEnv === "development") {
+      mongoUri = devUri;
 
-      if (process.env.MONGO_URI_DEV_LOCAL) {
+      if (process.env.MONGO_URI_DEV || process.env.MONGO_URI_DEV_LOCAL) {
         console.log("📍 Usando base de datos LOCAL (desarrollo)");
       }
-    } else if (process.env.NODE_ENV === "test") {
-      // En test: priorizar URIs de test para aislamiento
-      mongoUri =
-        process.env.MONGODB_URI_TEST ||
-        process.env.MONGO_URI_TEST ||
-        process.env.MONGODB_URI ||
-        process.env.MONGO_URI;
+    } else if (nodeEnv === "test") {
+      mongoUri = testUri;
     } else {
-      // En producción: usar la URI principal
-      mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+      mongoUri = resolveFirstMongoUri(
+        process.env.MONGODB_URI,
+        process.env.MONGO_URI,
+        prodUri,
+      );
     }
 
     if (!mongoUri) {
       throw new Error(
-        "MONGODB_URI no está definida en las variables de entorno",
+        "No se encontró URI de MongoDB para el entorno actual (MONGO_URI_PROD / MONGO_URI_DEV / MONGO_URI_TEST)",
+      );
+    }
+
+    const nonProductionPointsToProd =
+      nodeEnv !== "production" && isProductionUriTarget(mongoUri, process.env);
+
+    if (nonProductionPointsToProd) {
+      console.warn(
+        "⚠️  Entorno no productivo conectado a URI de producción: se forzará modo READ-ONLY estricto.",
       );
     }
 
     let dbName = resolveDbName(mongoUri);
 
     // SEGURIDAD: Verificar que en producción no se use la BD de test
-    if (
-      process.env.NODE_ENV === "production" &&
-      (mongoUri.includes("_test") || dbName.includes("_test"))
-    ) {
+    if (nodeEnv === "production" && (mongoUri.includes("_test") || dbName.includes("_test"))) {
       throw new Error(
         "❌ PELIGRO: Intentando usar base de datos de test en producción",
       );
     }
 
     // SEGURIDAD: Verificar que en test no se use la BD de producción
-    if (process.env.NODE_ENV === "test" && !dbName.includes("_test")) {
+    if (nodeEnv === "test" && !dbName.includes("_test")) {
       console.warn(
         "⚠️ URI de test sin sufijo _test detectada. Forzando dbName=essence_test para aislamiento.",
       );
@@ -116,11 +163,21 @@ export const connectDB = async () => {
     };
 
     const conn = await mongoose.connect(mongoUri, mongoOptions);
+
+    if (nonProductionPointsToProd) {
+      enforceReadOnlyForProtectedProductionUri(conn.connection, mongoUri, {
+        nodeEnv,
+      });
+      console.warn(
+        "🛡️ Muro de Producción activo: escritura bloqueada en esta conexión.",
+      );
+    }
+
     console.log(`✅ MongoDB conectado: ${conn.connection.host}`);
     console.log(`🗄️ Base de datos activa: ${conn.connection.name}`);
     console.log(`🧱 autoIndex: ${autoIndex ? "habilitado" : "deshabilitado"}`);
 
-    if (process.env.NODE_ENV === "test") {
+    if (nodeEnv === "test") {
       console.log(`🧪 Modo TEST: usando base de datos ${conn.connection.name}`);
     }
   } catch (error) {

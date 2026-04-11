@@ -1,5 +1,5 @@
 import { GetDashboardStatsUseCase } from "../../../application/use-cases/GetDashboardStatsUseCase.js";
-import { AnalyticsRepository } from "../../database/repositories/AnalyticsRepository.js";
+import { AnalyticsPersistenceUseCase } from "../../../application/use-cases/repository-gateways/AnalyticsPersistenceUseCase.js";
 
 /**
  * Get Dashboard Stats
@@ -31,7 +31,7 @@ export const getEstimatedProfit = async (req, res, next) => {
   try {
     const businessId = req.headers["x-business-id"] || req.user.business;
 
-    const repository = new AnalyticsRepository();
+    const repository = new AnalyticsPersistenceUseCase();
     const estimatedProfit = await repository.getEstimatedProfit(businessId);
 
     res.json({
@@ -52,7 +52,7 @@ export const getDistributorEstimatedProfit = async (req, res, next) => {
     const businessId = req.headers["x-business-id"] || req.user.business;
     const distributorId = req.user.id || req.user._id;
 
-    const repository = new AnalyticsRepository();
+    const repository = new AnalyticsPersistenceUseCase();
     const estimatedProfit = await repository.getDistributorEstimatedProfit(
       businessId,
       distributorId,

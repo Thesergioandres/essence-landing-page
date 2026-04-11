@@ -1,7 +1,7 @@
-import Branch from "../../../models/Branch.js";
-import Business from "../../../models/Business.js";
-import GlobalSettings from "../../../models/GlobalSettings.js";
-import Membership from "../../../models/Membership.js";
+import Branch from "../database/models/Branch.js";
+import Business from "../database/models/Business.js";
+import GlobalSettings from "../database/models/GlobalSettings.js";
+import Membership from "../database/models/Membership.js";
 
 const VALID_PLANS = ["starter", "pro", "enterprise"];
 
@@ -176,19 +176,32 @@ export const buildBusinessLimitPayload = async (businessDocOrId) => {
 };
 
 export const listPublicPlans = async () => {
-  const settings = await ensureGlobalSettings();
-  return {
-    maintenanceMode: Boolean(settings.maintenanceMode),
-    defaultPlan: settings.defaultPlan || "starter",
-    plans: {
-      starter: mergePlanWithDefaults("starter", settings.plans?.starter),
-      pro: mergePlanWithDefaults("pro", settings.plans?.pro),
-      enterprise: mergePlanWithDefaults(
-        "enterprise",
-        settings.plans?.enterprise,
-      ),
-    },
-  };
+  try {
+    const settings = await ensureGlobalSettings();
+    return {
+      maintenanceMode: Boolean(settings.maintenanceMode),
+      defaultPlan: settings.defaultPlan || "starter",
+      plans: {
+        starter: mergePlanWithDefaults("starter", settings.plans?.starter),
+        pro: mergePlanWithDefaults("pro", settings.plans?.pro),
+        enterprise: mergePlanWithDefaults(
+          "enterprise",
+          settings.plans?.enterprise,
+        ),
+      },
+    };
+  } catch (error) {
+    console.error("[planLimits] Fallback listPublicPlans:", error?.message);
+    return {
+      maintenanceMode: false,
+      defaultPlan: "starter",
+      plans: {
+        starter: { ...defaultPlans.starter },
+        pro: { ...defaultPlans.pro },
+        enterprise: { ...defaultPlans.enterprise },
+      },
+    };
+  }
 };
 
 export const VALID_BUSINESS_PLANS = VALID_PLANS;

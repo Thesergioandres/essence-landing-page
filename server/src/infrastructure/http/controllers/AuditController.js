@@ -1,6 +1,6 @@
-import { AuditRepository } from "../../database/repositories/AuditRepository.js";
+import { AuditPersistenceUseCase } from "../../../application/use-cases/repository-gateways/AuditPersistenceUseCase.js";
 
-const repository = new AuditRepository();
+const repository = new AuditPersistenceUseCase();
 
 export class AuditController {
   async getLogs(req, res) {

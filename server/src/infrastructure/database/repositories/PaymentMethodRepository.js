@@ -3,7 +3,7 @@
  * Handles payment method operations in Hexagonal Architecture
  */
 
-import PaymentMethod from "../../../../models/PaymentMethod.js";
+import PaymentMethod from "../models/PaymentMethod.js";
 
 class PaymentMethodRepository {
   /**
