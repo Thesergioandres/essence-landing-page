@@ -57,18 +57,18 @@ if (!testUri) {
   errors++;
 } else if (!testUri.includes("_test") && !testUri.includes("localhost")) {
   console.error(
-    "❌ ERROR: Base de datos debe contener '_test' o ser localhost"
+    "❌ ERROR: Base de datos debe contener '_test' o ser localhost",
   );
   console.error(`   URI actual: ${testUri.substring(0, 60)}...`);
   errors++;
 } else if (prodUri && normalizeUri(prodUri) === normalizeUri(testUri)) {
   console.error(
-    "❌ ERROR: MONGO_URI_TEST coincide con URI de producción (bloqueado)"
+    "❌ ERROR: MONGO_URI_TEST coincide con URI de producción (bloqueado)",
   );
   errors++;
 } else if (devUri && normalizeUri(devUri) === normalizeUri(testUri)) {
   console.error(
-    "❌ ERROR: MONGO_URI_TEST coincide con URI de desarrollo (bloqueado)"
+    "❌ ERROR: MONGO_URI_TEST coincide con URI de desarrollo (bloqueado)",
   );
   errors++;
 } else {
@@ -79,7 +79,7 @@ if (!testUri) {
 const port = process.env.PORT;
 if (port === "5000") {
   console.warn(
-    "⚠️  ADVERTENCIA: Puerto 5000 es el de producción, usar otro puerto para tests"
+    "⚠️  ADVERTENCIA: Puerto 5000 es el de producción, usar otro puerto para tests",
   );
 } else {
   console.log(`✅ Puerto correcto: ${port}`);

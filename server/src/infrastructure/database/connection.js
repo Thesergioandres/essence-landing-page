@@ -137,7 +137,10 @@ export const connectDB = async () => {
     let dbName = resolveDbName(mongoUri);
 
     // SEGURIDAD: Verificar que en producción no se use la BD de test
-    if (nodeEnv === "production" && (mongoUri.includes("_test") || dbName.includes("_test"))) {
+    if (
+      nodeEnv === "production" &&
+      (mongoUri.includes("_test") || dbName.includes("_test"))
+    ) {
       throw new Error(
         "❌ PELIGRO: Intentando usar base de datos de test en producción",
       );

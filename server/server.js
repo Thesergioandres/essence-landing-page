@@ -163,11 +163,11 @@ if (
 ) {
   const hasProductionSource = Boolean(
     process.env.MONGO_URI_PROD ||
-      process.env.MONGODB_URI_PROD ||
-      process.env.MONGO_URI_PROD_READ ||
-      process.env.MONGODB_URI_PROD_READ ||
-      process.env.MONGO_PUBLIC_URL ||
-      process.env.RAILWAY_MONGO_PUBLIC_URL,
+    process.env.MONGODB_URI_PROD ||
+    process.env.MONGO_URI_PROD_READ ||
+    process.env.MONGODB_URI_PROD_READ ||
+    process.env.MONGO_PUBLIC_URL ||
+    process.env.RAILWAY_MONGO_PUBLIC_URL,
   );
 
   if (hasProductionSource) {

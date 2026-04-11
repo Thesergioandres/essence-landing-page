@@ -44,8 +44,7 @@ const buildBackupFileName = () => {
 };
 
 const cleanupOldBackups = () => {
-  const cutoffMs =
-    Date.now() - BACKUP_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  const cutoffMs = Date.now() - BACKUP_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
   const files = fs
     .readdirSync(BACKUP_DIR)
@@ -212,7 +211,9 @@ export const startProductionBackupWorker = () => {
   }
 
   if (process.env.PRODUCTION_BACKUP_WORKER_DISABLED === "true") {
-    console.log("[PROD BACKUP] Worker disabled by PRODUCTION_BACKUP_WORKER_DISABLED=true.");
+    console.log(
+      "[PROD BACKUP] Worker disabled by PRODUCTION_BACKUP_WORKER_DISABLED=true.",
+    );
     return;
   }
 

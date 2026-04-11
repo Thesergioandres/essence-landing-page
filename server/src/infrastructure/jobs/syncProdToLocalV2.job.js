@@ -25,8 +25,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { validateProdReadOnlyPermissions } from "../../../config/validateProdReadOnlyPermissions.js";
 import { installFullProtection } from "../../../security/mongooseWriteProtector.js";
-import { resolveProductionMongoSource } from "../database/utils/resolveProductionMongoUri.js";
 import { syncLogger } from "../../../utils/syncLogger.js";
+import { resolveProductionMongoSource } from "../database/utils/resolveProductionMongoUri.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

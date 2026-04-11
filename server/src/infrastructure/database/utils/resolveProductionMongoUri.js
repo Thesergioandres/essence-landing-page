@@ -12,7 +12,9 @@ const isLikelyRailwayHttpDomain = (host = "") =>
   host.endsWith(".up.railway.app");
 
 const runningInsideRailway = (env) =>
-  Boolean(env.RAILWAY_ENVIRONMENT || env.RAILWAY_PROJECT_ID || env.RAILWAY_SERVICE_ID);
+  Boolean(
+    env.RAILWAY_ENVIRONMENT || env.RAILWAY_PROJECT_ID || env.RAILWAY_SERVICE_ID,
+  );
 
 const appendDefaultDbAndReadPreference = (uri, dbName = DEFAULT_DB_NAME) => {
   try {
