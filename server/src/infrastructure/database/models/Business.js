@@ -53,6 +53,22 @@ const businessSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    slug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      minlength: 3,
+      maxlength: 80,
+      unique: true,
+      index: true,
+      sparse: true,
+      match: [/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug inválido"],
+    },
+    landingTemplate: {
+      type: String,
+      enum: ["modern", "minimal", "bold"],
+      default: "modern",
+    },
     contactEmail: {
       type: String,
       trim: true,

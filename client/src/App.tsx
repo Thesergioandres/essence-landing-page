@@ -40,6 +40,9 @@ const AccountHold = lazy(() => import("./features/auth/pages/AccountHoldPage"));
 const Home = lazy(() => import("./features/common/pages/HomePage"));
 const Manual = lazy(() => import("./features/common/pages/ManualPage"));
 const Catalog = lazy(() => import("./features/common/pages/CatalogPage"));
+const PublicStorefront = lazy(
+  () => import("./features/public-storefront/pages/PublicStorefrontPage")
+);
 const GodPanel = lazy(() => import("./features/common/pages/GodPanelPage"));
 const DefectiveReports = lazy(
   () => import("./features/common/pages/DefectiveReportsPage")
@@ -347,6 +350,7 @@ export default function App() {
                     path="/distributor-catalog/:distributorId"
                     element={<PublicDistributorCatalog />}
                   />
+                  <Route path="/tienda/:slug" element={<PublicStorefront />} />
 
                   {/* Auth Routes */}
                   <Route path="/login" element={<Login />} />

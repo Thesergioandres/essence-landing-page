@@ -2,7 +2,76 @@ import Business from "../models/Business.js";
 import Membership from "../models/Membership.js";
 import User from "../models/User.js";
 
+const LANDING_TEMPLATES = new Set(["modern", "minimal", "bold"]);
+const SLUG_MAX_LENGTH = 80;
+
+const normalizeSlug = (rawValue = "") =>
+  String(rawValue || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, SLUG_MAX_LENGTH);
+
+const buildSlugCandidate = (baseSlug, counter = 1) => {
+  const suffix = counter > 1 ? `-${counter}` : "";
+  const maxBaseLength = Math.max(1, SLUG_MAX_LENGTH - suffix.length);
+  const normalizedBase = baseSlug.slice(0, maxBaseLength).replace(/-+$/g, "");
+  const safeBase = normalizedBase || "negocio";
+  return `${safeBase}${suffix}`;
+};
+
 export class BusinessRepository {
+  async generateUniqueSlug({ desiredSlug, fallbackName, excludeBusinessId }) {
+    const baseSlug = normalizeSlug(desiredSlug || fallbackName || "negocio");
+
+    if (!baseSlug || baseSlug.length < 3) {
+      const error = new Error("Slug inválido");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    let counter = 1;
+    while (counter < 2000) {
+      const candidate = buildSlugCandidate(baseSlug, counter);
+      const existing = await Business.findOne({
+        slug: candidate,
+        ...(excludeBusinessId ? { _id: { $ne: excludeBusinessId } } : {}),
+      })
+        .select("_id")
+        .lean();
+
+      if (!existing) {
+        return candidate;
+      }
+
+      counter += 1;
+    }
+
+    const error = new Error("No se pudo generar un slug único");
+    error.statusCode = 500;
+    throw error;
+  }
+
+  validateLandingTemplate(template) {
+    if (template === undefined || template === null) {
+      return "modern";
+    }
+
+    const normalizedTemplate = String(template).trim().toLowerCase();
+    if (!LANDING_TEMPLATES.has(normalizedTemplate)) {
+      const error = new Error("Plantilla de landing inválida");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return normalizedTemplate;
+  }
+
   async create(data, creatorId) {
     const exists = await Business.findOne({ name: data.name });
     if (exists) {
@@ -10,6 +79,12 @@ export class BusinessRepository {
       err.statusCode = 400;
       throw err;
     }
+
+    const uniqueSlug = await this.generateUniqueSlug({
+      desiredSlug: data.slug,
+      fallbackName: data.name,
+    });
+    const landingTemplate = this.validateLandingTemplate(data.landingTemplate);
 
     const creatorUser = await User.findById(creatorId)
       .select("selectedPlan")
@@ -26,6 +101,8 @@ export class BusinessRepository {
       description: data.description,
       logoUrl: data.logoUrl,
       logoPublicId: data.logoPublicId,
+      slug: uniqueSlug,
+      landingTemplate,
       contactEmail: data.contactEmail,
       contactPhone: data.contactPhone,
       contactWhatsapp: data.contactWhatsapp,
@@ -54,6 +131,37 @@ export class BusinessRepository {
   async findById(id) {
     const business = await Business.findById(id).lean();
     return business;
+  }
+
+  async findBySlug(slug) {
+    const normalizedSlug = normalizeSlug(slug);
+    if (!normalizedSlug) {
+      return null;
+    }
+
+    return Business.findOne({ slug: normalizedSlug, status: "active" }).lean();
+  }
+
+  async checkSlugAvailability(slug, excludeBusinessId) {
+    const normalizedSlug = normalizeSlug(slug);
+
+    if (!normalizedSlug || normalizedSlug.length < 3) {
+      const error = new Error("El slug debe tener al menos 3 caracteres");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const existing = await Business.findOne({
+      slug: normalizedSlug,
+      ...(excludeBusinessId ? { _id: { $ne: excludeBusinessId } } : {}),
+    })
+      .select("_id")
+      .lean();
+
+    return {
+      slug: normalizedSlug,
+      available: !existing,
+    };
   }
 
   async findWithMembers(id) {
@@ -85,6 +193,18 @@ export class BusinessRepository {
     if (data.logoUrl !== undefined) business.logoUrl = data.logoUrl;
     if (data.logoPublicId !== undefined)
       business.logoPublicId = data.logoPublicId;
+    if (data.slug !== undefined || data.name !== undefined) {
+      business.slug = await this.generateUniqueSlug({
+        desiredSlug: data.slug,
+        fallbackName: data.name ?? business.name,
+        excludeBusinessId: id,
+      });
+    }
+    if (data.landingTemplate !== undefined) {
+      business.landingTemplate = this.validateLandingTemplate(
+        data.landingTemplate,
+      );
+    }
     if (data.plan !== undefined) business.plan = data.plan;
     if (data.customLimits !== undefined)
       business.customLimits = data.customLimits;

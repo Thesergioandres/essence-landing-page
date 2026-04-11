@@ -42,6 +42,8 @@ export interface BusinessPlanSnapshot {
 export interface Business {
   _id: string;
   name: string;
+  slug?: string;
+  landingTemplate?: "modern" | "minimal" | "bold";
   description?: string;
   contactEmail?: string;
   contactPhone?: string;
@@ -101,6 +103,8 @@ export interface Membership {
   business: {
     _id: string;
     name: string;
+    slug?: string;
+    landingTemplate?: "modern" | "minimal" | "bold";
     description?: string;
     plan?: "starter" | "pro" | "enterprise";
     config?: BusinessConfig;

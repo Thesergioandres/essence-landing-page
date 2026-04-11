@@ -25,6 +25,13 @@ router.get(
 );
 
 router.get("/", protect, (req, res) => controller.getAll(req, res));
+router.get(
+  "/:id/slug-availability",
+  protect,
+  businessContext,
+  requirePermission({ module: "config", action: "update" }),
+  (req, res) => controller.checkSlugAvailability(req, res),
+);
 router.get("/:id", protect, businessContext, (req, res) =>
   controller.getById(req, res),
 );

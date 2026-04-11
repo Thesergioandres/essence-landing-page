@@ -121,6 +121,7 @@ api.interceptors.request.use(
     const allowsWithoutBusiness =
       url.startsWith("/auth") ||
       url.startsWith("/business/my-memberships") ||
+      url.startsWith("/public/") ||
       url.startsWith("/upload") ||
       url.startsWith("/users/god") ||
       url.startsWith("/issues") ||

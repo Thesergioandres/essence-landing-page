@@ -356,7 +356,28 @@ export class RegisterSaleUseCase {
     };
 
     for (const item of items) {
-      const { productId, quantity, salePrice } = item;
+      const { productId, quantity } = item;
+
+      if (quantity <= 0)
+        throw new Error(`Invalid quantity for product ${productId}`);
+
+      // 🛡️ Anti-IDOR y Anti-Manipulación de Precios
+      const product = await this.productRepository.findById(productId);
+      if (!product) throw new Error(`Product not found: ${productId}`);
+
+      // Muro Anti-IDOR: Verificar pertinencia de negocio si NO es GOD
+      if (
+        user?.role !== "god" &&
+        String(product.business) !== String(businessId)
+      ) {
+        throw new Error(
+          `Acceso denegado: El producto no pertenece a tu negocio.`,
+        );
+      }
+
+      // Anti-Manipulación: Siempre usar el precio real almacenado en la BD
+      const salePrice = product.price || product.salePrice || 0;
+
       const itemSubtotal = Number(salePrice || 0) * Number(quantity || 0);
       const discountShare =
         totalSubtotal > 0 ? (itemSubtotal / totalSubtotal) * discountTotal : 0;
@@ -368,12 +389,6 @@ export class RegisterSaleUseCase {
         0,
         itemSubtotal - discountShare - additionalShare,
       );
-
-      if (quantity <= 0)
-        throw new Error(`Invalid quantity for product ${productId}`);
-
-      const product = await this.productRepository.findById(productId);
-      if (!product) throw new Error(`Product not found: ${productId}`);
 
       productCache.set(String(productId), product);
 

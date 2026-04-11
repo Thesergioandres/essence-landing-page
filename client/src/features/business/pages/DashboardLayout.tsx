@@ -1110,11 +1110,11 @@ export default function DashboardLayout() {
 
       {/* Main Content */}
       <main
-        className={`content-with-safe-header duration-400 h-screen overflow-y-auto overflow-x-hidden transition-all ease-in-out lg:pt-20 ${
+        className={`content-with-safe-header duration-400 h-screen overflow-y-auto overflow-x-hidden transition-all ease-in-out lg:pt-20 pb-24 md:pb-28 ${
           desktopSidebarOpen ? "lg:ml-72" : "lg:ml-0"
         }`}
       >
-        <div className="mx-auto w-full max-w-screen-2xl p-4 md:p-6 lg:p-8">
+        <div className="mx-auto w-full max-w-screen-2xl p-4 md:p-6 lg:p-8 pb-32">
           <DemoSandboxBanner />
           <BusinessGate>
             <AnimatePresence mode="wait" initial={false}>

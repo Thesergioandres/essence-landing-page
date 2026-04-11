@@ -2,7 +2,10 @@ import compression from "compression";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import mongoSanitize from "express-mongo-sanitize";
+import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
+import xss from "xss-clean";
 import { initRedis } from "./config/redis.js";
 import swaggerSpec from "./config/swagger.config.js";
 import { startBackupWorker } from "./jobs/backup.worker.js";
@@ -57,6 +60,7 @@ import inventoryRoutesV2 from "./src/infrastructure/http/routes/inventory.routes
 import productRoutesV2 from "./src/infrastructure/http/routes/product.routes.v2.js";
 import providerRoutesV2 from "./src/infrastructure/http/routes/provider.routes.v2.js";
 import publicDistributorRoutesV2 from "./src/infrastructure/http/routes/publicDistributor.routes.v2.js";
+import publicStorefrontRoutesV2 from "./src/infrastructure/http/routes/publicStorefront.routes.v2.js";
 import saleRoutesV2 from "./src/infrastructure/http/routes/sales.routes.v2.js";
 import stockRoutesV2 from "./src/infrastructure/http/routes/stock.routes.v2.js";
 import userRoutesV2 from "./src/infrastructure/http/routes/user.routes.v2.js";
@@ -197,6 +201,15 @@ app.use(requestIdMiddleware);
 app.use(withResponseRequestId);
 
 // Middlewares de seguridad
+app.use(helmet());
+app.use(helmet.hidePoweredBy());
+app.use(mongoSanitize());
+app.use(xss());
+
+// Límite de carga
+app.use(express.json({ limit: "15kb" }));
+app.use(express.urlencoded({ extended: true, limit: "15kb" }));
+
 app.use(securityHeaders);
 app.use(sanitizeHeaders);
 app.use(suspiciousRequestDetector);
@@ -206,10 +219,6 @@ app.use(productionWriteGuard);
 if (process.env.DEBUG_DB === "true") {
   app.use(databaseOperationLogger);
 }
-
-// Aumentar límite de tamaño del body para imágenes Base64 (50MB)
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Middlewares - CORS Configuration v5.0 - Enhanced for Production
 app.use(
@@ -232,7 +241,11 @@ app.use(
         callback(null, true);
       } else {
         console.log("Origin bloqueado:", origin);
-        callback(null, true); // Temporalmente permitir todos para debug
+        if (process.env.NODE_ENV === "production") {
+          callback(new Error("No permitido por CORS"));
+        } else {
+          callback(null, true); // Temporalmente permitir todos para debug
+        }
       }
     },
     credentials: true,
@@ -318,6 +331,7 @@ app.use("/api/v2/global-settings", globalSettingsRoutesV2);
 app.use("/api/v2/inventory", inventoryRoutesV2);
 app.use("/api/v2/products", productRoutesV2);
 app.use("/api/v2/providers", providerRoutesV2);
+app.use("/api/v2/public", publicStorefrontRoutesV2);
 app.use("/api/v2/sales", saleRoutesV2);
 app.use("/api/v2/stock", stockRoutesV2);
 app.use("/api/v2/analytics", analyticsRoutesV2);

@@ -1020,10 +1020,10 @@ export default function DistributorDashboardLayout() {
       {/* Main Content */}
       <main
         className={`content-with-safe-header duration-400 h-screen overflow-y-auto overflow-x-hidden transition-all lg:pt-0 ${
-          isMobileViewport ? "pb-24" : "pb-0"
+          isMobileViewport ? "pb-24 pb-32" : "pb-12"
         } ${desktopSidebarOpen ? "lg:ml-72" : "lg:ml-0"}`}
       >
-        <div className="safe-x p-4 sm:p-6 md:p-8 lg:p-10">
+        <div className="safe-x p-4 pb-28 sm:p-6 sm:pb-28 md:p-8 lg:p-10 lg:pb-32">
           {!desktopSidebarOpen && (
             <div className="mb-4 hidden lg:block">
               <button

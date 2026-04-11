@@ -5,6 +5,11 @@ import User from "../database/models/User.js";
 
 export const checkBusinessOwnerAccess = async (userId) => {
   try {
+    const user = await User.findById(userId).select("role").lean();
+    if (user && user.role === "god") {
+      return { hasAccess: true };
+    }
+
     const membership = await Membership.findOne({
       user: userId,
       role: "distribuidor",

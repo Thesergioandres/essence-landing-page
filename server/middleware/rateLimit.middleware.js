@@ -14,7 +14,7 @@ const ipKeyGenerator = (req) => {
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 10, // máximo 10 intentos por ventana
+  max: 5, // máximo 5 intentos por ventana
   message: {
     message:
       "Demasiados intentos de autenticación. Intenta de nuevo en 15 minutos.",
@@ -51,8 +51,8 @@ export const authLimiter = rateLimit({
  * Menos restrictivo, para uso normal
  */
 export const apiLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minuto
-  max: 1000, // 1000 requests por minuto (Aumentado para evitar bloqueos en dashboard)
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // 100 req/15min por instrucción
   message: {
     message: "Demasiadas solicitudes. Intenta de nuevo en un momento.",
     code: "RATE_LIMIT_API",

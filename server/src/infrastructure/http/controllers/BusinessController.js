@@ -103,6 +103,21 @@ export class BusinessController {
     }
   }
 
+  async checkSlugAvailability(req, res) {
+    try {
+      const slugCandidate = String(req.query?.slug || "");
+      const result = await repository.checkSlugAvailability(
+        slugCandidate,
+        req.business?._id || req.params.id,
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      const status = error.statusCode || 500;
+      res.status(status).json({ success: false, message: error.message });
+    }
+  }
+
   async update(req, res) {
     try {
       const business = await repository.update(req.business._id, req.body);

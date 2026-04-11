@@ -32,7 +32,7 @@ export default function ReportIssueButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="bg-linear-to-r z-45 fixed bottom-4 right-4 rounded-full from-purple-600 to-fuchsia-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-900/40 transition hover:from-purple-700 hover:to-fuchsia-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
+        className="bg-linear-to-r fixed bottom-20 right-4 z-[45] rounded-full from-purple-600 to-fuchsia-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-900/40 transition hover:from-purple-700 hover:to-fuchsia-700 focus:outline-none focus:ring-2 focus:ring-purple-400 md:bottom-8 lg:bottom-12"
         aria-label="Reportar un problema"
       >
         Reportar problema

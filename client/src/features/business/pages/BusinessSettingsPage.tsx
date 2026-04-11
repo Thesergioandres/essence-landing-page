@@ -7,6 +7,7 @@ import {
 } from "../../analytics/pages";
 import { gamificationService, uploadService } from "../../common/services";
 import { DistributorsPage as Distributors } from "../../distributors/pages";
+import PublicPageSettingsPanel from "../components/PublicPageSettingsPanel";
 import { businessService } from "../services";
 import type { BusinessFeatures } from "../types/business.types";
 import { GamificationConfigPage as GamificationConfig } from "./";
@@ -62,6 +63,7 @@ export default function BusinessSettings() {
     useState<BusinessFeatures | null>(null);
   const [selectedView, setSelectedView] = useState<
     | "business"
+    | "publicPage"
     | "distributors"
     | "gamification"
     | "rankings"
@@ -75,6 +77,11 @@ export default function BusinessSettings() {
         key: "business" as const,
         title: "Datos del negocio",
         desc: "Información general y contacto",
+      },
+      {
+        key: "publicPage" as const,
+        title: "Mi Pagina Publica",
+        desc: "Slug, plantilla y storefront publico",
       },
       {
         key: "distributors" as const,
@@ -792,6 +799,14 @@ export default function BusinessSettings() {
                   </div>
                 </form>
               </>
+            )}
+
+            {selectedView === "publicPage" && (
+              <PublicPageSettingsPanel
+                businessId={businessId}
+                business={business}
+                onRefresh={refresh}
+              />
             )}
 
             {selectedView === "distributors" && <Distributors />}

@@ -110,6 +110,8 @@ export const businessService = {
     businessId: string,
     data: Partial<{
       name: string;
+      slug: string;
+      landingTemplate: "modern" | "minimal" | "bold";
       description: string;
       type: string;
       size: string;
@@ -148,6 +150,36 @@ export const businessService = {
       features,
     });
     return response.data;
+  },
+
+  async checkSlugAvailability(
+    businessId: string,
+    slug: string
+  ): Promise<{ slug: string; available: boolean }> {
+    const response = await api.get(
+      `/business/${businessId}/slug-availability`,
+      {
+        params: { slug },
+      }
+    );
+
+    const payload = response.data?.data || response.data;
+    return {
+      slug: payload.slug,
+      available: Boolean(payload.available),
+    };
+  },
+
+  async updatePublicStorefront(
+    businessId: string,
+    data: {
+      slug: string;
+      landingTemplate: "modern" | "minimal" | "bold";
+    }
+  ): Promise<{ message?: string; business: Business }> {
+    const response = await api.put(`/business/${businessId}`, data);
+    const payload = response.data?.data || response.data;
+    return payload;
   },
 
   async listMembers(businessId: string): Promise<{
