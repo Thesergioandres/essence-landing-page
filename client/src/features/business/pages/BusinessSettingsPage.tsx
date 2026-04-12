@@ -6,7 +6,7 @@ import {
   RankingsPage as Rankings,
 } from "../../analytics/pages";
 import { gamificationService, uploadService } from "../../common/services";
-import { DistributorsPage as Distributors } from "../../distributors/pages";
+import { DistributorsPage as Distributors } from "../../employees/pages";
 import PublicPageSettingsPanel from "../components/PublicPageSettingsPanel";
 import { businessService } from "../services";
 import type { BusinessFeatures } from "../types/business.types";

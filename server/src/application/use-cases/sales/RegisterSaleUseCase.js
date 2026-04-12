@@ -12,6 +12,10 @@ import Membership from "../../../infrastructure/database/models/Membership.js";
 import PaymentMethod from "../../../infrastructure/database/models/PaymentMethod.js";
 import { getDistributorCommissionInfo } from "../../../infrastructure/services/distributorPricing.service.js";
 import { applySaleGamification } from "../../../infrastructure/services/gamification.service.js";
+import {
+  employeeRoleQuery,
+  isEmployeeRole,
+} from "../../../utils/roleAliases.js";
 import CreditRepository from "../repository-gateways/CreditPersistenceUseCase.js";
 import { ProductPersistenceUseCase } from "../repository-gateways/ProductPersistenceUseCase.js";
 import ProfitHistoryRepository from "../repository-gateways/ProfitHistoryPersistenceUseCase.js";
@@ -276,13 +280,13 @@ export class RegisterSaleUseCase {
           ? "branch"
           : "warehouse";
 
-    const isDistributorUser = user?.role === "distribuidor";
+    const isDistributorUser = isEmployeeRole(user?.role);
 
     if (isDistributorUser && distributorId) {
       const distributorMembership = await Membership.findOne({
         business: businessId,
         user: distributorId,
-        role: "distribuidor",
+        role: employeeRoleQuery,
         status: "active",
       })
         .select("allowedBranches")

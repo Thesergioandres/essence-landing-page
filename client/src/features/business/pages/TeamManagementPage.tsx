@@ -56,12 +56,12 @@ interface TeamMember {
     isCommissionFixed?: boolean;
     customCommissionRate?: number | null;
   } | null;
-  role: "admin" | "distribuidor" | "viewer";
+  role: "admin" | "employee" | "viewer";
   status: "active" | "invited" | "disabled";
   permissions?: MemberPermissions;
 }
 
-type TeamRoleFilter = "all" | "admin" | "distribuidor" | "viewer";
+type TeamRoleFilter = "all" | "admin" | "employee" | "viewer";
 type TeamStatusFilter = "all" | "active" | "invited" | "disabled";
 
 const MODULES = [
@@ -174,7 +174,7 @@ export default function TeamManagement() {
 
   // Add member form
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"admin" | "distribuidor">("distribuidor");
+  const [role, setRole] = useState<"admin" | "employee">("employee");
   const [searchingUser, setSearchingUser] = useState(false);
   const [foundUser, setFoundUser] = useState<User | null>(null);
   const [error, setError] = useState("");
@@ -261,7 +261,7 @@ export default function TeamManagement() {
 
       const isAllowedRole =
         result.membership?.role === "admin" ||
-        result.membership?.role === "distribuidor";
+        result.membership?.role === "employee";
 
       if (
         !result.membership ||
@@ -480,7 +480,7 @@ export default function TeamManagement() {
   );
 
   const distributorCount = useMemo(
-    () => members.filter(member => member.role === "distribuidor").length,
+    () => members.filter(member => member.role === "employee").length,
     [members]
   );
 
@@ -501,7 +501,7 @@ export default function TeamManagement() {
     switch (role) {
       case "admin":
         return "bg-purple-500/20 text-purple-400";
-      case "distribuidor":
+      case "employee":
         return "bg-blue-500/20 text-blue-400";
       case "viewer":
         return "bg-gray-500/20 text-gray-400";
@@ -514,7 +514,7 @@ export default function TeamManagement() {
     switch (role) {
       case "admin":
         return "Administrador";
-      case "distribuidor":
+      case "employee":
         return "Distribuidor";
       case "viewer":
         return "Observador";
@@ -588,7 +588,7 @@ export default function TeamManagement() {
         >
           <option value="all">Todos los roles</option>
           <option value="admin">Administradores</option>
-          <option value="distribuidor">Distribuidores</option>
+          <option value="employee">Distribuidores</option>
           <option value="viewer">Observadores</option>
         </select>
         <select
@@ -809,12 +809,12 @@ export default function TeamManagement() {
                     <select
                       value={role}
                       onChange={e =>
-                        setRole(e.target.value as "admin" | "distribuidor")
+                        setRole(e.target.value as "admin" | "employee")
                       }
                       className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
                     >
                       <option value="admin">Administrador</option>
-                      <option value="distribuidor">Distribuidor</option>
+                      <option value="employee">Distribuidor</option>
                     </select>
                   </div>
                 )}

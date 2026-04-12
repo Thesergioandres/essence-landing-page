@@ -1,3 +1,4 @@
+import { isEmployeeRole } from "../src/utils/roleAliases.js";
 import { buildEffectivePermissions } from "./permissions.js";
 
 const toRecord = (value) => (value && typeof value === "object" ? value : {});
@@ -41,8 +42,7 @@ const hasHideFinancialFlag = (user, membership) => {
   );
 };
 
-const isDistributorRole = (role) =>
-  role === "distribuidor" || role === "distributor";
+const isDistributorRole = (role) => isEmployeeRole(role);
 
 const resolvePermissionSource = (user, membership) => {
   if (membership?.role) {

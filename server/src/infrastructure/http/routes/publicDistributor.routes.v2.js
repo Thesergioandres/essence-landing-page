@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { DistributorController } from "../controllers/DistributorController.js";
+import { EmployeeController } from "../controllers/EmployeeController.js";
 
 const router = Router();
-const controller = new DistributorController();
+const controller = new EmployeeController();
 
 // Public distributor catalog (no auth)
 router.get("/:id/catalog", (req, res) => controller.getPublicCatalog(req, res));

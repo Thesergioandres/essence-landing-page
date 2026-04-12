@@ -5,6 +5,7 @@
  */
 
 import api from "../../../api/axios";
+import { normalizeEmployeeRole } from "../../../shared/utils/roleAliases";
 import type {
   AuthResponse,
   Membership,
@@ -44,6 +45,7 @@ const resolveEntityId = (value: unknown): string | null => {
 
 const normalizeSessionUser = <T extends User | AuthResponse>(user: T): T => {
   const record = (user || {}) as Record<string, unknown>;
+  const normalizedRole = normalizeEmployeeRole(record.role as string);
   const normalizedUserId = resolveEntityId(record._id);
   const rawMemberships = Array.isArray(record.memberships)
     ? (record.memberships as Array<Record<string, unknown>>)
@@ -55,6 +57,7 @@ const normalizeSessionUser = <T extends User | AuthResponse>(user: T): T => {
 
     return {
       ...membership,
+      role: normalizeEmployeeRole(membership.role as string),
       business:
         typeof membership.business === "string"
           ? businessId || membership.business
@@ -92,6 +95,7 @@ const normalizeSessionUser = <T extends User | AuthResponse>(user: T): T => {
     ...(Array.isArray(record.memberships)
       ? { memberships: normalizedMemberships }
       : {}),
+    ...(record.role ? { role: normalizedRole } : {}),
   };
 };
 
@@ -230,7 +234,7 @@ export const authService = {
       if (response.data.refreshToken) {
         localStorage.setItem("refreshToken", response.data.refreshToken);
       }
-      await trySetBusinessForGod(response.data.role);
+      await trySetBusinessForGod(normalizeEmployeeRole(response.data.role));
       notifySessionChange();
     }
 
@@ -402,11 +406,17 @@ export const authService = {
   },
 
   getDashboardRoute(role?: string | null): string {
-    if (role === "distribuidor") {
-      return "/distributor/dashboard";
+    const normalizedRole = normalizeEmployeeRole(role);
+
+    if (normalizedRole === "employee") {
+      return "/staff/dashboard";
     }
 
-    if (role === "admin" || role === "super_admin" || role === "god") {
+    if (
+      normalizedRole === "admin" ||
+      normalizedRole === "super_admin" ||
+      normalizedRole === "god"
+    ) {
       return "/admin/analytics";
     }
 

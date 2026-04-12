@@ -221,14 +221,14 @@ Si un distribuidor entra por una ruta administrativa, la plataforma lo dirige au
 - /productos
 - /producto/:id
 - /categoria/:slug
-- /distributor-catalog/:distributorId
+- /staff-catalog/:distributorId
 - /account-hold
 
 ## Rutas de autenticación
 
 - /login
 - /login/admin
-- /login/distributor
+- /login/staff
 - /login/god
 - /register
 - /onboarding
@@ -486,7 +486,7 @@ Las ventas especiales y promocionales deben revisarse en cierre para validar mar
 ## Pantallas clave
 
 - Admin: /admin/credits y /admin/credits/:id.
-- Distribuidor: /distributor/credits.
+- Distribuidor: /staff/credits.
 
 ## Impacto en reportes
 
@@ -523,8 +523,8 @@ Las ventas especiales y promocionales deben revisarse en cierre para validar mar
 
 - /admin/defective-products
 - /admin/warranties
-- /distributor/defective-reports
-- /distributor/warranties
+- /staff/defective-reports
+- /staff/warranties
 `,
   },
   {

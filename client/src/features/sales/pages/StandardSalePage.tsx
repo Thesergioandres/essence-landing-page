@@ -23,7 +23,7 @@ import type {
 import { branchService } from "../../branches/services/branch.service";
 import type { Branch } from "../../business/types/business.types";
 import { gamificationService } from "../../common/services";
-import { distributorService } from "../../distributors/services/distributor.service";
+import { distributorService } from "../../employees/services/distributor.service";
 import { productsService } from "../../inventory/api/products.service";
 import { stockService } from "../../inventory/services/inventory.service";
 import type { Product } from "../../inventory/types/product.types";
@@ -58,7 +58,7 @@ export default function StandardSalePage({
   registerStandardSale,
 }: StandardSalePageProps = {}) {
   const { user, loading: userLoading } = useSession(); // Get user from session
-  const isDistributor = user?.role === "distribuidor";
+  const isDistributor = user?.role === "employee";
 
   // State: Order managed by reducer
   const [order, dispatch] = useReducer(orderReducer, {

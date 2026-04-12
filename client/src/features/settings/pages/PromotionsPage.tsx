@@ -24,7 +24,7 @@ import { invalidateProductCache } from "../../../hooks/useProductCache";
 import type { User } from "../../auth/types/auth.types";
 import { branchService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
-import { distributorService } from "../../distributors/services/distributor.service";
+import { distributorService } from "../../employees/services/distributor.service";
 import { productsService } from "../../inventory/api/products.service";
 import type { Product } from "../../inventory/types/product.types";
 import { promotionService } from "../../settings/services";

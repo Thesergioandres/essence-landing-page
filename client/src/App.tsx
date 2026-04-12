@@ -114,92 +114,91 @@ const PromotionSale = lazy(
 
 // Distributors pages
 const Distributors = lazy(
-  () => import("./features/distributors/pages/DistributorsPage")
+  () => import("./features/employees/pages/DistributorsPage")
 );
 const AddDistributor = lazy(
-  () => import("./features/distributors/pages/AddDistributorPage")
+  () => import("./features/employees/pages/AddDistributorPage")
 );
 const DistributorDetail = lazy(
-  () => import("./features/distributors/pages/DistributorDetailPage")
+  () => import("./features/employees/pages/DistributorDetailPage")
 );
 const EditDistributor = lazy(
-  () => import("./features/distributors/pages/EditDistributorPage")
+  () => import("./features/employees/pages/EditDistributorPage")
 );
 const DistributorDashboard = lazy(
-  () => import("./features/distributors/pages/DistributorDashboardPage")
+  () => import("./features/employees/pages/DistributorDashboardPage")
 );
 const DistributorDashboardLayout = lazy(
-  () => import("./features/distributors/pages/DistributorDashboardLayout")
+  () => import("./features/employees/pages/DistributorDashboardLayout")
 );
 const DistributorProducts = lazy(
-  () => import("./features/distributors/pages/DistributorProductsPage")
+  () => import("./features/employees/pages/DistributorProductsPage")
 );
 const DistributorSales = lazy(
-  () => import("./features/distributors/pages/DistributorSalesPage")
+  () => import("./features/employees/pages/DistributorSalesPage")
 );
 const DistributorCredits = lazy(
-  () => import("./features/distributors/pages/DistributorCreditsPage")
+  () => import("./features/employees/pages/DistributorCreditsPage")
 );
 const DistributorStats = lazy(
-  () => import("./features/distributors/pages/DistributorStatsPage")
+  () => import("./features/employees/pages/DistributorStatsPage")
 );
 const DistributorLevel = lazy(
-  () => import("./features/distributors/pages/DistributorLevelPage")
+  () => import("./features/employees/pages/DistributorLevelPage")
 );
 const DistributorCatalog = lazy(
-  () => import("./features/distributors/pages/DistributorCatalogPage")
+  () => import("./features/employees/pages/DistributorCatalogPage")
 );
 const DistributorCatalogShare = lazy(
-  () => import("./features/distributors/pages/DistributorCatalogSharePage")
+  () => import("./features/employees/pages/DistributorCatalogSharePage")
 );
 const DistributorShipments = lazy(
-  () => import("./features/distributors/pages/DistributorShipmentsPage")
+  () => import("./features/employees/pages/DistributorShipmentsPage")
 );
 const DistributorRequestDispatch = lazy(
-  () => import("./features/distributors/pages/DistributorRequestDispatchPage")
+  () => import("./features/employees/pages/DistributorRequestDispatchPage")
 );
 const PublicDistributorCatalog = lazy(
-  () => import("./features/distributors/pages/PublicDistributorCatalogPage")
+  () => import("./features/employees/pages/PublicDistributorCatalogPage")
 );
 const DistributorAdvertising = lazy(
   () => import("./features/advertising/pages/DistributorAdvertisingPage")
 );
 const OperativoStockManagement = lazy(
   () =>
-    import("./features/distributors/pages/operativo/OperativoStockManagementPage")
+    import("./features/employees/pages/operativo/OperativoStockManagementPage")
 );
 const OperativoGlobalInventory = lazy(
   () =>
-    import("./features/distributors/pages/operativo/OperativoGlobalInventoryPage")
+    import("./features/employees/pages/operativo/OperativoGlobalInventoryPage")
 );
 const OperativoBranches = lazy(
-  () => import("./features/distributors/pages/operativo/OperativoBranchesPage")
+  () => import("./features/employees/pages/operativo/OperativoBranchesPage")
 );
 const OperativoTransferHistory = lazy(
   () =>
-    import("./features/distributors/pages/operativo/OperativoTransferHistoryPage")
+    import("./features/employees/pages/operativo/OperativoTransferHistoryPage")
 );
 const OperativoSales = lazy(
-  () => import("./features/distributors/pages/operativo/OperativoSalesPage")
+  () => import("./features/employees/pages/operativo/OperativoSalesPage")
 );
 const OperativoAnalytics = lazy(
-  () => import("./features/distributors/pages/operativo/OperativoAnalyticsPage")
+  () => import("./features/employees/pages/operativo/OperativoAnalyticsPage")
 );
 const OperativoExpenses = lazy(
-  () => import("./features/distributors/pages/operativo/OperativoExpensesPage")
+  () => import("./features/employees/pages/operativo/OperativoExpensesPage")
 );
 const OperativoTeam = lazy(
-  () => import("./features/distributors/pages/operativo/OperativoTeamPage")
+  () => import("./features/employees/pages/operativo/OperativoTeamPage")
 );
 const OperativoPromotions = lazy(
-  () =>
-    import("./features/distributors/pages/operativo/OperativoPromotionsPage")
+  () => import("./features/employees/pages/operativo/OperativoPromotionsPage")
 );
 const OperativoProviders = lazy(
-  () => import("./features/distributors/pages/operativo/OperativoProvidersPage")
+  () => import("./features/employees/pages/operativo/OperativoProvidersPage")
 );
 const OperativoCustomers = lazy(
-  () => import("./features/distributors/pages/operativo/OperativoCustomersPage")
+  () => import("./features/employees/pages/operativo/OperativoCustomersPage")
 );
 const DemoPage = lazy(() => import("./features/demo/DemoPage"));
 
@@ -347,6 +346,10 @@ export default function App() {
                     element={<CategoryProducts />}
                   />
                   <Route
+                    path="/staff-catalog/:distributorId"
+                    element={<PublicDistributorCatalog />}
+                  />
+                  <Route
                     path="/distributor-catalog/:distributorId"
                     element={<PublicDistributorCatalog />}
                   />
@@ -356,6 +359,7 @@ export default function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/login/admin" element={<LoginAdmin />} />
                   <Route path="/login/god" element={<LoginGod />} />
+                  <Route path="/login/staff" element={<LoginDistributor />} />
                   <Route
                     path="/login/distributor"
                     element={<LoginDistributor />}
@@ -367,7 +371,7 @@ export default function App() {
                       <ProtectedRoute
                         allowedRoles={[
                           "admin",
-                          "distribuidor",
+                          "employee",
                           "super_admin",
                           "god",
                         ]}
@@ -398,7 +402,7 @@ export default function App() {
                           "admin",
                           "super_admin",
                           "god",
-                          "distribuidor",
+                          "employee",
                           "viewer",
                         ]}
                       >
@@ -736,9 +740,9 @@ export default function App() {
 
                   {/* Distributor Routes */}
                   <Route
-                    path="/distributor"
+                    path="/staff"
                     element={
-                      <ProtectedRoute allowedRoles={["distribuidor"]}>
+                      <ProtectedRoute allowedRoles={["employee"]}>
                         <DistributorDashboardLayout />
                       </ProtectedRoute>
                     }
@@ -956,6 +960,11 @@ export default function App() {
                       }
                     />
                   </Route>
+
+                  <Route
+                    path="/distributor/*"
+                    element={<Navigate to="/staff/dashboard" replace />}
+                  />
 
                   {/* Redirect unknown routes to home */}
                   <Route path="*" element={<Navigate to="/" replace />} />

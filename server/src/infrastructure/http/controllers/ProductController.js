@@ -147,7 +147,7 @@ export const getPublicCatalog = async (req, res) => {
  */
 export const getMyCatalog = async (req, res) => {
   try {
-    if (req.user?.role !== "distribuidor") {
+    if (req.user?.role !== "employee") {
       return res.status(403).json({
         message: "Solo los distribuidores pueden acceder a su catálogo",
       });

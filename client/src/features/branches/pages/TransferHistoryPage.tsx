@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "../../auth/types/auth.types";
-import { distributorService } from "../../distributors/services";
+import { distributorService } from "../../employees/services";
 import {
   productService,
   stockService,

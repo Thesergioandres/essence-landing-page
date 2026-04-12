@@ -202,7 +202,7 @@ export class SetupDemoTenantUseCase {
         name: `Demo Distribuidor ${demoCode}`,
         email: distributorEmail,
         password: distributorPasswordHash,
-        role: "distribuidor",
+        role: "employee",
         status: "active",
         active: true,
         isCommissionFixed: true,
@@ -219,7 +219,7 @@ export class SetupDemoTenantUseCase {
         {
           user: setupState.distributorUser._id,
           business: setupState.business._id,
-          role: "distribuidor",
+          role: "employee",
           status: "active",
         },
       ]);

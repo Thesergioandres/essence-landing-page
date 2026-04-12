@@ -15,7 +15,7 @@ import type { User } from "../../auth/types/auth.types";
 import { useFinancialPrivacy } from "../../auth/utils/financialPrivacy";
 import { branchService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
-import { distributorService } from "../../distributors/services";
+import { distributorService } from "../../employees/services";
 import { productService } from "../../inventory/services/inventory.service";
 import type { Product } from "../../inventory/types/product.types";
 import { saleService } from "../../sales/services";

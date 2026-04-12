@@ -574,7 +574,7 @@ export class AdvancedAnalyticsRepository {
         ? Promise.resolve(1)
         : Membership.countDocuments({
             business: businessObjectId,
-            role: "distribuidor",
+            role: "employee",
             status: "active",
           }),
       // Get expenses summary

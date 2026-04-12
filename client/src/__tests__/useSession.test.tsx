@@ -31,11 +31,11 @@ describe("useSession", () => {
   it("asigna businessId automáticamente para distribuidor con único membership", async () => {
     localStorage.setItem("token", "tkn");
     mockedAuth.getCurrentUser.mockReturnValue({
-      role: "distribuidor",
+      role: "employee",
       token: "tkn",
     });
     mockedAuth.getProfile.mockResolvedValue({
-      role: "distribuidor",
+      role: "employee",
       token: "tkn",
     });
     mockedApi.get.mockResolvedValue({

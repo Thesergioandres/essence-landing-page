@@ -565,8 +565,8 @@ export const defectiveProductService = {
     status?: "pendiente" | "confirmado" | "rechazado"
   ): Promise<DefectiveProduct[]> {
     const url = distributorId
-      ? `/defective-products/distributor/${distributorId}`
-      : "/defective-products/distributor/me";
+      ? `/defective-products/staff/${distributorId}`
+      : "/defective-products/staff/me";
     const response = await api.get(url, { params: { status } });
     const rawData = response.data;
     return rawData?.data || rawData?.reports || [];
@@ -726,7 +726,7 @@ export const warrantyService = {
       saleId: string;
       saleDate: string;
       seller: {
-        role: "admin" | "distribuidor";
+        role: "admin" | "employee";
         user: { _id: string; name: string; email?: string } | string | null;
       };
       items: Array<{

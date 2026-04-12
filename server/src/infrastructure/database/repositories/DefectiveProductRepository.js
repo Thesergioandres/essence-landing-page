@@ -364,7 +364,7 @@ export class DefectiveProductRepository {
 
     const contextRole = this.getContextRole(user);
 
-    if (contextRole === "distribuidor") {
+    if (contextRole === "employee") {
       const distributorId = user._id?.toString?.() || user.id?.toString?.();
       const saleDistributorId =
         sale?.distributor && typeof sale.distributor === "object"
@@ -398,7 +398,7 @@ export class DefectiveProductRepository {
       : [sale];
 
     const seller = sale.distributor
-      ? { role: "distribuidor", user: sale.distributor }
+      ? { role: "employee", user: sale.distributor }
       : { role: "admin", user: sale.createdBy };
 
     const items = sales.map((item) => ({
@@ -499,7 +499,7 @@ export class DefectiveProductRepository {
       }
 
       if (
-        contextRole === "distribuidor" &&
+        contextRole === "employee" &&
         saleItem.distributor &&
         saleItem.distributor.toString() !== userId.toString()
       ) {
@@ -603,7 +603,7 @@ export class DefectiveProductRepository {
       const resolvedReplacementSource = replacementSource;
 
       if (resolvedReplacementSource === "distributor") {
-        if (contextRole !== "distribuidor") {
+        if (contextRole !== "employee") {
           const err = new Error(
             "Solo distribuidores pueden usar su inventario",
           );
@@ -688,7 +688,7 @@ export class DefectiveProductRepository {
       const ticketId = await this.generateWarrantyTicket(businessId, {
         session,
       });
-      const isDistributor = contextRole === "distribuidor";
+      const isDistributor = contextRole === "employee";
       const resolvedSaleGroupId =
         saleItem.saleGroupId || saleItem._id?.toString();
 

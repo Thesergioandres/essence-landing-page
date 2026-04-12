@@ -186,7 +186,7 @@ export const businessService = {
     members: Array<{
       _id: string;
       user: User;
-      role: "admin" | "distribuidor" | "viewer";
+      role: "admin" | "employee" | "viewer";
       status: "active" | "invited" | "disabled";
       permissions?: Record<string, Record<string, boolean>>;
       branches?: string[];
@@ -236,7 +236,7 @@ export const businessService = {
     data: {
       email?: string;
       userId?: string;
-      role: "admin" | "distribuidor" | "viewer";
+      role: "admin" | "employee" | "viewer";
       permissions?: string[];
       branches?: string[];
     }
@@ -279,7 +279,7 @@ export const businessService = {
     businessId: string,
     userId: string,
     data: {
-      role?: "admin" | "distribuidor" | "viewer";
+      role?: "admin" | "employee" | "viewer";
       permissions?: Record<string, unknown>;
       branches?: string[];
       commissionSettings?: {

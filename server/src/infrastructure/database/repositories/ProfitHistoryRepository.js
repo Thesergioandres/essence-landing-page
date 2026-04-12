@@ -320,7 +320,7 @@ class ProfitHistoryRepository {
     // Get distributor user IDs for this business
     const distributorMemberships = await Membership.find({
       business: businessObjectId,
-      role: "distribuidor",
+      role: "employee",
       status: "active",
     })
       .select("user")
@@ -520,7 +520,7 @@ class ProfitHistoryRepository {
             isDistributorUser: {
               $or: [
                 { $in: ["$user", distributorUserObjectIds] },
-                { $eq: ["$userInfo.role", "distribuidor"] },
+                { $eq: ["$userInfo.role", "employee"] },
               ],
             },
             isCommissionType: { $eq: ["$type", "commission"] },

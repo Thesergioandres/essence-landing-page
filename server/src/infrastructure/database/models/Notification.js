@@ -20,7 +20,7 @@ const notificationSchema = new mongoose.Schema(
     // Rol destinatario (si aplica a un rol específico)
     targetRole: {
       type: String,
-      enum: ["admin", "distribuidor", "all"],
+      enum: ["admin", "employee", "all"],
     },
     // Tipo de notificación
     type: {

@@ -22,7 +22,7 @@ import type { User } from "../../auth/types/auth.types";
 import { dispatchService } from "../../branches/services";
 import DemoModeTour from "../../demo/DemoModeTour";
 import DemoSandboxBanner from "../../demo/DemoSandboxBanner";
-import { distributorService } from "../../distributors/services";
+import { distributorService } from "../../employees/services";
 
 const navLinkClasses = (isActive: boolean): string =>
   [
@@ -93,7 +93,7 @@ export default function DashboardLayout() {
         const items = response?.data || [];
         setDistributors(
           items.filter(
-            item => item.role === "distribuidor" && item.active !== false
+            item => item.role === "employee" && item.active !== false
           )
         );
       } catch (error) {

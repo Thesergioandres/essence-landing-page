@@ -88,7 +88,7 @@ export interface BusinessMembership {
   _id: string;
   user: unknown | string;
   business: Business | string;
-  role: "admin" | "distribuidor" | "viewer";
+  role: "admin" | "employee" | "viewer";
   status: "active" | "pending" | "suspended";
   allowedBranches?: string[];
   invitedBy?: unknown | string;
@@ -132,7 +132,7 @@ export interface Distributor {
   email: string;
   phone?: string;
   address?: string;
-  role: "distribuidor";
+  role: "employee";
   status?: "pending" | "active" | "expired" | "suspended" | "paused";
   active?: boolean;
   assignedProducts?: string[];

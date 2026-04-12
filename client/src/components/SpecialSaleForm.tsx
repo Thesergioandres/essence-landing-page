@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "../features/auth/types/auth.types";
-import { distributorService } from "../features/distributors/services";
+import { distributorService } from "../features/employees/services";
 import { productService } from "../features/inventory/services/inventory.service";
 import type { Product } from "../features/inventory/types/product.types";
 import { specialSaleService } from "../features/sales/services";
@@ -93,10 +93,10 @@ export default function SpecialSaleForm({
   const loadDistributors = useCallback(async () => {
     try {
       const response = await distributorService.getAll({ active: true } as any); // Solo activos
-      // Extraer solo distribuidores (role: 'distribuidor')
+      // Extraer solo distribuidores (role: 'employee')
       const distData = Array.isArray(response) ? response : response.data;
       const distributorUsers = distData.filter(
-        (user: User) => user.role === "distribuidor"
+        (user: User) => user.role === "employee"
       );
       setDistributors(distributorUsers);
     } catch (error) {

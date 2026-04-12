@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { normalizeEmployeeRole } from "../../../shared/utils/roleAliases";
 import { authService } from "../api/auth.service";
 import type {
   LoginCredentials,
@@ -47,6 +48,7 @@ export const useAuth = () => {
       // 🔑 POLYFILL: Map memberships to legacy business field for backward compatibility
       const memberships = response.memberships || [];
       const primaryBusiness = memberships[0]?.business;
+      const normalizedRole = normalizeEmployeeRole(response.role);
       const businessId =
         resolveEntityId(primaryBusiness) || resolveEntityId(response.business);
       const userId = resolveEntityId(response._id);
@@ -59,7 +61,7 @@ export const useAuth = () => {
           _id: userId || response._id,
           name: response.name,
           email: response.email,
-          role: response.role,
+          role: normalizedRole,
           status: response.status,
           business: businessId || undefined, // Legacy compatibility
           memberships, // New V2 data
@@ -78,9 +80,9 @@ export const useAuth = () => {
       // Redirect Logic
       if (response.status === "pending") {
         navigate("/account-hold");
-      } else if (response.role === "distribuidor") {
-        navigate("/distributor/dashboard");
-      } else if (["admin", "super_admin", "god"].includes(response.role)) {
+      } else if (normalizedRole === "employee") {
+        navigate("/staff/dashboard");
+      } else if (["admin", "super_admin", "god"].includes(normalizedRole)) {
         navigate("/admin/dashboard");
       } else {
         navigate("/");

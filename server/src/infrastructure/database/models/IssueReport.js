@@ -14,7 +14,7 @@ const issueReportSchema = new mongoose.Schema(
       type: String,
       required: true,
       index: true,
-      enum: ["admin", "super_admin", "distribuidor", "god", "cliente", "guest"],
+      enum: ["admin", "super_admin", "employee", "god", "cliente", "guest"],
     },
     message: {
       type: String,

@@ -195,7 +195,7 @@ export const impersonateDistributor = async (req, res) => {
     const distributorMembership = await Membership.findOne({
       user: distributorId,
       business: businessId,
-      role: "distribuidor",
+      role: "employee",
       status: "active",
     })
       .populate("business", "_id name")
@@ -212,7 +212,7 @@ export const impersonateDistributor = async (req, res) => {
       .select("-password")
       .lean();
 
-    if (!distributor || distributor.role !== "distribuidor") {
+    if (!distributor || distributor.role !== "employee") {
       return res.status(404).json({
         success: false,
         message: "Usuario destino inválido para suplantación",

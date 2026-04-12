@@ -14,7 +14,7 @@ const membershipSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "distribuidor", "viewer"],
+      enum: ["admin", "employee", "distributor", "distribuidor", "viewer"],
       required: true,
     },
     status: {
@@ -35,7 +35,7 @@ const membershipSchema = new mongoose.Schema(
       default: {},
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 membershipSchema.index({ user: 1, business: 1 }, { unique: true });

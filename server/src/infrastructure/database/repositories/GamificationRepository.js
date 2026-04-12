@@ -16,7 +16,7 @@ export class GamificationRepository {
     const memberships = await Membership.find({
       business: businessId,
       status: "active",
-      role: { $in: ["distribuidor"] },
+      role: { $in: ["employee"] },
     }).select("user");
     return memberships.map((m) => m.user);
   }

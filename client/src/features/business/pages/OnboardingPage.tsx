@@ -41,7 +41,7 @@ export default function Onboarding() {
       // Si ya tiene negocio, llévalo directo al dashboard
       const role = memberships[0]?.role;
       navigate(
-        role === "admin" ? "/admin/analytics" : "/distributor/dashboard",
+        role === "admin" ? "/admin/analytics" : "/staff/dashboard",
         { replace: true }
       );
     }
@@ -129,8 +129,8 @@ export default function Onboarding() {
     // Redirigir según el rol del usuario
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const redirectPath =
-      user.role === "distribuidor"
-        ? "/distributor/dashboard"
+      user.role === "employee"
+        ? "/staff/dashboard"
         : "/admin/analytics";
 
     console.log("[Onboarding] Redirecting to:", redirectPath);

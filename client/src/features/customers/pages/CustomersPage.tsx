@@ -59,7 +59,7 @@ const segmentConfig: Record<
 
 export default function Customers() {
   const user = authService.getCurrentUser();
-  const isDistributor = user?.role === "distribuidor";
+  const isDistributor = user?.role === "employee";
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");

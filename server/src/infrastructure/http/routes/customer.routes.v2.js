@@ -13,7 +13,7 @@ const controller = new CustomerController();
 router.use(protect, businessContext, requireFeature("crm"));
 
 const allowDistributor = (module, action) => (req, res, next) => {
-  if (req.user?.role === "distribuidor") return next();
+  if (req.user?.role === "employee") return next();
   return requirePermission({ module, action })(req, res, next);
 };
 

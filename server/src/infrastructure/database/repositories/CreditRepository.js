@@ -70,7 +70,7 @@ class CreditRepository {
 
   async findByBusiness(businessId, filters, page, limit, userId, userRole) {
     const filter = { business: businessId };
-    if (userRole === "distribuidor") filter.createdBy = userId;
+    if (userRole === "employee") filter.createdBy = userId;
     if (filters.status) filter.status = filters.status;
     if (filters.customerId) filter.customer = filters.customerId;
     if (filters.branchId) filter.branch = filters.branchId;

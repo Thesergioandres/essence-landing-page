@@ -4,6 +4,7 @@ import {
   sanitizeSalesStatsForFinancialPrivacy,
 } from "../../../../utils/financialPrivacy.js";
 import { listSalesUseCase } from "../../../application/use-cases/sales/buildListSalesUseCase.js";
+import { isEmployeeRole } from "../../../utils/roleAliases.js";
 
 /**
  * GET /api/v2/sales
@@ -40,8 +41,7 @@ export async function listSales(req, res) {
     // If no distributorId in params, check effective role (membership first)
     // so distributor users with admin membership can view team sales.
     const effectiveRole = req.membership?.role || req.user?.role;
-    const isDistributorRole =
-      effectiveRole === "distribuidor" || effectiveRole === "distributor";
+    const isDistributorRole = isEmployeeRole(effectiveRole);
     const canViewTeamSalesByMembership =
       req.membership?.role === "admin" ||
       req.membership?.permissions?.sales?.update === true ||

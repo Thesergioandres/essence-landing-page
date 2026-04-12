@@ -228,7 +228,7 @@ const testimonials = [
   },
   {
     name: "Luis Perez",
-    role: "Distribuidor",
+    role: "Empleado",
     quote:
       "El catalogo compartible nos ayudo a cerrar pedidos sin llamadas eternas.",
     metric: "-35% tiempo operativo",

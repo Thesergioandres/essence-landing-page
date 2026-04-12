@@ -1,6 +1,10 @@
 import jwt from "jsonwebtoken";
 import User from "../src/infrastructure/database/models/User.js";
 import { checkBusinessOwnerAccess } from "../src/infrastructure/services/authBusinessAccess.service.js";
+import {
+  isEmployeeRole,
+  normalizeEmployeeRole,
+} from "../src/utils/roleAliases.js";
 import { logAuthError } from "../utils/logger.js";
 
 // Proteger rutas - verificar JWT
@@ -49,7 +53,7 @@ export const protect = async (req, res, next) => {
         userId: user._id.toString(),
         id: user._id.toString(),
         _id: user._id, // mantener compatibilidad con controladores que esperan _id
-        role: user.role,
+        role: normalizeEmployeeRole(user.role),
         name: user.name,
         email: user.email,
         active: user.active,
@@ -100,7 +104,7 @@ export const protect = async (req, res, next) => {
         }
 
         // Para distribuidores, verificar también el estado del owner del negocio
-        if (user.role === "distribuidor") {
+        if (isEmployeeRole(user.role)) {
           const ownerCheck = await checkBusinessOwnerAccess(user._id);
           if (!ownerCheck.hasAccess) {
             logAuthError({
@@ -180,7 +184,7 @@ export const protectAllowPending = async (req, res, next) => {
         userId: user._id.toString(),
         id: user._id.toString(),
         _id: user._id,
-        role: user.role,
+        role: normalizeEmployeeRole(user.role),
         name: user.name,
         email: user.email,
         active: user.active,
@@ -254,7 +258,7 @@ export const god = (req, res, next) => {
 export const distributor = (req, res, next) => {
   if (
     req.user &&
-    (req.user.role === "distribuidor" ||
+    (isEmployeeRole(req.user.role) ||
       req.user.role === "admin" ||
       req.user.role === "super_admin" ||
       req.user.role === "god")
@@ -276,7 +280,7 @@ export const adminOrDistributor = (req, res, next) => {
   if (
     req.user &&
     (req.user.role === "admin" ||
-      req.user.role === "distribuidor" ||
+      isEmployeeRole(req.user.role) ||
       req.user.role === "super_admin" ||
       req.user.role === "god")
   ) {

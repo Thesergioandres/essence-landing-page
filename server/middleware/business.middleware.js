@@ -5,6 +5,10 @@ import {
   getBusinessUsage,
   resolveBusinessLimits,
 } from "../src/infrastructure/services/planLimits.service.js";
+import {
+  isEmployeeRole,
+  normalizeEmployeeRole,
+} from "../src/utils/roleAliases.js";
 import { logAuthError } from "../utils/logger.js";
 import {
   buildEffectivePermissions,
@@ -134,7 +138,7 @@ export const businessContext = async (req, res, next) => {
     }
 
     // Si el creador (super admin) perdió acceso, bloquear a los distribuidores del negocio
-    if (membership?.role === "distribuidor" && !isGod) {
+    if (isEmployeeRole(membership?.role) && !isGod) {
       addDebugLog(`[businessContext] Checking distribuidor's owner status...`);
 
       // Resolver owner/admin principal: membership admin más antiguo o creador
@@ -221,9 +225,15 @@ export const requireRole = (roles = [], options = {}) => {
 
     const membershipRole = req.membership?.role;
     const userRole = req.user?.role;
-    const effectiveRole = isGod ? "super_admin" : membershipRole || userRole;
+    const effectiveRole = isGod
+      ? "super_admin"
+      : normalizeEmployeeRole(membershipRole || userRole);
 
-    if (roles.includes(effectiveRole)) {
+    const normalizedAllowedRoles = roles.map((role) =>
+      normalizeEmployeeRole(role),
+    );
+
+    if (normalizedAllowedRoles.includes(effectiveRole)) {
       return next();
     }
 

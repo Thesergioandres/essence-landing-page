@@ -16,7 +16,7 @@ export class HttpSalesReadRepository implements SalesReadRepository {
     filters?: DistributorSalesFilters;
   }): Promise<DistributorSalesResponse<TSale, TStats>> {
     const url = distributorId
-      ? `/sales/distributor/${distributorId}`
+      ? `/sales/staff/${distributorId}`
       : "/sales/distributor";
     const response = await api.get(url, { params: filters });
     return response.data;

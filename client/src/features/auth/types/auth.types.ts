@@ -2,7 +2,14 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  role: "admin" | "super_admin" | "distribuidor" | "god" | "user";
+  role:
+    | "admin"
+    | "super_admin"
+    | "employee"
+    | "distributor"
+    | "distribuidor"
+    | "god"
+    | "user";
   status?: "pending" | "active" | "expired" | "suspended" | "paused";
   subscriptionExpiresAt?: string | null;
   active?: boolean;

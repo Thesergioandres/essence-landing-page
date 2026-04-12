@@ -8,7 +8,7 @@ export interface AuditLog {
   user: { _id: string; name: string; email: string } | string;
   userEmail?: string;
   userName?: string;
-  userRole?: "admin" | "distribuidor" | "user";
+  userRole?: "admin" | "employee" | "user";
   action: string;
   module?: string;
   resourceType?: string;

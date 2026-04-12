@@ -250,7 +250,7 @@ export class AnalyticsRepository {
     // Check if business has distributors
     const distributorMemberships = await Membership.find({
       business: businessObjectId,
-      role: "distribuidor",
+      role: "employee",
       status: "active",
     })
       .select("user")

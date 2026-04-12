@@ -108,7 +108,7 @@ export function useFinancialPrivacy() {
     ) as (Membership & { [key: string]: unknown }) | null;
 
     const effectiveRole = membership?.role || user?.role || "user";
-    const isDistributorRole = effectiveRole === "distribuidor";
+    const isDistributorRole = effectiveRole === "employee";
     const currentUserId = String(user?._id || user?.id || "");
 
     const canViewCosts = resolveCanViewCosts(user, membership, effectiveRole);

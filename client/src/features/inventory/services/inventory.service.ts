@@ -198,7 +198,7 @@ export const productService = {
   },
 
   async getBuyableCatalog(): Promise<{ message: string; data: any[] }> {
-    const response = await api.get("/distributors/catalog/buyable");
+    const response = await api.get("/employees/catalog/buyable");
     return response.data;
   },
 
@@ -207,7 +207,7 @@ export const productService = {
     paymentMethodId?: string;
     paymentProof?: string;
   }): Promise<{ message: string; summary: any }> {
-    const response = await api.post("/distributors/orders", data);
+    const response = await api.post("/employees/orders", data);
     return response.data;
   },
 };
@@ -292,7 +292,7 @@ export const stockService = {
   async getDistributorStock(
     distributorId: string
   ): Promise<DistributorStock[]> {
-    const response = await api.get(`/stock/distributor/${distributorId}`);
+    const response = await api.get(`/stock/staff/${distributorId}`);
 
     let data: any[] = [];
     if (Array.isArray(response.data)) {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { distributorService } from "../../distributors/services";
+import { distributorService } from "../../employees/services";
 import { productService } from "../../inventory/services/inventory.service";
 import type { Product } from "../../inventory/types/product.types";
 import {
@@ -106,7 +106,7 @@ export default function DispatchCenterPage() {
 
       setDistributors(
         distributorItems.filter(
-          (item: any) => item?.role === "distribuidor" && item?._id
+          (item: any) => item?.role === "employee" && item?._id
         )
       );
       setProducts(productItems);

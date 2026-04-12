@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { authService } from "../features/auth/services";
 import { useSession } from "../hooks/useSession";
+import { normalizeEmployeeRole } from "../shared/utils/roleAliases";
 
 interface ProtectedRouteProps {
   children: ReactElement;
@@ -35,36 +36,38 @@ export default function ProtectedRoute({
       );
     })?.role || null;
 
-  const effectiveRole = activeMembershipRole || user?.role;
+  const effectiveRole = normalizeEmployeeRole(
+    activeMembershipRole || user?.role
+  );
 
   const operativoAdminToDistributorMap: Record<string, string> = {
-    "/admin/stock-management": "/distributor/operativo/stock-management",
-    "/admin/global-inventory": "/distributor/operativo/global-inventory",
-    "/admin/branches": "/distributor/operativo/branches",
-    "/admin/inventory-entries": "/distributor/operativo/inventory-entries",
-    "/admin/transfer-history": "/distributor/operativo/transfer-history",
-    "/admin/sales": "/distributor/operativo/sales",
-    "/admin/analytics": "/distributor/operativo/analytics",
-    "/admin/expenses": "/distributor/operativo/expenses",
-    "/admin/team": "/distributor/operativo/team",
+    "/admin/stock-management": "/staff/operativo/stock-management",
+    "/admin/global-inventory": "/staff/operativo/global-inventory",
+    "/admin/branches": "/staff/operativo/branches",
+    "/admin/inventory-entries": "/staff/operativo/inventory-entries",
+    "/admin/transfer-history": "/staff/operativo/transfer-history",
+    "/admin/sales": "/staff/operativo/sales",
+    "/admin/analytics": "/staff/operativo/analytics",
+    "/admin/expenses": "/staff/operativo/expenses",
+    "/admin/team": "/staff/operativo/team",
   };
 
   const distributorAdminPrefixRedirects: Array<{
     prefix: string;
     target: string;
   }> = [
-    { prefix: "/admin/products", target: "/distributor/products" },
-    { prefix: "/admin/add-product", target: "/distributor/products" },
-    { prefix: "/admin/distributors", target: "/distributor/operativo/team" },
-    { prefix: "/admin/credits", target: "/distributor/credits" },
-    { prefix: "/admin/register-sale", target: "/distributor/register-sale" },
+    { prefix: "/admin/products", target: "/staff/products" },
+    { prefix: "/admin/add-product", target: "/staff/products" },
+    { prefix: "/admin/distributors", target: "/staff/operativo/team" },
+    { prefix: "/admin/credits", target: "/staff/credits" },
+    { prefix: "/admin/register-sale", target: "/staff/register-sale" },
     {
       prefix: "/admin/register-promotion",
-      target: "/distributor/register-promotion",
+      target: "/staff/register-promotion",
     },
   ];
 
-  if (effectiveRole === "distribuidor") {
+  if (effectiveRole === "employee") {
     const distributorOperativoTarget =
       operativoAdminToDistributorMap[location.pathname];
 
@@ -115,7 +118,9 @@ export default function ProtectedRoute({
     user.subscriptionExpiresAt &&
     new Date(user.subscriptionExpiresAt) < new Date();
 
-  if (user.role !== "god" && (user.status !== "active" || isExpired)) {
+  const normalizedUserRole = normalizeEmployeeRole(user.role);
+
+  if (normalizedUserRole !== "god" && (user.status !== "active" || isExpired)) {
     const reason = isExpired ? "expired" : user.status;
     return (
       <Navigate to="/account-hold" replace state={{ from: location, reason }} />
@@ -127,8 +132,8 @@ export default function ProtectedRoute({
     if (!effectiveRole || !allowedRoles.includes(effectiveRole)) {
       // Redirect to appropriate dashboard based on user's actual role
       const targetPath =
-        effectiveRole === "distribuidor"
-          ? "/distributor/dashboard"
+        effectiveRole === "employee"
+          ? "/staff/dashboard"
           : effectiveRole === "admin" || effectiveRole === "super_admin"
             ? "/admin/analytics"
             : effectiveRole === "god"

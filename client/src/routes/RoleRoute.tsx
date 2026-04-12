@@ -1,14 +1,16 @@
 import type { ReactElement } from "react";
 import { Navigate } from "react-router-dom";
 import { authService } from "../features/auth/services";
+import { normalizeEmployeeRole } from "../shared/utils/roleAliases";
 
 interface RoleRouteProps {
   children: ReactElement;
-  role: "admin" | "distribuidor";
+  role: "admin" | "employee";
 }
 
 export function RoleRoute({ children, role }: RoleRouteProps) {
   const user = authService.getCurrentUser();
+  const normalizedUserRole = normalizeEmployeeRole(user?.role);
 
   // If no user, let ProtectedRoute handle it
   if (!user) {
@@ -16,11 +18,11 @@ export function RoleRoute({ children, role }: RoleRouteProps) {
   }
 
   // Check role and redirect to appropriate dashboard
-  if (user.role !== role) {
-    if (user.role === "distribuidor") {
-      return <Navigate to="/distributor/dashboard" replace />;
+  if (normalizedUserRole !== role) {
+    if (normalizedUserRole === "employee") {
+      return <Navigate to="/staff/dashboard" replace />;
     }
-    if (user.role === "admin") {
+    if (normalizedUserRole === "admin") {
       return <Navigate to="/admin/analytics" replace />;
     }
     return <Navigate to="/" replace />;

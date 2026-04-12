@@ -23,7 +23,7 @@ export interface Notification {
   _id: string;
   business: string;
   user?: string;
-  targetRole?: "admin" | "distribuidor" | "all";
+  targetRole?: "admin" | "employee" | "all";
   type: NotificationType;
   title: string;
   message: string;

@@ -16,7 +16,7 @@ export default function ImpersonationBanner() {
       );
       const currentUser = authService.getCurrentUser();
       setIsImpersonating(hasOriginalToken);
-      setCurrentName(currentUser?.name || "Distribuidor");
+      setCurrentName(currentUser?.name || "Empleado");
     };
 
     syncState();

@@ -36,7 +36,7 @@ const resolveDistributorId = (req) => {
   const userId = req.user?.id || req.user?._id;
   const membershipRole = req.membership?.role;
 
-  if (req.user?.role === "distribuidor" || membershipRole === "distribuidor") {
+  if (req.user?.role === "employee" || membershipRole === "employee") {
     return userId;
   }
 

@@ -37,7 +37,7 @@ type SaleLookupResponse = {
   saleId: string;
   saleDate: string;
   seller: {
-    role: "admin" | "distribuidor";
+    role: "admin" | "employee";
     user: { _id: string; name: string; email?: string } | string | null;
   };
   items: SaleLookupItem[];
@@ -45,7 +45,7 @@ type SaleLookupResponse = {
 
 export default function CustomerWarrantyPage() {
   const { user } = useSession();
-  const isDistributor = user?.role === "distribuidor";
+  const isDistributor = user?.role === "employee";
 
   const [lookupId, setLookupId] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -300,10 +300,7 @@ export default function CustomerWarrantyPage() {
     sales.forEach(sale => {
       if (sale.distributor) {
         if (typeof sale.distributor === "object") {
-          map.set(
-            sale.distributor._id,
-            sale.distributor.name || "Distribuidor"
-          );
+          map.set(sale.distributor._id, sale.distributor.name || "Empleado");
         } else {
           map.set(sale.distributor, "Distribuidor");
         }
@@ -744,7 +741,7 @@ export default function CustomerWarrantyPage() {
                   const resolvedSaleId = sale.saleId || sale._id;
                   const responsibleName = sale.distributor
                     ? typeof sale.distributor === "object"
-                      ? sale.distributor.name || "Distribuidor"
+                      ? sale.distributor.name || "Empleado"
                       : "Distribuidor"
                     : typeof sale.createdBy === "object"
                       ? sale.createdBy.name || "Admin"
@@ -797,10 +794,7 @@ export default function CustomerWarrantyPage() {
               </p>
             </div>
             <div className="text-sm text-gray-300">
-              {saleData.seller?.role === "distribuidor"
-                ? "Distribuidor"
-                : "Admin"}
-              :{" "}
+              {saleData.seller?.role === "employee" ? "Distribuidor" : "Admin"}:{" "}
               {typeof saleData.seller?.user === "object"
                 ? saleData.seller.user?.name
                 : "-"}

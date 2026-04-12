@@ -11,7 +11,7 @@ import { branchService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
 import { expenseService } from "../../common/services";
 import type { Expense } from "../../common/types/common.types";
-import { distributorService } from "../../distributors/services/distributor.service";
+import { distributorService } from "../../employees/services/distributor.service";
 import { productService } from "../../inventory/services/inventory.service";
 import type { Product } from "../../inventory/types/product.types";
 

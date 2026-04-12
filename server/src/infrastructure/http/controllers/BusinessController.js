@@ -3,7 +3,7 @@ import Membership from "../../database/models/Membership.js";
 import User from "../../database/models/User.js";
 
 const repository = new BusinessPersistenceUseCase();
-const ALLOWED_MEMBER_ROLES = new Set(["admin", "distribuidor", "viewer"]);
+const ALLOWED_MEMBER_ROLES = new Set(["admin", "employee", "viewer"]);
 const ROLES_AUTORIZADOS_COMISION_FIJA = new Set([
   "admin",
   "super_admin",

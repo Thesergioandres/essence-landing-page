@@ -136,7 +136,7 @@ export const getBusinessUsage = async (businessId) => {
     Branch.countDocuments({ business: businessId, isWarehouse: { $ne: true } }),
     Membership.countDocuments({
       business: businessId,
-      role: "distribuidor",
+      role: "employee",
       status: "active",
     }),
   ]);

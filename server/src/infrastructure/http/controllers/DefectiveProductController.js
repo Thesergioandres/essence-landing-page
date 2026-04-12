@@ -55,7 +55,7 @@ export class DefectiveProductController {
       }
 
       const role = req.membership?.role || req.user?.role;
-      const isDistributor = role === "distribuidor";
+      const isDistributor = role === "employee";
 
       if (isDistributor) {
         const allowedBranches = Array.isArray(req.membership?.allowedBranches)
@@ -231,7 +231,7 @@ export class DefectiveProductController {
       }
 
       const role = req.membership?.role;
-      const isDistributor = role === "distribuidor";
+      const isDistributor = role === "employee";
       const replacementSource = req.body?.replacementSource;
 
       if (isDistributor && replacementSource === "warehouse") {
@@ -280,7 +280,7 @@ export class DefectiveProductController {
       }
 
       const role = req.membership?.role;
-      if (role === "distribuidor") {
+      if (role === "employee") {
         return res.status(403).json({
           success: false,
           message: "No tienes permiso para resolver garantias",

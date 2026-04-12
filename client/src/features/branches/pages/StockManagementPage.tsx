@@ -5,7 +5,7 @@ import { Button, LoadingSpinner } from "../../../shared/components/ui";
 import type { User } from "../../auth/types/auth.types";
 import { branchService, branchTransferService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
-import { distributorService } from "../../distributors/services";
+import { distributorService } from "../../employees/services";
 import {
   productService,
   stockService,
@@ -36,9 +36,9 @@ const StockManagement = () => {
   const location = useLocation();
   const firstSegment = location.pathname.split("/").filter(Boolean)[0] || "";
   const areaBase = firstSegment ? `/${firstSegment}` : "";
-  const isDistributorView = areaBase === "/distributor";
+  const isDistributorView = areaBase === "/staff";
   const isOperativoDistributorView = location.pathname.startsWith(
-    "/distributor/operativo/"
+    "/staff/operativo/"
   );
   const addDistributorRoute = isOperativoDistributorView
     ? `${areaBase}/operativo/team`

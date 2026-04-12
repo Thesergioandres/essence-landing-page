@@ -1,4 +1,5 @@
 import { OwnerAccessPolicyService } from "../../domain/services/OwnerAccessPolicyService.js";
+import { employeeRoleQuery } from "../../utils/roleAliases.js";
 import Business from "../database/models/Business.js";
 import Membership from "../database/models/Membership.js";
 import User from "../database/models/User.js";
@@ -12,7 +13,7 @@ export const checkBusinessOwnerAccess = async (userId) => {
 
     const membership = await Membership.findOne({
       user: userId,
-      role: "distribuidor",
+      role: employeeRoleQuery,
       status: "active",
     }).populate("business");
 

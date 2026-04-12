@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LoadingSpinner } from "../../../shared/components/ui";
 import type { User } from "../../auth/types/auth.types";
 import type { Branch } from "../../business/types/business.types";
-import { distributorService } from "../../distributors/services";
+import { distributorService } from "../../employees/services";
 import { stockService } from "../../inventory/services/inventory.service";
 import type { DistributorStock } from "../../inventory/types/product.types";
 
@@ -401,7 +401,7 @@ export default function TransferStock() {
               <p className="mt-4 text-sm text-amber-300">
                 ⚠️ Esta acción no se puede deshacer. El stock se restará de tu
                 inventario y se agregará al inventario del{" "}
-                {transferType === "distributor" ? "distribuidor" : "sede"}{" "}
+                {transferType === "distributor" ? "employee" : "sede"}{" "}
                 seleccionado{transferType === "distributor" ? "" : "."}.
               </p>
             </div>
