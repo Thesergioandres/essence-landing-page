@@ -1,4 +1,4 @@
-import { defineConfig, devices } from "@playwright/test";
+﻿import { defineConfig, devices } from "@playwright/test";
 import * as dotenv from "dotenv";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -14,8 +14,8 @@ dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 dotenv.config({ path: path.resolve(__dirname, "..", "server", ".env") });
 
 // Log loaded API key status
-console.log(
-  `🔐 GEMINI_API_KEY: ${process.env.GEMINI_API_KEY ? "Loaded ✅" : "Not found ❌"}`
+console.warn("[Essence Debug]", 
+  `ðŸ” GEMINI_API_KEY: ${process.env.GEMINI_API_KEY ? "Loaded âœ…" : "Not found âŒ"}`
 );
 
 /**
@@ -117,3 +117,4 @@ export default defineConfig({
   //   },
   // ],
 });
+

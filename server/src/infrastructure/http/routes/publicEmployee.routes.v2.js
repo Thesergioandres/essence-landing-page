@@ -1,3 +1,10 @@
-import publicDistributorRoutes from "./publicDistributor.routes.v2.js";
+import { Router } from "express";
+import { EmployeeController } from "../controllers/EmployeeController.js";
 
-export default publicDistributorRoutes;
+const router = Router();
+const controller = new EmployeeController();
+
+// Public employee catalog (no auth)
+router.get("/:id/catalog", (req, res) => controller.getPublicCatalog(req, res));
+
+export default router;

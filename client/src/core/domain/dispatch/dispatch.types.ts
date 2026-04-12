@@ -15,7 +15,7 @@ export interface DispatchItem {
 
 export interface DispatchRequest {
   _id: string;
-  distributor:
+  employee:
     | string
     | {
         _id: string;
@@ -60,7 +60,7 @@ export interface DispatchRequest {
 
 export interface DispatchRequestsQuery {
   status?: DispatchStatus;
-  distributorId?: string;
+  employeeId?: string;
   page?: number;
   limit?: number;
   startDate?: string;
@@ -80,7 +80,7 @@ export interface DispatchRequestsResult {
 export interface DispatchHotSector {
   zoneId: string;
   zoneName: string;
-  zoneType: "distributor" | "branch";
+  zoneType: "employee" | "branch";
   units: number;
   revenue: number;
   marginProfit: number;

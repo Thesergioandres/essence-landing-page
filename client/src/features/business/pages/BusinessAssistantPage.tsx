@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useNavigate } from "react-router-dom";
 import { useFeatures } from "../../../components/FeatureSection";
@@ -77,7 +77,7 @@ const categoryLabel = (category?: string) => {
     case "demanda":
       return "Demanda";
     case "operacion":
-      return "Operación";
+      return "OperaciÃ³n";
     default:
       return null;
   }
@@ -86,7 +86,7 @@ const categoryLabel = (category?: string) => {
 const actionLabel = (action: string) => {
   switch (action) {
     case "buy_more_inventory":
-      return "Comprar más inventario";
+      return "Comprar mÃ¡s inventario";
     case "pause_purchases":
       return "Pausar compras";
     case "decrease_price":
@@ -94,11 +94,11 @@ const actionLabel = (action: string) => {
     case "increase_price":
       return "Subir precio";
     case "run_promotion":
-      return "Hacer promoción";
+      return "Hacer promociÃ³n";
     case "review_margin":
       return "Revisar margen";
     case "clearance":
-      return "Liquidación";
+      return "LiquidaciÃ³n";
     default:
       return "Mantener";
   }
@@ -182,7 +182,7 @@ const formatAnalysisMarkdown = (raw: any) => {
     "**Fortalezas**",
     strengths.length
       ? strengths.map((item: string) => `- ${item}`).join("\n")
-      : "- Aun sin señales claras. Registra ventas e inventario para detectar fortalezas.",
+      : "- Aun sin seÃ±ales claras. Registra ventas e inventario para detectar fortalezas.",
     "",
     "**Debilidades**",
     weaknesses.length
@@ -335,7 +335,7 @@ export default function BusinessAssistant() {
   // Feature flags
   const features = useFeatures([
     "credits",
-    "distributors",
+    "employees",
     "inventory",
     "promotions",
     "expenses",
@@ -355,7 +355,7 @@ export default function BusinessAssistant() {
         total: number;
         warehouse: number;
         branches: number;
-        distributors: number;
+        employees: number;
         unassigned: number;
       }
     >
@@ -369,7 +369,7 @@ export default function BusinessAssistant() {
   const [analystError, setAnalystError] = useState<string | null>(null);
   const [lastAnalysisDate, setLastAnalysisDate] = useState<string | null>(null);
 
-  // Métricas adicionales para contexto
+  // MÃ©tricas adicionales para contexto
   const [creditMetrics, setCreditMetrics] = useState<CreditMetrics | null>(
     null
   );
@@ -513,7 +513,7 @@ export default function BusinessAssistant() {
   // Filtro ABC
   const [abcFilter, setAbcFilter] = useState<"ALL" | "A" | "B" | "C">("ALL");
 
-  // Estado para creación de promos desde AI
+  // Estado para creaciÃ³n de promos desde AI
   const [creatingPromoIdx, setCreatingPromoIdx] = useState<number | null>(null);
   const [promoSuccessMsg, setPromoSuccessMsg] = useState<string | null>(null);
   const [selectedPromoIdx, setSelectedPromoIdx] = useState(0);
@@ -539,9 +539,9 @@ export default function BusinessAssistant() {
       setCreatingPromoIdx(idx);
       setPromoSuccessMsg(null);
 
-      // Obtener precios de los productos del backend (ya están en recommendations)
+      // Obtener precios de los productos del backend (ya estÃ¡n en recommendations)
       const productPrices: { id: string; price: number }[] = [];
-      const distributorPrices: { id: string; price: number }[] = [];
+      const employeePrices: { id: string; price: number }[] = [];
       const recMap = new Map(
         (data?.recommendations || []).map(rec => [rec.productId, rec])
       );
@@ -553,11 +553,11 @@ export default function BusinessAssistant() {
           product?.clientPrice ||
           product?.suggestedPrice ||
           0;
-        const distributorPrice =
-          product?.distributorPrice || product?.clientPrice || price || 0;
+        const employeePrice =
+          product?.employeePrice || product?.clientPrice || price || 0;
         if (!price) continue;
         productPrices.push({ id: productId, price });
-        distributorPrices.push({ id: productId, price: distributorPrice });
+        employeePrices.push({ id: productId, price: employeePrice });
       }
 
       if (productPrices.length === 0) {
@@ -566,7 +566,7 @@ export default function BusinessAssistant() {
 
       // Calcular precio combo con descuento sugerido
       const totalPrice = productPrices.reduce((sum, p) => sum + p.price, 0);
-      const totalDistributorPrice = distributorPrices.reduce(
+      const totalEmployeePrice = employeePrices.reduce(
         (sum, p) => sum + p.price,
         0
       );
@@ -575,9 +575,9 @@ export default function BusinessAssistant() {
         0,
         Math.round(totalPrice * (1 - discountPct / 100))
       );
-      const promoDistributorPrice = Math.max(
+      const promoEmployeePrice = Math.max(
         0,
-        Math.round(totalDistributorPrice * (1 - discountPct / 100))
+        Math.round(totalEmployeePrice * (1 - discountPct / 100))
       );
 
       const comboItems = productPrices.map(item => ({
@@ -587,12 +587,12 @@ export default function BusinessAssistant() {
       }));
 
       await promotionService.create({
-        name: promo.title.replace("📦 ", "").replace("🔥 ", ""),
+        name: promo.title.replace("ðŸ“¦ ", "").replace("ðŸ”¥ ", ""),
         type: "combo",
         description: promo.description,
         comboItems,
         promotionPrice: promoPrice,
-        distributorPrice: promoDistributorPrice,
+        employeePrice: promoEmployeePrice,
         originalPrice: Math.round(totalPrice),
         discount: {
           type: "percentage",
@@ -602,12 +602,12 @@ export default function BusinessAssistant() {
       });
 
       setPromoSuccessMsg(
-        `✅ Promoción "${promo.title}" creada y activa en catálogo`
+        `âœ… PromociÃ³n "${promo.title}" creada y activa en catÃ¡logo`
       );
       setTimeout(() => setPromoSuccessMsg(null), 5000);
     } catch (err: unknown) {
       console.error("Error creating promo:", err);
-      setPromoSuccessMsg(`❌ Error: ${(err as Error).message}`);
+      setPromoSuccessMsg(`âŒ Error: ${(err as Error).message}`);
     } finally {
       setCreatingPromoIdx(null);
     }
@@ -617,7 +617,7 @@ export default function BusinessAssistant() {
     const promos = data?.promotions || [];
     const promo = promos[selectedPromoIdx] || promos[0];
     if (!promo) return;
-    const cleanName = promo.title.replace("📦 ", "").replace("🔥 ", "").trim();
+    const cleanName = promo.title.replace("ðŸ“¦ ", "").replace("ðŸ”¥ ", "").trim();
 
     navigate("/admin/promotions", {
       state: {
@@ -683,9 +683,9 @@ export default function BusinessAssistant() {
           existing.stock.warehouseStock;
         const branchesStock =
           inventorySnapshot?.branches ?? existing.stock.branchesStock ?? 0;
-        const distributorsStock =
-          inventorySnapshot?.distributors ??
-          existing.stock.distributorsStock ??
+        const employeesStock =
+          inventorySnapshot?.employees ??
+          existing.stock.employeesStock ??
           0;
         const unassignedStock =
           inventorySnapshot?.unassigned ?? existing.stock.unassignedStock ?? 0;
@@ -701,7 +701,7 @@ export default function BusinessAssistant() {
             totalStock,
             warehouseStock,
             branchesStock,
-            distributorsStock,
+            employeesStock,
             unassignedStock,
             lowStockAlert,
           },
@@ -721,7 +721,7 @@ export default function BusinessAssistant() {
       const warehouseStock =
         inventorySnapshot?.warehouse ?? product.warehouseStock ?? 0;
       const branchesStock = inventorySnapshot?.branches ?? 0;
-      const distributorsStock = inventorySnapshot?.distributors ?? 0;
+      const employeesStock = inventorySnapshot?.employees ?? 0;
       const unassignedStock = inventorySnapshot?.unassigned ?? 0;
       const price = product.clientPrice ?? product.suggestedPrice ?? 0;
       const cost = product.averageCost || product.purchasePrice || 0;
@@ -741,7 +741,7 @@ export default function BusinessAssistant() {
         stock: {
           warehouseStock,
           branchesStock,
-          distributorsStock,
+          employeesStock,
           unassignedStock,
           totalStock,
           lowStockAlert: product.lowStockAlert ?? 0,
@@ -804,7 +804,7 @@ export default function BusinessAssistant() {
         }
       } catch {
         // Silenciosamente fallar si no hay memoria (es normal la primera vez)
-        console.log("No previous CEO memory found.");
+        console.warn("[Essence Debug]", "No previous CEO memory found.");
       }
     };
     loadMemory();
@@ -845,7 +845,7 @@ export default function BusinessAssistant() {
           new Date(res.generatedAt || new Date().toISOString()).toISOString()
         );
       } else {
-        setAnalystError("No se recibió un análisis válido.");
+        setAnalystError("No se recibiÃ³ un anÃ¡lisis vÃ¡lido.");
       }
     } catch (e: any) {
       setAnalystError(
@@ -997,7 +997,7 @@ export default function BusinessAssistant() {
       }
     } catch (e: any) {
       setConfigError(
-        e?.response?.data?.message || "No se pudo cargar la configuración"
+        e?.response?.data?.message || "No se pudo cargar la configuraciÃ³n"
       );
       setConfig(null);
       setConfigDraft(null);
@@ -1049,7 +1049,7 @@ export default function BusinessAssistant() {
       // Keep the same draft values after save
     } catch (e: any) {
       setConfigError(
-        e?.response?.data?.message || "No se pudo guardar la configuración"
+        e?.response?.data?.message || "No se pudo guardar la configuraciÃ³n"
       );
     } finally {
       setConfigSaving(false);
@@ -1223,7 +1223,7 @@ export default function BusinessAssistant() {
               total: number;
               warehouse: number;
               branches: number;
-              distributors: number;
+              employees: number;
               unassigned: number;
             }
           >
@@ -1249,8 +1249,8 @@ export default function BusinessAssistant() {
             branchDetails.length > 0 ? branchesFromDetails : item.branches || 0;
 
           const warehouse = item.warehouse || 0;
-          const distributors = item.distributors || 0;
-          const total = warehouse + branches + distributors;
+          const employees = item.employees || 0;
+          const total = warehouse + branches + employees;
           const systemTotal = item.systemTotal || 0;
           const unassigned = systemTotal - total;
 
@@ -1258,7 +1258,7 @@ export default function BusinessAssistant() {
             total,
             warehouse,
             branches,
-            distributors,
+            employees,
             unassigned,
           };
           return acc;
@@ -1274,7 +1274,7 @@ export default function BusinessAssistant() {
     loadGlobalInventory();
   }, []);
 
-  // Cargar métricas adicionales de créditos para contexto
+  // Cargar mÃ©tricas adicionales de crÃ©ditos para contexto
   useEffect(() => {
     const loadAdditionalInsights = async () => {
       try {
@@ -1514,7 +1514,7 @@ export default function BusinessAssistant() {
     if (!primary) {
       return (
         <span className="inline-flex items-center rounded-full border border-gray-600/40 bg-gray-700/40 px-2 py-1 text-xs text-gray-200">
-          Sin acción
+          Sin acciÃ³n
         </span>
       );
     }
@@ -1569,7 +1569,7 @@ export default function BusinessAssistant() {
   };
 
   const formatPctOrDash = (value: number, showDash: boolean) => {
-    if (showDash) return "—";
+    if (showDash) return "â€”";
     return `${value.toFixed(1)}%`;
   };
 
@@ -1584,16 +1584,16 @@ export default function BusinessAssistant() {
 
     if (inventorySnapshot) {
       lines.push(
-        `Stock total: ${inventorySnapshot.total} (Bodega ${inventorySnapshot.warehouse} · Sedes ${inventorySnapshot.branches} · Distribuidores ${inventorySnapshot.distributors})`
+        `Stock total: ${inventorySnapshot.total} (Bodega ${inventorySnapshot.warehouse} Â· Sedes ${inventorySnapshot.branches} Â· Empleados ${inventorySnapshot.employees})`
       );
       if (inventorySnapshot.unassigned > 0) {
         lines.push(`Sin asignar: ${inventorySnapshot.unassigned}`);
       }
     } else {
       const branches = item.stock.branchesStock ?? 0;
-      const distributors = item.stock.distributorsStock ?? 0;
+      const employees = item.stock.employeesStock ?? 0;
       lines.push(
-        `Stock total: ${item.stock.totalStock} (Bodega ${item.stock.warehouseStock} · Sedes ${branches} · Distribuidores ${distributors})`
+        `Stock total: ${item.stock.totalStock} (Bodega ${item.stock.warehouseStock} Â· Sedes ${branches} Â· Empleados ${employees})`
       );
       if ((item.stock.unassignedStock || 0) > 0) {
         lines.push(`Sin asignar: ${item.stock.unassignedStock}`);
@@ -1603,7 +1603,7 @@ export default function BusinessAssistant() {
     if (showPrice) {
       const margin = formatPctOrDash(item.metrics.recentMarginPct, false);
       lines.push(
-        `Precio promedio: ${formatCurrencyCOP(item.metrics.recentAvgPrice)} · Margen: ${margin}`
+        `Precio promedio: ${formatCurrencyCOP(item.metrics.recentAvgPrice)} Â· Margen: ${margin}`
       );
     } else {
       lines.push("Precio y margen sin datos recientes.");
@@ -1611,15 +1611,15 @@ export default function BusinessAssistant() {
 
     if (showCategoryAvg) {
       lines.push(
-        `vs categoría: ${formatPctOrDash(item.metrics.priceVsCategoryPct, false)}`
+        `vs categorÃ­a: ${formatPctOrDash(item.metrics.priceVsCategoryPct, false)}`
       );
     } else {
-      lines.push("Sin referencia de precio por categoría.");
+      lines.push("Sin referencia de precio por categorÃ­a.");
     }
 
     if (showSales) {
       lines.push(
-        `Ventas ${item.metrics.recentDays}d: ${item.metrics.recentUnits} uds · Ingresos: ${formatCurrencyCOP(item.metrics.recentRevenue)}`
+        `Ventas ${item.metrics.recentDays}d: ${item.metrics.recentUnits} uds Â· Ingresos: ${formatCurrencyCOP(item.metrics.recentRevenue)}`
       );
     } else {
       lines.push(`Sin ventas confirmadas en ${item.metrics.recentDays}d.`);
@@ -1660,7 +1660,7 @@ export default function BusinessAssistant() {
 
     if (!parts.length) return null;
 
-    return <p className="mt-2 text-xs text-gray-300">{parts.join(" · ")}</p>;
+    return <p className="mt-2 text-xs text-gray-300">{parts.join(" Â· ")}</p>;
   };
 
   const renderActionButtons = (item: BusinessAssistantRecommendationItem) => {
@@ -1747,7 +1747,7 @@ export default function BusinessAssistant() {
       return null;
 
     const parts: string[] = [
-      `Precio: ${formatCurrencyCOP(current)} → ${formatCurrencyCOP(suggested)}`,
+      `Precio: ${formatCurrencyCOP(current)} â†’ ${formatCurrencyCOP(suggested)}`,
     ];
 
     if (typeof price.effectiveChangePct === "number") {
@@ -1763,7 +1763,7 @@ export default function BusinessAssistant() {
       parts.push(`Margen obj: ${price.targetMarginPct.toFixed(0)}%`);
     }
 
-    return <p className="mt-2 text-xs text-gray-300">{parts.join(" · ")}</p>;
+    return <p className="mt-2 text-xs text-gray-300">{parts.join(" Â· ")}</p>;
   };
 
   return (
@@ -1778,40 +1778,40 @@ export default function BusinessAssistant() {
       <div className="relative space-y-8">
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200">
-            ⚡ Panel de inteligencia comercial
+            âš¡ Panel de inteligencia comercial
           </div>
           <h1 className="mt-3 text-4xl font-bold text-white md:text-5xl">
             Business Assistant
           </h1>
           <p className="mt-2 max-w-3xl text-sm text-slate-300 md:text-base">
-            Recomendaciones accionables por producto con señales de demanda,
-            margen real, cobertura de inventario y comparativos por categoría.
+            Recomendaciones accionables por producto con seÃ±ales de demanda,
+            margen real, cobertura de inventario y comparativos por categorÃ­a.
           </p>
-          {/* Indicadores de módulos activos */}
+          {/* Indicadores de mÃ³dulos activos */}
           <div className="mt-4 flex flex-wrap gap-2">
             {features.inventory && (
               <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-medium text-cyan-200">
-                📦 Inventario
+                ðŸ“¦ Inventario
               </span>
             )}
             {features.credits && (
               <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-200">
-                💳 Créditos
+                ðŸ’³ CrÃ©ditos
               </span>
             )}
-            {features.distributors && (
+            {features.employees && (
               <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-200">
-                👥 Distribuidores
+                ðŸ‘¥ Empleados
               </span>
             )}
             {features.promotions && (
               <span className="rounded-full bg-sky-500/20 px-3 py-1 text-xs font-medium text-sky-200">
-                🎯 Promociones
+                ðŸŽ¯ Promociones
               </span>
             )}
             {features.gamification && (
               <span className="rounded-full bg-orange-500/20 px-3 py-1 text-xs font-medium text-orange-200">
-                🏆 Gamificación
+                ðŸ† GamificaciÃ³n
               </span>
             )}
           </div>
@@ -1862,19 +1862,19 @@ export default function BusinessAssistant() {
             {features.credits && creditMetrics && (
               <>
                 <div className="rounded-xl border border-orange-700/40 bg-orange-900/20 p-4">
-                  <p className="text-xs text-orange-300/80">💳 Por cobrar</p>
+                  <p className="text-xs text-orange-300/80">ðŸ’³ Por cobrar</p>
                   <p className="mt-1 text-xl font-bold text-orange-300">
                     {formatCurrencyCOP(
                       creditMetrics.total.totalRemainingAmount || 0
                     )}
                   </p>
                   <p className="text-xs text-gray-400">
-                    {creditMetrics.total.totalCredits || 0} créditos activos
+                    {creditMetrics.total.totalCredits || 0} crÃ©ditos activos
                   </p>
                 </div>
                 {(creditMetrics.overdue.count || 0) > 0 && (
                   <div className="rounded-xl border border-red-700/40 bg-red-900/20 p-4">
-                    <p className="text-xs text-red-300/80">⚠️ Vencidos</p>
+                    <p className="text-xs text-red-300/80">âš ï¸ Vencidos</p>
                     <p className="mt-1 text-xl font-bold text-red-400">
                       {creditMetrics.overdue.count}
                     </p>
@@ -1886,7 +1886,7 @@ export default function BusinessAssistant() {
                 )}
                 <div className="rounded-xl border border-green-700/40 bg-green-900/20 p-4">
                   <p className="text-xs text-green-300/80">
-                    📈 Tasa recuperación
+                    ðŸ“ˆ Tasa recuperaciÃ³n
                   </p>
                   <p
                     className={`mt-1 text-xl font-bold ${Number(creditMetrics.recoveryRate || 0) >= 70 ? "text-green-400" : Number(creditMetrics.recoveryRate || 0) >= 50 ? "text-yellow-400" : "text-red-400"}`}
@@ -1905,7 +1905,7 @@ export default function BusinessAssistant() {
           </div>
         )}
 
-        {/* SECCIÓN 2: ESTRATEGA VIRTUAL (PROJECT CEO) */}
+        {/* SECCIÃ“N 2: ESTRATEGA VIRTUAL (PROJECT CEO) */}
         <div className="bg-linear-to-br relative mb-10 overflow-hidden rounded-2xl border border-cyan-500/30 from-gray-950 via-slate-900 to-cyan-900/20 p-6 shadow-2xl md:p-8">
           {/* Decorative background element */}
           <div className="pointer-events-none absolute right-0 top-0 -mr-10 -mt-10 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl"></div>
@@ -1914,18 +1914,18 @@ export default function BusinessAssistant() {
             <div className="mb-8 flex flex-col justify-between gap-6 md:flex-row md:items-center">
               <div>
                 <h2 className="flex items-center gap-3 text-2xl font-bold text-white">
-                  <span className="text-3xl text-cyan-300">✨</span>
+                  <span className="text-3xl text-cyan-300">âœ¨</span>
                   Estratega Virtual (CEO)
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-400">
                   Soy tu consultor de inteligencia artificial. Analizo tus
                   ventas, inventario, gastos y deudas en tiempo real para darte
-                  recomendaciones estratégicas de alto impacto.
+                  recomendaciones estratÃ©gicas de alto impacto.
                 </p>
                 {lastAnalysisDate && (
                   <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-200 ring-1 ring-inset ring-cyan-500/30">
-                    <span>📅</span>
-                    Última actualización:{" "}
+                    <span>ðŸ“…</span>
+                    Ãšltima actualizaciÃ³n:{" "}
                     {new Date(lastAnalysisDate).toLocaleString("es-CO", {
                       dateStyle: "medium",
                       timeStyle: "short",
@@ -1942,8 +1942,8 @@ export default function BusinessAssistant() {
                 disabled={analystLoading}
                 className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-cyan-600 px-6 py-3 font-medium text-white shadow-lg shadow-cyan-500/20 transition-all duration-300 hover:scale-105 hover:bg-cyan-700 active:scale-95 disabled:opacity-70 disabled:hover:scale-100"
               >
-                <span className="mr-2 text-lg">🚀</span>
-                {analystLoading ? "Analizando..." : "Generar Análisis Diario"}
+                <span className="mr-2 text-lg">ðŸš€</span>
+                {analystLoading ? "Analizando..." : "Generar AnÃ¡lisis Diario"}
                 <div className="bg-linear-to-r absolute inset-0 -z-10 -translate-x-full from-transparent via-white/20 to-transparent group-hover:animate-shimmer" />
               </button>
             </div>
@@ -1978,7 +1978,7 @@ export default function BusinessAssistant() {
                 <div className="relative flex rounded-lg bg-gray-900">
                   <input
                     type="text"
-                    placeholder="Pregúntale a tu estratega (ej: ¿Por qué bajó mi margen este mes?)"
+                    placeholder="PregÃºntale a tu estratega (ej: Â¿Por quÃ© bajÃ³ mi margen este mes?)"
                     className="w-full bg-transparent px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none"
                     value={analystQuestion}
                     onChange={e => setAnalystQuestion(e.target.value)}
@@ -2019,7 +2019,7 @@ export default function BusinessAssistant() {
                   >
                     {data?.promotions?.map((promo, index) => (
                       <option key={`${promo.title}-${index}`} value={index}>
-                        {promo.title?.replace("📦 ", "").replace("🔥 ", "") ||
+                        {promo.title?.replace("ðŸ“¦ ", "").replace("ðŸ”¥ ", "") ||
                           `Promo ${index + 1}`}
                       </option>
                     ))}
@@ -2029,7 +2029,7 @@ export default function BusinessAssistant() {
                     onClick={handleOpenPromoModal}
                     className="inline-flex items-center gap-2 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20"
                   >
-                    ⚡ Abrir promo sugerida
+                    âš¡ Abrir promo sugerida
                   </button>
                 </div>
               )}
@@ -2086,7 +2086,7 @@ export default function BusinessAssistant() {
                         d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21l-.394-.433a2.25 2.25 0 00-1.423-1.423L13.5 18l1.183-.394a2.25 2.25 0 001.423-1.423l.394-.433.394.433a2.25 2.25 0 001.423 1.423L20.5 18l-1.183.394a2.25 2.25 0 00-1.423 1.423z"
                       />
                     </svg>
-                    <p>Esperando tu consulta estratégica...</p>
+                    <p>Esperando tu consulta estratÃ©gica...</p>
                   </div>
                 )}
               </div>
@@ -2140,7 +2140,7 @@ export default function BusinessAssistant() {
                         {item.productName}
                       </p>
                       <p className="text-xs text-purple-200/80">
-                        Stock: {item.stock.warehouseStock} · Margen:{" "}
+                        Stock: {item.stock.warehouseStock} Â· Margen:{" "}
                         {item.metrics.recentMarginPct.toFixed(1)}%
                       </p>
                     </div>
@@ -2188,13 +2188,13 @@ export default function BusinessAssistant() {
                   Generado: {new Date(data.generatedAt).toLocaleString("es-CO")}
                 </span>
               ) : (
-                <span>Generando recomendaciones…</span>
+                <span>Generando recomendacionesâ€¦</span>
               )}
               {data?.window ? (
                 <div className="mt-1 text-xs text-gray-500">
                   Ventana: {data.window.recentDays}d (reciente)
                   {data.window.horizonDays !== null
-                    ? ` · ${data.window.horizonDays}d (horizonte)`
+                    ? ` Â· ${data.window.horizonDays}d (horizonte)`
                     : ""}
                 </div>
               ) : null}
@@ -2206,23 +2206,23 @@ export default function BusinessAssistant() {
                 disabled={loading}
                 className="rounded-md bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-60"
               >
-                {loading ? "Cargando…" : "Actualizar"}
+                {loading ? "Cargandoâ€¦" : "Actualizar"}
               </button>
               <button
                 onClick={() => fetchRecommendations({ force: 1 })}
                 disabled={loading}
                 className="rounded-md border border-gray-600/50 bg-gray-900/30 px-4 py-2 text-gray-200 hover:bg-gray-900/50 disabled:opacity-60"
-                title="Ignora la caché y recalcula en el backend"
+                title="Ignora la cachÃ© y recalcula en el backend"
               >
-                Forzar recálculo
+                Forzar recÃ¡lculo
               </button>
               <button
                 onClick={createJob}
                 disabled={jobLoading}
                 className="rounded-md border border-gray-600/50 bg-gray-900/30 px-4 py-2 text-gray-200 hover:bg-gray-900/50 disabled:opacity-60"
-                title="Útil para catálogos grandes (procesa en background)"
+                title="Ãštil para catÃ¡logos grandes (procesa en background)"
               >
-                {jobLoading ? "Creando job…" : "Generar en background"}
+                {jobLoading ? "Creando jobâ€¦" : "Generar en background"}
               </button>
             </div>
           </div>
@@ -2238,13 +2238,13 @@ export default function BusinessAssistant() {
                   <input
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    placeholder="Ej: Shampoo, Crema…"
+                    placeholder="Ej: Shampoo, Cremaâ€¦"
                     className="mt-1 w-full rounded-md border border-gray-700 bg-gray-900/40 px-3 py-2 text-sm text-gray-200 outline-none"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="text-xs text-gray-400">Acción</span>
+                  <span className="text-xs text-gray-400">AcciÃ³n</span>
                   <select
                     value={actionFilter}
                     onChange={e =>
@@ -2254,15 +2254,15 @@ export default function BusinessAssistant() {
                   >
                     <option value="all">Todas</option>
                     <option value="buy_more_inventory">
-                      Comprar más inventario
+                      Comprar mÃ¡s inventario
                     </option>
                     <option value="pause_purchases">Pausar compras</option>
                     <option value="decrease_price">Bajar precio</option>
                     <option value="increase_price">Subir precio</option>
-                    <option value="run_promotion">Hacer promoción</option>
+                    <option value="run_promotion">Hacer promociÃ³n</option>
                     <option value="review_margin">Revisar margen</option>
-                    <option value="clearance">Liquidación</option>
-                    <option value="none">Sin acción</option>
+                    <option value="clearance">LiquidaciÃ³n</option>
+                    <option value="none">Sin acciÃ³n</option>
                   </select>
                 </label>
 
@@ -2272,7 +2272,7 @@ export default function BusinessAssistant() {
                     checked={onlyActionable}
                     onChange={e => setOnlyActionable(e.target.checked)}
                   />
-                  Solo con acción
+                  Solo con acciÃ³n
                 </label>
 
                 <label className="block">
@@ -2295,7 +2295,7 @@ export default function BusinessAssistant() {
 
             <div className="rounded-lg border border-gray-700 bg-gray-900/30 p-4">
               <p className="mb-3 text-sm font-semibold text-gray-200">
-                Ventana de análisis
+                Ventana de anÃ¡lisis
               </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="block">
@@ -2353,11 +2353,11 @@ export default function BusinessAssistant() {
                     checked={force}
                     onChange={e => setForce(e.target.checked)}
                   />
-                  Ignorar caché (force)
+                  Ignorar cachÃ© (force)
                 </label>
 
                 <div className="text-xs text-gray-500">
-                  Si defines fechas, dominan sobre días.
+                  Si defines fechas, dominan sobre dÃ­as.
                 </div>
               </div>
             </div>
@@ -2368,9 +2368,9 @@ export default function BusinessAssistant() {
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <span className="font-semibold">Job:</span>{" "}
-                  {job?.jobId ? job.jobId : "—"} ·{" "}
+                  {job?.jobId ? job.jobId : "â€”"} Â·{" "}
                   <span className="font-semibold">Estado:</span>{" "}
-                  {job?.status || "—"}
+                  {job?.status || "â€”"}
                 </div>
                 {job?.jobId ? (
                   <button
@@ -2403,10 +2403,10 @@ export default function BusinessAssistant() {
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-white">
-                Configuración
+                ConfiguraciÃ³n
               </h2>
               <p className="mt-1 text-sm text-slate-300">
-                Parametros base, cache y señales que ajustan las decisiones.
+                Parametros base, cache y seÃ±ales que ajustan las decisiones.
               </p>
             </div>
 
@@ -2416,14 +2416,14 @@ export default function BusinessAssistant() {
                 disabled={configLoading}
                 className="rounded-md border border-slate-600/50 bg-slate-950/40 px-4 py-2 text-slate-200 hover:bg-slate-900/60 disabled:opacity-60"
               >
-                {configLoading ? "Cargando…" : "Recargar"}
+                {configLoading ? "Cargandoâ€¦" : "Recargar"}
               </button>
               <button
                 onClick={saveConfig}
                 disabled={configSaving || !configDraft}
                 className="rounded-md bg-cyan-600 px-4 py-2 text-white hover:bg-cyan-700 disabled:opacity-60"
               >
-                {configSaving ? "Guardando…" : "Guardar"}
+                {configSaving ? "Guardandoâ€¦" : "Guardar"}
               </button>
             </div>
           </div>
@@ -2466,7 +2466,7 @@ export default function BusinessAssistant() {
               />
             </label>
             <label className="block">
-              <span className="text-xs text-slate-300">TTL caché (s)</span>
+              <span className="text-xs text-slate-300">TTL cachÃ© (s)</span>
               <input
                 value={configDraft?.cacheTtlSeconds ?? ""}
                 onChange={e =>
@@ -2499,7 +2499,7 @@ export default function BusinessAssistant() {
             </label>
             <label className="block">
               <span className="text-xs text-slate-300">
-                Margen mínimo post-desc (%)
+                Margen mÃ­nimo post-desc (%)
               </span>
               <input
                 value={configDraft?.minMarginAfterDiscountPct ?? ""}
@@ -2527,7 +2527,7 @@ export default function BusinessAssistant() {
                   )
                 }
               />
-              Caché habilitada
+              CachÃ© habilitada
             </label>
           </div>
 
@@ -2536,12 +2536,12 @@ export default function BusinessAssistant() {
               Ajustes avanzados
             </h3>
             <p className="mt-1 text-xs text-slate-400">
-              Ajusta señales de demanda, inventario y precios para tu negocio.
+              Ajusta seÃ±ales de demanda, inventario y precios para tu negocio.
             </p>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <label className="block">
                 <span className="text-xs text-slate-300">
-                  Cobertura baja (días)
+                  Cobertura baja (dÃ­as)
                 </span>
                 <input
                   value={configDraft?.daysCoverLowThreshold ?? ""}
@@ -2561,7 +2561,7 @@ export default function BusinessAssistant() {
               </label>
               <label className="block">
                 <span className="text-xs text-slate-300">
-                  Objetivo compra (días)
+                  Objetivo compra (dÃ­as)
                 </span>
                 <input
                   value={configDraft?.buyTargetDays ?? ""}
@@ -2613,7 +2613,7 @@ export default function BusinessAssistant() {
               </label>
               <label className="block">
                 <span className="text-xs text-slate-300">
-                  Precio alto vs categoría (%)
+                  Precio alto vs categorÃ­a (%)
                 </span>
                 <input
                   value={configDraft?.priceHighVsCategoryThresholdPct ?? ""}
@@ -2635,7 +2635,7 @@ export default function BusinessAssistant() {
               </label>
               <label className="block">
                 <span className="text-xs text-slate-300">
-                  Precio bajo vs categoría (%)
+                  Precio bajo vs categorÃ­a (%)
                 </span>
                 <input
                   value={configDraft?.priceLowVsCategoryThresholdPct ?? ""}
@@ -3042,7 +3042,7 @@ export default function BusinessAssistant() {
 
           {config?.updatedAt ? (
             <p className="mt-3 text-xs text-slate-500">
-              Última actualización:{" "}
+              Ãšltima actualizaciÃ³n:{" "}
               {new Date(config.updatedAt).toLocaleString("es-CO")}
             </p>
           ) : null}
@@ -3052,7 +3052,7 @@ export default function BusinessAssistant() {
         {data?.promotions && data.promotions.length > 0 && (
           <div className="mb-8 rounded-2xl border border-cyan-500/30 bg-cyan-900/10 p-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-              💡 Sugerencias de Marketing{" "}
+              ðŸ’¡ Sugerencias de Marketing{" "}
               <span className="text-xs font-normal text-cyan-200">
                 (Generadas por IA)
               </span>
@@ -3062,7 +3062,7 @@ export default function BusinessAssistant() {
             {promoSuccessMsg && (
               <div
                 className={`mt-3 rounded-lg px-4 py-2 text-sm ${
-                  promoSuccessMsg.startsWith("✅")
+                  promoSuccessMsg.startsWith("âœ…")
                     ? "border border-green-500/30 bg-green-500/20 text-green-300"
                     : "border border-red-500/30 bg-red-500/20 text-red-300"
                 }`}
@@ -3080,10 +3080,10 @@ export default function BusinessAssistant() {
                   const price = item?.clientPrice ?? item?.suggestedPrice ?? 0;
                   return sum + (Number(price) || 0);
                 }, 0);
-                const totalDistributorPrice = promoProducts.reduce(
+                const totalEmployeePrice = promoProducts.reduce(
                   (sum, item) => {
                     const price =
-                      item?.distributorPrice ??
+                      item?.employeePrice ??
                       item?.clientPrice ??
                       item?.suggestedPrice ??
                       0;
@@ -3100,16 +3100,16 @@ export default function BusinessAssistant() {
                   0,
                   Math.round(totalClientPrice * (1 - discountPct / 100))
                 );
-                const suggestedDistributorPrice = Math.max(
+                const suggestedEmployeePrice = Math.max(
                   0,
-                  Math.round(totalDistributorPrice * (1 - discountPct / 100))
+                  Math.round(totalEmployeePrice * (1 - discountPct / 100))
                 );
                 const clientMarginPct = totalClientPrice
                   ? ((totalClientPrice - totalCost) / totalClientPrice) * 100
                   : 0;
-                const distributorMarginPct = totalDistributorPrice
-                  ? ((totalDistributorPrice - totalCost) /
-                      totalDistributorPrice) *
+                const employeeMarginPct = totalEmployeePrice
+                  ? ((totalEmployeePrice - totalCost) /
+                      totalEmployeePrice) *
                     100
                   : 0;
                 const promoClientMarginPct = suggestedClientPrice
@@ -3117,9 +3117,9 @@ export default function BusinessAssistant() {
                       suggestedClientPrice) *
                     100
                   : 0;
-                const promoDistributorMarginPct = suggestedDistributorPrice
-                  ? ((suggestedDistributorPrice - totalCost) /
-                      suggestedDistributorPrice) *
+                const promoEmployeeMarginPct = suggestedEmployeePrice
+                  ? ((suggestedEmployeePrice - totalCost) /
+                      suggestedEmployeePrice) *
                     100
                   : 0;
                 const clientSavings = Math.max(
@@ -3177,8 +3177,8 @@ export default function BusinessAssistant() {
                           Cliente: {formatCurrencyCOP(totalClientPrice)}
                         </span>
                         <span>
-                          Distribuidor:{" "}
-                          {formatCurrencyCOP(totalDistributorPrice)}
+                          Empleado:{" "}
+                          {formatCurrencyCOP(totalEmployeePrice)}
                         </span>
                         <span>Compra: {formatCurrencyCOP(totalCost)}</span>
                       </div>
@@ -3187,7 +3187,7 @@ export default function BusinessAssistant() {
                           Margen cliente: {clientMarginPct.toFixed(1)}%
                         </span>
                         <span>
-                          Margen distrib: {distributorMarginPct.toFixed(1)}%
+                          Margen distrib: {employeeMarginPct.toFixed(1)}%
                         </span>
                       </div>
                       <div className="mt-1 flex flex-wrap gap-2 text-slate-300">
@@ -3197,14 +3197,14 @@ export default function BusinessAssistant() {
                         </span>
                         <span>
                           Promo distrib:{" "}
-                          {formatCurrencyCOP(suggestedDistributorPrice)}
+                          {formatCurrencyCOP(suggestedEmployeePrice)}
                         </span>
                         <span>
                           Margen promo: {promoClientMarginPct.toFixed(1)}%
                         </span>
                         <span>
                           Margen promo distrib:{" "}
-                          {promoDistributorMarginPct.toFixed(1)}%
+                          {promoEmployeeMarginPct.toFixed(1)}%
                         </span>
                       </div>
                       <div className="mt-1 text-slate-300">
@@ -3222,11 +3222,11 @@ export default function BusinessAssistant() {
                     >
                       {creatingPromoIdx === idx ? (
                         <>
-                          <span className="animate-spin">⏳</span>
+                          <span className="animate-spin">â³</span>
                           Creando...
                         </>
                       ) : (
-                        <>⚡ Crear promo optimizada</>
+                        <>âš¡ Crear promo optimizada</>
                       )}
                     </button>
                   </div>
@@ -3239,7 +3239,7 @@ export default function BusinessAssistant() {
         {/* Results */}
         {loading ? (
           <div className="flex min-h-[40vh] items-center justify-center">
-            <div className="text-xl text-gray-200">Analizando productos…</div>
+            <div className="text-xl text-gray-200">Analizando productosâ€¦</div>
           </div>
         ) : (
           <>
@@ -3263,7 +3263,7 @@ export default function BusinessAssistant() {
                     : "border-slate-700 bg-slate-900/40 text-slate-300 hover:border-emerald-500/40 hover:text-emerald-200"
                 }`}
               >
-                🟢 Clase A (Top)
+                ðŸŸ¢ Clase A (Top)
               </button>
               <button
                 onClick={() => setAbcFilter("B")}
@@ -3273,7 +3273,7 @@ export default function BusinessAssistant() {
                     : "border-slate-700 bg-slate-900/40 text-slate-300 hover:border-amber-500/40 hover:text-amber-200"
                 }`}
               >
-                🟡 Clase B
+                ðŸŸ¡ Clase B
               </button>
               <button
                 onClick={() => setAbcFilter("C")}
@@ -3283,7 +3283,7 @@ export default function BusinessAssistant() {
                     : "border-slate-700 bg-slate-900/40 text-slate-300 hover:border-slate-500/40 hover:text-slate-200"
                 }`}
               >
-                ⚪ Clase C
+                âšª Clase C
               </button>
             </div>
 
@@ -3298,7 +3298,7 @@ export default function BusinessAssistant() {
                 </p>
                 <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-gray-400">
                   <li>Confirma ventas recientes con estado confirmado.</li>
-                  <li>Actualiza stock de bodega y distribuidores.</li>
+                  <li>Actualiza stock de bodega y empleados.</li>
                   <li>Revisa precios y costos promedio.</li>
                 </ul>
               </div>
@@ -3327,18 +3327,18 @@ export default function BusinessAssistant() {
                                   )}`}
                                 >
                                   Clase {item.abcClass}
-                                  {item.abcClass === "A" && " - Top Seller 🏆"}
+                                  {item.abcClass === "A" && " - Top Seller ðŸ†"}
                                 </span>
                               )}
                             </div>
                             <p className="mt-1 text-sm text-gray-400">
                               {item.categoryName
-                                ? `${item.categoryName} · `
+                                ? `${item.categoryName} Â· `
                                 : ""}
-                              Stock total: {item.stock.totalStock} · Bodega:{" "}
-                              {item.stock.warehouseStock} · Sedes:{" "}
-                              {item.stock.branchesStock ?? 0} · Dist:{" "}
-                              {item.stock.distributorsStock ?? 0} · Margen:{" "}
+                              Stock total: {item.stock.totalStock} Â· Bodega:{" "}
+                              {item.stock.warehouseStock} Â· Sedes:{" "}
+                              {item.stock.branchesStock ?? 0} Â· Dist:{" "}
+                              {item.stock.employeesStock ?? 0} Â· Margen:{" "}
                               {formatPctOrDash(
                                 item.metrics.recentMarginPct,
                                 !showPrice
@@ -3364,7 +3364,7 @@ export default function BusinessAssistant() {
                               Unidades ({item.metrics.recentDays}d)
                             </p>
                             <p className="text-sm font-semibold text-white">
-                              {showSales ? item.metrics.recentUnits : "—"}
+                              {showSales ? item.metrics.recentUnits : "â€”"}
                             </p>
                           </div>
                           <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-3">
@@ -3380,7 +3380,7 @@ export default function BusinessAssistant() {
                             >
                               {showSales
                                 ? `${item.metrics.unitsGrowthPct >= 0 ? "+" : ""}${item.metrics.unitsGrowthPct.toFixed(1)}%`
-                                : "—"}
+                                : "â€”"}
                             </p>
                           </div>
                         </div>
@@ -3405,7 +3405,7 @@ export default function BusinessAssistant() {
 
                         <div className="mt-4">
                           <p className="text-sm font-semibold text-gray-200">
-                            Justificación
+                            JustificaciÃ³n
                           </p>
                           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-300">
                             {getJustificationLines(item)
@@ -3427,13 +3427,13 @@ export default function BusinessAssistant() {
                     <thead className="bg-gray-900/50 text-gray-300">
                       <tr>
                         <th className="px-4 py-3 text-left">Producto</th>
-                        <th className="px-4 py-3 text-left">Acción</th>
+                        <th className="px-4 py-3 text-left">AcciÃ³n</th>
                         <th className="px-4 py-3 text-right">Stock</th>
                         <th className="px-4 py-3 text-right">Unidades</th>
                         <th className="px-4 py-3 text-right">Tendencia</th>
                         <th className="px-4 py-3 text-right">Margen</th>
                         <th className="px-4 py-3 text-right">Ingresos</th>
-                        <th className="px-4 py-3 text-left">Justificación</th>
+                        <th className="px-4 py-3 text-left">JustificaciÃ³n</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-700 text-gray-200">
@@ -3464,15 +3464,15 @@ export default function BusinessAssistant() {
                               </div>
                               <p className="mt-1 text-xs text-gray-400">
                                 {item.categoryName
-                                  ? `${item.categoryName} · `
+                                  ? `${item.categoryName} Â· `
                                   : ""}
                                 Precio promedio:{" "}
                                 {showPrice
                                   ? formatCurrencyCOP(
                                       item.metrics.recentAvgPrice
                                     )
-                                  : "—"}{" "}
-                                · vs categoría:{" "}
+                                  : "â€”"}{" "}
+                                Â· vs categorÃ­a:{" "}
                                 {formatPctOrDash(
                                   item.metrics.priceVsCategoryPct,
                                   !showCategoryAvg
@@ -3495,12 +3495,12 @@ export default function BusinessAssistant() {
                                 {item.stock.totalStock}
                               </p>
                               <p className="text-xs text-gray-400">
-                                Bodega: {item.stock.warehouseStock} · Sedes:{" "}
-                                {item.stock.branchesStock ?? 0} · Dist:{" "}
-                                {item.stock.distributorsStock ?? 0} · Alerta:{" "}
+                                Bodega: {item.stock.warehouseStock} Â· Sedes:{" "}
+                                {item.stock.branchesStock ?? 0} Â· Dist:{" "}
+                                {item.stock.employeesStock ?? 0} Â· Alerta:{" "}
                                 {item.stock.lowStockAlert}
                                 {item.metrics.daysCover !== null
-                                  ? ` · Cobertura: ${item.metrics.daysCover}d`
+                                  ? ` Â· Cobertura: ${item.metrics.daysCover}d`
                                   : ""}
                               </p>
                               {item.recommendation.primary?.suggestedQty ? (
@@ -3511,7 +3511,7 @@ export default function BusinessAssistant() {
                               ) : null}
                             </td>
                             <td className="px-4 py-3 text-right font-semibold">
-                              {showSales ? item.metrics.recentUnits : "—"}
+                              {showSales ? item.metrics.recentUnits : "â€”"}
                             </td>
                             <td
                               className={`px-4 py-3 text-right font-semibold ${
@@ -3524,7 +3524,7 @@ export default function BusinessAssistant() {
                             >
                               {showSales
                                 ? `${item.metrics.unitsGrowthPct >= 0 ? "+" : ""}${item.metrics.unitsGrowthPct.toFixed(1)}%`
-                                : "—"}
+                                : "â€”"}
                             </td>
                             <td className="px-4 py-3 text-right">
                               <span className="font-semibold">
@@ -3540,7 +3540,7 @@ export default function BusinessAssistant() {
                                   ? formatCurrencyCOP(
                                       item.metrics.recentRevenue
                                     )
-                                  : "—"}
+                                  : "â€”"}
                               </span>
                             </td>
                             <td className="px-4 py-3">
@@ -3591,3 +3591,4 @@ export default function BusinessAssistant() {
     </div>
   );
 }
+

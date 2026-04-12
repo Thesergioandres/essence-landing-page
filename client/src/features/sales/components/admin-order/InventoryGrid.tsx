@@ -66,8 +66,8 @@ export function InventoryGrid({
     if (locationType === "warehouse") {
       return product.warehouseStock || 0;
     }
-    if (locationType === "distributor") {
-      return product.distributorStock || 0;
+    if (locationType === "employee") {
+      return product.employeeStock || 0;
     }
     return product.branchStock ?? product.totalStock ?? 0;
   };

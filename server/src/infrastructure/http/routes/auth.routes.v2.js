@@ -6,7 +6,7 @@ import {
 } from "../../../../middleware/business.middleware.js";
 import {
   getProfile,
-  impersonateDistributor,
+  impersonateEmployee,
   login,
   logout,
   refreshAccessToken,
@@ -25,11 +25,11 @@ router.patch("/select-plan", protect, selectPlan);
 router.get("/profile", protect, getProfile);
 router.post("/impersonate/revert", protect, revertImpersonation);
 router.post(
-  "/impersonate/:distributorId",
+  "/impersonate/:employeeId",
   protect,
   businessContext,
   requireRole(["admin", "super_admin"]),
-  impersonateDistributor,
+  impersonateEmployee,
 );
 
 export default router;

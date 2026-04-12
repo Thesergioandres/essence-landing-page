@@ -52,7 +52,7 @@ const creditPaymentSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    // Comprobante de pago (imagen base64) - para distribuidores
+    // Comprobante de pago (imagen base64) - para empleados
     paymentProof: {
       type: String,
       default: null,

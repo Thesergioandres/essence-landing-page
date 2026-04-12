@@ -60,11 +60,11 @@ router.get(
   (req, res) => controller.getProductRotation(req, res),
 );
 
-// Distributor rankings
+// Employee rankings
 router.get(
-  "/distributor-rankings",
+  "/employee-rankings",
   requirePermission({ module: "analytics", action: "read" }),
-  (req, res) => controller.getDistributorRankings(req, res),
+  (req, res) => controller.getEmployeeRankings(req, res),
 );
 
 // Low stock visual
@@ -85,9 +85,9 @@ router.get(
   (req, res) => controller.getTopProducts(req, res),
 );
 router.get(
-  "/distributor-performance",
+  "/employee-performance",
   requirePermission({ module: "analytics", action: "read" }),
-  (req, res) => controller.getDistributorPerformance(req, res),
+  (req, res) => controller.getEmployeePerformance(req, res),
 );
 router.get(
   "/inventory-status",

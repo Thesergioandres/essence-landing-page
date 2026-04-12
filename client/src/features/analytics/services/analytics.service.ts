@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Analytics Services
  * Extracted from monolithic api/services.ts
  * Handles analytics, audit logs, and reporting
@@ -157,22 +157,22 @@ export const analyticsService = {
   },
 
   /**
-   * Get profit by distributor using V2 distributor-performance endpoint
+   * Get profit by employee using V2 employee-performance endpoint
    */
-  async getProfitByDistributor(filters?: {
+  async getProfitByEmployee(filters?: {
     startDate?: string;
     endDate?: string;
-    distributorId?: string;
+    employeeId?: string;
   }): Promise<{
-    distributors: Array<{
-      distributorId: string;
-      distributorName: string;
+    employees: Array<{
+      employeeId: string;
+      employeeName: string;
       totalSales: number;
       totalRevenue: number;
       totalCost: number;
       totalProfit: number;
       adminProfit: number;
-      distributorProfit: number;
+      employeeProfit: number;
     }>;
     totals: {
       revenue: number;
@@ -182,7 +182,7 @@ export const analyticsService = {
   }> {
     try {
       const response = await api.get(
-        "/advanced-analytics/distributor-performance",
+        "/advanced-analytics/employee-performance",
         {
           params: filters,
         }
@@ -190,19 +190,19 @@ export const analyticsService = {
       const rawData = response.data.data || response.data || [];
       const data = Array.isArray(rawData) ? rawData : [];
 
-      const distributors = data.map((item: any) => ({
-        distributorId: item._id || item.distributorId,
-        distributorName:
-          item.distributor?.name || item.distributorName || "Sin nombre",
+      const employees = data.map((item: any) => ({
+        employeeId: item._id || item.employeeId,
+        employeeName:
+          item.employee?.name || item.employeeName || "Sin nombre",
         totalSales: item.totalSales || 0,
         totalRevenue: item.totalRevenue || 0,
         totalCost: 0,
         totalProfit: item.totalProfit || 0,
-        adminProfit: item.totalProfit - (item.distributorProfit || 0),
-        distributorProfit: item.distributorProfit || 0,
+        adminProfit: item.totalProfit - (item.employeeProfit || 0),
+        employeeProfit: item.employeeProfit || 0,
       }));
 
-      const totals = distributors.reduce(
+      const totals = employees.reduce(
         (acc: any, d: any) => ({
           revenue: acc.revenue + d.totalRevenue,
           cost: acc.cost + d.totalCost,
@@ -211,10 +211,10 @@ export const analyticsService = {
         { revenue: 0, cost: 0, profit: 0 }
       );
 
-      return { distributors, totals };
+      return { employees, totals };
     } catch (error) {
-      console.error("[getProfitByDistributor] Error:", error);
-      return { distributors: [], totals: { revenue: 0, cost: 0, profit: 0 } };
+      console.error("[getProfitByEmployee] Error:", error);
+      return { employees: [], totals: { revenue: 0, cost: 0, profit: 0 } };
     }
   },
 
@@ -347,7 +347,7 @@ export const analyticsService = {
       totalCost: number;
       grossProfit: number;
       adminProfit: number;
-      distributorProfit: number;
+      employeeProfit: number;
       expenses: number;
       netProfit: number;
       profitMargin: number;
@@ -385,7 +385,7 @@ export const analyticsService = {
           totalCost: 0, // Not directly available
           grossProfit,
           adminProfit: grossProfit, // Simplified
-          distributorProfit: 0,
+          employeeProfit: 0,
           expenses: totalExpenses,
           netProfit,
           profitMargin:
@@ -395,7 +395,7 @@ export const analyticsService = {
           byPaymentMethod: [], // Would need separate endpoint
           byCategory: Array.isArray(categories)
             ? categories.map((c: any) => ({
-                category: c.category || c.categoryName || "Sin categoría",
+                category: c.category || c.categoryName || "Sin categorÃ­a",
                 revenue: c.revenue || c.totalRevenue || 0,
                 profit: c.profit || c.totalProfit || 0,
                 quantity: c.quantity || c.totalQuantity || 0,
@@ -411,7 +411,7 @@ export const analyticsService = {
           totalCost: 0,
           grossProfit: 0,
           adminProfit: 0,
-          distributorProfit: 0,
+          employeeProfit: 0,
           expenses: 0,
           netProfit: 0,
           profitMargin: 0,
@@ -449,8 +449,8 @@ export const analyticsService = {
       quantity: number;
       revenue: number;
     }>;
-    topDistributors: Array<{
-      distributorId: string;
+    topEmployees: Array<{
+      employeeId: string;
       name: string;
       sales: number;
       revenue: number;
@@ -475,7 +475,7 @@ export const analyticsService = {
         week: data?.week || { sales: 0, revenue: 0, profit: 0, trend: 0 },
         month: data?.month || { sales: 0, revenue: 0, profit: 0, trend: 0 },
         topProducts: data?.topProducts || [],
-        topDistributors: data?.topDistributors || [],
+        topEmployees: data?.topEmployees || [],
         alerts: data?.alerts || [],
       };
     } catch (error) {
@@ -485,7 +485,7 @@ export const analyticsService = {
         week: { sales: 0, revenue: 0, profit: 0, trend: 0 },
         month: { sales: 0, revenue: 0, profit: 0, trend: 0 },
         topProducts: [],
-        topDistributors: [],
+        topEmployees: [],
         alerts: [],
       };
     }
@@ -524,7 +524,7 @@ export const analyticsService = {
   async getEstimatedProfit(params?: {
     startDate?: string;
     endDate?: string;
-    distributorId?: string;
+    employeeId?: string;
   }): Promise<{
     estimatedProfit: {
       total: number;
@@ -547,7 +547,7 @@ export const analyticsService = {
     };
   },
 
-  async getDistributorEstimatedProfit(params?: {
+  async getEmployeeEstimatedProfit(params?: {
     startDate?: string;
     endDate?: string;
   }): Promise<{
@@ -565,7 +565,7 @@ export const analyticsService = {
         name: string;
         image?: { url: string; publicId: string };
         quantity: number;
-        distributorPrice: number;
+        employeePrice: number;
         clientPrice: number;
         investment: number;
         salesValue: number;
@@ -669,15 +669,15 @@ export const advancedAnalyticsService = {
       const response = await api.get("/advanced-analytics/sales-by-category", {
         params,
       });
-      console.log("[getSalesByCategory] response.data:", response.data);
+      console.warn("[Essence Debug]", "[getSalesByCategory] response.data:", response.data);
       const rawData = response.data.data || response.data || [];
-      console.log("[getSalesByCategory] rawData:", rawData);
+      console.warn("[Essence Debug]", "[getSalesByCategory] rawData:", rawData);
       const data = Array.isArray(rawData) ? rawData : [];
 
       const categories = data.map((item: any) => {
         const transformed = {
-          name: item.category || "Sin categoría",
-          category: item.category || "Sin categoría",
+          name: item.category || "Sin categorÃ­a",
+          category: item.category || "Sin categorÃ­a",
           totalSales: item.sales || 0,
           sales: item.sales || 0,
           totalRevenue: item.revenue || 0,
@@ -685,7 +685,7 @@ export const advancedAnalyticsService = {
           profit: item.profit || 0,
           quantity: item.quantity || 0,
         };
-        console.log(
+        console.warn("[Essence Debug]", 
           "[getSalesByCategory] item:",
           item,
           "-> transformed:",
@@ -694,7 +694,7 @@ export const advancedAnalyticsService = {
         return transformed;
       });
 
-      console.log(
+      console.warn("[Essence Debug]", 
         "[getSalesByCategory] categories after transform:",
         categories
       );
@@ -764,11 +764,11 @@ export const advancedAnalyticsService = {
       const response = await api.get("/advanced-analytics/top-products", {
         params,
       });
-      console.log("[getTopProducts] response.data:", response.data);
+      console.warn("[Essence Debug]", "[getTopProducts] response.data:", response.data);
       const rawData = response.data.data || response.data || [];
-      console.log("[getTopProducts] rawData:", rawData);
+      console.warn("[Essence Debug]", "[getTopProducts] rawData:", rawData);
       const data = Array.isArray(rawData) ? rawData : [];
-      console.log("[getTopProducts] data after isArray check:", data);
+      console.warn("[Essence Debug]", "[getTopProducts] data after isArray check:", data);
 
       const topProducts = data.map((item: any, index: number) => {
         const transformed = {
@@ -778,13 +778,13 @@ export const advancedAnalyticsService = {
             item.product?.category?.name ||
             item.product?.category ||
             item.category ||
-            "Sin categoría",
+            "Sin categorÃ­a",
           quantity: item.totalQuantity || 0,
           revenue: item.totalRevenue || 0,
           rank: index + 1,
           profit: item.totalProfit || 0,
         };
-        console.log(
+        console.warn("[Essence Debug]", 
           "[getTopProducts] item:",
           item,
           "-> transformed:",
@@ -793,7 +793,7 @@ export const advancedAnalyticsService = {
         return transformed;
       });
 
-      console.log("[getTopProducts] topProducts after transform:", topProducts);
+      console.warn("[Essence Debug]", "[getTopProducts] topProducts after transform:", topProducts);
       return { topProducts };
     } catch (error) {
       if (isForbiddenError(error)) {
@@ -822,9 +822,9 @@ export const advancedAnalyticsService = {
       const response = await api.get("/advanced-analytics/product-rotation", {
         params,
       });
-      console.log("[getProductRotation] response.data:", response.data);
+      console.warn("[Essence Debug]", "[getProductRotation] response.data:", response.data);
       const rawData = response.data.data || response.data || [];
-      console.log("[getProductRotation] rawData:", rawData);
+      console.warn("[Essence Debug]", "[getProductRotation] rawData:", rawData);
       const data = Array.isArray(rawData) ? rawData : [];
 
       const productRotation = data.map((item: any) => ({
@@ -836,7 +836,7 @@ export const advancedAnalyticsService = {
         rotationRate: item.rotationRate || 0,
       }));
 
-      console.log(
+      console.warn("[Essence Debug]", 
         "[getProductRotation] productRotation after transform:",
         productRotation
       );
@@ -888,7 +888,7 @@ export const advancedAnalyticsService = {
       const products = data.map((item: any) => ({
         productId: item._id || item.productId,
         name: item.product?.name || item.name || "Sin nombre",
-        category: item.product?.category?.name || "Sin categoría",
+        category: item.product?.category?.name || "Sin categorÃ­a",
         salesCount: item.totalQuantity || 0,
         revenue: item.totalRevenue || 0,
         profit: item.totalProfit || 0,
@@ -909,13 +909,13 @@ export const advancedAnalyticsService = {
     }
   },
 
-  async getDistributorPerformance(params?: {
+  async getEmployeePerformance(params?: {
     startDate?: string;
     endDate?: string;
     limit?: number;
   }): Promise<{
-    distributors: Array<{
-      distributorId: string;
+    employees: Array<{
+      employeeId: string;
       name: string;
       salesCount: number;
       revenue: number;
@@ -933,7 +933,7 @@ export const advancedAnalyticsService = {
     };
   }> {
     const response = await api.get(
-      "/advanced-analytics/distributor-performance",
+      "/advanced-analytics/employee-performance",
       { params }
     );
     return response.data;
@@ -1243,8 +1243,8 @@ export const advancedAnalyticsService = {
     }
   },
 
-  // ===== Distributor Analytics =====
-  async getDistributorRankings(params?: {
+  // ===== Employee Analytics =====
+  async getEmployeeRankings(params?: {
     startDate?: string;
     endDate?: string;
     limit?: number;
@@ -1252,9 +1252,9 @@ export const advancedAnalyticsService = {
   }): Promise<{
     rankings: Array<{
       rank: number;
-      distributorId: string;
-      distributorName: string;
-      distributorEmail?: string;
+      employeeId: string;
+      employeeName: string;
+      employeeEmail?: string;
       totalSales: number;
       revenue: number;
       profit: number;
@@ -1269,7 +1269,7 @@ export const advancedAnalyticsService = {
   }> {
     try {
       const response = await api.get(
-        "/advanced-analytics/distributor-rankings",
+        "/advanced-analytics/employee-rankings",
         {
           params,
         }
@@ -1294,9 +1294,9 @@ export const advancedAnalyticsService = {
 
         return {
           rank: index + 1,
-          distributorId: item.distributorId || item._id,
-          distributorName: item.distributorName || item.name || "Sin nombre",
-          distributorEmail: item.distributorEmail || item.email || "",
+          employeeId: item.employeeId || item._id,
+          employeeName: item.employeeName || item.name || "Sin nombre",
+          employeeEmail: item.employeeEmail || item.email || "",
           totalSales,
           revenue: totalRevenue,
           profit: totalProfit,
@@ -1503,3 +1503,4 @@ export const auditService = {
     } as any;
   },
 };
+

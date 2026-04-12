@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+﻿import dotenv from "dotenv";
 import fs from "fs/promises";
 import mongoose from "mongoose";
 import path from "path";
@@ -13,8 +13,8 @@ import Credit from "../src/infrastructure/database/models/Credit.js";
 import CreditPayment from "../src/infrastructure/database/models/CreditPayment.js";
 import Customer from "../src/infrastructure/database/models/Customer.js";
 import DefectiveProduct from "../src/infrastructure/database/models/DefectiveProduct.js";
-import DistributorStats from "../src/infrastructure/database/models/DistributorStats.js";
-import DistributorStock from "../src/infrastructure/database/models/DistributorStock.js";
+import EmployeeStats from "../src/infrastructure/database/models/EmployeeStats.js";
+import EmployeeStock from "../src/infrastructure/database/models/EmployeeStock.js";
 import Expense from "../src/infrastructure/database/models/Expense.js";
 import GamificationConfig from "../src/infrastructure/database/models/GamificationConfig.js";
 import InventoryEntry from "../src/infrastructure/database/models/InventoryEntry.js";
@@ -38,11 +38,11 @@ dotenv.config();
 
 /**
  * Crear backup local completo en JSON (sin mongodump)
- * VENTAJA: No requiere herramientas externas, más rápido
+ * VENTAJA: No requiere herramientas externas, mÃ¡s rÃ¡pido
  */
 export const createBackup = async () => {
   try {
-    // Directorio de backups en la raíz del proyecto
+    // Directorio de backups en la raÃ­z del proyecto
     const backupDir = path.join(process.cwd(), "..", "backups");
     const timestamp = new Date()
       .toISOString()
@@ -53,9 +53,9 @@ export const createBackup = async () => {
     // Crear directorio de backups si no existe
     await fs.mkdir(backupPath, { recursive: true });
 
-    console.log(`📦 Creando backup local en: ${backupPath}`);
+    console.warn("[Essence Debug]", `ðŸ“¦ Creando backup local en: ${backupPath}`);
 
-    // Conectar a MongoDB si no está conectado
+    // Conectar a MongoDB si no estÃ¡ conectado
     if (mongoose.connection.readyState !== 1) {
       const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
       await mongoose.connect(mongoUri);
@@ -75,8 +75,8 @@ export const createBackup = async () => {
       { model: CreditPayment, name: "creditpayments" },
       { model: Stock, name: "stock" },
       { model: StockTransfer, name: "stocktransfers" },
-      { model: DistributorStock, name: "distributorstock" },
-      { model: DistributorStats, name: "distributorstats" },
+      { model: EmployeeStock, name: "employeestock" },
+      { model: EmployeeStats, name: "employeestats" },
       { model: Provider, name: "providers" },
       { model: Promotion, name: "promotions" },
       { model: Branch, name: "branches" },
@@ -106,14 +106,14 @@ export const createBackup = async () => {
         if (documents.length > 0) {
           const filePath = path.join(backupPath, `${name}.json`);
           await fs.writeFile(filePath, JSON.stringify(documents, null, 2));
-          console.log(`   ✅ ${name}: ${documents.length} documentos`);
+          console.warn("[Essence Debug]", `   âœ… ${name}: ${documents.length} documentos`);
           totalDocuments += documents.length;
           totalCollections++;
         } else {
-          console.log(`   ⚪ ${name}: vacía`);
+          console.warn("[Essence Debug]", `   âšª ${name}: vacÃ­a`);
         }
       } catch (error) {
-        console.log(`   ❌ ${name}: Error - ${error.message}`);
+        console.warn("[Essence Debug]", `   âŒ ${name}: Error - ${error.message}`);
       }
     }
 
@@ -134,18 +134,18 @@ export const createBackup = async () => {
       JSON.stringify(metadata, null, 2)
     );
 
-    console.log(`\n✅ Backup creado exitosamente`);
-    console.log(`   📂 Ubicación: ${backupPath}`);
-    console.log(
-      `   📊 ${totalCollections} colecciones, ${totalDocuments} documentos\n`
+    console.warn("[Essence Debug]", `\nâœ… Backup creado exitosamente`);
+    console.warn("[Essence Debug]", `   ðŸ“‚ UbicaciÃ³n: ${backupPath}`);
+    console.warn("[Essence Debug]", 
+      `   ðŸ“Š ${totalCollections} colecciones, ${totalDocuments} documentos\n`
     );
 
     // Limpiar backups antiguos
-    await cleanOldBackups(backupDir, 30); // Mantener 30 días
+    await cleanOldBackups(backupDir, 30); // Mantener 30 dÃ­as
 
     return backupPath;
   } catch (error) {
-    console.error("❌ Error creando backup:", error.message);
+    console.error("âŒ Error creando backup:", error.message);
     throw error;
   }
 };
@@ -169,16 +169,16 @@ const cleanOldBackups = async (backupDir, daysToKeep) => {
 
       if (now - stats.mtime.getTime() > maxAge) {
         await fs.rm(filePath, { recursive: true, force: true });
-        console.log(`   🗑️  Backup antiguo eliminado: ${file}`);
+        console.warn("[Essence Debug]", `   ðŸ—‘ï¸  Backup antiguo eliminado: ${file}`);
         cleaned++;
       }
     }
 
     if (cleaned > 0) {
-      console.log(`   ✅ ${cleaned} backup(s) antiguos eliminados\n`);
+      console.warn("[Essence Debug]", `   âœ… ${cleaned} backup(s) antiguos eliminados\n`);
     }
   } catch (error) {
-    console.error("⚠️  Error limpiando backups antiguos:", error.message);
+    console.error("âš ï¸  Error limpiando backups antiguos:", error.message);
   }
 };
 
@@ -187,9 +187,9 @@ const cleanOldBackups = async (backupDir, daysToKeep) => {
  */
 export const restoreBackup = async (backupPath) => {
   try {
-    console.log(`📥 Restaurando backup desde: ${backupPath}\n`);
+    console.warn("[Essence Debug]", `ðŸ“¥ Restaurando backup desde: ${backupPath}\n`);
 
-    // Conectar a MongoDB si no está conectado
+    // Conectar a MongoDB si no estÃ¡ conectado
     if (mongoose.connection.readyState !== 1) {
       const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
       await mongoose.connect(mongoUri);
@@ -199,13 +199,13 @@ export const restoreBackup = async (backupPath) => {
     const metadataPath = path.join(backupPath, "metadata.json");
     const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
 
-    console.log(
-      `📋 Backup creado: ${new Date(metadata.timestamp).toLocaleString(
+    console.warn("[Essence Debug]", 
+      `ðŸ“‹ Backup creado: ${new Date(metadata.timestamp).toLocaleString(
         "es-ES"
       )}`
     );
-    console.log(
-      `📊 ${metadata.totalCollections} colecciones, ${metadata.totalDocuments} documentos\n`
+    console.warn("[Essence Debug]", 
+      `ðŸ“Š ${metadata.totalCollections} colecciones, ${metadata.totalDocuments} documentos\n`
     );
 
     // Leer archivos JSON
@@ -238,8 +238,8 @@ export const restoreBackup = async (backupPath) => {
             creditpayments: CreditPayment,
             stock: Stock,
             stocktransfers: StockTransfer,
-            distributorstock: DistributorStock,
-            distributorstats: DistributorStats,
+            employeestock: EmployeeStock,
+            employeestats: EmployeeStats,
             providers: Provider,
             promotions: Promotion,
             branches: Branch,
@@ -262,28 +262,29 @@ export const restoreBackup = async (backupPath) => {
           const Model = modelMap[collectionName];
 
           if (Model) {
-            // Borrar colección existente
+            // Borrar colecciÃ³n existente
             await Model.deleteMany({});
 
             // Insertar datos del backup
             await Model.insertMany(data);
 
-            console.log(
-              `   ✅ ${collectionName}: ${data.length} documentos restaurados`
+            console.warn("[Essence Debug]", 
+              `   âœ… ${collectionName}: ${data.length} documentos restaurados`
             );
             totalRestored += data.length;
           }
         }
       } catch (error) {
-        console.log(`   ❌ ${collectionName}: Error - ${error.message}`);
+        console.warn("[Essence Debug]", `   âŒ ${collectionName}: Error - ${error.message}`);
       }
     }
 
-    console.log(`\n✅ Restauración completada: ${totalRestored} documentos\n`);
+    console.warn("[Essence Debug]", `\nâœ… RestauraciÃ³n completada: ${totalRestored} documentos\n`);
 
     return true;
   } catch (error) {
-    console.error("❌ Error restaurando backup:", error.message);
+    console.error("âŒ Error restaurando backup:", error.message);
     throw error;
   }
 };
+

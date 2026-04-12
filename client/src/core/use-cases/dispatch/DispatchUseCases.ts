@@ -9,7 +9,7 @@ export class DispatchUseCases {
   constructor(private readonly repository: DispatchRepository) {}
 
   async createRequest(data: {
-    distributorId: string;
+    employeeId: string;
     items: Array<{ productId: string; quantity: number }>;
     notes?: string;
   }): Promise<DispatchRequest> {
@@ -51,7 +51,7 @@ export class DispatchUseCases {
     limit?: number;
   }): Promise<{
     canViewFinancialMargins: boolean;
-    distributors: any[];
+    employees: any[];
     branches: any[];
   }> {
     return this.repository.getHotSectors(params);

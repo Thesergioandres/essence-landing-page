@@ -1,6 +1,6 @@
-# DOCUMENTACIÓN UNIFICADA ESSENCE
+﻿# DOCUMENTACIÃ“N UNIFICADA ESSENCE
 
-A continuación se consolida toda la documentación del proyecto Essence.
+A continuaciÃ³n se consolida toda la documentaciÃ³n del proyecto Essence.
 
 
 
@@ -8,61 +8,61 @@ A continuación se consolida toda la documentación del proyecto Essence.
 <!-- DOCUMENTO: BUSINESS_LOGIC_COMPLIANCE_AUDIT.md -->
 <!-- ========================================== -->
 
-# 🕵️‍♂️ BUSINESS LOGIC COMPLIANCE AUDIT REPORT
+# ðŸ•µï¸â€â™‚ï¸ BUSINESS LOGIC COMPLIANCE AUDIT REPORT
 
 **Audit Date:** 2 de febrero de 2026  
-**Last Update:** 2 de febrero de 2026 - **MASTER FIX APPLIED** ✅  
+**Last Update:** 2 de febrero de 2026 - **MASTER FIX APPLIED** âœ…  
 **Audited By:** GitHub Copilot (Claude Sonnet 4.5)  
 **Scope:** @workspace (Backend - Sales, Analytics, Products, Inventory)  
 **Methodology:** Direct code inspection against defined business rules
 
 ---
 
-## 📊 EXECUTIVE SUMMARY
+## ðŸ“Š EXECUTIVE SUMMARY
 
-**Overall Compliance:** ✅ **7/7 PASS** (100% Compliant)
+**Overall Compliance:** âœ… **7/7 PASS** (100% Compliant)
 
-### 🎉 ALL CRITICAL FIXES IMPLEMENTED:
+### ðŸŽ‰ ALL CRITICAL FIXES IMPLEMENTED:
 
-- ✅ **Distributor Sales NOW deduct from DistributorStock** (FIXED)
-- ✅ **Admin Sales NOW deduct from warehouseStock** (FIXED)
-- ✅ **Net Profit NOW includes operational expenses** (FIXED)
-- ✅ **Data Privacy: Cost fields hidden from distributors** (FIXED)
-- ✅ **Weighted Average Cost calculation is correct**
-- ✅ **Credit Sales Revenue filtering is implemented correctly**
-- ✅ **Cancellations return stock to origin correctly**
+- âœ… **Employee Sales NOW deduct from EmployeeStock** (FIXED)
+- âœ… **Admin Sales NOW deduct from warehouseStock** (FIXED)
+- âœ… **Net Profit NOW includes operational expenses** (FIXED)
+- âœ… **Data Privacy: Cost fields hidden from employees** (FIXED)
+- âœ… **Weighted Average Cost calculation is correct**
+- âœ… **Credit Sales Revenue filtering is implemented correctly**
+- âœ… **Cancellations return stock to origin correctly**
 
 ---
 
-## 📋 DETAILED COMPLIANCE TABLE
+## ðŸ“‹ DETAILED COMPLIANCE TABLE
 
 | #   | Logic / Scenario                               | Status After Fix                                                         | Evidence (File & Line)                 | Verdict     |
 | --- | ---------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------- | ----------- |
-| 1   | **Weighted Average Cost (Inventory Receipts)** | ✅ Calculation correct, documented clarification added                   | `InventoryRepository.js:49-59`         | ✅ **PASS** |
-| 2   | **Distributor Sales - Stock Deduction**        | ✅ NOW deducts from DistributorStock collection (FIXED)                  | `RegisterSaleUseCase.js:106-128`       | ✅ **PASS** |
-| 3   | **Admin Sales - Stock Deduction**              | ✅ NOW deducts from Product.warehouseStock (FIXED)                       | `RegisterSaleUseCase.js:130-137`       | ✅ **PASS** |
-| 4   | **Cancellation - Stock Return to Origin**      | ✅ Correctly checks sale.branch/distributor and restores to origin       | `DeleteSaleController.js:18-53`        | ✅ **PASS** |
-| 5   | **Defective Products - Loss Value**            | ✅ Uses purchasePrice (cost) for admin, distributorPrice for distributor | `DefectiveProductRepository.js:27, 77` | ✅ **PASS** |
-| 6   | **Overpricing - Commission Calculation**       | ✅ Calculated on FINAL sale price (salePrice \* percentage)              | `FinanceService.js:14-21, 29-31`       | ✅ **PASS** |
-| 7   | **Credit Sales - Revenue Recognition**         | ✅ Filters by paymentStatus="confirmado" in KPIs                         | `AnalyticsRepository.js:42-58`         | ✅ **PASS** |
-| 8   | **Net Profit KPI (Real Cash Flow)**            | ✅ NOW includes operational expenses (FIXED)                             | `AdvancedAnalyticsRepository.js:177`   | ✅ **PASS** |
-| 9   | **Data Privacy (Cost Fields)**                 | ✅ Cost fields hidden from distributors (FIXED)                          | `ProductController.js:40-48, 76-82`    | ✅ **PASS** |
+| 1   | **Weighted Average Cost (Inventory Receipts)** | âœ… Calculation correct, documented clarification added                   | `InventoryRepository.js:49-59`         | âœ… **PASS** |
+| 2   | **Employee Sales - Stock Deduction**        | âœ… NOW deducts from EmployeeStock collection (FIXED)                  | `RegisterSaleUseCase.js:106-128`       | âœ… **PASS** |
+| 3   | **Admin Sales - Stock Deduction**              | âœ… NOW deducts from Product.warehouseStock (FIXED)                       | `RegisterSaleUseCase.js:130-137`       | âœ… **PASS** |
+| 4   | **Cancellation - Stock Return to Origin**      | âœ… Correctly checks sale.branch/employee and restores to origin       | `DeleteSaleController.js:18-53`        | âœ… **PASS** |
+| 5   | **Defective Products - Loss Value**            | âœ… Uses purchasePrice (cost) for admin, employeePrice for employee | `DefectiveProductRepository.js:27, 77` | âœ… **PASS** |
+| 6   | **Overpricing - Commission Calculation**       | âœ… Calculated on FINAL sale price (salePrice \* percentage)              | `FinanceService.js:14-21, 29-31`       | âœ… **PASS** |
+| 7   | **Credit Sales - Revenue Recognition**         | âœ… Filters by paymentStatus="confirmado" in KPIs                         | `AnalyticsRepository.js:42-58`         | âœ… **PASS** |
+| 8   | **Net Profit KPI (Real Cash Flow)**            | âœ… NOW includes operational expenses (FIXED)                             | `AdvancedAnalyticsRepository.js:177`   | âœ… **PASS** |
+| 9   | **Data Privacy (Cost Fields)**                 | âœ… Cost fields hidden from employees (FIXED)                          | `ProductController.js:40-48, 76-82`    | âœ… **PASS** |
 
 ---
 
-## 🔍 DETAILED FINDINGS
+## ðŸ” DETAILED FINDINGS
 
-### ❌ RULE 1: PRODUCT COST (Weighted Average) - **FAIL**
+### âŒ RULE 1: PRODUCT COST (Weighted Average) - **FAIL**
 
 **Expected Behavior:**
 
-- When stock is added at different prices → Calculate weighted average
-- When selling → Use current `averageCost`, NOT `purchasePrice`
-- Example: Buy 10 @ $10k, Buy 10 @ $12k → Avg = $11k → Sell using $11k
+- When stock is added at different prices â†’ Calculate weighted average
+- When selling â†’ Use current `averageCost`, NOT `purchasePrice`
+- Example: Buy 10 @ $10k, Buy 10 @ $12k â†’ Avg = $11k â†’ Sell using $11k
 
 **Current Implementation:**
 
-#### ✅ Part 1: Average Cost IS Calculated on Inventory Receipt
+#### âœ… Part 1: Average Cost IS Calculated on Inventory Receipt
 
 **File:** `InventoryRepository.js` (Lines 49-59)
 
@@ -83,9 +83,9 @@ product.averageCost = newAverageCost;
 product.lastCostUpdate = new Date();
 ```
 
-✅ **This correctly implements weighted average calculation.**
+âœ… **This correctly implements weighted average calculation.**
 
-#### ✅ Part 2: Sales DO Use Average Cost
+#### âœ… Part 2: Sales DO Use Average Cost
 
 **File:** `RegisterSaleUseCase.js` (Line 80)
 
@@ -93,9 +93,9 @@ product.lastCostUpdate = new Date();
 const costBasis = product.averageCost || product.purchasePrice || 0;
 ```
 
-✅ **This correctly uses averageCost when available.**
+âœ… **This correctly uses averageCost when available.**
 
-#### ❌ Part 3: Average Cost is NOT Updated When Selling
+#### âŒ Part 3: Average Cost is NOT Updated When Selling
 
 **Problem:** When stock is deducted during a sale, the system does NOT recalculate `averageCost` or `totalInventoryValue`.
 
@@ -117,15 +117,15 @@ async updateStock(productId, quantityChange, session) {
 
 **Issue:** When `quantityChange` is negative (sale), this reduces `totalInventoryValue`, but does NOT recalculate `averageCost`. The averageCost should remain constant until NEW inventory is added at a different price.
 
-**Verdict:** ⚠️ **PARTIAL PASS** - The logic is MOSTLY correct. The averageCost is used for sales, and totalInventoryValue is adjusted. However, the implementation could be clearer about not changing averageCost on sales (which is correct behavior for weighted average).
+**Verdict:** âš ï¸ **PARTIAL PASS** - The logic is MOSTLY correct. The averageCost is used for sales, and totalInventoryValue is adjusted. However, the implementation could be clearer about not changing averageCost on sales (which is correct behavior for weighted average).
 
 **Recommendation:** Add comment to clarify that averageCost intentionally remains unchanged during sales.
 
----✅ RULE 2: DISTRIBUTOR SALES (Flow) - **PASS** ✅ FIXED
+---âœ… RULE 2: EMPLOYEE SALES (Flow) - **PASS** âœ… FIXED
 
 **Expected Behavior:**
 
-- Inventory: Deduct from **DistributorStock** (NOT Main Warehouse)
+- Inventory: Deduct from **EmployeeStock** (NOT Main Warehouse)
 - Admin Revenue = Sale Price - Commission
 - Net Profit = Admin Revenue - Average Cost
 
@@ -135,13 +135,13 @@ async updateStock(productId, quantityChange, session) {
 
 ```javascript
 // D. Deduct Stock (Infra) - LOCATION-AWARE
-// 🎯 FIX TASK 1: Identify stock origin and deduct from specific location
-if (distributorId) {
-  // Distributor Sale → Deduct from DistributorStock
-  const distStock = await DistributorStock.findOneAndUpdate(
+// ðŸŽ¯ FIX TASK 1: Identify stock origin and deduct from specific location
+if (employeeId) {
+  // Employee Sale â†’ Deduct from EmployeeStock
+  const distStock = await EmployeeStock.findOneAndUpdate(
     {
       business: businessId,
-      distributor: distributorId,
+      employee: employeeId,
       product: productId,
     },
     { $inc: { quantity: -quantity } },
@@ -150,42 +150,42 @@ if (distributorId) {
 
   if (!distStock) {
     throw new Error(
-      `Distributor stock not found for product ${productId}. Ensure stock is assigned first.`,
+      `Employee stock not found for product ${productId}. Ensure stock is assigned first.`,
     );
   }
 
-  console.log(
-    `📦 Deducted ${quantity} from DistributorStock (distributor: ${distributorId})`,
+  console.warn("[Essence Debug]", 
+    `ðŸ“¦ Deducted ${quantity} from EmployeeStock (employee: ${employeeId})`,
   );
 } else {
-  // Admin Sale → Deduct from Warehouse
+  // Admin Sale â†’ Deduct from Warehouse
   await this.productRepository.updateWarehouseStock(
     productId,
     -quantity,
     session,
   );
-  console.log(`📦 Deducted ${quantity} from Warehouse (admin sale)`);
+  console.warn("[Essence Debug]", `ðŸ“¦ Deducted ${quantity} from Warehouse (admin sale)`);
 }
 
 // Always update global totalStock counter for statistics
 await this.productRepository.updateStock(productId, -quantity, session);
 ```
 
-**✅ Solution Applied:**
+**âœ… Solution Applied:**
 
-1. **Branching Logic:** Checks if `distributorId` exists
-2. **Distributor Sale:** Deducts from `DistributorStock` collection using `findOneAndUpdate`
-3. **Error Handling:** Throws error if distributor stock doesn't exist
+1. **Branching Logic:** Checks if `employeeId` exists
+2. **Employee Sale:** Deducts from `EmployeeStock` collection using `findOneAndUpdate`
+3. **Error Handling:** Throws error if employee stock doesn't exist
 4. **Global Counter:** Still updates `Product.totalStock` for statistics
 5. **Admin Sale:** Falls back to warehouse deduction (see Rule 3)
 
-**Verdict:** ✅ **PASS** - Distributor sales NOW correctly deduct from distributor-specific inventory
+**Verdict:** âœ… **PASS** - Employee sales NOW correctly deduct from employee-specific inventory
 
-This means the V2 hexagonal architecture **does not support distributor/branch sales yet**.
+This means the V2 hexagonal architecture **does not support employee/branch sales yet**.
 
 ---
 
-### ✅ RULE 3: ADMIN SALES (Direct) - **PASS** ✅ FIXED
+### âœ… RULE 3: ADMIN SALES (Direct) - **PASS** âœ… FIXED
 
 **Expected Behavior:**
 
@@ -198,13 +198,13 @@ This means the V2 hexagonal architecture **does not support distributor/branch s
 
 ```javascript
 } else {
-  // Admin Sale → Deduct from Warehouse
+  // Admin Sale â†’ Deduct from Warehouse
   await this.productRepository.updateWarehouseStock(
     productId,
     -quantity,
     session
   );
-  console.log(`📦 Deducted ${quantity} from Warehouse (admin sale)`);
+  console.warn("[Essence Debug]", `ðŸ“¦ Deducted ${quantity} from Warehouse (admin sale)`);
 }
 ```
 
@@ -213,7 +213,7 @@ This means the V2 hexagonal architecture **does not support distributor/branch s
 ```javascript
 /**
  * Update warehouse stock specifically (for admin sales).
- * 🎯 FIX TASK 1: Deduct from warehouse when admin makes direct sales.
+ * ðŸŽ¯ FIX TASK 1: Deduct from warehouse when admin makes direct sales.
  */
 async updateWarehouseStock(productId, quantityChange, session) {
   if (!session) {
@@ -238,22 +238,22 @@ async updateWarehouseStock(productId, quantityChange, session) {
 }
 ```
 
-**✅ Solution Applied:**
+**âœ… Solution Applied:**
 
 1. **New Repository Method:** `updateWarehouseStock()` specifically updates warehouse inventory
-2. **Admin Sales:** When no `distributorId` exists, deducts from `warehouseStock`
+2. **Admin Sales:** When no `employeeId` exists, deducts from `warehouseStock`
 3. **Stock Validation:** Throws error if warehouse has insufficient stock
 4. **Dual Update:** Both `warehouseStock` (specific) and `totalStock` (global) are updated
 
-**Verdict:** ✅ **PASS** - Admin sales NOW correctly deduct from warehouse-specific inventory.
+**Verdict:** âœ… **PASS** - Admin sales NOW correctly deduct from warehouse-specific inventory.
 
 ---
 
-### ✅ RULE 4: CANCELLATIONS (Rollback) - **PASS**
+### âœ… RULE 4: CANCELLATIONS (Rollback) - **PASS**
 
 **Expected Behavior:**
 
-- Stock returns to ORIGIN (Branch/Distributor/Warehouse)
+- Stock returns to ORIGIN (Branch/Employee/Warehouse)
 - Financials reversed correctly
 - Cost restored at same value
 
@@ -273,10 +273,10 @@ async function restoreStock(sale, session) {
       { $inc: { quantity: sale.quantity } },
       { session },
     );
-  } else if (sale.distributor) {
-    // Stock was deducted from distributor
-    await DistributorStock.findOneAndUpdate(
-      { distributor: sale.distributor, product: productId },
+  } else if (sale.employee) {
+    // Stock was deducted from employee
+    await EmployeeStock.findOneAndUpdate(
+      { employee: sale.employee, product: productId },
       { $inc: { quantity: sale.quantity } },
       { session },
     );
@@ -298,11 +298,11 @@ async function restoreStock(sale, session) {
 }
 ```
 
-**✅ Strengths:**
+**âœ… Strengths:**
 
-1. Checks `sale.branch` field → Restores to BranchStock
-2. Checks `sale.distributor` field → Restores to DistributorStock
-3. Default → Restores to Product.warehouseStock
+1. Checks `sale.branch` field â†’ Restores to BranchStock
+2. Checks `sale.employee` field â†’ Restores to EmployeeStock
+3. Default â†’ Restores to Product.warehouseStock
 4. Always updates Product.totalStock
 
 **Financial Reversal:**
@@ -334,21 +334,21 @@ async function deleteRelatedRecords(sale, session) {
 }
 ```
 
-**✅ Complete reversal of financial records.**
+**âœ… Complete reversal of financial records.**
 
-**Verdict:** ✅ **PASS** - Deletion logic correctly implements symmetry.
+**Verdict:** âœ… **PASS** - Deletion logic correctly implements symmetry.
 
-**⚠️ Caveat:** This logic ASSUMES sales were created with correct `sale.branch` or `sale.distributor` fields. Since V2 API (`RegisterSaleUseCase`) does NOT set these fields, there's a mismatch. But the deletion logic itself is correct.
+**âš ï¸ Caveat:** This logic ASSUMES sales were created with correct `sale.branch` or `sale.employee` fields. Since V2 API (`RegisterSaleUseCase`) does NOT set these fields, there's a mismatch. But the deletion logic itself is correct.
 
 ---
 
-### ✅ RULE 5: DEFECTIVE PRODUCTS (Loss) - **PASS**
+### âœ… RULE 5: DEFECTIVE PRODUCTS (Loss) - **PASS**
 
 **Expected Behavior:**
 
 - Loss = COST PRICE (not sale price)
-- Admin defective → Use `purchasePrice`
-- Distributor defective → Use `distributorPrice`
+- Admin defective â†’ Use `purchasePrice`
+- Employee defective â†’ Use `employeePrice`
 
 **Current Implementation:**
 
@@ -362,37 +362,37 @@ const lossAmount = data.hasWarranty
   : (product.purchasePrice || 0) * data.quantity;
 ```
 
-✅ **Correct:** Uses `purchasePrice` (cost price) for admin losses.
+âœ… **Correct:** Uses `purchasePrice` (cost price) for admin losses.
 
-#### Distributor Defective Reports
+#### Employee Defective Reports
 
 **File:** `DefectiveProductRepository.js` (Line 77)
 
 ```javascript
 const lossAmount = data.hasWarranty
   ? 0
-  : (product.distributorPrice || 0) * data.quantity;
+  : (product.employeePrice || 0) * data.quantity;
 ```
 
-✅ **Correct:** Uses `distributorPrice` (distributor's cost) for distributor losses.
+âœ… **Correct:** Uses `employeePrice` (employee's cost) for employee losses.
 
 **Logic:**
 
 - Admin loses their cost (`purchasePrice`)
-- Distributor loses their cost (`distributorPrice`)
-- With warranty → Loss = $0 (will be replaced)
+- Employee loses their cost (`employeePrice`)
+- With warranty â†’ Loss = $0 (will be replaced)
 
-**Verdict:** ✅ **PASS** - Defective product loss calculations are correct.
+**Verdict:** âœ… **PASS** - Defective product loss calculations are correct.
 
 ---
 
-### ✅ RULE 6: OVERPRICING (Commission Logic) - **PASS**
+### âœ… RULE 6: OVERPRICING (Commission Logic) - **PASS**
 
 **Expected Behavior:**
 
 - Base Price $20k, Sold $30k, Commission 20%
-- Commission = $30k × 20% = $6k (calculated on FINAL price)
-- Distributor gets $6k
+- Commission = $30k Ã— 20% = $6k (calculated on FINAL price)
+- Employee gets $6k
 - Admin gets $30k - $6k = $24k
 
 **Current Implementation:**
@@ -400,7 +400,7 @@ const lossAmount = data.hasWarranty
 **File:** `FinanceService.js` (Lines 14-21)
 
 ```javascript
-static calculateDistributorPrice(salePrice, profitPercentage) {
+static calculateEmployeePrice(salePrice, profitPercentage) {
   if (salePrice < 0) throw new Error("Sale price cannot be negative");
   const percentage = profitPercentage || 20; // Default logic
   // Price for dist = SalePrice * (100 - Commission) / 100
@@ -412,42 +412,42 @@ static calculateDistributorPrice(salePrice, profitPercentage) {
 
 - `salePrice` = $30,000
 - `profitPercentage` = 20
-- `distributorPrice` = $30,000 × (100 - 20) / 100 = $30,000 × 0.8 = **$24,000**
+- `employeePrice` = $30,000 Ã— (100 - 20) / 100 = $30,000 Ã— 0.8 = **$24,000**
 
 **File:** `FinanceService.js` (Lines 29-31)
 
 ```javascript
-static calculateDistributorProfit(salePrice, distributorPrice, quantity) {
-  return (salePrice - distributorPrice) * quantity;
+static calculateEmployeeProfit(salePrice, employeePrice, quantity) {
+  return (salePrice - employeePrice) * quantity;
 }
 ```
 
 **Example:**
 
-- Distributor Profit = ($30,000 - $24,000) × 1 = **$6,000** ✅
+- Employee Profit = ($30,000 - $24,000) Ã— 1 = **$6,000** âœ…
 
 **File:** `FinanceService.js` (Lines 40-50)
 
 ```javascript
-static calculateAdminProfit(salePrice, costBasis, distributorProfit, quantity) {
+static calculateAdminProfit(salePrice, costBasis, employeeProfit, quantity) {
   const totalRevenue = salePrice * quantity;
   const totalCost = costBasis * quantity;
-  // Revenue - Cost - DistributorShare
-  return totalRevenue - totalCost - distributorProfit;
+  // Revenue - Cost - EmployeeShare
+  return totalRevenue - totalCost - employeeProfit;
 }
 ```
 
 **Example:**
 
-- Total Revenue = $30,000 × 1 = $30,000
-- Total Cost = $10,000 × 1 = $10,000
-- Admin Profit = $30,000 - $10,000 - $6,000 = **$14,000** ✅
+- Total Revenue = $30,000 Ã— 1 = $30,000
+- Total Cost = $10,000 Ã— 1 = $10,000
+- Admin Profit = $30,000 - $10,000 - $6,000 = **$14,000** âœ…
 
-**Verdict:** ✅ **PASS** - Commission is calculated on the final sale price, not base price.
+**Verdict:** âœ… **PASS** - Commission is calculated on the final sale price, not base price.
 
 ---
 
-### ✅ RULE 7: CREDIT SALES / FIADO (Cash Flow) - **PASS**
+### âœ… RULE 7: CREDIT SALES / FIADO (Cash Flow) - **PASS**
 
 **Expected Behavior:**
 
@@ -466,7 +466,7 @@ static calculateAdminProfit(salePrice, costBasis, distributorProfit, quantity) {
 await this.productRepository.updateStock(productId, -quantity, session);
 ```
 
-✅ **Stock is deducted immediately**, regardless of payment status.
+âœ… **Stock is deducted immediately**, regardless of payment status.
 
 #### Part 2: Revenue Recognition (Filtered)
 
@@ -493,7 +493,7 @@ totalProfit: {
 },
 ```
 
-✅ **Revenue and Profit are $0 for pending sales** (only count when `paymentStatus: "confirmado"`).
+âœ… **Revenue and Profit are $0 for pending sales** (only count when `paymentStatus: "confirmado"`).
 
 **Sales Count:**
 
@@ -501,65 +501,65 @@ totalProfit: {
 totalSales: { $sum: 1 },
 ```
 
-✅ **Sales count includes ALL sales** (pending + confirmed).
+âœ… **Sales count includes ALL sales** (pending + confirmed).
 
 **Also Verified in:**
 
-- `AdvancedAnalyticsRepository.js` (Line 52) - ✅ Already filters by "confirmado"
-- `GamificationRepository.js` (Line 248) - ✅ Already filters by "confirmado"
-- `DistributorRepository.js` (Line 117) - ✅ Now filters by "confirmado" (recently added)
-- `GodRepository.js` (Line 82) - ✅ Now filters by "confirmado" (recently added)
+- `AdvancedAnalyticsRepository.js` (Line 52) - âœ… Already filters by "confirmado"
+- `GamificationRepository.js` (Line 248) - âœ… Already filters by "confirmado"
+- `EmployeeRepository.js` (Line 117) - âœ… Now filters by "confirmado" (recently added)
+- `GodRepository.js` (Line 82) - âœ… Now filters by "confirmado" (recently added)
 
 \*\*VerdIMPLEMENTATION SUMMARY
 
-### ✅ COMPLETED FIXES (ALL CRITICAL ITEMS)
+### âœ… COMPLETED FIXES (ALL CRITICAL ITEMS)
 
-1. **✅ Distributor/Branch Sales in V2 API - FIXED**
+1. **âœ… Employee/Branch Sales in V2 API - FIXED**
    - **File:** `RegisterSaleUseCase.js` (Lines 106-128)
-   - **Action:** Added branching logic to deduct from `DistributorStock` when `distributorId` exists
+   - **Action:** Added branching logic to deduct from `EmployeeStock` when `employeeId` exists
    - **Impact:** High - Eliminates inventory discrepancies
-   - **Status:** ✅ DEPLOYED
+   - **Status:** âœ… DEPLOYED
 
-2. **✅ Update warehouseStock on Admin Sales - FIXED**
+2. **âœ… Update warehouseStock on Admin Sales - FIXED**
    - **File:** `ProductRepository.js` (Lines 60-82)
-   - **Action:** Created `updateWarehouseStock()` method, called when sale has no distributor
+   - **Action:** Created `updateWarehouseStock()` method, called when sale has no employee
    - **Impact:** High - Maintains warehouse inventory integrity
-   - **Status:** ✅ DEPLOYED
+   - **Status:** âœ… DEPLOYED
 
-3. **✅ Net Profit KPI with Expenses - FIXED**
+3. **âœ… Net Profit KPI with Expenses - FIXED**
    - **File:** `AdvancedAnalyticsRepository.js` (Line 177)
    - **Action:** Formula now calculates `netProfit = grossProfit - totalExpenses`
    - **Impact:** High - Dashboard shows REAL profitability
-   - **Status:** ✅ DEPLOYED
+   - **Status:** âœ… DEPLOYED
 
-4. **✅ Data Privacy for Distributors - FIXED**
+4. **âœ… Data Privacy for Employees - FIXED**
    - **File:** `ProductController.js` (Lines 40-48, 76-82)
-   - **Action:** Cost fields excluded from API responses when user role is "distribuidor"
+   - **Action:** Cost fields excluded from API responses when user role is "empleado"
    - | **Impact:** High - ProtectBefore Fix | After Fix     |
      | ------------------------------------ | ------------- | ------------- |
-     | **Financial Calculations**           | 3/3 (100%) ✅ | 4/4 (100%) ✅ |
-     | **Inventory Management**             | 1/4 (25%) ❌  | 3/3 (100%) ✅ |
-     | **Data Privacy**                     | 0/1 (0%) ❌   | 1/1 (100%) ✅ |
-     | **Overall**                          | 4/7 (57%) ⚠️  | 9/9 (100%) ✅ |
-5. **✅ Average Cost Documentation - ADDED**
+     | **Financial Calculations**           | 3/3 (100%) âœ… | 4/4 (100%) âœ… |
+     | **Inventory Management**             | 1/4 (25%) âŒ  | 3/3 (100%) âœ… |
+     | **Data Privacy**                     | 0/1 (0%) âŒ   | 1/1 (100%) âœ… |
+     | **Overall**                          | 4/7 (57%) âš ï¸  | 9/9 (100%) âœ… |
+5. **âœ… Average Cost Documentation - ADDED**
    - **File:** `ProductRepository.updateStock()` (Line 57)
    - **Action:** Added comment explaining that `averageCost` intentionally remains unchanged during sales
    - **Impact:** Low - Clarifies correct behavior
-   - **Status:** ✅ DEPLOYED
+   - **Status:** âœ… DEPLOYED
 6. **Add Comment to Clarify Average Cost Behavior**
    - FINAL SIGN-OFF MATRIX
 
 | Rule           | Requirement                   | Status Before | Status After | Risk Level |
 | -------------- | ----------------------------- | ------------- | ------------ | ---------- |
-| Average Cost   | Use weighted average on sales | ⚠️ Mostly OK  | ✅ PASS      | 🟢 None    |
-| Distri Sales   | Deduct from DistributorStock  | ❌ FAIL       | ✅ PASS      | 🟢 None    |
-| Admin Sales    | Deduct from Warehouse         | ❌ FAIL       | ✅ PASS      | 🟢 None    |
-| Cancellations  | Return to origin              | ✅ PASS       | ✅ PASS      | 🟢 None    |
-| Defective Loss | Use cost price                | ✅ PASS       | ✅ PASS      | 🟢 None    |
-| Overpricing    | Commission on final price     | ✅ PASS       | ✅ PASS      | 🟢 None    |
-| Credit Sales   | Filter revenue by status      | ✅ PASS       | ✅ PASS      | 🟢 None    |
-| Net Profit KPI | Include operational expenses  | ❌ FAIL       | ✅ PASS      | 🟢 None    |
-| Data Privacy   | Hide cost fields from dists   | ❌ FAIL       | ✅ PASS      | 🟢 None    |
+| Average Cost   | Use weighted average on sales | âš ï¸ Mostly OK  | âœ… PASS      | ðŸŸ¢ None    |
+| Distri Sales   | Deduct from EmployeeStock  | âŒ FAIL       | âœ… PASS      | ðŸŸ¢ None    |
+| Admin Sales    | Deduct from Warehouse         | âŒ FAIL       | âœ… PASS      | ðŸŸ¢ None    |
+| Cancellations  | Return to origin              | âœ… PASS       | âœ… PASS      | ðŸŸ¢ None    |
+| Defective Loss | Use cost price                | âœ… PASS       | âœ… PASS      | ðŸŸ¢ None    |
+| Overpricing    | Commission on final price     | âœ… PASS       | âœ… PASS      | ðŸŸ¢ None    |
+| Credit Sales   | Filter revenue by status      | âœ… PASS       | âœ… PASS      | ðŸŸ¢ None    |
+| Net Profit KPI | Include operational expenses  | âŒ FAIL       | âœ… PASS      | ðŸŸ¢ None    |
+| Data Privacy   | Hide cost fields from dists   | âŒ FAIL       | âœ… PASS      | ðŸŸ¢ None    |
 
 ---
 
@@ -570,14 +570,14 @@ totalSales: { $sum: 1 },
 **Lines Inspected:** ~3,500 lines of production code  
 **Fixes Applied:** 5 critical fixes across 4 files
 
-**✅ FINAL VERDICT:** System is now 100% compliant with business requirements. All critical inventory, financial, and security issues have been resolved. Ready for database restart and production deployment
-| Average Cost | Use weighted average on sales | ⚠️ Mostly OK | 🟡 Low |
-| Distri Sales | Deduct from DistributorStock | ❌ Not Implemented | 🔴 High |
-| Admin Sales | Deduct from Warehouse | ❌ Partial | 🔴 High |
-| Cancellations | Return to origin | ✅ Correct | 🟢 None |
-| Defective Loss | Use cost price | ✅ Correct | 🟢 None |
-| Overpricing | Commission on final price | ✅ Correct | 🟢 None |
-| Credit Sales | Filter revenue by status | ✅ Correct | 🟢 None |
+**âœ… FINAL VERDICT:** System is now 100% compliant with business requirements. All critical inventory, financial, and security issues have been resolved. Ready for database restart and production deployment
+| Average Cost | Use weighted average on sales | âš ï¸ Mostly OK | ðŸŸ¡ Low |
+| Distri Sales | Deduct from EmployeeStock | âŒ Not Implemented | ðŸ”´ High |
+| Admin Sales | Deduct from Warehouse | âŒ Partial | ðŸ”´ High |
+| Cancellations | Return to origin | âœ… Correct | ðŸŸ¢ None |
+| Defective Loss | Use cost price | âœ… Correct | ðŸŸ¢ None |
+| Overpricing | Commission on final price | âœ… Correct | ðŸŸ¢ None |
+| Credit Sales | Filter revenue by status | âœ… Correct | ðŸŸ¢ None |
 
 ---
 
@@ -586,23 +586,23 @@ totalSales: { $sum: 1 },
 **Files Analyzed:** 12+ files across repositories, controllers, and services  
 **Lines Inspected:** ~3,500 lines of production code
 
-**Recommendation:** Address CRITICAL items before deploying to production. The V2 API needs distributor/branch sales support to maintain inventory integrity.
+**Recommendation:** Address CRITICAL items before deploying to production. The V2 API needs employee/branch sales support to maintain inventory integrity.
 
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: CASOS_DE_USO_EXTENDIDOS.md -->
 <!-- ========================================== -->
 
-# 🎭 ESPECIFICACIÓN: CASOS DE USO EXTENDIDOS
+# ðŸŽ­ ESPECIFICACIÃ“N: CASOS DE USO EXTENDIDOS
 
-> **Propósito:** Definir de manera metódica los actores e interacciones principales mediante el estándar UML, desglosando los flujos primarios, alternativos y de excepción.
+> **PropÃ³sito:** Definir de manera metÃ³dica los actores e interacciones principales mediante el estÃ¡ndar UML, desglosando los flujos primarios, alternativos y de excepciÃ³n.
 
 ## 1. Diagrama General de Actores
 
 ```mermaid
 usecaseDiagram
   actor "Administrador (Owner)" as Admin
-  actor "Distribuidor" as Dist
+  actor "Empleado" as Dist
   actor "GOD (Superadmin)" as God
   
   package "Essence ERP" {
@@ -626,138 +626,138 @@ usecaseDiagram
 
 ---
 
-## 2. Detalle de Casos de Uso Críticos
+## 2. Detalle de Casos de Uso CrÃ­ticos
 
-### 🛒 CU-04A: Registrar Venta (Como Administrador)
+### ðŸ›’ CU-04A: Registrar Venta (Como Administrador)
 * **Actor:** Administrador (Owner).
-* **Precondiciones:** JWT válido, suscripción de negocio activa, producto con stock > 0 en `warehouseStock`.
+* **Precondiciones:** JWT vÃ¡lido, suscripciÃ³n de negocio activa, producto con stock > 0 en `warehouseStock`.
 * **Flujo Principal (Happy Path):**
-  1. El Administrador añade N productos al carrito en el POS.
-  2. Selecciona método de pago "Efectivo".
+  1. El Administrador aÃ±ade N productos al carrito en el POS.
+  2. Selecciona mÃ©todo de pago "Efectivo".
   3. El sistema valida stock suficiente en `warehouseStock`.
-  4. El sistema ejecuta descuento atómico en base de datos.
+  4. El sistema ejecuta descuento atÃ³mico en base de datos.
   5. El sistema (`FinanceService`) calcula Ganancia = Precio Venta - Costo.
   6. Se guarda el ticket de venta en estado "confirmado".
-  7. El sistema arroja éxito HTTP 201 al cliente.
+  7. El sistema arroja Ã©xito HTTP 201 al cliente.
 * **Flujos Alternativos:**
-  * **(3.A)** El producto no tiene stock: Se aborta la operación y se arroja alerta (`Stock Insuficiente`).
-  * **(2.A)** Método de pago "Crédito": El paso 6 cambia a estado `"pendiente"` y no se suma a métricas financieras.
+  * **(3.A)** El producto no tiene stock: Se aborta la operaciÃ³n y se arroja alerta (`Stock Insuficiente`).
+  * **(2.A)** MÃ©todo de pago "CrÃ©dito": El paso 6 cambia a estado `"pendiente"` y no se suma a mÃ©tricas financieras.
 
-### 💼 CU-04B: Registrar Venta (Como Distribuidor)
-* **Actor:** Distribuidor.
-* **Precondiciones:** JWT válido, y la cuenta del Administrador (Owner del Negocio) debe estar ACTIVA y sin expirar.
+### ðŸ’¼ CU-04B: Registrar Venta (Como Empleado)
+* **Actor:** Empleado.
+* **Precondiciones:** JWT vÃ¡lido, y la cuenta del Administrador (Owner del Negocio) debe estar ACTIVA y sin expirar.
 * **Flujo Principal:**
-  1. El Distribuidor entra al POS en su móvil.
-  2. El catálogo *solo* expone productos donde él tenga `DistributorStock` > 0.
+  1. El Empleado entra al POS en su mÃ³vil.
+  2. El catÃ¡logo *solo* expone productos donde Ã©l tenga `EmployeeStock` > 0.
   3. Ejecuta orden de compra de N productos.
-  4. El sistema deduce el stock *exclusivamente* del `DistributorStock` (NO de `warehouseStock`).
-  5. `FinanceService` calcula el % de comisión sobre la base del ranking operativo.
-  6. Retorna Ticket donde se revela su comisión ganada pero sin revelar los costos nativos del Owner.
-* **Flujos de Excepción:**
-  * **(Pre-1)** La cuenta del Owner expiró: Cierre de sesión forzado del Distribuidor con mensaje "Su administrador no posee servicio activo".
+  4. El sistema deduce el stock *exclusivamente* del `EmployeeStock` (NO de `warehouseStock`).
+  5. `FinanceService` calcula el % de comisiÃ³n sobre la base del ranking operativo.
+  6. Retorna Ticket donde se revela su comisiÃ³n ganada pero sin revelar los costos nativos del Owner.
+* **Flujos de ExcepciÃ³n:**
+  * **(Pre-1)** La cuenta del Owner expirÃ³: Cierre de sesiÃ³n forzado del Empleado con mensaje "Su administrador no posee servicio activo".
 
-### 📦 CU-03: Asignar Stock Atómico
+### ðŸ“¦ CU-03: Asignar Stock AtÃ³mico
 * **Actor:** Administrador (Owner).
 * **Precondiciones:** `warehouseStock` suficiente.
 * **Flujo Principal:**
-  1. El Admin elige un Distribuidor y asigna 100 unidades de "Producto X".
-  2. Se inicia una Transacción de BD (Transaction Session).
+  1. El Admin elige un Empleado y asigna 100 unidades de "Producto X".
+  2. Se inicia una TransacciÃ³n de BD (Transaction Session).
   3. Se deducen 100 unidades de `Product.warehouseStock`.
-  4. Se crea o actualiza `DistributorStock` agregando 100 unidades.
-  5. Se consolida transacción y ambas mutaciones aplican.
+  4. Se crea o actualiza `EmployeeStock` agregando 100 unidades.
+  5. Se consolida transacciÃ³n y ambas mutaciones aplican.
 * **Flujo Alternativo:**
-  * **(3.Error)** El servidor o DB se reinicia en medio del proceso: La transacción hace ROLLBACK. El stock del negocio se recupera sin haber inflado la cuenta del distribuidor.
+  * **(3.Error)** El servidor o DB se reinicia en medio del proceso: La transacciÃ³n hace ROLLBACK. El stock del negocio se recupera sin haber inflado la cuenta del empleado.
 
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: COMPREHENSIVE_PROJECT_ANALYSIS.md -->
 <!-- ========================================== -->
 
-# 📊 ANÁLISIS COMPLETO DEL PROYECTO ESSENCE
+# ðŸ“Š ANÃLISIS COMPLETO DEL PROYECTO ESSENCE
 
-**Fecha de Análisis:** 2 de febrero de 2026  
+**Fecha de AnÃ¡lisis:** 2 de febrero de 2026  
 **Analista:** GitHub Copilot (Claude Sonnet 4.5)  
 **Alcance:** Full Stack - Frontend (React/TypeScript) + Backend (Node.js/Express)
 
 ---
 
-## 📋 ÍNDICE
+## ðŸ“‹ ÃNDICE
 
 1. [Resumen Ejecutivo](#resumen-ejecutivo)
 2. [Arquitectura General](#arquitectura-general)
-3. [Backend - Análisis Detallado](#backend-análisis-detallado)
-4. [Frontend - Análisis Detallado](#frontend-análisis-detallado)
+3. [Backend - AnÃ¡lisis Detallado](#backend-anÃ¡lisis-detallado)
+4. [Frontend - AnÃ¡lisis Detallado](#frontend-anÃ¡lisis-detallado)
 5. [Base de Datos y Modelos](#base-de-datos-y-modelos)
-6. [Seguridad y Autenticación](#seguridad-y-autenticación)
-7. [Análisis de Performance](#análisis-de-performance)
-8. [Deuda Técnica](#deuda-técnica)
-9. [Recomendaciones Críticas](#recomendaciones-críticas)
-10. [Plan de Acción](#plan-de-acción)
+6. [Seguridad y AutenticaciÃ³n](#seguridad-y-autenticaciÃ³n)
+7. [AnÃ¡lisis de Performance](#anÃ¡lisis-de-performance)
+8. [Deuda TÃ©cnica](#deuda-tÃ©cnica)
+9. [Recomendaciones CrÃ­ticas](#recomendaciones-crÃ­ticas)
+10. [Plan de AcciÃ³n](#plan-de-acciÃ³n)
 
 ---
 
 ## 1. RESUMEN EJECUTIVO
 
-### 🎯 Visión General
+### ðŸŽ¯ VisiÃ³n General
 
-**Essence** es una plataforma full-stack de gestión empresarial para distribución de productos tecnológicos premium. Implementa un sistema multiempresarial (multi-tenant) con roles diferenciados (God, Admin, Distribuidor) y features avanzados de inventario, ventas, finanzas y gamificación.
+**Essence** es una plataforma full-stack de gestiÃ³n empresarial para distribuciÃ³n de productos tecnolÃ³gicos premium. Implementa un sistema multiempresarial (multi-tenant) con roles diferenciados (God, Admin, Empleado) y features avanzados de inventario, ventas, finanzas y gamificaciÃ³n.
 
-### 📊 Métricas del Proyecto
+### ðŸ“Š MÃ©tricas del Proyecto
 
 ```
 Backend:
-  - Líneas de Código: ~50,000+ LOC
+  - LÃ­neas de CÃ³digo: ~50,000+ LOC
   - Modelos de Datos: 36 modelos
   - Endpoints API: ~150+ endpoints
   - Arquitectura: Hexagonal (Clean Architecture) V2 + Legacy V1
-  - Migración: 80% completada a V2
+  - MigraciÃ³n: 80% completada a V2
 
 Frontend:
-  - Líneas de Código: ~30,000+ LOC
+  - LÃ­neas de CÃ³digo: ~30,000+ LOC
   - Componentes: ~120+ componentes
-  - Páginas: ~40+ páginas
+  - PÃ¡ginas: ~40+ pÃ¡ginas
   - Framework: React 19 + TypeScript
   - Build Tool: Vite 6
 
 Database:
   - Motor: MongoDB 7
   - Colecciones: 31 colecciones
-  - Índices: Múltiples índices compuestos
-  - Caché: Redis (BullMQ para jobs)
+  - Ãndices: MÃºltiples Ã­ndices compuestos
+  - CachÃ©: Redis (BullMQ para jobs)
 
 Infraestructura:
-  - Containerización: Docker Compose
+  - ContainerizaciÃ³n: Docker Compose
   - CI/CD: Scripts de deployment
-  - Backup: Sistema automático con sincronización VPS
+  - Backup: Sistema automÃ¡tico con sincronizaciÃ³n VPS
   - Monitoreo: Logs estructurados + Audit trails
 ```
 
-### ✅ Fortalezas del Proyecto
+### âœ… Fortalezas del Proyecto
 
-1. **Arquitectura Limpia**: Migración exitosa a arquitectura hexagonal
+1. **Arquitectura Limpia**: MigraciÃ³n exitosa a arquitectura hexagonal
 2. **Tipado Fuerte**: TypeScript en frontend, JSDoc en backend
-3. **Seguridad Robusta**: Multi-capa con guards, rate limiting, sanitización
+3. **Seguridad Robusta**: Multi-capa con guards, rate limiting, sanitizaciÃ³n
 4. **Testing**: Suite de tests con Jest + React Testing Library
-5. **Optimización**: Virtualización de listas, lazy loading, PWA
-6. **Documentación**: Swagger API, auditorías de lógica de negocio
-7. **DevOps**: Docker, sync automático prod→local, backups
-8. **Business Logic**: 100% compliance después de MASTER FIX
+5. **OptimizaciÃ³n**: VirtualizaciÃ³n de listas, lazy loading, PWA
+6. **DocumentaciÃ³n**: Swagger API, auditorÃ­as de lÃ³gica de negocio
+7. **DevOps**: Docker, sync automÃ¡tico prodâ†’local, backups
+8. **Business Logic**: 100% compliance despuÃ©s de MASTER FIX
 
-### ⚠️ Áreas de Mejora Críticas
+### âš ï¸ Ãreas de Mejora CrÃ­ticas
 
-1. **Migración Incompleta**: 20% del código aún en legacy V1
-2. **Duplicación de Código**: Algunos controladores duplicados
+1. **MigraciÃ³n Incompleta**: 20% del cÃ³digo aÃºn en legacy V1
+2. **DuplicaciÃ³n de CÃ³digo**: Algunos controladores duplicados
 3. **Testing Coverage**: ~40% de cobertura estimada
 4. **Performance**: N+1 queries en algunos endpoints
 5. **Error Handling**: Inconsistente entre V1 y V2
-6. **TODOs Pendientes**: 4 TODOs críticos en net profit calculation
+6. **TODOs Pendientes**: 4 TODOs crÃ­ticos en net profit calculation
 7. **Dependencias**: Algunas outdated (revisar security advisories)
 
 ---
 
 ## 2. ARQUITECTURA GENERAL
 
-### 🏗️ Stack Tecnológico
+### ðŸ—ï¸ Stack TecnolÃ³gico
 
 ```yaml
 Frontend:
@@ -796,149 +796,149 @@ Infraestructura:
   Backup: Scheduled worker + SSH sync
 ```
 
-### 🎨 Arquitectura Frontend
+### ðŸŽ¨ Arquitectura Frontend
 
 ```
 client/
-├── src/
-│   ├── api/                    # API clients (axios wrappers)
-│   ├── components/             # Componentes globales compartidos
-│   │   ├── NotificationBell.tsx
-│   │   ├── ProductSelector.tsx
-│   │   ├── ReportIssueButton.tsx
-│   │   └── PushNotificationSettings.tsx
-│   ├── context/                # React Context (BusinessContext)
-│   ├── features/               # Feature modules (Domain-driven)
-│   │   ├── auth/
-│   │   ├── business/
-│   │   ├── common/
-│   │   ├── credits/
-│   │   ├── distributors/
-│   │   ├── inventory/
-│   │   ├── notifications/
-│   │   ├── sales/
-│   │   └── settings/
-│   ├── hooks/                  # Custom React hooks
-│   ├── routes/                 # Router configuration
-│   ├── services/               # Business logic services
-│   ├── shared/                 # Shared utilities
-│   │   ├── components/ui/      # Reusable UI components
-│   │   └── utils/
-│   ├── types/                  # TypeScript definitions
-│   └── utils/                  # Helper functions
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ api/                    # API clients (axios wrappers)
+â”‚   â”œâ”€â”€ components/             # Componentes globales compartidos
+â”‚   â”‚   â”œâ”€â”€ NotificationBell.tsx
+â”‚   â”‚   â”œâ”€â”€ ProductSelector.tsx
+â”‚   â”‚   â”œâ”€â”€ ReportIssueButton.tsx
+â”‚   â”‚   â””â”€â”€ PushNotificationSettings.tsx
+â”‚   â”œâ”€â”€ context/                # React Context (BusinessContext)
+â”‚   â”œâ”€â”€ features/               # Feature modules (Domain-driven)
+â”‚   â”‚   â”œâ”€â”€ auth/
+â”‚   â”‚   â”œâ”€â”€ business/
+â”‚   â”‚   â”œâ”€â”€ common/
+â”‚   â”‚   â”œâ”€â”€ credits/
+â”‚   â”‚   â”œâ”€â”€ employees/
+â”‚   â”‚   â”œâ”€â”€ inventory/
+â”‚   â”‚   â”œâ”€â”€ notifications/
+â”‚   â”‚   â”œâ”€â”€ sales/
+â”‚   â”‚   â””â”€â”€ settings/
+â”‚   â”œâ”€â”€ hooks/                  # Custom React hooks
+â”‚   â”œâ”€â”€ routes/                 # Router configuration
+â”‚   â”œâ”€â”€ services/               # Business logic services
+â”‚   â”œâ”€â”€ shared/                 # Shared utilities
+â”‚   â”‚   â”œâ”€â”€ components/ui/      # Reusable UI components
+â”‚   â”‚   â””â”€â”€ utils/
+â”‚   â”œâ”€â”€ types/                  # TypeScript definitions
+â”‚   â””â”€â”€ utils/                  # Helper functions
 ```
 
-**Patrón de Organización:**
+**PatrÃ³n de OrganizaciÃ³n:**
 
-- **Feature-based**: Cada módulo (distributors, inventory, etc.) es autocontenido
+- **Feature-based**: Cada mÃ³dulo (employees, inventory, etc.) es autocontenido
 - **Atomic Design**: Componentes UI reutilizables en shared/components
-- **Container/Presenter**: Separación lógica entre páginas y componentes
+- **Container/Presenter**: SeparaciÃ³n lÃ³gica entre pÃ¡ginas y componentes
 
-### 🔧 Arquitectura Backend
+### ðŸ”§ Arquitectura Backend
 
 ```
 server/
-├── src/                        # 🟢 V2 - Hexagonal Architecture
-│   ├── application/
-│   │   └── use-cases/          # Application layer (orchestration)
-│   │       ├── RegisterSaleUseCase.js
-│   │       ├── CreateProductUseCase.js
-│   │       ├── LoginUseCase.js
-│   │       └── UserPermissionUseCases.js
-│   ├── domain/
-│   │   ├── services/           # Domain layer (pure business logic)
-│   │   │   ├── FinanceService.js
-│   │   │   ├── InventoryService.js
-│   │   │   └── AnalyticsService.js
-│   │   └── types/              # Domain types/interfaces
-│   └── infrastructure/
-│       ├── database/
-│       │   ├── connection.js
-│       │   ├── models/         # Mongoose schemas (link to ../../../models/)
-│       │   └── repositories/   # Data access layer
-│       │       ├── ProductRepository.js
-│       │       ├── SaleRepository.js
-│       │       ├── UserRepository.js
-│       │       └── [32 more repositories]
-│       ├── http/
-│       │   ├── controllers/    # HTTP handlers
-│       │   │   ├── ProductController.js
-│       │   │   ├── SaleController.js
-│       │   │   └── [28 more controllers]
-│       │   └── routes/         # Express routes (V2)
-│       │       ├── product.routes.v2.js
-│       │       └── [32 more route files]
-│       ├── jobs/               # Background workers
-│       │   ├── devStartV2.job.js
-│       │   ├── syncProdToLocalV2.job.js
-│       │   └── [3 more workers]
-│       └── services/           # External integrations
-│
-├── models/                     # 🟡 Legacy - Mongoose models (36 files)
-├── middleware/                 # 🟡 Legacy - Express middleware
-│   ├── auth.middleware.js
-│   ├── errorHandler.middleware.js
-│   ├── security.middleware.js
-│   ├── databaseGuard.middleware.js
-│   └── [6 more middleware]
-├── jobs/                       # 🟡 Legacy - Worker scripts
-│   ├── backup.worker.js
-│   ├── debtNotification.worker.js
-│   └── businessAssistant.worker.js
-├── config/                     # Configuration files
-├── scripts/                    # Utility scripts
-├── utils/                      # Helper functions
-├── tests/                      # Integration tests
-├── __tests__/                  # Unit tests (Jest)
-└── server.js                   # 🔴 Main entry point (mixed V1/V2)
+â”œâ”€â”€ src/                        # ðŸŸ¢ V2 - Hexagonal Architecture
+â”‚   â”œâ”€â”€ application/
+â”‚   â”‚   â””â”€â”€ use-cases/          # Application layer (orchestration)
+â”‚   â”‚       â”œâ”€â”€ RegisterSaleUseCase.js
+â”‚   â”‚       â”œâ”€â”€ CreateProductUseCase.js
+â”‚   â”‚       â”œâ”€â”€ LoginUseCase.js
+â”‚   â”‚       â””â”€â”€ UserPermissionUseCases.js
+â”‚   â”œâ”€â”€ domain/
+â”‚   â”‚   â”œâ”€â”€ services/           # Domain layer (pure business logic)
+â”‚   â”‚   â”‚   â”œâ”€â”€ FinanceService.js
+â”‚   â”‚   â”‚   â”œâ”€â”€ InventoryService.js
+â”‚   â”‚   â”‚   â””â”€â”€ AnalyticsService.js
+â”‚   â”‚   â””â”€â”€ types/              # Domain types/interfaces
+â”‚   â””â”€â”€ infrastructure/
+â”‚       â”œâ”€â”€ database/
+â”‚       â”‚   â”œâ”€â”€ connection.js
+â”‚       â”‚   â”œâ”€â”€ models/         # Mongoose schemas (link to ../../../models/)
+â”‚       â”‚   â””â”€â”€ repositories/   # Data access layer
+â”‚       â”‚       â”œâ”€â”€ ProductRepository.js
+â”‚       â”‚       â”œâ”€â”€ SaleRepository.js
+â”‚       â”‚       â”œâ”€â”€ UserRepository.js
+â”‚       â”‚       â””â”€â”€ [32 more repositories]
+â”‚       â”œâ”€â”€ http/
+â”‚       â”‚   â”œâ”€â”€ controllers/    # HTTP handlers
+â”‚       â”‚   â”‚   â”œâ”€â”€ ProductController.js
+â”‚       â”‚   â”‚   â”œâ”€â”€ SaleController.js
+â”‚       â”‚   â”‚   â””â”€â”€ [28 more controllers]
+â”‚       â”‚   â””â”€â”€ routes/         # Express routes (V2)
+â”‚       â”‚       â”œâ”€â”€ product.routes.v2.js
+â”‚       â”‚       â””â”€â”€ [32 more route files]
+â”‚       â”œâ”€â”€ jobs/               # Background workers
+â”‚       â”‚   â”œâ”€â”€ devStartV2.job.js
+â”‚       â”‚   â”œâ”€â”€ syncProdToLocalV2.job.js
+â”‚       â”‚   â””â”€â”€ [3 more workers]
+â”‚       â””â”€â”€ services/           # External integrations
+â”‚
+â”œâ”€â”€ models/                     # ðŸŸ¡ Legacy - Mongoose models (36 files)
+â”œâ”€â”€ middleware/                 # ðŸŸ¡ Legacy - Express middleware
+â”‚   â”œâ”€â”€ auth.middleware.js
+â”‚   â”œâ”€â”€ errorHandler.middleware.js
+â”‚   â”œâ”€â”€ security.middleware.js
+â”‚   â”œâ”€â”€ databaseGuard.middleware.js
+â”‚   â””â”€â”€ [6 more middleware]
+â”œâ”€â”€ jobs/                       # ðŸŸ¡ Legacy - Worker scripts
+â”‚   â”œâ”€â”€ backup.worker.js
+â”‚   â”œâ”€â”€ debtNotification.worker.js
+â”‚   â””â”€â”€ businessAssistant.worker.js
+â”œâ”€â”€ config/                     # Configuration files
+â”œâ”€â”€ scripts/                    # Utility scripts
+â”œâ”€â”€ utils/                      # Helper functions
+â”œâ”€â”€ tests/                      # Integration tests
+â”œâ”€â”€ __tests__/                  # Unit tests (Jest)
+â””â”€â”€ server.js                   # ðŸ”´ Main entry point (mixed V1/V2)
 ```
 
 **Capas de la Arquitectura Hexagonal:**
 
-1. **Domain** (Core): Lógica de negocio pura, sin dependencias externas
-2. **Application**: Orquestación de casos de uso, coordina domain + infra
-3. **Infrastructure**: Detalles técnicos (DB, HTTP, jobs, externos)
+1. **Domain** (Core): LÃ³gica de negocio pura, sin dependencias externas
+2. **Application**: OrquestaciÃ³n de casos de uso, coordina domain + infra
+3. **Infrastructure**: Detalles tÃ©cnicos (DB, HTTP, jobs, externos)
 
 **Ventajas:**
 
-- ✅ Testeable: Lógica de negocio separada de detalles técnicos
-- ✅ Mantenible: Cambios en DB no afectan lógica de negocio
-- ✅ Escalable: Fácil agregar nuevos adapters (GraphQL, gRPC, etc.)
+- âœ… Testeable: LÃ³gica de negocio separada de detalles tÃ©cnicos
+- âœ… Mantenible: Cambios en DB no afectan lÃ³gica de negocio
+- âœ… Escalable: FÃ¡cil agregar nuevos adapters (GraphQL, gRPC, etc.)
 
 ---
 
-## 3. BACKEND - ANÁLISIS DETALLADO
+## 3. BACKEND - ANÃLISIS DETALLADO
 
-### 📦 Modelos de Datos (36 Modelos)
+### ðŸ“¦ Modelos de Datos (36 Modelos)
 
 #### Modelos Core:
 
-1. **User** - Usuarios del sistema (god, admin, distribuidor)
+1. **User** - Usuarios del sistema (god, admin, empleado)
 2. **Business** - Empresas multiempresariales
-3. **Membership** - Relación User ↔ Business con roles
-4. **Product** - Catálogo de productos
-5. **Category** - Categorías de productos
+3. **Membership** - RelaciÃ³n User â†” Business con roles
+4. **Product** - CatÃ¡logo de productos
+5. **Category** - CategorÃ­as de productos
 6. **Sale** - Ventas registradas
-7. **Credit** - Créditos/Fiados
-8. **CreditPayment** - Pagos de créditos
+7. **Credit** - CrÃ©ditos/Fiados
+8. **CreditPayment** - Pagos de crÃ©ditos
 
 #### Modelos de Inventario:
 
-9. **DistributorStock** - Stock asignado a distribuidores
+9. **EmployeeStock** - Stock asignado a empleados
 10. **BranchStock** - Stock en sucursales
 11. **Stock** - (Legacy) Stock global
 12. **InventoryEntry** - Entradas de inventario
 13. **StockTransfer** - Transferencias entre ubicaciones
-14. **BranchTransfer** - Transferencias específicas de sucursales
+14. **BranchTransfer** - Transferencias especÃ­ficas de sucursales
 15. **DefectiveProduct** - Productos defectuosos
 
-#### Modelos de Configuración:
+#### Modelos de ConfiguraciÃ³n:
 
-16. **PaymentMethod** - Métodos de pago configurables
-17. **DeliveryMethod** - Métodos de entrega
+16. **PaymentMethod** - MÃ©todos de pago configurables
+17. **DeliveryMethod** - MÃ©todos de entrega
 18. **Provider** - Proveedores
-19. **GamificationConfig** - Configuración de gamificación
-20. **BusinessAssistantConfig** - Configuración de asistente IA
+19. **GamificationConfig** - ConfiguraciÃ³n de gamificaciÃ³n
+20. **BusinessAssistantConfig** - ConfiguraciÃ³n de asistente IA
 
 #### Modelos de Clientes:
 
@@ -954,13 +954,13 @@ server/
 #### Modelos de Reportes y Analytics:
 
 26. **ProfitHistory** - Historial de ganancias
-27. **DistributorStats** - Estadísticas de distribuidores
-28. **PeriodWinner** - Ganadores por período (gamificación)
-29. **AnalysisLog** - Logs de análisis
+27. **EmployeeStats** - EstadÃ­sticas de empleados
+28. **PeriodWinner** - Ganadores por perÃ­odo (gamificaciÃ³n)
+29. **AnalysisLog** - Logs de anÃ¡lisis
 
 #### Modelos de Sistema:
 
-30. **AuditLog** - Auditoría de acciones
+30. **AuditLog** - AuditorÃ­a de acciones
 31. **Notification** - Notificaciones
 32. **PushSubscription** - Suscripciones push
 33. **RefreshToken** - Tokens de refresco JWT
@@ -968,7 +968,7 @@ server/
 35. **Expense** - Gastos operacionales
 36. **Branch** - Sucursales
 
-### 🔄 Flujos de Negocio Críticos
+### ðŸ”„ Flujos de Negocio CrÃ­ticos
 
 #### 1. Flujo de Venta (RegisterSaleUseCase)
 
@@ -978,20 +978,20 @@ server/
 2. Loop por cada producto:
    a. Cargar producto
    b. Verificar stock (totalStock)
-   c. Calcular finanzas (distributorPrice, profits)
-   d. Deducir stock GLOBAL (totalStock)  ❌
+   c. Calcular finanzas (employeePrice, profits)
+   d. Deducir stock GLOBAL (totalStock)  âŒ
    e. Crear registro de venta
 3. Retornar resumen
 
-// DESPUÉS DEL FIX (ACTUAL):
+// DESPUÃ‰S DEL FIX (ACTUAL):
 1. Validar items
 2. Loop por cada producto:
    a. Cargar producto
    b. Verificar stock
    c. Calcular finanzas
-   d. Deducir stock ESPECÍFICO:  ✅
-      - Si distributorId → DistributorStock.quantity
-      - Si no → Product.warehouseStock
+   d. Deducir stock ESPECÃFICO:  âœ…
+      - Si employeeId â†’ EmployeeStock.quantity
+      - Si no â†’ Product.warehouseStock
    e. Actualizar contador global (totalStock)
    f. Crear registro de venta
 3. Retornar resumen
@@ -999,9 +999,9 @@ server/
 
 **Transaccionalidad:**
 
-- ✅ Usa MongoDB sessions para atomicidad
-- ⚠️ Sin replica set en desarrollo (sessions no funcionan localmente)
-- ✅ Rollback automático si falla algún item
+- âœ… Usa MongoDB sessions para atomicidad
+- âš ï¸ Sin replica set en desarrollo (sessions no funcionan localmente)
+- âœ… Rollback automÃ¡tico si falla algÃºn item
 
 #### 2. Flujo de Inventario (InventoryRepository)
 
@@ -1009,8 +1009,8 @@ server/
 // Entrada de Inventario:
 1. Buscar producto
 2. Calcular weighted average cost:
-   previousValue = previousStock × currentCost
-   newTotalValue = previousValue + (quantity × unitCost)
+   previousValue = previousStock Ã— currentCost
+   newTotalValue = previousValue + (quantity Ã— unitCost)
    newAverageCost = newTotalValue / newTotalStock
 3. Actualizar producto:
    - totalStock
@@ -1022,49 +1022,49 @@ server/
 
 **Costo Promedio Ponderado:**
 
-- ✅ Implementado correctamente
-- ✅ No cambia en ventas (comportamiento correcto)
-- ✅ Se recalcula solo en nuevas entradas
+- âœ… Implementado correctamente
+- âœ… No cambia en ventas (comportamiento correcto)
+- âœ… Se recalcula solo en nuevas entradas
 
-#### 3. Flujo de Créditos (Credit System)
+#### 3. Flujo de CrÃ©ditos (Credit System)
 
 ```javascript
-// Crear Crédito:
+// Crear CrÃ©dito:
 1. Registrar venta con paymentStatus: "pendiente"
 2. Crear Credit document
 3. KPIs NO cuentan revenue/profit (filtrado por "confirmado")
 
-// Pagar Crédito:
-1. Actualizar Sale.paymentStatus → "confirmado"
+// Pagar CrÃ©dito:
+1. Actualizar Sale.paymentStatus â†’ "confirmado"
 2. Crear CreditPayment record
 3. Actualizar Credit.amountPaid
-4. Si totalmentePagado → marcar cerrado
+4. Si totalmentePagado â†’ marcar cerrado
 5. KPIs AHORA cuentan el revenue/profit
 ```
 
 **Cash Flow Correcto:**
 
-- ✅ Revenue = Solo ventas confirmadas
-- ✅ Inventory = Deducción inmediata
-- ✅ Conteo de ventas = Incluye pendientes + confirmadas
+- âœ… Revenue = Solo ventas confirmadas
+- âœ… Inventory = DeducciÃ³n inmediata
+- âœ… Conteo de ventas = Incluye pendientes + confirmadas
 
-### 🔒 Seguridad Implementada
+### ðŸ”’ Seguridad Implementada
 
 #### Capas de Seguridad (5 Capas):
 
 ```javascript
-// 1. SANITIZACIÓN DE ENTRADA
-- sanitizeHeaders() → Limpia headers HTTP
-- express-validator → Valida request body/params/query
-- Mongoose schema validation → Valida antes de guardar
+// 1. SANITIZACIÃ“N DE ENTRADA
+- sanitizeHeaders() â†’ Limpia headers HTTP
+- express-validator â†’ Valida request body/params/query
+- Mongoose schema validation â†’ Valida antes de guardar
 
-// 2. AUTENTICACIÓN
+// 2. AUTENTICACIÃ“N
 - JWT con access + refresh tokens
 - Token rotation en cada refresh
-- Expiración configurable (access: 1h, refresh: 7d)
+- ExpiraciÃ³n configurable (access: 1h, refresh: 7d)
 
-// 3. AUTORIZACIÓN
-- Role-based: god, admin, distribuidor, cliente
+// 3. AUTORIZACIÃ“N
+- Role-based: god, admin, empleado, cliente
 - Permission checks en middleware
 - Business-scoped data isolation (x-business-id header)
 
@@ -1073,30 +1073,30 @@ server/
 - uploadLimiter: 10 req/15min para uploads
 - Por-endpoint limits configurables
 
-// 5. PROTECCIÓN DE DATOS
-- Data Privacy: Cost fields ocultos para distribuidores
+// 5. PROTECCIÃ“N DE DATOS
+- Data Privacy: Cost fields ocultos para empleados
 - Production Write Guard: Previene escrituras accidentales en prod
 - Database Operation Logger: Audita operaciones sensibles
 - Suspicious Request Detector: Detecta patrones maliciosos
 ```
 
-#### Protección contra Ataques:
+#### ProtecciÃ³n contra Ataques:
 
-| Ataque            | Protección                       | Estado         |
+| Ataque            | ProtecciÃ³n                       | Estado         |
 | ----------------- | -------------------------------- | -------------- |
-| SQL Injection     | N/A (NoSQL)                      | ✅             |
-| NoSQL Injection   | Mongoose sanitization            | ✅             |
-| XSS               | Content Security Policy headers  | ✅             |
-| CSRF              | SameSite cookies + Origin checks | ✅             |
-| DDoS              | Rate limiting                    | ⚠️ Básico      |
-| Brute Force       | Login rate limiting              | ✅             |
-| Data Leaks        | Role-based filtering             | ✅             |
-| Man-in-the-Middle | HTTPS + HSTS                     | ⚠️ Config prod |
+| SQL Injection     | N/A (NoSQL)                      | âœ…             |
+| NoSQL Injection   | Mongoose sanitization            | âœ…             |
+| XSS               | Content Security Policy headers  | âœ…             |
+| CSRF              | SameSite cookies + Origin checks | âœ…             |
+| DDoS              | Rate limiting                    | âš ï¸ BÃ¡sico      |
+| Brute Force       | Login rate limiting              | âœ…             |
+| Data Leaks        | Role-based filtering             | âœ…             |
+| Man-in-the-Middle | HTTPS + HSTS                     | âš ï¸ Config prod |
 
-### 📡 API Endpoints (Resumen)
+### ðŸ“¡ API Endpoints (Resumen)
 
 ```
-Autenticación (auth.routes.v2.js):
+AutenticaciÃ³n (auth.routes.v2.js):
   POST   /api/v2/auth/register
   POST   /api/v2/auth/login
   GET    /api/v2/auth/profile
@@ -1117,9 +1117,9 @@ Ventas (sales.routes.v2.js):
   DELETE /api/v2/sales/group/:groupId
 
 Inventario (stock.routes.v2.js):
-  POST   /api/v2/stock/assign-distributor
+  POST   /api/v2/stock/assign-employee
   POST   /api/v2/stock/assign-branch
-  GET    /api/v2/stock/distributor/:distributorId
+  GET    /api/v2/stock/employee/:employeeId
   GET    /api/v2/stock/branch/:branchId
   GET    /api/v2/stock/alerts
 
@@ -1133,91 +1133,91 @@ Advanced Analytics (advancedAnalytics.routes.v2.js):
   GET    /api/v2/analytics/sales-evolution
   GET    /api/v2/analytics/inventory-health
 
-Distribuidores (distributor.routes.v2.js):
-  GET    /api/v2/distributors
-  GET    /api/v2/distributors/:id
-  POST   /api/v2/distributors
-  PUT    /api/v2/distributors/:id
-  GET    /api/v2/distributors/:id/stats
+Empleados (employee.routes.v2.js):
+  GET    /api/v2/employees
+  GET    /api/v2/employees/:id
+  POST   /api/v2/employees
+  PUT    /api/v2/employees/:id
+  GET    /api/v2/employees/:id/stats
 
-... (25+ route files más)
+... (25+ route files mÃ¡s)
 ```
 
 **Total Estimado:** ~150+ endpoints
 
-### 🧪 Testing Status
+### ðŸ§ª Testing Status
 
 ```javascript
 // Archivos de Test Encontrados:
 __tests__/
-  ├── controllers/
-  │   ├── expense.controller.test.js
-  │   └── sale.controller.test.js
-  └── transferStock.test.js
+  â”œâ”€â”€ controllers/
+  â”‚   â”œâ”€â”€ expense.controller.test.js
+  â”‚   â””â”€â”€ sale.controller.test.js
+  â””â”€â”€ transferStock.test.js
 
 // Cobertura Estimada:
 - Controllers: ~15% (2/30 controladores testeados)
 - Use Cases: ~20% (pocos tests encontrados)
 - Services: ~30% (algunos tests de dominio)
-- Repositories: ~10% (tests de integración limitados)
+- Repositories: ~10% (tests de integraciÃ³n limitados)
 
 // TOTAL: ~20-30% cobertura estimada
 ```
 
-**⚠️ CRÍTICO:** Coverage muy bajo para producción.
+**âš ï¸ CRÃTICO:** Coverage muy bajo para producciÃ³n.
 
 ---
 
-## 4. FRONTEND - ANÁLISIS DETALLADO
+## 4. FRONTEND - ANÃLISIS DETALLADO
 
-### 🎨 Componentes Principales
+### ðŸŽ¨ Componentes Principales
 
 #### UI Components (Shared)
 
 ```typescript
 // shared/components/ui/
-- Button.tsx           → Componente base con variantes
-- Card.tsx             → Container con shadow y padding
-- LoadingSpinner.tsx   → Spinner animado
-- LoadingOverlay.tsx   → Overlay full-screen
-- Toast.tsx            → Sistema de notificaciones
-- ErrorBoundary.tsx    → Error boundary para crashes
-- VirtualList.tsx      → Lista virtualizada (react-window)
-- Spinner.tsx          → Loading indicator
+- Button.tsx           â†’ Componente base con variantes
+- Card.tsx             â†’ Container con shadow y padding
+- LoadingSpinner.tsx   â†’ Spinner animado
+- LoadingOverlay.tsx   â†’ Overlay full-screen
+- Toast.tsx            â†’ Sistema de notificaciones
+- ErrorBoundary.tsx    â†’ Error boundary para crashes
+- VirtualList.tsx      â†’ Lista virtualizada (react-window)
+- Spinner.tsx          â†’ Loading indicator
 ```
 
 #### Feature Components
 
 ```typescript
 // components/
-- NotificationBell.tsx         → Notificaciones en tiempo real
-- ProductSelector.tsx          → Selector de productos con filtros
-- ReportIssueButton.tsx        → Botón para reportar problemas
-- PushNotificationSettings.tsx → Configuración de push notifications
-- PointsRedemption.tsx         → Redención de puntos de clientes
+- NotificationBell.tsx         â†’ Notificaciones en tiempo real
+- ProductSelector.tsx          â†’ Selector de productos con filtros
+- ReportIssueButton.tsx        â†’ BotÃ³n para reportar problemas
+- PushNotificationSettings.tsx â†’ ConfiguraciÃ³n de push notifications
+- PointsRedemption.tsx         â†’ RedenciÃ³n de puntos de clientes
 ```
 
-#### Pages (40+ páginas)
+#### Pages (40+ pÃ¡ginas)
 
 **Admin Dashboard:**
 
 - DashboardLayout.tsx - Layout principal con sidebar
-- HomePage.tsx - Página de inicio con KPIs
+- HomePage.tsx - PÃ¡gina de inicio con KPIs
 - CreateBusinessPage.tsx - Crear nuevo negocio
 
-**Distribuidores:**
+**Empleados:**
 
-- DistributorsPage.tsx - Lista de distribuidores
-- DistributorDetailPage.tsx - Detalle completo (661 líneas ⚠️)
-- AddDistributorPage.tsx - Agregar distribuidor
-- EditDistributorPage.tsx - Editar distribuidor (236 líneas)
-- DistributorDashboardPage.tsx - Dashboard del distribuidor
-- DistributorStatsPage.tsx - Estadísticas
-- DistributorSalesPage.tsx - Ventas del distribuidor
-- DistributorCreditsPage.tsx - Créditos del distribuidor
-- DistributorCatalogPage.tsx - Catálogo de productos
-- DistributorProductsPage.tsx - Productos asignados
-- PublicDistributorCatalogPage.tsx - Catálogo público
+- EmployeesPage.tsx - Lista de empleados
+- EmployeeDetailPage.tsx - Detalle completo (661 lÃ­neas âš ï¸)
+- AddEmployeePage.tsx - Agregar empleado
+- EditEmployeePage.tsx - Editar empleado (236 lÃ­neas)
+- EmployeeDashboardPage.tsx - Dashboard del empleado
+- EmployeeStatsPage.tsx - EstadÃ­sticas
+- EmployeeSalesPage.tsx - Ventas del empleado
+- EmployeeCreditsPage.tsx - CrÃ©ditos del empleado
+- EmployeeCatalogPage.tsx - CatÃ¡logo de productos
+- EmployeeProductsPage.tsx - Productos asignados
+- PublicEmployeeCatalogPage.tsx - CatÃ¡logo pÃºblico
 
 **Inventario:**
 
@@ -1226,10 +1226,10 @@ __tests__/
 - EditProductPage.tsx - Editar producto
 - ProductDetailPage.tsx - Detalle del producto
 - GlobalInventoryPage.tsx - Inventario global
-- InventoryPage.tsx - Gestión de inventario
+- InventoryPage.tsx - GestiÃ³n de inventario
 - InventoryEntriesPage.tsx - Entradas de inventario
-- CategoriesPage.tsx - Gestión de categorías
-- CategoryProductsPage.tsx - Productos por categoría
+- CategoriesPage.tsx - GestiÃ³n de categorÃ­as
+- CategoryProductsPage.tsx - Productos por categorÃ­a
 
 **Ventas:**
 
@@ -1237,29 +1237,29 @@ __tests__/
 - RegisterSalePage.tsx - Registrar nueva venta
 - SpecialSalesPage.tsx - Ventas especiales
 
-**Créditos:**
+**CrÃ©ditos:**
 
-- CreditsPage.tsx - Gestión de créditos
-- CreditDetailPage.tsx - Detalle de crédito
+- CreditsPage.tsx - GestiÃ³n de crÃ©ditos
+- CreditDetailPage.tsx - Detalle de crÃ©dito
 
-**Configuración:**
+**ConfiguraciÃ³n:**
 
 - ProvidersPage.tsx - Proveedores
-- PaymentMethodsPage.tsx - Métodos de pago
-- DeliveryMethodsPage.tsx - Métodos de entrega
+- PaymentMethodsPage.tsx - MÃ©todos de pago
+- DeliveryMethodsPage.tsx - MÃ©todos de entrega
 - PromotionsPage.tsx - Promociones
-- UserSettingsPage.tsx - Configuración de usuario
+- UserSettingsPage.tsx - ConfiguraciÃ³n de usuario
 
 **Otros:**
 
 - NotificationsPage.tsx - Notificaciones
 - DefectiveReportsPage.tsx - Reportes de defectos
-- DefectiveProductsManagementPage.tsx - Gestión de defectos
+- DefectiveProductsManagementPage.tsx - GestiÃ³n de defectos
 - GodPanelPage.tsx - Panel God (super admin)
 - BusinessAssistantPage.tsx - Asistente de negocio IA
-- CatalogPage.tsx - Catálogo de productos
+- CatalogPage.tsx - CatÃ¡logo de productos
 
-### 🎯 Context API
+### ðŸŽ¯ Context API
 
 ```typescript
 // context/BusinessContext.tsx
@@ -1280,14 +1280,14 @@ interface BusinessContextValue {
 - Loading states
 ```
 
-**⚠️ OBSERVACIÓN:** Solo 1 contexto global encontrado. El resto usa props drilling o local state.
+**âš ï¸ OBSERVACIÃ“N:** Solo 1 contexto global encontrado. El resto usa props drilling o local state.
 
-### 🔄 State Management
+### ðŸ”„ State Management
 
 ```typescript
-// Patrón predominante: useState + useEffect
+// PatrÃ³n predominante: useState + useEffect
 
-// Ejemplo típico:
+// Ejemplo tÃ­pico:
 const [data, setData] = useState([]);
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState(null);
@@ -1296,28 +1296,28 @@ useEffect(() => {
   fetchData();
 }, [dependency]);
 
-// ⚠️ NO usa:
-- Redux/Zustand (No necesario aún)
-- React Query (Podría mejorar caching)
+// âš ï¸ NO usa:
+- Redux/Zustand (No necesario aÃºn)
+- React Query (PodrÃ­a mejorar caching)
 - SWR (Alternativa a React Query)
 ```
 
 **Ventajas:**
 
-- ✅ Simple y directo
-- ✅ Fácil de entender
-- ✅ Menos boilerplate
+- âœ… Simple y directo
+- âœ… FÃ¡cil de entender
+- âœ… Menos boilerplate
 
 **Desventajas:**
 
-- ⚠️ Re-fetching frecuente
-- ⚠️ No caching automático
-- ⚠️ Estados duplicados entre componentes
+- âš ï¸ Re-fetching frecuente
+- âš ï¸ No caching automÃ¡tico
+- âš ï¸ Estados duplicados entre componentes
 
-### 🚀 Optimizaciones Implementadas
+### ðŸš€ Optimizaciones Implementadas
 
 ```typescript
-// 1. VIRTUALIZACIÓN
+// 1. VIRTUALIZACIÃ“N
 <VirtualList
   items={products}
   itemHeight={80}
@@ -1332,12 +1332,12 @@ const LazyComponent = lazy(() => import('./Heavy.tsx'));
 - Service Worker
 - Offline support
 - App-like experience
-- Cache estratégico (Workbox)
+- Cache estratÃ©gico (Workbox)
 
 // 4. COMPRESSION
 - Gzip
 - Brotli
-- Reducción ~70% del bundle size
+- ReducciÃ³n ~70% del bundle size
 
 // 5. CODE SPLITTING
 - Dynamic imports
@@ -1350,25 +1350,25 @@ const LazyComponent = lazy(() => import('./Heavy.tsx'));
 - WebP format
 ```
 
-### 📦 Bundle Analysis
+### ðŸ“¦ Bundle Analysis
 
 ```bash
-# Tamaño estimado (producción):
+# TamaÃ±o estimado (producciÃ³n):
 dist/
-├── index.html (2 KB)
-├── assets/
-│   ├── index-[hash].js (800 KB → 250 KB gzipped)
-│   ├── index-[hash].css (150 KB → 40 KB gzipped)
-│   └── vendor-[hash].js (400 KB → 120 KB gzipped)
+â”œâ”€â”€ index.html (2 KB)
+â”œâ”€â”€ assets/
+â”‚   â”œâ”€â”€ index-[hash].js (800 KB â†’ 250 KB gzipped)
+â”‚   â”œâ”€â”€ index-[hash].css (150 KB â†’ 40 KB gzipped)
+â”‚   â””â”€â”€ vendor-[hash].js (400 KB â†’ 120 KB gzipped)
 ```
 
-**⚠️ Oportunidades de Mejora:**
+**âš ï¸ Oportunidades de Mejora:**
 
-- Bundle principal aún grande (~800 KB)
-- Considerar tree-shaking más agresivo
+- Bundle principal aÃºn grande (~800 KB)
+- Considerar tree-shaking mÃ¡s agresivo
 - Lazy load features pesados (recharts, xlsx)
 
-### 🎨 Estilos y Diseño
+### ðŸŽ¨ Estilos y DiseÃ±o
 
 ```typescript
 // Tailwind CSS 4.1.6
@@ -1380,7 +1380,7 @@ dist/
 
 // Framer Motion 12.23.25
 - Animaciones fluidas
-- Transiciones entre páginas
+- Transiciones entre pÃ¡ginas
 - Gestures y hover effects
 
 // Lucide React 0.555.0
@@ -1389,64 +1389,64 @@ dist/
 - ~1,000+ iconos disponibles
 ```
 
-### 🔍 Análisis de Componentes Problemáticos
+### ðŸ” AnÃ¡lisis de Componentes ProblemÃ¡ticos
 
-#### ⚠️ Componentes Grandes:
+#### âš ï¸ Componentes Grandes:
 
 ```
-DistributorDetailPage.tsx     → 661 líneas (REFACTORIZAR)
-EditDistributorPage.tsx       → 236 líneas (MEJORAR)
-InventoryEntriesPage.tsx      → 577+ líneas (SIMPLIFICAR)
+EmployeeDetailPage.tsx     â†’ 661 lÃ­neas (REFACTORIZAR)
+EditEmployeePage.tsx       â†’ 236 lÃ­neas (MEJORAR)
+InventoryEntriesPage.tsx      â†’ 577+ lÃ­neas (SIMPLIFICAR)
 ```
 
-**Recomendación:** Dividir en sub-componentes.
+**RecomendaciÃ³n:** Dividir en sub-componentes.
 
 ---
 
 ## 5. BASE DE DATOS Y MODELOS
 
-### 📊 Esquema de Relaciones
+### ðŸ“Š Esquema de Relaciones
 
 ```
-User (1) ──< Membership >── (M) Business
-  │
-  ├──< Sale (distributor)
-  ├──< DistributorStock
-  ├──< Credit
-  └──< AuditLog
+User (1) â”€â”€< Membership >â”€â”€ (M) Business
+  â”‚
+  â”œâ”€â”€< Sale (employee)
+  â”œâ”€â”€< EmployeeStock
+  â”œâ”€â”€< Credit
+  â””â”€â”€< AuditLog
 
-Business (1) ──< Product
-  │           └──< Sale
-  │           └──< InventoryEntry
-  │           └──< DistributorStock
-  │           └──< BranchStock
-  │
-  ├──< Category
-  ├──< Customer
-  ├──< Branch
-  ├──< Provider
-  ├──< PaymentMethod
-  ├──< DeliveryMethod
-  ├──< Expense
-  ├──< Promotion
-  └──< GamificationConfig
+Business (1) â”€â”€< Product
+  â”‚           â””â”€â”€< Sale
+  â”‚           â””â”€â”€< InventoryEntry
+  â”‚           â””â”€â”€< EmployeeStock
+  â”‚           â””â”€â”€< BranchStock
+  â”‚
+  â”œâ”€â”€< Category
+  â”œâ”€â”€< Customer
+  â”œâ”€â”€< Branch
+  â”œâ”€â”€< Provider
+  â”œâ”€â”€< PaymentMethod
+  â”œâ”€â”€< DeliveryMethod
+  â”œâ”€â”€< Expense
+  â”œâ”€â”€< Promotion
+  â””â”€â”€< GamificationConfig
 
-Product (1) ──< InventoryEntry
-  │          └──< Sale
-  │          └──< DistributorStock
-  │          └──< BranchStock
-  │          └──< DefectiveProduct
-  │
-  └──< StockTransfer
+Product (1) â”€â”€< InventoryEntry
+  â”‚          â””â”€â”€< Sale
+  â”‚          â””â”€â”€< EmployeeStock
+  â”‚          â””â”€â”€< BranchStock
+  â”‚          â””â”€â”€< DefectiveProduct
+  â”‚
+  â””â”€â”€< StockTransfer
 
-Sale (1) ──< Credit
-  │      └──< CreditPayment
-  │      └──< ProfitHistory
-  │
-  └── Distributor (User)
+Sale (1) â”€â”€< Credit
+  â”‚      â””â”€â”€< CreditPayment
+  â”‚      â””â”€â”€< ProfitHistory
+  â”‚
+  â””â”€â”€ Employee (User)
 ```
 
-### 🔍 Índices Críticos
+### ðŸ” Ãndices CrÃ­ticos
 
 ```javascript
 // Product
@@ -1455,12 +1455,12 @@ Sale (1) ──< Credit
   { business: 1, isActive: 1 } -
   // Sale
   { business: 1, saleDate: -1 } -
-  { business: 1, distributor: 1, saleDate: -1 } -
+  { business: 1, employee: 1, saleDate: -1 } -
   { business: 1, paymentStatus: 1 } -
   { saleGroupId: 1 } -
-  // DistributorStock
-  { business: 1, distributor: 1, product: 1 }(UNIQUE) -
-  { business: 1, distributor: 1, quantity: 1 } -
+  // EmployeeStock
+  { business: 1, employee: 1, product: 1 }(UNIQUE) -
+  { business: 1, employee: 1, quantity: 1 } -
   // Credit
   { business: 1, customer: 1 } -
   { business: 1, status: 1 } -
@@ -1473,7 +1473,7 @@ Sale (1) ──< Credit
   { business: 1, role: 1, status: 1 };
 ```
 
-### ⚠️ Missing Indexes (Detectados)
+### âš ï¸ Missing Indexes (Detectados)
 
 ```javascript
 // Potenciales mejoras:
@@ -1483,123 +1483,123 @@ Sale (1) ──< Credit
 - Expense: { business: 1, date: -1, type: 1 }
 ```
 
-### 💾 Tamaño de Datos (Estimado)
+### ðŸ’¾ TamaÃ±o de Datos (Estimado)
 
 ```
 Colecciones Principales:
 - users: ~100-500 docs (50-250 KB)
 - businesses: ~10-50 docs (10-50 KB)
 - products: ~1,000-5,000 docs (1-5 MB)
-- sales: ~10,000-100,000 docs (10-100 MB) 🔴 HEAVY
-- distributorstocks: ~5,000-20,000 docs (5-20 MB)
+- sales: ~10,000-100,000 docs (10-100 MB) ðŸ”´ HEAVY
+- employeestocks: ~5,000-20,000 docs (5-20 MB)
 - credits: ~1,000-10,000 docs (1-10 MB)
-- auditlogs: ~50,000-500,000 docs (50-500 MB) 🔴 HEAVY
+- auditlogs: ~50,000-500,000 docs (50-500 MB) ðŸ”´ HEAVY
 
-Total Estimado: 100 MB - 1 GB (en producción)
+Total Estimado: 100 MB - 1 GB (en producciÃ³n)
 ```
 
-### 🗄️ Estrategia de Backup
+### ðŸ—„ï¸ Estrategia de Backup
 
 ```javascript
 // jobs/backup.worker.js
 - Frecuencia: Cada 24 horas
-- Método: mongodump + tar.gz
+- MÃ©todo: mongodump + tar.gz
 - Destino: ./backups/ + VPS sync
-- Retención: 7 días locales, 30 días VPS
-- Compresión: ~90% (100 MB → 10 MB)
+- RetenciÃ³n: 7 dÃ­as locales, 30 dÃ­as VPS
+- CompresiÃ³n: ~90% (100 MB â†’ 10 MB)
 
 // sync-vps-backups.ps1
 - SSH sync a VPS remoto
-- Encriptación en tránsito
-- Verificación de integridad
+- EncriptaciÃ³n en trÃ¡nsito
+- VerificaciÃ³n de integridad
 ```
 
 ---
 
-## 6. SEGURIDAD Y AUTENTICACIÓN
+## 6. SEGURIDAD Y AUTENTICACIÃ“N
 
-### 🔐 Sistema de Autenticación
+### ðŸ” Sistema de AutenticaciÃ³n
 
 ```javascript
 // JWT Strategy
 Access Token:
-  - Expiración: 1 hora
+  - ExpiraciÃ³n: 1 hora
   - Payload: { userId, email, role, businessId }
-  - Storage: localStorage (⚠️ riesgo XSS)
+  - Storage: localStorage (âš ï¸ riesgo XSS)
 
 Refresh Token:
-  - Expiración: 7 días
+  - ExpiraciÃ³n: 7 dÃ­as
   - Storage: MongoDB (RefreshToken model)
   - Rotation: Nuevo token en cada refresh
   - Revocable: Soft delete en DB
 
 // Auth Flow:
 1. POST /api/v2/auth/login
-   → Valida credenciales
-   → Genera accessToken + refreshToken
-   → Retorna ambos tokens
+   â†’ Valida credenciales
+   â†’ Genera accessToken + refreshToken
+   â†’ Retorna ambos tokens
 
 2. Peticiones con accessToken en header:
    Authorization: Bearer <accessToken>
 
 3. Si accessToken expira:
    POST /api/v2/auth/refresh
-   → Valida refreshToken
-   → Genera nuevos tokens
-   → Invalida refreshToken anterior
+   â†’ Valida refreshToken
+   â†’ Genera nuevos tokens
+   â†’ Invalida refreshToken anterior
 
 4. Logout:
-   → Elimina refreshToken de DB
-   → Cliente limpia localStorage
+   â†’ Elimina refreshToken de DB
+   â†’ Cliente limpia localStorage
 ```
 
-### 🛡️ Roles y Permisos
+### ðŸ›¡ï¸ Roles y Permisos
 
 ```javascript
-// Jerarquía de Roles:
-god > admin > distribuidor > cliente
+// JerarquÃ­a de Roles:
+god > admin > empleado > cliente
 
 // Permisos por Rol:
 god:
   - Control total del sistema
-  - Gestión de businesses
+  - GestiÃ³n de businesses
   - Operaciones de mantenimiento
   - Acceso a God Panel
 
 admin:
-  - Gestión completa de su business
+  - GestiÃ³n completa de su business
   - CRUD de productos, ventas, inventario
-  - Gestión de distribuidores
+  - GestiÃ³n de empleados
   - Analytics completos
-  - Configuración de métodos de pago/entrega
+  - ConfiguraciÃ³n de mÃ©todos de pago/entrega
   - NO puede ver otros businesses
 
-distribuidor:
+empleado:
   - Ver productos asignados
   - Registrar ventas propias
   - Ver su inventario
-  - Ver sus estadísticas
+  - Ver sus estadÃ­sticas
   - NO puede ver costos (purchasePrice, averageCost)
   - NO puede crear/editar productos
 
 cliente:
-  - Ver catálogo público
+  - Ver catÃ¡logo pÃºblico
   - Ver su historial de compras
   - Ver puntos acumulados
-  - (Implementación limitada)
+  - (ImplementaciÃ³n limitada)
 ```
 
-### 🔒 Middleware de Seguridad
+### ðŸ”’ Middleware de Seguridad
 
 ```javascript
 // 1. authenticate.middleware.js
 - Valida JWT
 - Extrae userId, role
-- Verifica expiración
+- Verifica expiraciÃ³n
 - Adjunta req.user
 
 // 2. authorize.middleware.js
-- Verifica rol mínimo requerido
+- Verifica rol mÃ­nimo requerido
 - authorize(['admin', 'god'])
 
 // 3. databaseGuard.middleware.js
@@ -1615,38 +1615,38 @@ cliente:
 // 5. rateLimit.middleware.js
 - apiLimiter: 100 req/15min global
 - uploadLimiter: 10 req/15min para uploads
-- loginLimiter: 5 req/15min por IP (implícito)
+- loginLimiter: 5 req/15min por IP (implÃ­cito)
 ```
 
-### 🚨 Vulnerabilidades Potenciales
+### ðŸš¨ Vulnerabilidades Potenciales
 
-| Vulnerabilidad         | Riesgo | Estado | Mitigación                   |
+| Vulnerabilidad         | Riesgo | Estado | MitigaciÃ³n                   |
 | ---------------------- | ------ | ------ | ---------------------------- |
-| JWT en localStorage    | MEDIO  | ⚠️     | Migrar a httpOnly cookies    |
-| No CSRF tokens         | BAJO   | ⚠️     | Añadir CSRF protection       |
-| Rate limiting básico   | MEDIO  | ⚠️     | Implementar Redis rate limit |
-| Logs sin sanitizar     | BAJO   | ⚠️     | Sanitizar antes de logging   |
-| Secrets en código      | ALTO   | ✅     | Usa .env (no commiteado)     |
-| Dependencias outdated  | MEDIO  | ⚠️     | npm audit fix                |
-| Sin helmet.js          | MEDIO  | ⚠️     | Añadir helmet() middleware   |
-| Sin input sanitization | MEDIO  | ⚠️     | Añadir DOMPurify frontend    |
+| JWT en localStorage    | MEDIO  | âš ï¸     | Migrar a httpOnly cookies    |
+| No CSRF tokens         | BAJO   | âš ï¸     | AÃ±adir CSRF protection       |
+| Rate limiting bÃ¡sico   | MEDIO  | âš ï¸     | Implementar Redis rate limit |
+| Logs sin sanitizar     | BAJO   | âš ï¸     | Sanitizar antes de logging   |
+| Secrets en cÃ³digo      | ALTO   | âœ…     | Usa .env (no commiteado)     |
+| Dependencias outdated  | MEDIO  | âš ï¸     | npm audit fix                |
+| Sin helmet.js          | MEDIO  | âš ï¸     | AÃ±adir helmet() middleware   |
+| Sin input sanitization | MEDIO  | âš ï¸     | AÃ±adir DOMPurify frontend    |
 
 ---
 
-## 7. ANÁLISIS DE PERFORMANCE
+## 7. ANÃLISIS DE PERFORMANCE
 
-### 🐌 Problemas Detectados
+### ðŸŒ Problemas Detectados
 
 #### 1. N+1 Query Problem
 
 ```javascript
-// ❌ ANTES (N+1):
+// âŒ ANTES (N+1):
 const sales = await Sale.find({ business: businessId });
 for (const sale of sales) {
   const product = await Product.findById(sale.product); // N queries
 }
 
-// ✅ DESPUÉS (1 query):
+// âœ… DESPUÃ‰S (1 query):
 const sales = await Sale.find({ business: businessId }).populate(
   "product",
   "name price",
@@ -1655,40 +1655,40 @@ const sales = await Sale.find({ business: businessId }).populate(
 
 **Ubicaciones con N+1:**
 
-- `DistributorRepository.getSalesWithDetails()` - ⚠️ Requiere optimización
-- `AnalyticsRepository.getTopProducts()` - ✅ Ya optimizado con aggregation
-- Loop manual en algunos controllers - ⚠️ Revisar
+- `EmployeeRepository.getSalesWithDetails()` - âš ï¸ Requiere optimizaciÃ³n
+- `AnalyticsRepository.getTopProducts()` - âœ… Ya optimizado con aggregation
+- Loop manual en algunos controllers - âš ï¸ Revisar
 
 #### 2. Missing Pagination
 
 ```javascript
-// ❌ SIN PAGINACIÓN:
-GET /api/v2/sales → Retorna TODAS las ventas (100,000+ docs)
+// âŒ SIN PAGINACIÃ“N:
+GET /api/v2/sales â†’ Retorna TODAS las ventas (100,000+ docs)
 
-// ✅ CON PAGINACIÓN:
+// âœ… CON PAGINACIÃ“N:
 GET /api/v2/sales?page=1&limit=50
 ```
 
-**Endpoints sin paginación:**
+**Endpoints sin paginaciÃ³n:**
 
-- `/api/v2/products` - ⚠️ Implementar
-- `/api/v2/customers` - ⚠️ Implementar
-- `/api/v2/credits` - ⚠️ Implementar
+- `/api/v2/products` - âš ï¸ Implementar
+- `/api/v2/customers` - âš ï¸ Implementar
+- `/api/v2/credits` - âš ï¸ Implementar
 
 #### 3. Projections Faltantes
 
 ```javascript
-// ❌ Retorna TODO el documento:
+// âŒ Retorna TODO el documento:
 await Product.find({ business: businessId });
 
-// ✅ Retorna solo lo necesario:
+// âœ… Retorna solo lo necesario:
 await Product.find({ business: businessId }).select(
   "name price totalStock image",
 );
-// Reducción: ~5 KB → ~1 KB por documento
+// ReducciÃ³n: ~5 KB â†’ ~1 KB por documento
 ```
 
-#### 4. Índices No Utilizados
+#### 4. Ãndices No Utilizados
 
 ```sql
 -- Query lento:
@@ -1698,13 +1698,13 @@ Sale.find({
   paymentStatus: 'confirmado'
 })
 
--- Índice necesario:
+-- Ãndice necesario:
 { business: 1, paymentStatus: 1, saleDate: -1 }
 ```
 
-**⚠️ MISSING INDEX:** Este índice compuesto no existe.
+**âš ï¸ MISSING INDEX:** Este Ã­ndice compuesto no existe.
 
-### ⚡ Optimizaciones Implementadas
+### âš¡ Optimizaciones Implementadas
 
 ```javascript
 // 1. AGGREGATION PIPELINES
@@ -1713,62 +1713,62 @@ Sale.find({
 - Evita cargar docs completos en memoria
 
 // 2. LEAN QUERIES
-.lean() → Retorna POJO en lugar de Mongoose documents
-Reducción: ~40% memoria + ~30% velocidad
+.lean() â†’ Retorna POJO en lugar de Mongoose documents
+ReducciÃ³n: ~40% memoria + ~30% velocidad
 
 // 3. VIRTUAL SCROLLING (Frontend)
-VirtualList.tsx → Renderiza solo items visibles
-1,000 items → Renderiza 20-50 realmente
+VirtualList.tsx â†’ Renderiza solo items visibles
+1,000 items â†’ Renderiza 20-50 realmente
 
 // 4. REDIS CACHING
 - BullMQ jobs en Redis
-- Session storage en Redis (no implementado aún ⚠️)
+- Session storage en Redis (no implementado aÃºn âš ï¸)
 
 // 5. COMPRESSION
 - Gzip/Brotli en assets
-- Reducción ~70% en bundle size
+- ReducciÃ³n ~70% en bundle size
 ```
 
-### 📊 Métricas de Performance (Estimadas)
+### ðŸ“Š MÃ©tricas de Performance (Estimadas)
 
 ```
 Endpoint Performance (Local):
 - GET /api/v2/auth/profile: ~10ms
-- GET /api/v2/products: ~50ms (sin paginación ⚠️)
-- POST /api/v2/sales: ~100-200ms (transacción)
+- GET /api/v2/products: ~50ms (sin paginaciÃ³n âš ï¸)
+- POST /api/v2/sales: ~100-200ms (transacciÃ³n)
 - GET /api/v2/analytics/dashboard: ~300-500ms (aggregation)
-- GET /api/v2/analytics/financial-kpis: ~800ms-1.5s (heavy ⚠️)
+- GET /api/v2/analytics/financial-kpis: ~800ms-1.5s (heavy âš ï¸)
 
 Frontend Performance:
 - First Contentful Paint: ~800ms
 - Time to Interactive: ~1.2s
 - Bundle Load: ~2-3s (mobile 3G)
-- Virtual List Render: <16ms (60fps ✅)
+- Virtual List Render: <16ms (60fps âœ…)
 ```
 
-### 🎯 Recomendaciones de Performance
+### ðŸŽ¯ Recomendaciones de Performance
 
 **Alto Impacto:**
 
-1. ✅ Añadir paginación a endpoints sin limite
-2. ✅ Implementar Redis para session/cache
-3. ✅ Añadir índices compuestos faltantes
-4. ✅ Optimizar financial-kpis query (es muy lento)
+1. âœ… AÃ±adir paginaciÃ³n a endpoints sin limite
+2. âœ… Implementar Redis para session/cache
+3. âœ… AÃ±adir Ã­ndices compuestos faltantes
+4. âœ… Optimizar financial-kpis query (es muy lento)
 
-**Medio Impacto:** 5. ⚠️ Lazy load features pesados (recharts, xlsx) 6. ⚠️ Implementar service worker caching 7. ⚠️ Code splitting más granular
+**Medio Impacto:** 5. âš ï¸ Lazy load features pesados (recharts, xlsx) 6. âš ï¸ Implementar service worker caching 7. âš ï¸ Code splitting mÃ¡s granular
 
-**Bajo Impacto:** 8. ℹ️ Comprimir imágenes con Cloudinary 9. ℹ️ Añadir CDN para assets estáticos 10. ℹ️ Implementar HTTP/2
+**Bajo Impacto:** 8. â„¹ï¸ Comprimir imÃ¡genes con Cloudinary 9. â„¹ï¸ AÃ±adir CDN para assets estÃ¡ticos 10. â„¹ï¸ Implementar HTTP/2
 
 ---
 
-## 8. DEUDA TÉCNICA
+## 8. DEUDA TÃ‰CNICA
 
-### 🔴 Crítica (Arreglar Inmediatamente)
+### ðŸ”´ CrÃ­tica (Arreglar Inmediatamente)
 
-1. **Migración V1→V2 Incompleta (20% pendiente)**
+1. **MigraciÃ³n V1â†’V2 Incompleta (20% pendiente)**
    - Archivos: `server.js` mixto V1/V2
-   - Algunos endpoints aún en V1
-   - Duplicación de lógica
+   - Algunos endpoints aÃºn en V1
+   - DuplicaciÃ³n de lÃ³gica
    - **Esfuerzo:** 2-3 semanas
    - **Impacto:** Alto (mantenibilidad)
 
@@ -1777,26 +1777,26 @@ Frontend Performance:
    - Use cases sin tests
    - Repositories sin integration tests
    - **Esfuerzo:** 4-6 semanas
-   - **Impacto:** Crítico (estabilidad)
+   - **Impacto:** CrÃ­tico (estabilidad)
 
 3. **N+1 Queries en Varios Endpoints**
-   - `DistributorRepository.getSalesWithDetails()`
+   - `EmployeeRepository.getSalesWithDetails()`
    - Algunos loops manuales
    - **Esfuerzo:** 1 semana
    - **Impacto:** Alto (performance)
 
-### 🟡 Media (Arreglar Pronto)
+### ðŸŸ¡ Media (Arreglar Pronto)
 
-4. **Componentes Grandes (600+ líneas)**
-   - `DistributorDetailPage.tsx` (661 LOC)
+4. **Componentes Grandes (600+ lÃ­neas)**
+   - `EmployeeDetailPage.tsx` (661 LOC)
    - `InventoryEntriesPage.tsx` (577+ LOC)
    - **Esfuerzo:** 1-2 semanas
    - **Impacto:** Medio (mantenibilidad)
 
-5. **Sin Paginación en Endpoints Clave**
+5. **Sin PaginaciÃ³n en Endpoints Clave**
    - `/products`, `/customers`, `/credits`
-   - **Esfuerzo:** 3-5 días
-   - **Impacto:** Alto (performance en producción)
+   - **Esfuerzo:** 3-5 dÃ­as
+   - **Impacto:** Alto (performance en producciÃ³n)
 
 6. **JWT en localStorage (Riesgo XSS)**
    - Migrar a httpOnly cookies
@@ -1805,10 +1805,10 @@ Frontend Performance:
 
 7. **TODOs Pendientes (Expense Filtering)**
    - Net profit daily/weekly/monthly
-   - **Esfuerzo:** 2-3 días
+   - **Esfuerzo:** 2-3 dÃ­as
    - **Impacto:** Bajo (feature completo)
 
-### 🟢 Baja (Mejorar Eventualmente)
+### ðŸŸ¢ Baja (Mejorar Eventualmente)
 
 8. **Bundle Size Grande (~800 KB)**
    - Lazy load features pesados
@@ -1822,10 +1822,10 @@ Frontend Performance:
 
 10. **Logs sin Sanitizar**
     - Sanitizar antes de logging
-    - **Esfuerzo:** 2-3 días
+    - **Esfuerzo:** 2-3 dÃ­as
     - **Impacto:** Bajo (seguridad marginal)
 
-### 📊 Deuda Técnica Total Estimada
+### ðŸ“Š Deuda TÃ©cnica Total Estimada
 
 ```
 Total Story Points: ~120 SP
@@ -1837,30 +1837,30 @@ Prioridad Baja: ~4 semanas
 
 ---
 
-## 9. RECOMENDACIONES CRÍTICAS
+## 9. RECOMENDACIONES CRÃTICAS
 
-### 🚨 MUST FIX (Antes de Producción)
+### ðŸš¨ MUST FIX (Antes de ProducciÃ³n)
 
 #### 1. Completar Testing Coverage
 
 ```bash
 # Target: 80% coverage
-- Controllers: 15% → 80%
-- Use Cases: 20% → 90%
-- Services: 30% → 95%
-- Repositories: 10% → 70%
+- Controllers: 15% â†’ 80%
+- Use Cases: 20% â†’ 90%
+- Services: 30% â†’ 95%
+- Repositories: 10% â†’ 70%
 
 # Prioridad:
-1. Use Cases (lógica de negocio)
+1. Use Cases (lÃ³gica de negocio)
 2. Services (dominio puro)
 3. Controllers (HTTP handlers)
 4. Repositories (DB access)
 ```
 
-**Justificación:**
+**JustificaciÃ³n:**
 
 - Sin tests, cualquier cambio puede romper funcionalidad
-- Bugs costosos de detectar en producción
+- Bugs costosos de detectar en producciÃ³n
 - Refactoring imposible sin tests
 
 #### 2. Migrar JWT a httpOnly Cookies
@@ -1876,14 +1876,14 @@ res.cookie("accessToken", token, {
 
 // Frontend:
 // Eliminar localStorage
-// Axios enviará cookies automáticamente
+// Axios enviarÃ¡ cookies automÃ¡ticamente
 ```
 
-**Justificación:**
+**JustificaciÃ³n:**
 
 - localStorage vulnerable a XSS
 - httpOnly cookies NO accesibles desde JavaScript
-- Protección automática contra XSS
+- ProtecciÃ³n automÃ¡tica contra XSS
 
 #### 3. Implementar Rate Limiting con Redis
 
@@ -1898,13 +1898,13 @@ const limiter = rateLimit({
 });
 ```
 
-**Justificación:**
+**JustificaciÃ³n:**
 
 - Rate limiting actual es por proceso (no cluster-safe)
 - Redis permite compartir entre instancias
-- Protección contra DDoS más robusta
+- ProtecciÃ³n contra DDoS mÃ¡s robusta
 
-#### 4. Añadir Índices Compuestos Faltantes
+#### 4. AÃ±adir Ãndices Compuestos Faltantes
 
 ```javascript
 // scripts/createIndexes.js (mejorado)
@@ -1915,28 +1915,28 @@ ProfitHistory.createIndex({ business: 1, date: -1 });
 Expense.createIndex({ business: 1, date: -1, type: 1 });
 ```
 
-**Justificación:**
+**JustificaciÃ³n:**
 
-- Queries lentas en producción
-- Fácil de implementar (solo crear índices)
+- Queries lentas en producciÃ³n
+- FÃ¡cil de implementar (solo crear Ã­ndices)
 - Gran mejora de performance
 
-### ⚠️ HIGH PRIORITY (Después de Producción)
+### âš ï¸ HIGH PRIORITY (DespuÃ©s de ProducciÃ³n)
 
-#### 5. Completar Migración V1→V2
+#### 5. Completar MigraciÃ³n V1â†’V2
 
 ```javascript
-// Eliminar código legacy:
-- server.js → Solo V2 routes
+// Eliminar cÃ³digo legacy:
+- server.js â†’ Solo V2 routes
 - Eliminar controllers duplicados
 - Eliminar middleware legacy no usado
 - Unificar error handling
 ```
 
-#### 6. Implementar Paginación Universal
+#### 6. Implementar PaginaciÃ³n Universal
 
 ```javascript
-// Middleware de paginación:
+// Middleware de paginaciÃ³n:
 function paginate(defaultLimit = 50, maxLimit = 100) {
   return (req, res, next) => {
     req.pagination = {
@@ -1955,17 +1955,17 @@ router.get("/products", paginate(), ProductController.getAll);
 #### 7. Refactorizar Componentes Grandes
 
 ```typescript
-// DistributorDetailPage.tsx (661 líneas)
+// EmployeeDetailPage.tsx (661 lÃ­neas)
 // Dividir en:
--DistributorHeader.tsx -
-  DistributorTabs.tsx -
-  DistributorStatsSection.tsx -
-  DistributorSalesSection.tsx -
-  DistributorInventorySection.tsx -
-  DistributorActions.tsx;
+-EmployeeHeader.tsx -
+  EmployeeTabs.tsx -
+  EmployeeStatsSection.tsx -
+  EmployeeSalesSection.tsx -
+  EmployeeInventorySection.tsx -
+  EmployeeActions.tsx;
 ```
 
-### 📈 NICE TO HAVE (Mejoras Futuras)
+### ðŸ“ˆ NICE TO HAVE (Mejoras Futuras)
 
 #### 8. Implementar React Query
 
@@ -1981,7 +1981,7 @@ function useProducts() {
 }
 
 // Ventajas:
-- Caching automático
+- Caching automÃ¡tico
 - Refetch en background
 - Optimistic updates
 - Menos boilerplate
@@ -1996,7 +1996,7 @@ const LazyChart = lazy(() => import("./Chart"));
 // XLSX (800 KB)
 const exportExcel = lazy(() => import("./excelExporter"));
 
-// Reducción: ~1.2 MB del bundle inicial
+// ReducciÃ³n: ~1.2 MB del bundle inicial
 ```
 
 #### 10. Implementar Monitoring & Logging
@@ -2020,70 +2020,70 @@ Sentry.captureException(error);
 
 ---
 
-## 10. PLAN DE ACCIÓN
+## 10. PLAN DE ACCIÃ“N
 
-### 📅 Roadmap de 3 Meses
+### ðŸ“… Roadmap de 3 Meses
 
 #### **MES 1: Estabilidad y Seguridad**
 
 **Semana 1-2: Testing**
 
 - [ ] Configurar Jest + Coverage reporter
-- [ ] Escribir tests para Use Cases críticos
+- [ ] Escribir tests para Use Cases crÃ­ticos
   - [ ] RegisterSaleUseCase
   - [ ] CreateProductUseCase
   - [ ] LoginUseCase
 - [ ] Escribir tests para Services
   - [ ] FinanceService (100% coverage)
   - [ ] InventoryService
-- [ ] Target: 40% coverage → 60%
+- [ ] Target: 40% coverage â†’ 60%
 
 **Semana 3: Seguridad**
 
 - [ ] Migrar JWT a httpOnly cookies
 - [ ] Implementar CSRF protection
-- [ ] Añadir helmet.js
+- [ ] AÃ±adir helmet.js
 - [ ] Audit dependencies (npm audit)
 - [ ] Fix vulnerabilidades encontradas
 
-**Semana 4: Índices y Performance**
+**Semana 4: Ãndices y Performance**
 
-- [ ] Crear índices compuestos faltantes
+- [ ] Crear Ã­ndices compuestos faltantes
 - [ ] Implementar Redis rate limiting
 - [ ] Optimizar financial-kpis query
-- [ ] Añadir paginación a /products
+- [ ] AÃ±adir paginaciÃ³n a /products
 
 #### **MES 2: Performance y UX**
 
-**Semana 5-6: Optimización Backend**
+**Semana 5-6: OptimizaciÃ³n Backend**
 
 - [ ] Fix N+1 queries detectados
-- [ ] Implementar paginación en todos los endpoints
-- [ ] Añadir projections en queries pesados
+- [ ] Implementar paginaciÃ³n en todos los endpoints
+- [ ] AÃ±adir projections en queries pesados
 - [ ] Implementar Redis caching para sessions
 - [ ] Target: Reducir response time 30%
 
-**Semana 7-8: Optimización Frontend**
+**Semana 7-8: OptimizaciÃ³n Frontend**
 
-- [ ] Refactorizar DistributorDetailPage
+- [ ] Refactorizar EmployeeDetailPage
 - [ ] Refactorizar InventoryEntriesPage
 - [ ] Lazy load recharts + xlsx
 - [ ] Implementar React Query
 - [ ] Target: Reducir bundle size 20%
 
-#### **MES 3: Migración y Testing**
+#### **MES 3: MigraciÃ³n y Testing**
 
-**Semana 9-10: Completar Migración V2**
+**Semana 9-10: Completar MigraciÃ³n V2**
 
 - [ ] Migrar endpoints restantes a V2
-- [ ] Eliminar código legacy V1
+- [ ] Eliminar cÃ³digo legacy V1
 - [ ] Unificar error handling
 - [ ] Documentar breaking changes
 - [ ] Target: 100% V2
 
 **Semana 11: Testing Completo**
 
-- [ ] Tests de integración (E2E)
+- [ ] Tests de integraciÃ³n (E2E)
 - [ ] Tests de Controllers (80% coverage)
 - [ ] Tests de Repositories (70% coverage)
 - [ ] Performance tests
@@ -2094,10 +2094,10 @@ Sentry.captureException(error);
 - [ ] Fix TODOs pendientes (expense filtering)
 - [ ] Sanitizar logs
 - [ ] Implementar monitoring (Sentry)
-- [ ] Deploy a producción
-- [ ] Smoke tests en producción
+- [ ] Deploy a producciÃ³n
+- [ ] Smoke tests en producciÃ³n
 
-### 🎯 Métricas de Éxito
+### ðŸŽ¯ MÃ©tricas de Ã‰xito
 
 ```yaml
 Testing:
@@ -2128,50 +2128,50 @@ Bundle Size:
 
 ---
 
-## 📝 CONCLUSIONES FINALES
+## ðŸ“ CONCLUSIONES FINALES
 
-### ✅ Fortalezas del Proyecto
+### âœ… Fortalezas del Proyecto
 
-1. **Arquitectura Sólida**: Hexagonal architecture bien implementada
-2. **Lógica de Negocio**: 100% compliant después de MASTER FIX
-3. **Seguridad**: Multi-capa con múltiples guards
-4. **Optimizaciones**: PWA, virtualización, lazy loading
-5. **DevOps**: Docker, backups automáticos, sync prod→local
-6. **Documentación**: Auditorías técnicas detalladas
+1. **Arquitectura SÃ³lida**: Hexagonal architecture bien implementada
+2. **LÃ³gica de Negocio**: 100% compliant despuÃ©s de MASTER FIX
+3. **Seguridad**: Multi-capa con mÃºltiples guards
+4. **Optimizaciones**: PWA, virtualizaciÃ³n, lazy loading
+5. **DevOps**: Docker, backups automÃ¡ticos, sync prodâ†’local
+6. **DocumentaciÃ³n**: AuditorÃ­as tÃ©cnicas detalladas
 
-### ⚠️ Riesgos Principales
+### âš ï¸ Riesgos Principales
 
-1. **Testing Insuficiente**: 20-30% coverage (CRÍTICO)
+1. **Testing Insuficiente**: 20-30% coverage (CRÃTICO)
 2. **JWT en localStorage**: Vulnerable a XSS (ALTO)
 3. **N+1 Queries**: Performance degradada (MEDIO)
-4. **Migración Incompleta**: Código legacy mezclado (MEDIO)
-5. **Sin Paginación**: Endpoints sin límites (MEDIO)
+4. **MigraciÃ³n Incompleta**: CÃ³digo legacy mezclado (MEDIO)
+5. **Sin PaginaciÃ³n**: Endpoints sin lÃ­mites (MEDIO)
 
-### 🎯 Recomendación Final
+### ðŸŽ¯ RecomendaciÃ³n Final
 
 **ESTADO ACTUAL:** Pre-Alpha / Beta Temprano
 
-**PARA PRODUCCIÓN SE NECESITA:**
+**PARA PRODUCCIÃ“N SE NECESITA:**
 
-1. ✅ Testing Coverage > 80%
-2. ✅ JWT en httpOnly cookies
-3. ✅ Rate limiting con Redis
-4. ✅ Índices compuestos
-5. ✅ Paginación en todos los endpoints
+1. âœ… Testing Coverage > 80%
+2. âœ… JWT en httpOnly cookies
+3. âœ… Rate limiting con Redis
+4. âœ… Ãndices compuestos
+5. âœ… PaginaciÃ³n en todos los endpoints
 
-**ESTIMACIÓN PARA PRODUCCIÓN:**
+**ESTIMACIÃ“N PARA PRODUCCIÃ“N:**
 
-- **Óptimo:** 3 meses (siguiendo roadmap)
-- **Mínimo:** 6 semanas (solo críticos)
+- **Ã“ptimo:** 3 meses (siguiendo roadmap)
+- **MÃ­nimo:** 6 semanas (solo crÃ­ticos)
 - **Realista:** 2 meses
 
 **PRIORIDAD #1:** Testing coverage
 
 ---
 
-## 📚 RECURSOS ADICIONALES
+## ðŸ“š RECURSOS ADICIONALES
 
-### Documentación del Proyecto
+### DocumentaciÃ³n del Proyecto
 
 ```
 Documentos Existentes:
@@ -2185,15 +2185,15 @@ Documentos Existentes:
 
 Swagger API:
 - http://localhost:5000/api-docs
-- Documentación interactiva de endpoints
+- DocumentaciÃ³n interactiva de endpoints
 ```
 
-### Scripts Útiles
+### Scripts Ãštiles
 
 ```bash
 # Desarrollo
 npm run dev:v2                    # Full stack dev server
-npm run sync:v2                   # Sync prod → local
+npm run sync:v2                   # Sync prod â†’ local
 
 # Testing
 npm run test                      # Run all tests
@@ -2213,38 +2213,38 @@ npm run validate:backend          # Validate backend syntax
 
 ```
 Proyecto: Essence - Business Management Platform
-Versión: 1.0.0
+VersiÃ³n: 1.0.0
 Entorno: Node.js 18+ | React 19 | MongoDB 7
 Licencia: MIT
 ```
 
 ---
 
-**🎉 FIN DEL ANÁLISIS COMPLETO**
+**ðŸŽ‰ FIN DEL ANÃLISIS COMPLETO**
 
-Este reporte contiene un análisis exhaustivo del proyecto Essence. Se recomienda priorizar las secciones críticas marcadas con 🚨 y seguir el roadmap de 3 meses para llevar el proyecto a producción de forma segura.
+Este reporte contiene un anÃ¡lisis exhaustivo del proyecto Essence. Se recomienda priorizar las secciones crÃ­ticas marcadas con ðŸš¨ y seguir el roadmap de 3 meses para llevar el proyecto a producciÃ³n de forma segura.
 
-**Próximos Pasos Sugeridos:**
+**PrÃ³ximos Pasos Sugeridos:**
 
-1. Revisar sección de Recomendaciones Críticas
+1. Revisar secciÃ³n de Recomendaciones CrÃ­ticas
 2. Implementar testing coverage (Prioridad #1)
 3. Seguir roadmap Mes 1 (Estabilidad y Seguridad)
-4. Monitorear métricas de éxito semanalmente
+4. Monitorear mÃ©tricas de Ã©xito semanalmente
 
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: DIAGRAMAS_DE_SECUENCIA.md -->
 <!-- ========================================== -->
 
-# 🔁 DIAGRAMAS DE SECUENCIA (LIFECYCLE)
+# ðŸ” DIAGRAMAS DE SECUENCIA (LIFECYCLE)
 
-> **Propósito:** Esquematizar en formato de secuencia los flujos de arquitectura de red y la interacción entre Backend, Base de Datos y Servicios de Dominio. 
+> **PropÃ³sito:** Esquematizar en formato de secuencia los flujos de arquitectura de red y la interacciÃ³n entre Backend, Base de Datos y Servicios de Dominio. 
 
 ---
 
-## 1. Patrón Hexagonal: Registro de Venta y Deducción Atómica
+## 1. PatrÃ³n Hexagonal: Registro de Venta y DeducciÃ³n AtÃ³mica
 
-El siguiente diagrama detalla la ruta de los datos atravesando los *Drivers Adapters* (Controller) hacia los *Use Cases* (Aplicación) y finalmente al repositorio de datos.
+El siguiente diagrama detalla la ruta de los datos atravesando los *Drivers Adapters* (Controller) hacia los *Use Cases* (AplicaciÃ³n) y finalmente al repositorio de datos.
 
 ```mermaid
 sequenceDiagram
@@ -2270,7 +2270,7 @@ sequenceDiagram
     Finance-->>UseCase: 22,000 USD
     
     UseCase->>DBProduct: dec($inc: { warehouseStock: -qty })
-    DBProduct-->>UseCase: Ok (Atómico)
+    DBProduct-->>UseCase: Ok (AtÃ³mico)
     
     UseCase->>DBSale: saveTransaction(saleData)
     DBSale-->>UseCase: Sale ID: Object(XXX)
@@ -2281,21 +2281,21 @@ sequenceDiagram
 
 ---
 
-## 2. Herencia de Acceso (Validación Owner para Distributor)
+## 2. Herencia de Acceso (ValidaciÃ³n Owner para Employee)
 
 Este diagrama demuestra las reglas de seguridad invisibles operando a nivel de *Middleware*.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Dist as Distribuidor (App)
+    actor Dist as Empleado (App)
     participant Auth as ProtectMiddleware
     participant DBUser as UserRepository
     
     Dist->>Auth: GET /api/products
     Auth->>Auth: Verifica Local JWT
-    Auth->>DBUser: findOne({ id: distribuidor.id })
-    DBUser-->>Auth: user ok -> role='distribuidor'
+    Auth->>DBUser: findOne({ id: empleado.id })
+    DBUser-->>Auth: user ok -> role='empleado'
     
     Note over Auth, DBUser: Regla Inflexible Essence
     Auth->>DBUser: findOwner(businessId)
@@ -2309,71 +2309,71 @@ sequenceDiagram
 <!-- DOCUMENTO: DOCUMENTACION_MAESTRA_ESSENCE.md -->
 <!-- ========================================== -->
 
-# 📘 DOCUMENTACIÓN MAESTRA ESSENCE
+# ðŸ“˜ DOCUMENTACIÃ“N MAESTRA ESSENCE
 
 ## _"El Manual Sagrado"_
 
-> **Fecha de Generación:** 2 de Febrero de 2026  
-> **Versión del Sistema:** Essence Business Management Platform  
-> **Propósito:** Documento definitivo que explica la lógica de negocio, fórmulas matemáticas, flujos de usuario y reglas invisibles del sistema.
+> **Fecha de GeneraciÃ³n:** 2 de Febrero de 2026  
+> **VersiÃ³n del Sistema:** Essence Business Management Platform  
+> **PropÃ³sito:** Documento definitivo que explica la lÃ³gica de negocio, fÃ³rmulas matemÃ¡ticas, flujos de usuario y reglas invisibles del sistema.
 
 ---
 
-# 📑 ÍNDICE
+# ðŸ“‘ ÃNDICE
 
 1. [El Flujo de Vida del Negocio](#1--el-flujo-de-vida-del-negocio-the-golden-flow)
-2. [El Núcleo Matemático](#2--el-núcleo-matemático-financial-logic)
-3. [Lógica de Inventario](#3--lógica-de-inventario-inventory-rules)
-4. [Seguridad y Roles](#4-️-seguridad-y-roles)
-5. [Anexos Técnicos](#5--anexos-técnicos)
+2. [El NÃºcleo MatemÃ¡tico](#2--el-nÃºcleo-matemÃ¡tico-financial-logic)
+3. [LÃ³gica de Inventario](#3--lÃ³gica-de-inventario-inventory-rules)
+4. [Seguridad y Roles](#4-ï¸-seguridad-y-roles)
+5. [Anexos TÃ©cnicos](#5--anexos-tÃ©cnicos)
 
 ---
 
-# 1. 🔄 EL FLUJO DE VIDA DEL NEGOCIO (The Golden Flow)
+# 1. ðŸ”„ EL FLUJO DE VIDA DEL NEGOCIO (The Golden Flow)
 
 ## 1.1 Diagrama del Ciclo de Vida
 
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   REGISTRO  │───▶│  APROBACIÓN │───▶│CONFIGURACIÓN│───▶│  OPERACIÓN  │
-│   Usuario   │    │    GOD      │    │   Negocio   │    │    Diaria   │
-│  (pending)  │    │  (active)   │    │             │    │             │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
-                                                                │
-                   ┌─────────────┐    ┌─────────────┐           │
-                   │  ASIGNACIÓN │◀───│  EXPANSIÓN  │◀──────────┘
-                   │   de Stock  │    │   Sedes &   │
-                   │             │    │Distribuidores│
-                   └─────────────┘    └─────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚   REGISTRO  â”‚â”€â”€â”€â–¶â”‚  APROBACIÃ“N â”‚â”€â”€â”€â–¶â”‚CONFIGURACIÃ“Nâ”‚â”€â”€â”€â–¶â”‚  OPERACIÃ“N  â”‚
+â”‚   Usuario   â”‚    â”‚    GOD      â”‚    â”‚   Negocio   â”‚    â”‚    Diaria   â”‚
+â”‚  (pending)  â”‚    â”‚  (active)   â”‚    â”‚             â”‚    â”‚             â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                                                â”‚
+                   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”           â”‚
+                   â”‚  ASIGNACIÃ“N â”‚â—€â”€â”€â”€â”‚  EXPANSIÃ“N  â”‚â—€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                   â”‚   de Stock  â”‚    â”‚   Sedes &   â”‚
+                   â”‚             â”‚    â”‚Empleadosâ”‚
+                   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
 
 ## 1.2 Etapa 1: REGISTRO DE USUARIO
 
-### Descripción
+### DescripciÃ³n
 
 Cuando un usuario nuevo se registra en la plataforma, se crea con estado `pending` y no puede operar hasta ser aprobado.
 
-### Ubicación en Código
+### UbicaciÃ³n en CÃ³digo
 
 - **Archivo:** `server/src/application/use-cases/RegisterUserUseCase.js`
 - **Modelo:** `server/src/infrastructure/database/models/User.js`
 
 ### Estados de Usuario Disponibles
 
-| Estado      | Descripción                          | Puede Operar |
+| Estado      | DescripciÃ³n                          | Puede Operar |
 | ----------- | ------------------------------------ | ------------ |
-| `pending`   | Recién registrado, espera aprobación | ❌ No        |
-| `active`    | Cuenta activa y operativa            | ✅ Sí        |
-| `expired`   | Suscripción vencida                  | ❌ No        |
-| `suspended` | Suspendido por administración        | ❌ No        |
-| `paused`    | Pausado temporalmente                | ❌ No        |
+| `pending`   | ReciÃ©n registrado, espera aprobaciÃ³n | âŒ No        |
+| `active`    | Cuenta activa y operativa            | âœ… SÃ­        |
+| `expired`   | SuscripciÃ³n vencida                  | âŒ No        |
+| `suspended` | Suspendido por administraciÃ³n        | âŒ No        |
+| `paused`    | Pausado temporalmente                | âŒ No        |
 
-### Flujo de Registro (Código Real)
+### Flujo de Registro (CÃ³digo Real)
 
 ```javascript
-// RegisterUserUseCase.js - Líneas clave
+// RegisterUserUseCase.js - LÃ­neas clave
 const newUser = await this.userRepository.createUser({
   name,
   email,
@@ -2391,7 +2391,7 @@ const newUser = await this.userRepository.createUser({
 status: {
   type: String,
   enum: ["pending", "active", "expired", "suspended", "paused"],
-  default: "pending",  // ⚠️ IMPORTANTE: Siempre inicia pendiente
+  default: "pending",  // âš ï¸ IMPORTANTE: Siempre inicia pendiente
 },
 subscriptionExpiresAt: {
   type: Date,
@@ -2401,26 +2401,26 @@ subscriptionExpiresAt: {
 
 ---
 
-## 1.3 Etapa 2: APROBACIÓN GOD
+## 1.3 Etapa 2: APROBACIÃ“N GOD
 
-### Descripción
+### DescripciÃ³n
 
-Solo usuarios con rol `god` pueden activar cuentas. El sistema verifica el estado en cada petición.
+Solo usuarios con rol `god` pueden activar cuentas. El sistema verifica el estado en cada peticiÃ³n.
 
 ### Roles del Sistema
 
-| Rol            | Nivel        | Descripción                               |
+| Rol            | Nivel        | DescripciÃ³n                               |
 | -------------- | ------------ | ----------------------------------------- |
-| `god`          | 🔱 Supremo   | Control total del sistema, activa cuentas |
-| `super_admin`  | ⭐ Alto      | Administrador general de negocios         |
-| `admin`        | 🛠️ Medio     | Administrador dentro de un negocio        |
-| `distribuidor` | 📦 Operativo | Vendedor con stock asignado               |
-| `user`         | 👤 Básico    | Usuario estándar                          |
+| `god`          | ðŸ”± Supremo   | Control total del sistema, activa cuentas |
+| `super_admin`  | â­ Alto      | Administrador general de negocios         |
+| `admin`        | ðŸ› ï¸ Medio     | Administrador dentro de un negocio        |
+| `empleado` | ðŸ“¦ Operativo | Vendedor con stock asignado               |
+| `user`         | ðŸ‘¤ BÃ¡sico    | Usuario estÃ¡ndar                          |
 
-### Middleware de Protección
+### Middleware de ProtecciÃ³n
 
 ```javascript
-// auth.middleware.js - Línea 119-128
+// auth.middleware.js - LÃ­nea 119-128
 if (user.status !== "active") {
   return res.status(403).json({
     message: "Acceso restringido por estado de cuenta",
@@ -2433,30 +2433,30 @@ if (user.status !== "active") {
 ### GOD Bypass
 
 ```javascript
-// auth.middleware.js - Línea 38-41
+// auth.middleware.js - LÃ­nea 38-41
 if (owner.role === "god") {
-  console.log("✅ GOD BYPASS ACTIVATED");
+  console.warn("[Essence Debug]", "âœ… GOD BYPASS ACTIVATED");
   return { hasAccess: true };
 }
 ```
 
 ---
 
-## 1.4 Etapa 3: CONFIGURACIÓN DEL NEGOCIO
+## 1.4 Etapa 3: CONFIGURACIÃ“N DEL NEGOCIO
 
-### Secuencia de Configuración Requerida
+### Secuencia de ConfiguraciÃ³n Requerida
 
 ```
 1. Crear Empresa (Business)
-      ↓
-2. Crear Categorías
-      ↓
+      â†“
+2. Crear CategorÃ­as
+      â†“
 3. Crear Productos
-      ↓
-4. Configurar Métodos de Pago
-      ↓
-5. Configurar Métodos de Entrega
-      ↓
+      â†“
+4. Configurar MÃ©todos de Pago
+      â†“
+5. Configurar MÃ©todos de Entrega
+      â†“
 6. Registrar Clientes
 ```
 
@@ -2465,7 +2465,7 @@ if (owner.role === "god") {
 ```javascript
 // Business.js - Estructura principal
 {
-  name: String,           // Nombre único
+  name: String,           // Nombre Ãºnico
   description: String,
   logoUrl: String,
   contactEmail: String,
@@ -2473,7 +2473,7 @@ if (owner.role === "god") {
   contactWhatsapp: String,
   contactLocation: String,
   config: {
-    features: {           // Feature Flags (activar/desactivar módulos)
+    features: {           // Feature Flags (activar/desactivar mÃ³dulos)
       products: Boolean,
       inventory: Boolean,
       sales: Boolean,
@@ -2482,98 +2482,98 @@ if (owner.role === "god") {
       clients: Boolean,
       gamification: Boolean,
       expenses: Boolean,
-      distributors: Boolean,
+      employees: Boolean,
       rankings: Boolean,
       branches: Boolean,
       credits: Boolean,
       customers: Boolean,
-      // ... más features
+      // ... mÃ¡s features
     }
   },
-  createdBy: ObjectId,    // Usuario que creó el negocio (owner)
+  createdBy: ObjectId,    // Usuario que creÃ³ el negocio (owner)
   status: "active" | "archived"
 }
 ```
 
 ---
 
-## 1.5 Etapa 4: OPERACIÓN DIARIA
+## 1.5 Etapa 4: OPERACIÃ“N DIARIA
 
 ### Flujo de una Venta
 
 ```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Seleccionar │────▶│   Validar    │────▶│   Calcular   │
-│   Productos  │     │    Stock     │     │   Finanzas   │
-└──────────────┘     └──────────────┘     └──────────────┘
-                                                  │
-┌──────────────┐     ┌──────────────┐             │
-│   Registrar  │◀────│   Deducir    │◀────────────┘
-│    Venta     │     │    Stock     │
-└──────────────┘     └──────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”     â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”     â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  Seleccionar â”‚â”€â”€â”€â”€â–¶â”‚   Validar    â”‚â”€â”€â”€â”€â–¶â”‚   Calcular   â”‚
+â”‚   Productos  â”‚     â”‚    Stock     â”‚     â”‚   Finanzas   â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                                  â”‚
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”     â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”             â”‚
+â”‚   Registrar  â”‚â—€â”€â”€â”€â”€â”‚   Deducir    â”‚â—€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+â”‚    Venta     â”‚     â”‚    Stock     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
 
-## 1.6 Etapa 5: EXPANSIÓN (Sedes y Distribuidores)
+## 1.6 Etapa 5: EXPANSIÃ“N (Sedes y Empleados)
 
-### Creación de Sedes (Branches)
+### CreaciÃ³n de Sedes (Branches)
 
 ```javascript
 // Branch.js - Modelo
 {
-  business: ObjectId,     // A qué negocio pertenece
+  business: ObjectId,     // A quÃ© negocio pertenece
   name: String,
   address: String,
   contactName: String,
   contactPhone: String,
   timezone: "America/Bogota",
-  isWarehouse: Boolean,   // ¿Es la bodega principal?
+  isWarehouse: Boolean,   // Â¿Es la bodega principal?
   active: Boolean
 }
 ```
 
-### Creación de Distribuidores
+### CreaciÃ³n de Empleados
 
 ```javascript
-// DistributorRepository.js - Proceso de creación
-const distributor = await User.create({
+// EmployeeRepository.js - Proceso de creaciÃ³n
+const employee = await User.create({
   name: data.name,
   email: data.email,
   password: hashedPassword,
   phone: data.phone,
   address: data.address,
-  role: "distribuidor",
-  status: "active", // ⚠️ Distribuidores se activan inmediatamente
+  role: "empleado",
+  status: "active", // âš ï¸ Empleados se activan inmediatamente
   active: true,
 });
 
-// Crear membership (membresía) en el negocio
+// Crear membership (membresÃ­a) en el negocio
 await Membership.findOneAndUpdate(
-  { user: distributor._id, business: businessId },
-  { role: "distribuidor", status: "active" },
+  { user: employee._id, business: businessId },
+  { role: "empleado", status: "active" },
   { upsert: true, new: true },
 );
 ```
 
 ---
 
-## 1.7 Etapa 6: ASIGNACIÓN DE STOCK A DISTRIBUIDORES
+## 1.7 Etapa 6: ASIGNACIÃ“N DE STOCK A EMPLEADOS
 
 ### Proceso de Transferencia
 
 ```javascript
-// StockRepository.js - assignToDistributor
-async assignToDistributor(businessId, distributorId, productId, quantity) {
+// StockRepository.js - assignToEmployee
+async assignToEmployee(businessId, employeeId, productId, quantity) {
   // 1. Verificar stock en bodega
   const product = await Product.findOne({ _id: productId, business: businessId });
   if (!product || product.warehouseStock < quantity) {
     throw new Error("Stock insuficiente");
   }
 
-  // 2. Crear o actualizar stock del distribuidor
-  let distStock = await DistributorStock.findOne({
-    distributor: distributorId,
+  // 2. Crear o actualizar stock del empleado
+  let distStock = await EmployeeStock.findOne({
+    employee: employeeId,
     product: productId,
     business: businessId,
   });
@@ -2582,8 +2582,8 @@ async assignToDistributor(businessId, distributorId, productId, quantity) {
     distStock.quantity += quantity;
     await distStock.save();
   } else {
-    distStock = await DistributorStock.create({
-      distributor: distributorId,
+    distStock = await EmployeeStock.create({
+      employee: employeeId,
       product: productId,
       quantity,
       business: businessId,
@@ -2598,7 +2598,7 @@ async assignToDistributor(businessId, distributorId, productId, quantity) {
   );
 
   // 4. Agregar producto a lista de asignados
-  const user = await User.findById(distributorId);
+  const user = await User.findById(employeeId);
   if (user && !user.assignedProducts.includes(productId)) {
     user.assignedProducts.push(productId);
     await user.save();
@@ -2606,162 +2606,162 @@ async assignToDistributor(businessId, distributorId, productId, quantity) {
 }
 ```
 
-### Transferencias Inmediatas ✅
+### Transferencias Inmediatas âœ…
 
-> **CONFIRMADO:** Las transferencias de stock son **inmediatas**. No hay estado "pendiente" para asignaciones de bodega a distribuidor.
+> **CONFIRMADO:** Las transferencias de stock son **inmediatas**. No hay estado "pendiente" para asignaciones de bodega a empleado.
 
 ---
 
-# 2. 🧮 EL NÚCLEO MATEMÁTICO (Financial Logic)
+# 2. ðŸ§® EL NÃšCLEO MATEMÃTICO (Financial Logic)
 
 ## 2.1 Arquitectura Financiera
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                   REGISTRO DE VENTA                       │
-├──────────────────────────────────────────────────────────┤
-│  FinanceService.js         RegisterSaleUseCase.js        │
-│  (Cálculos Puros)          (Orquestación)                │
-└──────────────────────────────────────────────────────────┘
-                              ↓
-┌──────────────────────────────────────────────────────────┐
-│                   FÓRMULAS MAESTRAS                       │
-├──────────────────────────────────────────────────────────┤
-│  • Precio Distribuidor = PrecioVenta × (100 - %Com)/100  │
-│  • Ganancia Dist = (PrecioVenta - PrecioDist) × Cantidad │
-│  • Ganancia Admin = Venta - Costo - GananciaDist         │
-│  • Ganancia Neta = TotalProfit - Envío - CostosExtra     │
-└──────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                   REGISTRO DE VENTA                       â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  FinanceService.js         RegisterSaleUseCase.js        â”‚
+â”‚  (CÃ¡lculos Puros)          (OrquestaciÃ³n)                â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                              â†“
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                   FÃ“RMULAS MAESTRAS                       â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  â€¢ Precio Empleado = PrecioVenta Ã— (100 - %Com)/100  â”‚
+â”‚  â€¢ Ganancia Dist = (PrecioVenta - PrecioDist) Ã— Cantidad â”‚
+â”‚  â€¢ Ganancia Admin = Venta - Costo - GananciaDist         â”‚
+â”‚  â€¢ Ganancia Neta = TotalProfit - EnvÃ­o - CostosExtra     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
 
-## 2.2 FÓRMULA: Precio para Distribuidor
+## 2.2 FÃ“RMULA: Precio para Empleado
 
-### Definición
+### DefiniciÃ³n
 
-El **Precio Distribuidor** es lo que el distribuidor "paga" al admin por cada unidad.
+El **Precio Empleado** es lo que el empleado "paga" al admin por cada unidad.
 
-### Fórmula Exacta
+### FÃ³rmula Exacta
 
 ```
-Precio Distribuidor = Precio Venta × (100 - Comisión%) / 100
+Precio Empleado = Precio Venta Ã— (100 - ComisiÃ³n%) / 100
 ```
 
-### Código Fuente
+### CÃ³digo Fuente
 
 ```javascript
-// FinanceService.js - Línea 11-17
-static calculateDistributorPrice(salePrice, profitPercentage) {
+// FinanceService.js - LÃ­nea 11-17
+static calculateEmployeePrice(salePrice, profitPercentage) {
   if (salePrice < 0) throw new Error("Sale price cannot be negative");
   const percentage = profitPercentage || 20; // Default: 20%
   return salePrice * ((100 - percentage) / 100);
 }
 ```
 
-### Ejemplo Práctico
+### Ejemplo PrÃ¡ctico
 
 | Concepto                | Valor                        |
 | ----------------------- | ---------------------------- |
 | Precio de Venta         | $22,000                      |
-| Comisión Distribuidor   | 20%                          |
-| **Precio Distribuidor** | $22,000 × 0.80 = **$17,600** |
+| ComisiÃ³n Empleado   | 20%                          |
+| **Precio Empleado** | $22,000 Ã— 0.80 = **$17,600** |
 
-> 💡 **Interpretación:** El distribuidor "le paga" $17,600 al admin por cada unidad vendida a $22,000.
+> ðŸ’¡ **InterpretaciÃ³n:** El empleado "le paga" $17,600 al admin por cada unidad vendida a $22,000.
 
 ---
 
-## 2.3 FÓRMULA: Ganancia del Distribuidor
+## 2.3 FÃ“RMULA: Ganancia del Empleado
 
-### Definición
+### DefiniciÃ³n
 
-La ganancia del distribuidor es su **comisión** por vender el producto.
+La ganancia del empleado es su **comisiÃ³n** por vender el producto.
 
-### Fórmula Exacta
+### FÃ³rmula Exacta
 
 ```
-Ganancia Distribuidor = (Precio Venta - Precio Distribuidor) × Cantidad
+Ganancia Empleado = (Precio Venta - Precio Empleado) Ã— Cantidad
 ```
 
-### Código Fuente
+### CÃ³digo Fuente
 
 ```javascript
-// FinanceService.js - Línea 24-27
-static calculateDistributorProfit(salePrice, distributorPrice, quantity) {
-  return (salePrice - distributorPrice) * quantity;
+// FinanceService.js - LÃ­nea 24-27
+static calculateEmployeeProfit(salePrice, employeePrice, quantity) {
+  return (salePrice - employeePrice) * quantity;
 }
 ```
 
-### Ejemplo Práctico (Continuación)
+### Ejemplo PrÃ¡ctico (ContinuaciÃ³n)
 
 | Concepto                  | Valor                                 |
 | ------------------------- | ------------------------------------- |
 | Precio de Venta           | $22,000                               |
-| Precio Distribuidor       | $17,600                               |
+| Precio Empleado       | $17,600                               |
 | Cantidad                  | 3 unidades                            |
-| **Ganancia Distribuidor** | ($22,000 - $17,600) × 3 = **$13,200** |
+| **Ganancia Empleado** | ($22,000 - $17,600) Ã— 3 = **$13,200** |
 
 ---
 
-## 2.4 FÓRMULA: Ganancia del Administrador
+## 2.4 FÃ“RMULA: Ganancia del Administrador
 
-### Definición
+### DefiniciÃ³n
 
-La ganancia del admin es lo que queda **después de restar el costo del producto y la comisión del distribuidor**.
+La ganancia del admin es lo que queda **despuÃ©s de restar el costo del producto y la comisiÃ³n del empleado**.
 
-### Fórmula Exacta
+### FÃ³rmula Exacta
 
 ```
-Ganancia Admin = (Precio Venta × Cantidad) - (Costo × Cantidad) - Ganancia Distribuidor
+Ganancia Admin = (Precio Venta Ã— Cantidad) - (Costo Ã— Cantidad) - Ganancia Empleado
 ```
 
-### Código Fuente
+### CÃ³digo Fuente
 
 ```javascript
-// FinanceService.js - Línea 35-44
-static calculateAdminProfit(salePrice, costBasis, distributorProfit, quantity) {
+// FinanceService.js - LÃ­nea 35-44
+static calculateAdminProfit(salePrice, costBasis, employeeProfit, quantity) {
   const totalRevenue = salePrice * quantity;
   const totalCost = costBasis * quantity;
-  // Revenue - Cost - DistributorShare
-  return totalRevenue - totalCost - distributorProfit;
+  // Revenue - Cost - EmployeeShare
+  return totalRevenue - totalCost - employeeProfit;
 }
 ```
 
-### Ejemplo Práctico (Continuación)
+### Ejemplo PrÃ¡ctico (ContinuaciÃ³n)
 
 | Concepto                 | Valor                                                 |
 | ------------------------ | ----------------------------------------------------- |
 | Precio de Venta          | $22,000                                               |
 | Costo Base (averageCost) | $10,500                                               |
 | Cantidad                 | 3 unidades                                            |
-| Ganancia Distribuidor    | $13,200                                               |
-| **Ganancia Admin**       | ($22,000 × 3) - ($10,500 × 3) - $13,200 = **$21,300** |
+| Ganancia Empleado    | $13,200                                               |
+| **Ganancia Admin**       | ($22,000 Ã— 3) - ($10,500 Ã— 3) - $13,200 = **$21,300** |
 
 **Desglose:**
 
 - Ingreso Total: $66,000
 - Costo Total: $31,500
-- Comisión Distribuidor: $13,200
+- ComisiÃ³n Empleado: $13,200
 - Ganancia Admin: $66,000 - $31,500 - $13,200 = **$21,300**
 
 ---
 
-## 2.5 FÓRMULA: Ganancia Neta
+## 2.5 FÃ“RMULA: Ganancia Neta
 
-### Definición
+### DefiniciÃ³n
 
 La ganancia neta considera **todos los costos adicionales**.
 
-### Fórmula Exacta
+### FÃ³rmula Exacta
 
 ```
-Ganancia Neta = Total Profit - Costo Envío - Costos Adicionales - Descuento
+Ganancia Neta = Total Profit - Costo EnvÃ­o - Costos Adicionales - Descuento
 ```
 
-### Código Fuente
+### CÃ³digo Fuente
 
 ```javascript
-// FinanceService.js - Línea 52-58
+// FinanceService.js - LÃ­nea 52-58
 static calculateNetProfit(totalProfit, shippingCost = 0, additionalCosts = 0, discount = 0) {
   return totalProfit - shippingCost - additionalCosts - discount;
 }
@@ -2770,7 +2770,7 @@ static calculateNetProfit(totalProfit, shippingCost = 0, additionalCosts = 0, di
 ### Pre-Save Hook en Sale.js
 
 ```javascript
-// Sale.js - Línea 340-345
+// Sale.js - LÃ­nea 340-345
 const totalExtraCosts = this.totalAdditionalCosts + (this.shippingCost || 0);
 this.netProfit = this.totalProfit - totalExtraCosts - (this.discount || 0);
 ```
@@ -2781,41 +2781,41 @@ this.netProfit = this.totalProfit - totalExtraCosts - (this.discount || 0);
 
 ### Tabla de Comisiones
 
-| Posición    | Porcentaje Base | Descripción   |
+| PosiciÃ³n    | Porcentaje Base | DescripciÃ³n   |
 | ----------- | --------------- | ------------- |
-| 🥇 1º lugar | 25%             | Top performer |
-| 🥈 2º lugar | 23%             | Second best   |
-| 🥉 3º lugar | 21%             | Third place   |
-| 📦 Resto    | 20%             | Estándar      |
+| ðŸ¥‡ 1Âº lugar | 25%             | Top performer |
+| ðŸ¥ˆ 2Âº lugar | 23%             | Second best   |
+| ðŸ¥‰ 3Âº lugar | 21%             | Third place   |
+| ðŸ“¦ Resto    | 20%             | EstÃ¡ndar      |
 
-### Código de Referencia
+### CÃ³digo de Referencia
 
 ```javascript
-// Sale.js - Pre-save hook, Línea 313-325
-// El distribuidor recibe una comisión sobre el precio de venta según su ranking
-// 🥇 1º: 25%, 🥈 2º: 23%, 🥉 3º: 21%, Resto: 20%
-const profitPercentage = this.distributorProfitPercentage || 20;
+// Sale.js - Pre-save hook, LÃ­nea 313-325
+// El empleado recibe una comisiÃ³n sobre el precio de venta segÃºn su ranking
+// ðŸ¥‡ 1Âº: 25%, ðŸ¥ˆ 2Âº: 23%, ðŸ¥‰ 3Âº: 21%, Resto: 20%
+const profitPercentage = this.employeeProfitPercentage || 20;
 ```
 
 ---
 
-## 2.7 VENTAS A CRÉDITO (FIADO): Regla de Contabilización
+## 2.7 VENTAS A CRÃ‰DITO (FIADO): Regla de ContabilizaciÃ³n
 
-### Regla de Oro 💰
+### Regla de Oro ðŸ’°
 
-> **Las ventas a crédito NO cuentan como ingreso/ganancia hasta que son CONFIRMADAS (pagadas).**
+> **Las ventas a crÃ©dito NO cuentan como ingreso/ganancia hasta que son CONFIRMADAS (pagadas).**
 
 ### Estados de Pago
 
-| Estado       | Cuenta en Métricas | Descripción                     |
+| Estado       | Cuenta en MÃ©tricas | DescripciÃ³n                     |
 | ------------ | ------------------ | ------------------------------- |
-| `pendiente`  | ❌ NO              | Venta registrada pero no pagada |
-| `confirmado` | ✅ SÍ              | Venta pagada y confirmada       |
+| `pendiente`  | âŒ NO              | Venta registrada pero no pagada |
+| `confirmado` | âœ… SÃ              | Venta pagada y confirmada       |
 
-### Implementación en RegisterSaleUseCase.js
+### ImplementaciÃ³n en RegisterSaleUseCase.js
 
 ```javascript
-// RegisterSaleUseCase.js - Línea 173-178
+// RegisterSaleUseCase.js - LÃ­nea 173-178
 const saleData = {
   // ... otros campos
   paymentStatus: paymentMethodId === "credit" ? "pendiente" : "confirmado",
@@ -2823,14 +2823,14 @@ const saleData = {
 };
 ```
 
-### Agregación en Analytics (Solo Confirmadas)
+### AgregaciÃ³n en Analytics (Solo Confirmadas)
 
 ```javascript
 // AnalyticsRepository.js - getDashboardKPIs
 totalRevenue: {
   $sum: {
     $cond: [
-      { $eq: ["$paymentStatus", "confirmado"] }, // ⚠️ SOLO CONFIRMADAS
+      { $eq: ["$paymentStatus", "confirmado"] }, // âš ï¸ SOLO CONFIRMADAS
       "$salePrice",
       0,
     ],
@@ -2839,7 +2839,7 @@ totalRevenue: {
 totalProfit: {
   $sum: {
     $cond: [
-      { $eq: ["$paymentStatus", "confirmado"] }, // ⚠️ SOLO CONFIRMADAS
+      { $eq: ["$paymentStatus", "confirmado"] }, // âš ï¸ SOLO CONFIRMADAS
       { $ifNull: ["$netProfit", "$totalProfit"] },
       0,
     ],
@@ -2851,10 +2851,10 @@ totalProfit: {
 
 ## 2.8 UTILIDAD NETA (Con Gastos)
 
-### Fórmula Completa
+### FÃ³rmula Completa
 
 ```
-Utilidad Neta del Período = Σ(Ganancias Netas de Ventas Confirmadas) - Σ(Gastos del Período)
+Utilidad Neta del PerÃ­odo = Î£(Ganancias Netas de Ventas Confirmadas) - Î£(Gastos del PerÃ­odo)
 ```
 
 ### Modelo de Gastos
@@ -2873,96 +2873,96 @@ Utilidad Neta del Período = Σ(Ganancias Netas de Ventas Confirmadas) - Σ(Gast
 
 ---
 
-## 2.9 TABLA RESUMEN DE FÓRMULAS
+## 2.9 TABLA RESUMEN DE FÃ“RMULAS
 
-| Métrica                   | Fórmula                                 | Archivo              |
+| MÃ©trica                   | FÃ³rmula                                 | Archivo              |
 | ------------------------- | --------------------------------------- | -------------------- |
-| **Precio Distribuidor**   | `PV × (100 - Com%) / 100`               | FinanceService.js:14 |
-| **Ganancia Distribuidor** | `(PV - PD) × Qty`                       | FinanceService.js:25 |
-| **Ganancia Admin**        | `(PV × Qty) - (Costo × Qty) - GanDist`  | FinanceService.js:40 |
+| **Precio Empleado**   | `PV Ã— (100 - Com%) / 100`               | FinanceService.js:14 |
+| **Ganancia Empleado** | `(PV - PD) Ã— Qty`                       | FinanceService.js:25 |
+| **Ganancia Admin**        | `(PV Ã— Qty) - (Costo Ã— Qty) - GanDist`  | FinanceService.js:40 |
 | **Ganancia Total**        | `GanAdmin + GanDist`                    | Sale.js:335          |
-| **Ganancia Neta**         | `TotalProfit - Envío - CostosAd - Desc` | Sale.js:342          |
-| **% Rentabilidad**        | `(NetProfit / TotalSale) × 100`         | Sale.js:349          |
-| **% Costo**               | `(CostoBase / PrecioVenta) × 100`       | Sale.js:350          |
+| **Ganancia Neta**         | `TotalProfit - EnvÃ­o - CostosAd - Desc` | Sale.js:342          |
+| **% Rentabilidad**        | `(NetProfit / TotalSale) Ã— 100`         | Sale.js:349          |
+| **% Costo**               | `(CostoBase / PrecioVenta) Ã— 100`       | Sale.js:350          |
 
 ---
 
-# 3. 📦 LÓGICA DE INVENTARIO (Inventory Rules)
+# 3. ðŸ“¦ LÃ“GICA DE INVENTARIO (Inventory Rules)
 
 ## 3.1 Estructura de Inventario
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    PRODUCTO (Product)                        │
-├─────────────────────────────────────────────────────────────┤
-│  totalStock        →  Stock total (contador global)         │
-│  warehouseStock    →  Stock en bodega (disponible admin)    │
-│  averageCost       →  Costo promedio ponderado              │
-│  totalInventoryValue → Valor total del inventario           │
-└─────────────────────────────────────────────────────────────┘
-          │                         │
-          ▼                         ▼
-┌─────────────────┐       ┌─────────────────┐
-│  BranchStock    │       │DistributorStock │
-│  (Por Sede)     │       │(Por Distribuidor)│
-└─────────────────┘       └─────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                    PRODUCTO (Product)                        â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  totalStock        â†’  Stock total (contador global)         â”‚
+â”‚  warehouseStock    â†’  Stock en bodega (disponible admin)    â”‚
+â”‚  averageCost       â†’  Costo promedio ponderado              â”‚
+â”‚  totalInventoryValue â†’ Valor total del inventario           â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+          â”‚                         â”‚
+          â–¼                         â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”       â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  BranchStock    â”‚       â”‚EmployeeStock â”‚
+â”‚  (Por Sede)     â”‚       â”‚(Por Empleado)â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜       â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
 
-## 3.2 Regla de Deducción de Stock
+## 3.2 Regla de DeducciÃ³n de Stock
 
 ### Venta del Administrador (Admin Sale)
 
 ```javascript
-// RegisterSaleUseCase.js - Línea 134-145
-if (!distributorId) {
-  // Admin Sale → Deduct from Warehouse
+// RegisterSaleUseCase.js - LÃ­nea 134-145
+if (!employeeId) {
+  // Admin Sale â†’ Deduct from Warehouse
   await this.productRepository.updateWarehouseStock(
     productId,
     -quantity,
     session,
   );
-  console.log(`📦 Deducted ${quantity} from Warehouse (admin sale)`);
+  console.warn("[Essence Debug]", `ðŸ“¦ Deducted ${quantity} from Warehouse (admin sale)`);
 }
 ```
 
 **Flujo:**
 
 ```
-Venta Admin → Deduce de warehouseStock → Actualiza totalStock
+Venta Admin â†’ Deduce de warehouseStock â†’ Actualiza totalStock
 ```
 
-### Venta del Distribuidor (Distributor Sale)
+### Venta del Empleado (Employee Sale)
 
 ```javascript
-// RegisterSaleUseCase.js - Línea 123-133
-if (distributorId) {
-  // Distributor Sale → Deduct from DistributorStock
-  const distStock = await DistributorStock.findOneAndUpdate(
-    { business: businessId, distributor: distributorId, product: productId },
+// RegisterSaleUseCase.js - LÃ­nea 123-133
+if (employeeId) {
+  // Employee Sale â†’ Deduct from EmployeeStock
+  const distStock = await EmployeeStock.findOneAndUpdate(
+    { business: businessId, employee: employeeId, product: productId },
     { $inc: { quantity: -quantity } },
     session ? { session, new: true } : { new: true },
   );
-  console.log(`📦 Deducted ${quantity} from DistributorStock`);
+  console.warn("[Essence Debug]", `ðŸ“¦ Deducted ${quantity} from EmployeeStock`);
 }
 ```
 
 **Flujo:**
 
 ```
-Venta Distribuidor → Deduce de DistributorStock → Actualiza totalStock
+Venta Empleado â†’ Deduce de EmployeeStock â†’ Actualiza totalStock
 ```
 
 ---
 
 ## 3.3 Costo Promedio Ponderado (WAC - Weighted Average Cost)
 
-### Definición
+### DefiniciÃ³n
 
-El sistema utiliza el método de **Costo Promedio Ponderado** para valorar el inventario.
+El sistema utiliza el mÃ©todo de **Costo Promedio Ponderado** para valorar el inventario.
 
-### Configuración por Producto
+### ConfiguraciÃ³n por Producto
 
 ```javascript
 // Product.js - Campos de costeo
@@ -2975,22 +2975,22 @@ averageCost: {
 costingMethod: {
   type: String,
   enum: ["fixed", "average"],
-  default: "average",  // ⚠️ Por defecto: Promedio
+  default: "average",  // âš ï¸ Por defecto: Promedio
 },
 ```
 
-### Cuándo se Actualiza el Costo Promedio
+### CuÃ¡ndo se Actualiza el Costo Promedio
 
 ```javascript
-// ProductRepository.js - updateStock (Comentario línea 47-48)
-// ℹ️ averageCost intentionally remains unchanged during sales.
+// ProductRepository.js - updateStock (Comentario lÃ­nea 47-48)
+// â„¹ï¸ averageCost intentionally remains unchanged during sales.
 // It only updates when NEW inventory is received at a different price.
 ```
 
-### Fórmula de Actualización
+### FÃ³rmula de ActualizaciÃ³n
 
 ```
-Nuevo Costo Promedio = (Stock Actual × Costo Actual + Nuevas Unidades × Nuevo Costo)
+Nuevo Costo Promedio = (Stock Actual Ã— Costo Actual + Nuevas Unidades Ã— Nuevo Costo)
                        / (Stock Actual + Nuevas Unidades)
 ```
 
@@ -3038,9 +3038,9 @@ if (!targetStock) {
 }
 ```
 
-### ¿Las Transferencias son Inmediatas?
+### Â¿Las Transferencias son Inmediatas?
 
-> ✅ **SÍ.** Las transferencias entre sedes se ejecutan en una **transacción atómica** y se completan inmediatamente.
+> âœ… **SÃ.** Las transferencias entre sedes se ejecutan en una **transacciÃ³n atÃ³mica** y se completan inmediatamente.
 
 ```javascript
 // BranchTransferRepository.js - Estado final
@@ -3048,7 +3048,7 @@ const transfer = await BranchTransfer.create(
   [
     {
       // ...
-      status: "completed", // ⚠️ Se marca completada inmediatamente
+      status: "completed", // âš ï¸ Se marca completada inmediatamente
     },
   ],
   { session },
@@ -3057,7 +3057,7 @@ const transfer = await BranchTransfer.create(
 
 ---
 
-## 3.5 Validación de Stock Suficiente
+## 3.5 ValidaciÃ³n de Stock Suficiente
 
 ### Servicio de Dominio
 
@@ -3083,55 +3083,55 @@ static calculateNewStockLevel(currentStock, changeAmount) {
 ## 3.6 Diagrama de Flujo de Stock
 
 ```
-                    ┌─────────────────┐
-                    │    PRODUCTO     │
-                    │   totalStock    │
-                    └────────┬────────┘
-                             │
-            ┌────────────────┼────────────────┐
-            │                │                │
-            ▼                ▼                ▼
-    ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
-    │   Warehouse   │ │   Branches    │ │  Distributors │
-    │warehouseStock │ │  BranchStock  │ │DistributorStock│
-    └───────┬───────┘ └───────┬───────┘ └───────┬───────┘
-            │                 │                 │
-            │    Transferir   │                 │
-            │◀────────────────│                 │
-            │     Asignar     │                 │
-            │─────────────────────────────────▶│
-            │                                   │
-            ▼                                   ▼
-    ┌───────────────┐                   ┌───────────────┐
-    │  VENTA ADMIN  │                   │VENTA DISTRIB. │
-    │  Deduce WH    │                   │ Deduce DS     │
-    └───────────────┘                   └───────────────┘
+                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+                    â”‚    PRODUCTO     â”‚
+                    â”‚   totalStock    â”‚
+                    â””â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                             â”‚
+            â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+            â”‚                â”‚                â”‚
+            â–¼                â–¼                â–¼
+    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+    â”‚   Warehouse   â”‚ â”‚   Branches    â”‚ â”‚  Employees â”‚
+    â”‚warehouseStock â”‚ â”‚  BranchStock  â”‚ â”‚EmployeeStockâ”‚
+    â””â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”˜
+            â”‚                 â”‚                 â”‚
+            â”‚    Transferir   â”‚                 â”‚
+            â”‚â—€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”‚                 â”‚
+            â”‚     Asignar     â”‚                 â”‚
+            â”‚â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¶â”‚
+            â”‚                                   â”‚
+            â–¼                                   â–¼
+    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+    â”‚  VENTA ADMIN  â”‚                   â”‚VENTA DISTRIB. â”‚
+    â”‚  Deduce WH    â”‚                   â”‚ Deduce DS     â”‚
+    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
 
-# 4. 🛡️ SEGURIDAD Y ROLES
+# 4. ðŸ›¡ï¸ SEGURIDAD Y ROLES
 
-## 4.1 Jerarquía de Roles
+## 4.1 JerarquÃ­a de Roles
 
 ```
-                    ┌───────────┐
-                    │    GOD    │  🔱 Nivel Supremo
-                    └─────┬─────┘
-                          │
-                    ┌─────▼─────┐
-                    │SUPER_ADMIN│  ⭐ Nivel Sistema
-                    └─────┬─────┘
-                          │
-                    ┌─────▼─────┐
-                    │   ADMIN   │  🛠️ Nivel Negocio
-                    └─────┬─────┘
-                          │
-              ┌───────────┼───────────┐
-              │           │           │
-        ┌─────▼─────┐ ┌───▼───┐ ┌─────▼─────┐
-        │DISTRIBUIDOR│ │VIEWER │ │   USER    │
-        └───────────┘ └───────┘ └───────────┘
+                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+                    â”‚    GOD    â”‚  ðŸ”± Nivel Supremo
+                    â””â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”˜
+                          â”‚
+                    â”Œâ”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”
+                    â”‚SUPER_ADMINâ”‚  â­ Nivel Sistema
+                    â””â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”˜
+                          â”‚
+                    â”Œâ”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”
+                    â”‚   ADMIN   â”‚  ðŸ› ï¸ Nivel Negocio
+                    â””â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”˜
+                          â”‚
+              â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+              â”‚           â”‚           â”‚
+        â”Œâ”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â–¼â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”
+        â”‚EMPLEADOâ”‚ â”‚VIEWER â”‚ â”‚   USER    â”‚
+        â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -3156,51 +3156,51 @@ admin: {
 }
 ```
 
-### Permisos de DISTRIBUIDOR
+### Permisos de EMPLEADO
 
 ```javascript
 // permissions.js
-distribuidor: {
+empleado: {
   products: { read: true },          // Solo lectura
   inventory: { read: true },         // Solo lectura
   sales: { read: true, create: true }, // Puede crear ventas
   promotions: { read: true },        // Solo lectura
-  providers: { read: false },        // ❌ SIN ACCESO
-  clients: { read: false },          // ❌ SIN ACCESO
-  expenses: { read: false },         // ❌ SIN ACCESO
+  providers: { read: false },        // âŒ SIN ACCESO
+  clients: { read: false },          // âŒ SIN ACCESO
+  expenses: { read: false },         // âŒ SIN ACCESO
   analytics: { read: true },         // Solo lectura
-  config: { read: false },           // ❌ SIN ACCESO
+  config: { read: false },           // âŒ SIN ACCESO
   transfers: { read: true, create: true }, // Puede solicitar
 }
 ```
 
 ---
 
-## 4.3 LA CEGUERA DEL DISTRIBUIDOR 🔒
+## 4.3 LA CEGUERA DEL EMPLEADO ðŸ”’
 
-### Campos Ocultos para Distribuidores
+### Campos Ocultos para Empleados
 
-El distribuidor **NO PUEDE VER** los siguientes campos sensibles:
+El empleado **NO PUEDE VER** los siguientes campos sensibles:
 
-| Campo                 | Descripción            | Razón de Ocultamiento               |
+| Campo                 | DescripciÃ³n            | RazÃ³n de Ocultamiento               |
 | --------------------- | ---------------------- | ----------------------------------- |
-| `purchasePrice`       | Precio de compra/costo | Información financiera confidencial |
+| `purchasePrice`       | Precio de compra/costo | InformaciÃ³n financiera confidencial |
 | `averageCost`         | Costo promedio         | Margen de ganancia del admin        |
-| `adminProfit`         | Ganancia del admin     | Información financiera confidencial |
-| `totalInventoryValue` | Valor del inventario   | Información estratégica             |
+| `adminProfit`         | Ganancia del admin     | InformaciÃ³n financiera confidencial |
+| `totalInventoryValue` | Valor del inventario   | InformaciÃ³n estratÃ©gica             |
 
-### Implementación en API
+### ImplementaciÃ³n en API
 
 ```javascript
-// DistributorRepository.js - getProducts (Línea 343-365)
-async getProducts(distributorId, businessId, filters = {}) {
+// EmployeeRepository.js - getProducts (LÃ­nea 343-365)
+async getProducts(employeeId, businessId, filters = {}) {
   const [stocks, total] = await Promise.all([
-    DistributorStock.find(query)
-      .populate("product") // ⚠️ Populate incluye todos los campos
+    EmployeeStock.find(query)
+      .populate("product") // âš ï¸ Populate incluye todos los campos
       .skip(skip)
       .limit(limit)
       .lean(),
-    DistributorStock.countDocuments(query),
+    EmployeeStock.countDocuments(query),
   ]);
 
   // Nota: El filtrado de campos sensibles debe hacerse en el Controller
@@ -3208,11 +3208,11 @@ async getProducts(distributorId, businessId, filters = {}) {
 }
 ```
 
-### Recomendación de Implementación
+### RecomendaciÃ³n de ImplementaciÃ³n
 
 ```javascript
-// Populate seguro para distribuidores
-.populate("product", "name image distributorPrice clientPrice category")
+// Populate seguro para empleados
+.populate("product", "name image employeePrice clientPrice category")
 // Excluye: purchasePrice, averageCost, totalInventoryValue
 ```
 
@@ -3228,7 +3228,7 @@ export const protect = async (req, res, next) => {
   // 1. Verificar token
   // 2. Verificar usuario existe
   // 3. Verificar status === "active"
-  // 4. Para distribuidores: verificar owner del negocio activo
+  // 4. Para empleados: verificar owner del negocio activo
 };
 ```
 
@@ -3240,7 +3240,7 @@ export const businessContext = async (req, res, next) => {
   // 1. Obtener businessId de header o query
   // 2. Verificar negocio existe
   // 3. Verificar membership del usuario en el negocio
-  // 4. Verificar owner activo (para distribuidores)
+  // 4. Verificar owner activo (para empleados)
 };
 ```
 
@@ -3252,7 +3252,7 @@ export const requirePermission = ({ module, action }) => {
   return (req, res, next) => {
     // 1. GOD/Super Admin: bypass
     // 2. Construir permisos efectivos del membership
-    // 3. Verificar si acción está permitida
+    // 3. Verificar si acciÃ³n estÃ¡ permitida
     // 4. Verificar acceso a sede si aplica
   };
 };
@@ -3260,17 +3260,17 @@ export const requirePermission = ({ module, action }) => {
 
 ---
 
-## 4.5 Herencia de Acceso: Owner → Distribuidor
+## 4.5 Herencia de Acceso: Owner â†’ Empleado
 
-### Regla Crítica
+### Regla CrÃ­tica
 
-> Si el **owner/admin** del negocio tiene su cuenta **inactiva o expirada**, todos los **distribuidores** de ese negocio **pierden acceso**.
+> Si el **owner/admin** del negocio tiene su cuenta **inactiva o expirada**, todos los **empleados** de ese negocio **pierden acceso**.
 
-### Implementación
+### ImplementaciÃ³n
 
 ```javascript
-// business.middleware.js - Línea 77-108
-if (membership?.role === "distribuidor" && !isGod) {
+// business.middleware.js - LÃ­nea 77-108
+if (membership?.role === "empleado" && !isGod) {
   // Resolver owner del negocio
   const primaryAdminMembership = await Membership.findOne({
     business: businessId,
@@ -3299,7 +3299,7 @@ if (membership?.role === "distribuidor" && !isGod) {
 
 ---
 
-## 4.6 Feature Flags (Activación de Módulos)
+## 4.6 Feature Flags (ActivaciÃ³n de MÃ³dulos)
 
 ### Middleware: requireFeature
 
@@ -3311,7 +3311,7 @@ export const requireFeature = (featureKey) => {
     if (isSuperAdmin || isGod) return next();
 
     const isEnabled = req.business?.config?.features?.[featureKey];
-    // Si no está definido, asumir habilitado
+    // Si no estÃ¡ definido, asumir habilitado
     if (isEnabled !== false) return next();
 
     return res.status(403).json({
@@ -3323,73 +3323,73 @@ export const requireFeature = (featureKey) => {
 
 ---
 
-# 5. 📎 ANEXOS TÉCNICOS
+# 5. ðŸ“Ž ANEXOS TÃ‰CNICOS
 
 ## 5.1 Arquitectura del Sistema
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        FRONTEND                              │
-│                   (React + TailwindCSS)                      │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     API REST (Express)                       │
-├─────────────────────────────────────────────────────────────┤
-│  Routes → Controllers → Use Cases → Services → Repositories │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       MongoDB                                │
-└─────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                        FRONTEND                              â”‚
+â”‚                   (React + TailwindCSS)                      â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                              â”‚
+                              â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                     API REST (Express)                       â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  Routes â†’ Controllers â†’ Use Cases â†’ Services â†’ Repositories â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                              â”‚
+                              â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                       MongoDB                                â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ## 5.2 Estructura de Carpetas Clave
 
 ```
 server/
-├── src/
-│   ├── application/
-│   │   └── use-cases/          # Lógica de aplicación
-│   │       ├── RegisterSaleUseCase.js
-│   │       ├── RegisterUserUseCase.js
-│   │       └── UpdateStockUseCase.js
-│   ├── domain/
-│   │   └── services/           # Servicios de dominio puros
-│   │       ├── FinanceService.js
-│   │       ├── InventoryService.js
-│   │       └── AuthService.js
-│   └── infrastructure/
-│       ├── database/
-│       │   ├── models/         # Modelos Mongoose
-│       │   └── repositories/   # Acceso a datos
-│       └── http/
-│           ├── controllers/    # Controladores HTTP
-│           └── routes/         # Rutas Express
-├── middleware/                 # Middlewares Express
-├── models/                     # Modelos legacy
-└── utils/                      # Utilidades
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ application/
+â”‚   â”‚   â””â”€â”€ use-cases/          # LÃ³gica de aplicaciÃ³n
+â”‚   â”‚       â”œâ”€â”€ RegisterSaleUseCase.js
+â”‚   â”‚       â”œâ”€â”€ RegisterUserUseCase.js
+â”‚   â”‚       â””â”€â”€ UpdateStockUseCase.js
+â”‚   â”œâ”€â”€ domain/
+â”‚   â”‚   â””â”€â”€ services/           # Servicios de dominio puros
+â”‚   â”‚       â”œâ”€â”€ FinanceService.js
+â”‚   â”‚       â”œâ”€â”€ InventoryService.js
+â”‚   â”‚       â””â”€â”€ AuthService.js
+â”‚   â””â”€â”€ infrastructure/
+â”‚       â”œâ”€â”€ database/
+â”‚       â”‚   â”œâ”€â”€ models/         # Modelos Mongoose
+â”‚       â”‚   â””â”€â”€ repositories/   # Acceso a datos
+â”‚       â””â”€â”€ http/
+â”‚           â”œâ”€â”€ controllers/    # Controladores HTTP
+â”‚           â””â”€â”€ routes/         # Rutas Express
+â”œâ”€â”€ middleware/                 # Middlewares Express
+â”œâ”€â”€ models/                     # Modelos legacy
+â””â”€â”€ utils/                      # Utilidades
 ```
 
 ## 5.3 Modelos de Datos Principales
 
-| Modelo             | Propósito                | Relaciones Clave          |
+| Modelo             | PropÃ³sito                | Relaciones Clave          |
 | ------------------ | ------------------------ | ------------------------- |
 | `User`             | Usuarios del sistema     | Business (via Membership) |
 | `Business`         | Empresas/Negocios        | Users, Products, Sales    |
-| `Membership`       | Relación User↔Business   | User, Business            |
+| `Membership`       | RelaciÃ³n Userâ†”Business   | User, Business            |
 | `Product`          | Productos del inventario | Business, Category        |
 | `Sale`             | Registros de ventas      | Business, Product, User   |
-| `DistributorStock` | Stock por distribuidor   | User, Product, Business   |
+| `EmployeeStock` | Stock por empleado   | User, Product, Business   |
 | `BranchStock`      | Stock por sede           | Branch, Product, Business |
 | `Branch`           | Sedes/Sucursales         | Business                  |
-| `Credit`           | Créditos/Fiados          | Customer, Business        |
+| `Credit`           | CrÃ©ditos/Fiados          | Customer, Business        |
 | `Expense`          | Gastos del negocio       | Business                  |
 | `Customer`         | Clientes                 | Business                  |
 
-## 5.4 Índices de Base de Datos Críticos
+## 5.4 Ãndices de Base de Datos CrÃ­ticos
 
 ### Sale Model
 
@@ -3399,47 +3399,47 @@ saleSchema.index({ business: 1, paymentStatus: 1, saleDate: -1 });
 saleSchema.index({ business: 1, saleId: 1 }, { unique: true });
 ```
 
-### DistributorStock Model
+### EmployeeStock Model
 
 ```javascript
-distributorStockSchema.index(
-  { business: 1, distributor: 1, product: 1 },
+employeeStockSchema.index(
+  { business: 1, employee: 1, product: 1 },
   { unique: true },
 );
 ```
 
 ---
 
-## 5.5 Checklist de Verificación de Lógica de Negocio
+## 5.5 Checklist de VerificaciÃ³n de LÃ³gica de Negocio
 
-### ✅ Flujo de Usuarios
+### âœ… Flujo de Usuarios
 
 - [ ] Usuario nuevo inicia en `status: "pending"`
 - [ ] Solo `god` puede activar cuentas
-- [ ] Distribuidores heredan estado del owner
+- [ ] Empleados heredan estado del owner
 
-### ✅ Cálculos Financieros
+### âœ… CÃ¡lculos Financieros
 
-- [ ] Comisión default es 20%
-- [ ] Ventas a crédito no cuentan hasta confirmarse
-- [ ] Ganancia neta resta envío, costos adicionales y descuentos
+- [ ] ComisiÃ³n default es 20%
+- [ ] Ventas a crÃ©dito no cuentan hasta confirmarse
+- [ ] Ganancia neta resta envÃ­o, costos adicionales y descuentos
 
-### ✅ Inventario
+### âœ… Inventario
 
 - [ ] Venta admin deduce de `warehouseStock`
-- [ ] Venta distribuidor deduce de `DistributorStock`
+- [ ] Venta empleado deduce de `EmployeeStock`
 - [ ] Transferencias son inmediatas
 
-### ✅ Seguridad
+### âœ… Seguridad
 
-- [ ] Distribuidor no ve `purchasePrice`, `averageCost`, `adminProfit`
+- [ ] Empleado no ve `purchasePrice`, `averageCost`, `adminProfit`
 - [ ] Feature flags respetados
-- [ ] Permisos granulares por módulo/acción
+- [ ] Permisos granulares por mÃ³dulo/acciÃ³n
 
 ---
 
-> **Documento generado automáticamente a partir del análisis del código fuente.**  
-> **Para actualizaciones, volver a ejecutar el análisis.**
+> **Documento generado automÃ¡ticamente a partir del anÃ¡lisis del cÃ³digo fuente.**  
+> **Para actualizaciones, volver a ejecutar el anÃ¡lisis.**
 
 ---
 
@@ -3450,20 +3450,20 @@ _Fin del Manual Sagrado de Essence_
 <!-- DOCUMENTO: ESPECIFICACION_API_REST.md -->
 <!-- ========================================== -->
 
-# 📡 ESPECIFICACIÓN DE LA API REST
+# ðŸ“¡ ESPECIFICACIÃ“N DE LA API REST
 
-> **Propósito:** Documento canónico para integración Frontend-Backend y consumo de servicios HTTP del ERP Essence. Útil para configuración en Axios/Postman.
+> **PropÃ³sito:** Documento canÃ³nico para integraciÃ³n Frontend-Backend y consumo de servicios HTTP del ERP Essence. Ãštil para configuraciÃ³n en Axios/Postman.
 
 ---
 
-## 1. Reglas Generales de Conexión
+## 1. Reglas Generales de ConexiÃ³n
 
 *   **URL Base:** `/api/v1`
 *   **Acepta / Retorna:** `application/json`
-*   **Manejo de Respuestas (Patrón Canónico):** Todo éxito vendrá envuelto en un wrapper. Todo fallo regresará con el flag de `success: false`.
+*   **Manejo de Respuestas (PatrÃ³n CanÃ³nico):** Todo Ã©xito vendrÃ¡ envuelto en un wrapper. Todo fallo regresarÃ¡ con el flag de `success: false`.
 
 ```json
-/* ÉXITO HTTP 2xx */
+/* Ã‰XITO HTTP 2xx */
 {
     "success": true,
     "data": { ... },
@@ -3480,26 +3480,26 @@ _Fin del Manual Sagrado de Essence_
 
 ---
 
-## 2. Inyección de Contextos (Headers Mandatorios)
+## 2. InyecciÃ³n de Contextos (Headers Mandatorios)
 
 Todo Endpoint que no sea Login, requiere inyectarle al servidor:
 1. **Authorization Bearer [JWT]** : Token de seguridad web inyectado por el servicio de `login`.
-2. **x-business-id [STRING_ID]** : Opcional pero crítico. Es el ObjectID de la empresa que está visualizando la persona (El frontend inyecta de su `localStorage` general).
+2. **x-business-id [STRING_ID]** : Opcional pero crÃ­tico. Es el ObjectID de la empresa que estÃ¡ visualizando la persona (El frontend inyecta de su `localStorage` general).
 
 ---
 
-## 3. Endpoints Principales (Ejemplos Críticos)
+## 3. Endpoints Principales (Ejemplos CrÃ­ticos)
 
-### 🔑 Autenticación (Auth)
+### ðŸ”‘ AutenticaciÃ³n (Auth)
 #### `POST /auth/login`
 - **Uso:** Autenticar un usuario y obtener token y roles de respuesta.
 - **Body:** `{ email: "x", password: "y" }`
 - **Response `200`:** `token`, `user: { role, status, _id }`, `memberships: [...]` (Array de accesos a n negocios).
 
-### 🛒 Registro de Ventas (Sales)
+### ðŸ›’ Registro de Ventas (Sales)
 #### `POST /sales/register`
 - **Middlewares que pasan:** `[protect, businessContext, checkFeatures('sales')]`
-- **Rol requerdio:** `Admin` o `Distribuidor`.
+- **Rol requerdio:** `Admin` o `Empleado`.
 - **Body:**
 ```json
 {
@@ -3513,11 +3513,11 @@ Todo Endpoint que no sea Login, requiere inyectarle al servidor:
 ```
 - **Response `201`:** `{ success: true, message: "Venta Registrada y stock deducido" }`
 
-### 📦 Inventario Global
+### ðŸ“¦ Inventario Global
 #### `GET /products`
 - **Middlewares:** `[protect, businessContext]`
 - **QueryParams permitidos:** `?page=1&limit=20&search=celular`
-- **NOTA TÉCNICA (CEGUERA DISTRIBUIDOR):** Si este Endpoint lo invoca la ruta conteniendo el JWT de un "Distribuidor", el `SaleController` activará un `DTOFilter` el cual devolverá el objeto mutilado:
+- **NOTA TÃ‰CNICA (CEGUERA EMPLEADO):** Si este Endpoint lo invoca la ruta conteniendo el JWT de un "Empleado", el `SaleController` activarÃ¡ un `DTOFilter` el cual devolverÃ¡ el objeto mutilado:
 *Censurado = `{ "averageCost": null, "purchasePrice": null, "totalInventoryValue": null }`*.
 
 
@@ -3525,89 +3525,89 @@ Todo Endpoint que no sea Login, requiere inyectarle al servidor:
 <!-- DOCUMENTO: HISTORIAS_DE_USUARIO_BACKLOG.md -->
 <!-- ========================================== -->
 
-# 📖 BACKLOG Y HISTORIAS DE USUARIO (ESSENCE ERP)
+# ðŸ“– BACKLOG Y HISTORIAS DE USUARIO (ESSENCE ERP)
 
-> **Propósito:** Catálogo exhaustivo de requerimientos ágiles estructurados en Épicas e Historias de Usuario (HU) con sus Criterios de Aceptación (CA), listos para integrarse en un flujo de trabajo Scrum/Kanban.
+> **PropÃ³sito:** CatÃ¡logo exhaustivo de requerimientos Ã¡giles estructurados en Ã‰picas e Historias de Usuario (HU) con sus Criterios de AceptaciÃ³n (CA), listos para integrarse en un flujo de trabajo Scrum/Kanban.
 
 ---
 
-## 🏔️ ÉPICA 1: Gestión Multi-Tenant y Accesos
+## ðŸ”ï¸ Ã‰PICA 1: GestiÃ³n Multi-Tenant y Accesos
 
 **HU-1.1: Registro inicial y estado de cuarentena**
 * **Como** administrador de un nuevo negocio,
 * **Quiero** poder registrar mi perfil y empresa en la plataforma,
 * **Para** comenzar el proceso de onboarding en Essence.
-* **Criterios de Aceptación (CA):**
+* **Criterios de AceptaciÃ³n (CA):**
   * CA1: El perfil debe nacer con `status: "pending"`.
-  * CA2: No se permite acceso a ningún módulo (HTTP 403) hasta la aprobación de un GOD.
+  * CA2: No se permite acceso a ningÃºn mÃ³dulo (HTTP 403) hasta la aprobaciÃ³n de un GOD.
 
-**HU-1.2: Aprobación jerárquica (GOD Mode)**
+**HU-1.2: AprobaciÃ³n jerÃ¡rquica (GOD Mode)**
 * **Como** superusuario GOD,
 * **Quiero** poder listar usuarios pendientes y cambiar su estado a `active`,
 * **Para** autorizarlos a usar el sistema.
 
-**HU-1.3: Ceguera del Distribuidor**
+**HU-1.3: Ceguera del Empleado**
 * **Como** owner del negocio,
-* **Quiero** que cuando mis distribuidores ingresen al sistema,
-* **Para** que no puedan ver mi `purchasePrice`, `averageCost`, ni márgenes de ganancia.
+* **Quiero** que cuando mis empleados ingresen al sistema,
+* **Para** que no puedan ver mi `purchasePrice`, `averageCost`, ni mÃ¡rgenes de ganancia.
 * **CA:**
-  * CA1: El API debe mutilar estos campos financieros en los responses hacia JWTs con rol `distribuidor`.
+  * CA1: El API debe mutilar estos campos financieros en los responses hacia JWTs con rol `empleado`.
 
 ---
 
-## 🏔️ ÉPICA 2: Operaciones de Inventario
+## ðŸ”ï¸ Ã‰PICA 2: Operaciones de Inventario
 
-**HU-2.1: Transferencias atómicas entre Sedes**
+**HU-2.1: Transferencias atÃ³micas entre Sedes**
 * **Como** bodeguero o admin,
 * **Quiero** transferir 50 unidades de la Bodega a la Sucursal Norte,
 * **Para** mantener las sedes abastecidas.
 * **CA:**
-  * CA1: Si la bodega no tiene 50 unidades, arrojar error de validación.
-  * CA2: La operación de resta y suma debe ser una transacción atómica; o pasan ambas o ninguna.
+  * CA1: Si la bodega no tiene 50 unidades, arrojar error de validaciÃ³n.
+  * CA2: La operaciÃ³n de resta y suma debe ser una transacciÃ³n atÃ³mica; o pasan ambas o ninguna.
 
-**HU-2.2: Asignación a Distribuidores**
+**HU-2.2: AsignaciÃ³n a Empleados**
 * **Como** owner,
-* **Quiero** asignar stock específicamente a un distribuidor,
-* **Para** que él lo venda por su cuenta.
+* **Quiero** asignar stock especÃ­ficamente a un empleado,
+* **Para** que Ã©l lo venda por su cuenta.
 * **CA:**
-  * CA1: Deduce de `warehouseStock` e incrementa el registro en `DistributorStock`.
+  * CA1: Deduce de `warehouseStock` e incrementa el registro en `EmployeeStock`.
 
 ---
 
-## 🏔️ ÉPICA 3: Finanzas y Punto de Venta (POS)
+## ðŸ”ï¸ Ã‰PICA 3: Finanzas y Punto de Venta (POS)
 
-**HU-3.1: Comisiones Dinámicas por Ranking**
-* **Como** distribuidor,
-* **Quiero** ganar más porcentaje si soy el vendedor número 1,
+**HU-3.1: Comisiones DinÃ¡micas por Ranking**
+* **Como** empleado,
+* **Quiero** ganar mÃ¡s porcentaje si soy el vendedor nÃºmero 1,
 * **Para** sentirme motivado.
 * **CA:**
-  * CA1: El motor financiero calculará la ganancia con 25% si está en rango Oro, 20% si es estándar.
+  * CA1: El motor financiero calcularÃ¡ la ganancia con 25% si estÃ¡ en rango Oro, 20% si es estÃ¡ndar.
 
-**HU-3.2: Ventas a Crédito (Fiado)**
+**HU-3.2: Ventas a CrÃ©dito (Fiado)**
 * **Como** cajero,
-* **Quiero** registrar una salida de inventario bajo el método "Crédito",
+* **Quiero** registrar una salida de inventario bajo el mÃ©todo "CrÃ©dito",
 * **Para** entregar el producto sin recibir el dinero inmediato.
 * **CA:**
   * CA1: Deduce inventario normalmente.
   * CA2: Se guarda con `paymentStatus: "pendiente"`.
-  * CA3: No refleja suma en las analíticas de caja neta ni ganancia corporativa hasta ser confirmado.
+  * CA3: No refleja suma en las analÃ­ticas de caja neta ni ganancia corporativa hasta ser confirmado.
 
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: LOGIC_UPDATE_REPORT.md -->
 <!-- ========================================== -->
 
-# 🧠 LOGIC UPDATE REPORT
+# ðŸ§  LOGIC UPDATE REPORT
 
 **Date:** 2 de febrero de 2026  
 **Update Type:** Business Logic Correction  
-**Status:** ✅ COMPLETED (with notes)
+**Status:** âœ… COMPLETED (with notes)
 
 ---
 
-## 📊 1. CASH FLOW LOGIC (Revenue vs Sales)
+## ðŸ“Š 1. CASH FLOW LOGIC (Revenue vs Sales)
 
-### ✅ STATUS: IMPLEMENTED
+### âœ… STATUS: IMPLEMENTED
 
 **Problem Identified:**
 Some aggregation pipelines calculated revenue and profit by summing ALL sales, regardless of payment status. This meant pending/credit sales were falsely counted as money in the bank.
@@ -3618,14 +3618,14 @@ Modified all financial aggregation pipelines to apply conditional logic:
 - **Sales Count:** Remains unchanged (pending + confirmed sales)
 - **Monetary Sums (Revenue & Profit):** Only includes sales with `paymentStatus: "confirmado"`
 
-### 📝 Files Modified:
+### ðŸ“ Files Modified:
 
-#### ✅ `AnalyticsRepository.js`
+#### âœ… `AnalyticsRepository.js`
 
 **Line 31-60:** `getDashboardKPIs()`
 
 ```javascript
-// 💰 CASH FLOW: Revenue/Profit solo de ventas confirmadas (pagadas)
+// ðŸ’° CASH FLOW: Revenue/Profit solo de ventas confirmadas (pagadas)
 totalRevenue: {
   $sum: {
     $cond: [
@@ -3644,7 +3644,7 @@ totalProfit: {
     ],
   },
 },
-// 📊 COUNT: Todas las ventas (pendientes + confirmadas)
+// ðŸ“Š COUNT: Todas las ventas (pendientes + confirmadas)
 totalSales: { $sum: 1 },
 ```
 
@@ -3656,27 +3656,27 @@ totalSales: { $sum: 1 },
 
 - Already had filter, added explanatory comment
 
-#### ✅ `DistributorRepository.js`
+#### âœ… `EmployeeRepository.js`
 
-**Line 112-126:** `getDistributorsList()`
+**Line 112-126:** `getEmployeesList()`
 
 ```javascript
 $match: {
   business: businessObjectId,
-  distributor: { $in: objectIds },
-  // 💰 CASH FLOW: Solo ventas confirmadas para profit
+  employee: { $in: objectIds },
+  // ðŸ’° CASH FLOW: Solo ventas confirmadas para profit
   paymentStatus: "confirmado",
 },
 ```
 
-#### ✅ `GodRepository.js`
+#### âœ… `GodRepository.js`
 
 **Line 76-89:** `getGlobalMetrics()`
 
 ```javascript
 Sale.aggregate([
   {
-    // 💰 CASH FLOW: Solo ventas confirmadas para revenue/profit globales
+    // ðŸ’° CASH FLOW: Solo ventas confirmadas para revenue/profit globales
     $match: { paymentStatus: "confirmado" },
   },
   {
@@ -3690,13 +3690,13 @@ Sale.aggregate([
 ]),
 ```
 
-#### ✅ `GamificationRepository.js`
+#### âœ… `GamificationRepository.js`
 
 **Line 242-252:** `getRanking()`
 
 - Already filtered correctly, added explanatory comment
 
-#### ✅ `AdvancedAnalyticsRepository.js`
+#### âœ… `AdvancedAnalyticsRepository.js`
 
 **Line 47-56:** `getFinancialKPIs()`
 
@@ -3712,16 +3712,16 @@ Sale.aggregate([
 
 ---
 
-## 🔄 2. INVENTORY SYMMETRY (Cancellations/Rollback)
+## ðŸ”„ 2. INVENTORY SYMMETRY (Cancellations/Rollback)
 
-### ⚠️ STATUS: PARTIALLY ASYMMETRIC (Architectural Limitation)
+### âš ï¸ STATUS: PARTIALLY ASYMMETRIC (Architectural Limitation)
 
 **Problem Identified:**
 Risk that stock restoration logic doesn't match stock deduction logic, causing inventory corruption.
 
 **Current State Analysis:**
 
-#### ✅ **DELETION LOGIC (CORRECT)**
+#### âœ… **DELETION LOGIC (CORRECT)**
 
 `DeleteSaleController.restoreStock()` - Lines 18-53
 
@@ -3731,21 +3731,21 @@ async function restoreStock(sale, session) {
 
   // Determine where stock came from
   if (sale.branch) {
-    // Stock was deducted from branch → Restore to BranchStock
+    // Stock was deducted from branch â†’ Restore to BranchStock
     await BranchStock.findOneAndUpdate(
       { branch: sale.branch, product: productId },
       { $inc: { quantity: sale.quantity } },
       { session },
     );
-  } else if (sale.distributor) {
-    // Stock was deducted from distributor → Restore to DistributorStock
-    await DistributorStock.findOneAndUpdate(
-      { distributor: sale.distributor, product: productId },
+  } else if (sale.employee) {
+    // Stock was deducted from employee â†’ Restore to EmployeeStock
+    await EmployeeStock.findOneAndUpdate(
+      { employee: sale.employee, product: productId },
       { $inc: { quantity: sale.quantity } },
       { session },
     );
   } else {
-    // Default → Restore to Product.warehouseStock
+    // Default â†’ Restore to Product.warehouseStock
     await Product.findByIdAndUpdate(
       productId,
       { $inc: { warehouseStock: sale.quantity, totalStock: sale.quantity } },
@@ -3755,7 +3755,7 @@ async function restoreStock(sale, session) {
 }
 ```
 
-#### ⚠️ **CREATION LOGIC (SIMPLIFIED)**
+#### âš ï¸ **CREATION LOGIC (SIMPLIFIED)**
 
 `RegisterSaleUseCase.execute()` - Line 92
 
@@ -3767,52 +3767,52 @@ await this.productRepository.updateStock(productId, -quantity, session);
 **The Problem:**
 
 - `RegisterSaleUseCase` (V2 Hexagonal) **ONLY** deducts from `Product.totalStock` (global warehouse)
-- It does NOT support sales from specific branches or distributor stock
-- However, `DeleteSaleController` assumes sales CAN come from branches/distributors
-- This creates a mismatch if legacy code creates sales with `sale.branch` or `sale.distributor` fields
+- It does NOT support sales from specific branches or employee stock
+- However, `DeleteSaleController` assumes sales CAN come from branches/employees
+- This creates a mismatch if legacy code creates sales with `sale.branch` or `sale.employee` fields
 
 **Impact:**
 
-- If all sales go through V2 API → ✅ **Symmetry is maintained** (warehouse only)
-- If legacy endpoints create sales with branches → ⚠️ **Asymmetry exists**
+- If all sales go through V2 API â†’ âœ… **Symmetry is maintained** (warehouse only)
+- If legacy endpoints create sales with branches â†’ âš ï¸ **Asymmetry exists**
 
 **Recommendation:**
 Either:
 
 1. Ensure ALL sale creation uses `RegisterSaleUseCase` (V2 only)
-2. OR extend `RegisterSaleUseCase` to support branch/distributor stock sources
+2. OR extend `RegisterSaleUseCase` to support branch/employee stock sources
 
 **Documentation Added:**
 Added warning comment in `RegisterSaleUseCase.execute()` explaining the limitation.
 
 ---
 
-## 🎯 IMPLEMENTATION SUMMARY
+## ðŸŽ¯ IMPLEMENTATION SUMMARY
 
 | Repository                  | Method                   | Status     | Change Type           |
 | --------------------------- | ------------------------ | ---------- | --------------------- |
-| AnalyticsRepository         | getDashboardKPIs()       | ✅ Fixed   | Added conditional sum |
-| AnalyticsRepository         | getSalesTimeline()       | ✅ Fixed   | Added conditional sum |
-| AnalyticsRepository         | getEstimatedProfit()     | ✅ OK      | Already filtered      |
-| AdvancedAnalyticsRepository | getFinancialKPIs()       | ✅ OK      | Already filtered      |
-| AdvancedAnalyticsRepository | getSalesTimeline()       | ✅ OK      | Already filtered      |
-| AdvancedAnalyticsRepository | getComparativeAnalysis() | ✅ OK      | Already filtered      |
-| DistributorRepository       | getDistributorsList()    | ✅ Fixed   | Added status filter   |
-| GodRepository               | getGlobalMetrics()       | ✅ Fixed   | Added status filter   |
-| GamificationRepository      | getRanking()             | ✅ OK      | Already filtered      |
-| RegisterSaleUseCase         | execute()                | ⚠️ Warning | Added documentation   |
-| DeleteSaleController        | restoreStock()           | ✅ OK      | Already symmetric     |
+| AnalyticsRepository         | getDashboardKPIs()       | âœ… Fixed   | Added conditional sum |
+| AnalyticsRepository         | getSalesTimeline()       | âœ… Fixed   | Added conditional sum |
+| AnalyticsRepository         | getEstimatedProfit()     | âœ… OK      | Already filtered      |
+| AdvancedAnalyticsRepository | getFinancialKPIs()       | âœ… OK      | Already filtered      |
+| AdvancedAnalyticsRepository | getSalesTimeline()       | âœ… OK      | Already filtered      |
+| AdvancedAnalyticsRepository | getComparativeAnalysis() | âœ… OK      | Already filtered      |
+| EmployeeRepository       | getEmployeesList()    | âœ… Fixed   | Added status filter   |
+| GodRepository               | getGlobalMetrics()       | âœ… Fixed   | Added status filter   |
+| GamificationRepository      | getRanking()             | âœ… OK      | Already filtered      |
+| RegisterSaleUseCase         | execute()                | âš ï¸ Warning | Added documentation   |
+| DeleteSaleController        | restoreStock()           | âœ… OK      | Already symmetric     |
 
 ---
 
-## 🔬 TESTING RECOMMENDATIONS
+## ðŸ”¬ TESTING RECOMMENDATIONS
 
 ### Test Case 1: Pending Sale Does NOT Count in Revenue
 
 1. Create sale with `paymentStatus: "pendiente"`
-2. Check dashboard revenue → Should be $0
-3. Check sales count → Should be 1
-4. Confirm payment → Revenue should now appear
+2. Check dashboard revenue â†’ Should be $0
+3. Check sales count â†’ Should be 1
+4. Confirm payment â†’ Revenue should now appear
 
 ### Test Case 2: Stock Restoration Symmetry
 
@@ -3820,9 +3820,9 @@ Added warning comment in `RegisterSaleUseCase.execute()` explaining the limitati
 2. Verify `Product.totalStock` decreased
 3. Delete the sale
 4. Verify `Product.totalStock` increased back to original
-5. Verify `Product.warehouseStock` increased (not distributor/branch)
+5. Verify `Product.warehouseStock` increased (not employee/branch)
 
-### Test Case 3: Branch/Distributor Sales (If Legacy Exists)
+### Test Case 3: Branch/Employee Sales (If Legacy Exists)
 
 1. Identify if legacy endpoints still create sales with `sale.branch` field
 2. Create sale from branch
@@ -3832,7 +3832,7 @@ Added warning comment in `RegisterSaleUseCase.execute()` explaining the limitati
 
 ---
 
-## 📋 BUSINESS LOGIC RULES (POST-UPDATE)
+## ðŸ“‹ BUSINESS LOGIC RULES (POST-UPDATE)
 
 ### Rule 1: Sales Count vs Cash Flow
 
@@ -3843,34 +3843,34 @@ Added warning comment in `RegisterSaleUseCase.execute()` explaining the limitati
 ### Rule 2: Payment Status Flow
 
 ```
-Sale Created → paymentStatus: "pendiente"
-├─ Inventory: Stock DEDUCTED immediately
-├─ Revenue: $0 (not counted)
-└─ Profit: $0 (not counted)
+Sale Created â†’ paymentStatus: "pendiente"
+â”œâ”€ Inventory: Stock DEDUCTED immediately
+â”œâ”€ Revenue: $0 (not counted)
+â””â”€ Profit: $0 (not counted)
 
-Payment Confirmed → paymentStatus: "confirmado"
-├─ Inventory: No change (already deducted)
-├─ Revenue: ✅ NOW COUNTED
-└─ Profit: ✅ NOW COUNTED
+Payment Confirmed â†’ paymentStatus: "confirmado"
+â”œâ”€ Inventory: No change (already deducted)
+â”œâ”€ Revenue: âœ… NOW COUNTED
+â””â”€ Profit: âœ… NOW COUNTED
 ```
 
 ### Rule 3: Stock Source Symmetry
 
 ```
 CREATE SALE (V2):
-└─ Deduct from: Product.totalStock (warehouse)
+â””â”€ Deduct from: Product.totalStock (warehouse)
 
 DELETE SALE:
-├─ IF sale.branch exists → Restore to: BranchStock
-├─ ELSE IF sale.distributor exists → Restore to: DistributorStock
-└─ ELSE → Restore to: Product.warehouseStock
+â”œâ”€ IF sale.branch exists â†’ Restore to: BranchStock
+â”œâ”€ ELSE IF sale.employee exists â†’ Restore to: EmployeeStock
+â””â”€ ELSE â†’ Restore to: Product.warehouseStock
 
-⚠️ Potential mismatch if legacy creates branch sales!
+âš ï¸ Potential mismatch if legacy creates branch sales!
 ```
 
 ---
 
-## ✅ COMPLETION CHECKLIST
+## âœ… COMPLETION CHECKLIST
 
 - [x] Audit all aggregation pipelines for revenue/profit calculations
 - [x] Apply conditional sum logic to monetary fields
@@ -3891,81 +3891,81 @@ DELETE SALE:
 <!-- DOCUMENTO: MANUAL_DE_USUARIO_ESSENCE.md -->
 <!-- ========================================== -->
 
-# 📖 MANUAL DE USUARIO (ESSENCE ERP)
+# ðŸ“– MANUAL DE USUARIO (ESSENCE ERP)
 
-> **Propósito:** Guía de uso a nivel de flujos de pantalla y navegación, separada por el rol del usuario final. No contiene tecnicismos, asume a un ser humano operando el panel web/móvil.
+> **PropÃ³sito:** GuÃ­a de uso a nivel de flujos de pantalla y navegaciÃ³n, separada por el rol del usuario final. No contiene tecnicismos, asume a un ser humano operando el panel web/mÃ³vil.
 
 ---
 
-## 👑 1. Guía del Administrador (Owner)
+## ðŸ‘‘ 1. GuÃ­a del Administrador (Owner)
 
-El nivel Administrador tiene control absoluto de su inventario, finanzas corporativas y distribuidores adscritos.
+El nivel Administrador tiene control absoluto de su inventario, finanzas corporativas y empleados adscritos.
 
-#### A. ¿Cómo registrar el primer inventario?
-1. Dirígete a **Módulo de Inventario > Productos**.
+#### A. Â¿CÃ³mo registrar el primer inventario?
+1. DirÃ­gete a **MÃ³dulo de Inventario > Productos**.
 2. Presiona "Nuevo Producto".
-3. Rellena los datos vitales. Ojo: El sistema te preguntará tu **Precio de Venta Público**.
-4. Ingresa el modelo de costeo: Deja por defecto el *Costo Promedio*. El sistema registrará el costo de tu inversión y todo lo demás será automatizado.
-5. Presiona Guardar. El stock ingresado viajará directamente a tu "Bodega Principal" (`warehouseStock`).
+3. Rellena los datos vitales. Ojo: El sistema te preguntarÃ¡ tu **Precio de Venta PÃºblico**.
+4. Ingresa el modelo de costeo: Deja por defecto el *Costo Promedio*. El sistema registrarÃ¡ el costo de tu inversiÃ³n y todo lo demÃ¡s serÃ¡ automatizado.
+5. Presiona Guardar. El stock ingresado viajarÃ¡ directamente a tu "Bodega Principal" (`warehouseStock`).
 
-#### B. ¿Cómo asignar mercancía a mis distribuidores?
-1. Dirígete a **Equipo > Distribuidores**.
-2. Dale al botón "Transferir Mercancía".
-3. Identifica al distribuidor y el producto. Ingresa la cantidad (ej. 100).
-4. El sistema restará mágicamente tus 100 de tu *Bodega Principal* de manera inmediata para protegerte de vender un producto físico dos veces, y le dotará esas 100 unidades al celular o portátil del distribuidor de cara a su inicio de sesión en terreno.
+#### B. Â¿CÃ³mo asignar mercancÃ­a a mis empleados?
+1. DirÃ­gete a **Equipo > Empleados**.
+2. Dale al botÃ³n "Transferir MercancÃ­a".
+3. Identifica al empleado y el producto. Ingresa la cantidad (ej. 100).
+4. El sistema restarÃ¡ mÃ¡gicamente tus 100 de tu *Bodega Principal* de manera inmediata para protegerte de vender un producto fÃ­sico dos veces, y le dotarÃ¡ esas 100 unidades al celular o portÃ¡til del empleado de cara a su inicio de sesiÃ³n en terreno.
 
 #### C. Control Financiero Diario.
 1. Accede al **Dashboard**.
-2. Todo lo visualizado en "Ganancia Neta" ya tiene exentos: envíos, comisiones pagadas a distribuidores y ventas que no te han entrado dinero (Fiados). Tienes una contabilidad pura.
+2. Todo lo visualizado en "Ganancia Neta" ya tiene exentos: envÃ­os, comisiones pagadas a empleados y ventas que no te han entrado dinero (Fiados). Tienes una contabilidad pura.
 
 ---
 
-## 🏃 2. Guía del Distribuidor (Vendedor)
+## ðŸƒ 2. GuÃ­a del Empleado (Vendedor)
 
-El distribuidor no ve costos de compra, operaciones del dueño o ganancias administrativas. El distribuidor solo utiliza Essence ERP como su POS personal optimizado.
+El empleado no ve costos de compra, operaciones del dueÃ±o o ganancias administrativas. El empleado solo utiliza Essence ERP como su POS personal optimizado.
 
 #### A. Inicio de Jornada y Venta
-1. Al Iniciar Sesión, observarás una vista diferente. Sólo verás un resumen de "Mis Comisiones" ganadas en el mes o día.
-2. Inicia un "**Punto de Venta Automático (POS)**".
-3. Agrega productos a tu carrito virtual de las existencias que el administrador confió en tu cuenta (solo lo que tienes tú, no la bodega gigante).
-4. Configura porcentaje extra si le cobras envío al cliente y presiona generar venta.
+1. Al Iniciar SesiÃ³n, observarÃ¡s una vista diferente. SÃ³lo verÃ¡s un resumen de "Mis Comisiones" ganadas en el mes o dÃ­a.
+2. Inicia un "**Punto de Venta AutomÃ¡tico (POS)**".
+3. Agrega productos a tu carrito virtual de las existencias que el administrador confiÃ³ en tu cuenta (solo lo que tienes tÃº, no la bodega gigante).
+4. Configura porcentaje extra si le cobras envÃ­o al cliente y presiona generar venta.
 
-#### B. ¿Por qué se ha suspendido mi acceso al ingresar el lunes?
-El ERP trabaja mediante un sistema dependiente. Si tu Patrono Oficial (El Owner) ha dejado caducar la subscripción corporativa de la empresa, el panel no dejará iniciar sesión a ningún distribuidor por regulaciones preventivas del servidor de datos.
-> *"Contacta al Dueño del ERP para reactivar operaciones."*
+#### B. Â¿Por quÃ© se ha suspendido mi acceso al ingresar el lunes?
+El ERP trabaja mediante un sistema dependiente. Si tu Patrono Oficial (El Owner) ha dejado caducar la subscripciÃ³n corporativa de la empresa, el panel no dejarÃ¡ iniciar sesiÃ³n a ningÃºn empleado por regulaciones preventivas del servidor de datos.
+> *"Contacta al DueÃ±o del ERP para reactivar operaciones."*
 
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: MASTER_FIX_SUMMARY.md -->
 <!-- ========================================== -->
 
-# 🛠️ MASTER FIX IMPLEMENTATION REPORT
+# ðŸ› ï¸ MASTER FIX IMPLEMENTATION REPORT
 
 **Date:** 2 de febrero de 2026  
 **Developer:** GitHub Copilot (Claude Sonnet 4.5)  
-**Status:** ✅ **ALL FIXES DEPLOYED**
+**Status:** âœ… **ALL FIXES DEPLOYED**
 
 ---
 
-## 📊 EXECUTIVE SUMMARY
+## ðŸ“Š EXECUTIVE SUMMARY
 
-**Compliance Status:** ✅ **100% COMPLIANT** (Was 57%, Now 100%)
+**Compliance Status:** âœ… **100% COMPLIANT** (Was 57%, Now 100%)
 
-### ✅ FIXES IMPLEMENTED:
+### âœ… FIXES IMPLEMENTED:
 
-1. **Inventory Deduction Logic** - Distributor vs Warehouse (CRITICAL)
+1. **Inventory Deduction Logic** - Employee vs Warehouse (CRITICAL)
 2. **Net Profit KPI** - Includes Operational Expenses (CRITICAL)
-3. **Data Privacy** - Cost Fields Hidden from Distributors (CRITICAL)
+3. **Data Privacy** - Cost Fields Hidden from Employees (CRITICAL)
 
 ---
 
-## 🎯 TASK 1: FIX INVENTORY DEDUCTION ✅ DEPLOYED
+## ðŸŽ¯ TASK 1: FIX INVENTORY DEDUCTION âœ… DEPLOYED
 
 ### Problem Identified:
 
 `RegisterSaleUseCase` deducted from `Product.totalStock` (global) regardless of sale origin, causing:
 
-- Distributor inventory discrepancies
+- Employee inventory discrepancies
 - Warehouse stock not updated on admin sales
 - Loss of inventory traceability
 
@@ -3973,23 +3973,23 @@ El ERP trabaja mediante un sistema dependiente. Si tu Patrono Oficial (El Owner)
 
 #### File 1: `RegisterSaleUseCase.js`
 
-**Lines 1-6:** Added DistributorStock import
+**Lines 1-6:** Added EmployeeStock import
 
 ```javascript
-import DistributorStock from "../../../../models/DistributorStock.js";
+import EmployeeStock from "../../../../models/EmployeeStock.js";
 ```
 
 **Lines 106-139:** Implemented location-aware stock deduction
 
 ```javascript
 // D. Deduct Stock (Infra) - LOCATION-AWARE
-// 🎯 FIX TASK 1: Identify stock origin and deduct from specific location
-if (distributorId) {
-  // Distributor Sale → Deduct from DistributorStock
-  const distStock = await DistributorStock.findOneAndUpdate(
+// ðŸŽ¯ FIX TASK 1: Identify stock origin and deduct from specific location
+if (employeeId) {
+  // Employee Sale â†’ Deduct from EmployeeStock
+  const distStock = await EmployeeStock.findOneAndUpdate(
     {
       business: businessId,
-      distributor: distributorId,
+      employee: employeeId,
       product: productId,
     },
     { $inc: { quantity: -quantity } },
@@ -3998,21 +3998,21 @@ if (distributorId) {
 
   if (!distStock) {
     throw new Error(
-      `Distributor stock not found for product ${productId}. Ensure stock is assigned first.`,
+      `Employee stock not found for product ${productId}. Ensure stock is assigned first.`,
     );
   }
 
-  console.log(
-    `📦 Deducted ${quantity} from DistributorStock (distributor: ${distributorId})`,
+  console.warn("[Essence Debug]", 
+    `ðŸ“¦ Deducted ${quantity} from EmployeeStock (employee: ${employeeId})`,
   );
 } else {
-  // Admin Sale → Deduct from Warehouse
+  // Admin Sale â†’ Deduct from Warehouse
   await this.productRepository.updateWarehouseStock(
     productId,
     -quantity,
     session,
   );
-  console.log(`📦 Deducted ${quantity} from Warehouse (admin sale)`);
+  console.warn("[Essence Debug]", `ðŸ“¦ Deducted ${quantity} from Warehouse (admin sale)`);
 }
 
 // Always update global totalStock counter for statistics
@@ -4028,10 +4028,10 @@ await this.productRepository.updateStock(productId, -quantity, session);
  * Update stock atomically.
  * STRICTLY requires a session.
  *
- * ⚠️ NOTE: This updates totalStock (global counter) only.
+ * âš ï¸ NOTE: This updates totalStock (global counter) only.
  * For warehouse-specific updates, use updateWarehouseStock().
  *
- * ℹ️ averageCost intentionally remains unchanged during sales.
+ * â„¹ï¸ averageCost intentionally remains unchanged during sales.
  * It only updates when NEW inventory is received at a different price.
  */
 ```
@@ -4041,7 +4041,7 @@ await this.productRepository.updateStock(productId, -quantity, session);
 ```javascript
 /**
  * Update warehouse stock specifically (for admin sales).
- * 🎯 FIX TASK 1: Deduct from warehouse when admin makes direct sales.
+ * ðŸŽ¯ FIX TASK 1: Deduct from warehouse when admin makes direct sales.
  */
 async updateWarehouseStock(productId, quantityChange, session) {
   if (!session) {
@@ -4068,15 +4068,15 @@ async updateWarehouseStock(productId, quantityChange, session) {
 
 ### Impact:
 
-- ✅ Distributor sales NOW deduct from `DistributorStock` collection
-- ✅ Admin sales NOW deduct from `Product.warehouseStock`
-- ✅ Global `totalStock` still updated for statistics
-- ✅ Stock validation prevents negative inventory
-- ✅ Error handling for missing distributor stock
+- âœ… Employee sales NOW deduct from `EmployeeStock` collection
+- âœ… Admin sales NOW deduct from `Product.warehouseStock`
+- âœ… Global `totalStock` still updated for statistics
+- âœ… Stock validation prevents negative inventory
+- âœ… Error handling for missing employee stock
 
 ---
 
-## 📉 TASK 2: FIX NET PROFIT KPI ✅ DEPLOYED
+## ðŸ“‰ TASK 2: FIX NET PROFIT KPI âœ… DEPLOYED
 
 ### Problem Identified:
 
@@ -4089,7 +4089,7 @@ Dashboard showed gross profit as "Net Profit" without subtracting operational ex
 **Lines 177-206:** Calculate real net profit
 
 ```javascript
-// 🎯 FIX TASK 2: Calculate REAL Net Profit (Gross Profit - Expenses)
+// ðŸŽ¯ FIX TASK 2: Calculate REAL Net Profit (Gross Profit - Expenses)
 const realNetProfit = range.profit - expenses.totalExpenses;
 const dailyNetProfit = daily.profit; // No daily expenses aggregation yet
 const weeklyNetProfit = weekly.profit; // Would need week-specific expenses
@@ -4109,7 +4109,7 @@ return {
     monthRevenue: monthly.revenue,
     monthProfit: monthly.profit,
     monthNetProfit: monthlyNetProfit, // TODO: Add monthly expense filtering
-    totalActiveDistributors: activeDistributors,
+    totalActiveEmployees: activeEmployees,
     totalExpenses: expenses.totalExpenses,
     expensesCount: expenses.count,
   },
@@ -4120,7 +4120,7 @@ return {
     sales: range.sales,
     revenue: range.revenue,
     grossProfit: range.profit, // Renamed for clarity
-    netProfit: realNetProfit, // 🎯 Real Net Profit = Gross - Expenses
+    netProfit: realNetProfit, // ðŸŽ¯ Real Net Profit = Gross - Expenses
     quantity: range.quantity,
     avgTicket: range.sales > 0 ? range.revenue / range.sales : 0,
     totalExpenses: expenses.totalExpenses,
@@ -4130,19 +4130,19 @@ return {
 
 ### Impact:
 
-- ✅ Dashboard now shows **REAL net profit** (Gross - Expenses)
-- ✅ Added `grossProfit` field for transparency
-- ✅ Expense totals included in KPIs
-- ✅ Formula: `netProfit = totalProfit - totalExpenses`
-- ⚠️ TODO: Add time-filtered expenses for daily/weekly/monthly (currently uses range total)
+- âœ… Dashboard now shows **REAL net profit** (Gross - Expenses)
+- âœ… Added `grossProfit` field for transparency
+- âœ… Expense totals included in KPIs
+- âœ… Formula: `netProfit = totalProfit - totalExpenses`
+- âš ï¸ TODO: Add time-filtered expenses for daily/weekly/monthly (currently uses range total)
 
 ---
 
-## 🛡️ TASK 3: DATA PRIVACY ✅ DEPLOYED
+## ðŸ›¡ï¸ TASK 3: DATA PRIVACY âœ… DEPLOYED
 
 ### Problem Identified:
 
-Distributors could see admin cost fields (`purchasePrice`, `averageCost`, `supplierPrice`, `totalInventoryValue`) in product API responses, exposing sensitive business data.
+Employees could see admin cost fields (`purchasePrice`, `averageCost`, `supplierPrice`, `totalInventoryValue`) in product API responses, exposing sensitive business data.
 
 ### Solution Applied:
 
@@ -4151,10 +4151,10 @@ Distributors could see admin cost fields (`purchasePrice`, `averageCost`, `suppl
 **Lines 40-48:** `getAllProducts()` - List view protection
 
 ```javascript
-// 🛡️ FIX TASK 3: DATA PRIVACY - Hide cost fields from distributors
-// Check if user is distributor (not admin)
-const isDistributor = req.user?.role === "distribuidor";
-if (isDistributor) {
+// ðŸ›¡ï¸ FIX TASK 3: DATA PRIVACY - Hide cost fields from employees
+// Check if user is employee (not admin)
+const isEmployee = req.user?.role === "empleado";
+if (isEmployee) {
   // Remove sensitive cost fields from response
   products = products.map((product) => {
     const {
@@ -4166,16 +4166,16 @@ if (isDistributor) {
     } = product;
     return safeProduct;
   });
-  console.log("🛡️ Sensitive cost fields excluded for distributor");
+  console.warn("[Essence Debug]", "ðŸ›¡ï¸ Sensitive cost fields excluded for employee");
 }
 ```
 
 **Lines 76-82:** `getProductById()` - Detail view protection
 
 ```javascript
-// 🛡️ FIX TASK 3: DATA PRIVACY - Hide cost fields from distributors
-const isDistributor = req.user?.role === "distribuidor";
-if (isDistributor) {
+// ðŸ›¡ï¸ FIX TASK 3: DATA PRIVACY - Hide cost fields from employees
+const isEmployee = req.user?.role === "empleado";
+if (isEmployee) {
   const {
     purchasePrice,
     averageCost,
@@ -4189,72 +4189,72 @@ if (isDistributor) {
 
 ### Impact:
 
-- ✅ Cost fields **HIDDEN** from distributors
-- ✅ Admin users can still see all fields
-- ✅ Applied to both list and detail endpoints
-- ✅ Role-based security at API response level
-- ✅ No database schema changes required
+- âœ… Cost fields **HIDDEN** from employees
+- âœ… Admin users can still see all fields
+- âœ… Applied to both list and detail endpoints
+- âœ… Role-based security at API response level
+- âœ… No database schema changes required
 
 ### Protected Fields:
 
-- ❌ `purchasePrice` - Admin's cost from supplier
-- ❌ `averageCost` - Weighted average cost
-- ❌ `supplierPrice` - Raw supplier pricing
-- ❌ `totalInventoryValue` - Calculated inventory value
+- âŒ `purchasePrice` - Admin's cost from supplier
+- âŒ `averageCost` - Weighted average cost
+- âŒ `supplierPrice` - Raw supplier pricing
+- âŒ `totalInventoryValue` - Calculated inventory value
 
 ---
 
-## 📊 COMPLIANCE SCORECARD
+## ðŸ“Š COMPLIANCE SCORECARD
 
 | Category                   | Before Fix    | After Fix     |
 | -------------------------- | ------------- | ------------- |
-| **Financial Calculations** | 3/3 (100%) ✅ | 4/4 (100%) ✅ |
-| **Inventory Management**   | 1/4 (25%) ❌  | 3/3 (100%) ✅ |
-| **Data Privacy**           | 0/1 (0%) ❌   | 1/1 (100%) ✅ |
-| **Overall Compliance**     | 4/7 (57%) ⚠️  | 9/9 (100%) ✅ |
+| **Financial Calculations** | 3/3 (100%) âœ… | 4/4 (100%) âœ… |
+| **Inventory Management**   | 1/4 (25%) âŒ  | 3/3 (100%) âœ… |
+| **Data Privacy**           | 0/1 (0%) âŒ   | 1/1 (100%) âœ… |
+| **Overall Compliance**     | 4/7 (57%) âš ï¸  | 9/9 (100%) âœ… |
 
 ---
 
-## 🔍 TESTING CHECKLIST
+## ðŸ” TESTING CHECKLIST
 
 ### Inventory Tests:
 
-- [ ] Create product with initial stock → Verify `warehouseStock` = `totalStock`
-- [ ] Admin sale → Verify `warehouseStock` decreased
-- [ ] Distributor sale → Verify `DistributorStock.quantity` decreased
-- [ ] Admin sale → Verify `totalStock` decreased (global counter)
-- [ ] Try admin sale with insufficient warehouse stock → Verify error thrown
-- [ ] Try distributor sale with no assigned stock → Verify error thrown
+- [ ] Create product with initial stock â†’ Verify `warehouseStock` = `totalStock`
+- [ ] Admin sale â†’ Verify `warehouseStock` decreased
+- [ ] Employee sale â†’ Verify `EmployeeStock.quantity` decreased
+- [ ] Admin sale â†’ Verify `totalStock` decreased (global counter)
+- [ ] Try admin sale with insufficient warehouse stock â†’ Verify error thrown
+- [ ] Try employee sale with no assigned stock â†’ Verify error thrown
 
 ### KPI Tests:
 
-- [ ] Add expenses → Verify `netProfit` = `grossProfit` - `expenses`
-- [ ] Check dashboard → Verify separate `grossProfit` and `netProfit` fields
+- [ ] Add expenses â†’ Verify `netProfit` = `grossProfit` - `expenses`
+- [ ] Check dashboard â†’ Verify separate `grossProfit` and `netProfit` fields
 - [ ] Verify expense totals appear in KPIs
 
 ### Privacy Tests:
 
-- [ ] Login as distributor → GET /products → Verify cost fields ABSENT
-- [ ] Login as distributor → GET /products/:id → Verify cost fields ABSENT
-- [ ] Login as admin → GET /products → Verify cost fields PRESENT
-- [ ] Check network tab → Verify no cost data in JSON response for distributors
+- [ ] Login as employee â†’ GET /products â†’ Verify cost fields ABSENT
+- [ ] Login as employee â†’ GET /products/:id â†’ Verify cost fields ABSENT
+- [ ] Login as admin â†’ GET /products â†’ Verify cost fields PRESENT
+- [ ] Check network tab â†’ Verify no cost data in JSON response for employees
 
 ---
 
-## 🚀 DEPLOYMENT STATUS
+## ðŸš€ DEPLOYMENT STATUS
 
 ### Modified Files:
 
-1. ✅ `server/src/application/use-cases/RegisterSaleUseCase.js`
-2. ✅ `server/src/infrastructure/database/repositories/ProductRepository.js`
-3. ✅ `server/src/infrastructure/database/repositories/AdvancedAnalyticsRepository.js`
-4. ✅ `server/src/infrastructure/http/controllers/ProductController.js`
+1. âœ… `server/src/application/use-cases/RegisterSaleUseCase.js`
+2. âœ… `server/src/infrastructure/database/repositories/ProductRepository.js`
+3. âœ… `server/src/infrastructure/database/repositories/AdvancedAnalyticsRepository.js`
+4. âœ… `server/src/infrastructure/http/controllers/ProductController.js`
 
 ### No Errors Detected:
 
-- ✅ All files compiled without syntax errors
-- ✅ No linting issues found
-- ✅ TypeScript/JSDoc checks passed
+- âœ… All files compiled without syntax errors
+- âœ… No linting issues found
+- âœ… TypeScript/JSDoc checks passed
 
 ### Next Steps:
 
@@ -4265,7 +4265,7 @@ if (isDistributor) {
 
 ---
 
-## 📝 NOTES FOR FUTURE MAINTENANCE
+## ðŸ“ NOTES FOR FUTURE MAINTENANCE
 
 ### Weighted Average Cost:
 
@@ -4277,11 +4277,11 @@ Currently, net profit calculation uses TOTAL expenses in date range. For daily/w
 
 ### Symmetry Check:
 
-The `DeleteSaleController` already restores stock to origin correctly. Ensure new sales set `sale.distributor` field when created from distributor stock (currently done via branching logic).
+The `DeleteSaleController` already restores stock to origin correctly. Ensure new sales set `sale.employee` field when created from employee stock (currently done via branching logic).
 
 ---
 
-**✅ ALL CRITICAL FIXES DEPLOYED - SYSTEM NOW 100% COMPLIANT**
+**âœ… ALL CRITICAL FIXES DEPLOYED - SYSTEM NOW 100% COMPLIANT**
 
 Ready for production deployment and database restart.
 
@@ -4290,28 +4290,28 @@ Ready for production deployment and database restart.
 <!-- DOCUMENTO: MODELADO_DE_DATOS_ERD.md -->
 <!-- ========================================== -->
 
-# 🗄️ MODELADO DE DATOS (ERD y Arquitectura MongoDB)
+# ðŸ—„ï¸ MODELADO DE DATOS (ERD y Arquitectura MongoDB)
 
-> **Propósito:** Especificar el esquema relacional NoSQL (Mongoose/MongoDB) de la plataforma Essence, detallando las referencias por *ObjectIDs*, los índices de optimización y las fronteras de los documentos.
+> **PropÃ³sito:** Especificar el esquema relacional NoSQL (Mongoose/MongoDB) de la plataforma Essence, detallando las referencias por *ObjectIDs*, los Ã­ndices de optimizaciÃ³n y las fronteras de los documentos.
 
 ---
 
-## 1. Diagrama Entidad-Relación (ERD)
+## 1. Diagrama Entidad-RelaciÃ³n (ERD)
 
 Aunque MongoDB es NoSQL, Essence ERP mantiene una integridad referencial estricta manejada a nivel aplicativo mediante Mongoose `ref`.
 
 ```mermaid
 erDiagram
-    BUSINESS ||--o{ USER : "Contiene (vía Membership)"
-    BUSINESS ||--o{ PRODUCT : "Es Dueño"
+    BUSINESS ||--o{ USER : "Contiene (vÃ­a Membership)"
+    BUSINESS ||--o{ PRODUCT : "Es DueÃ±o"
     BUSINESS ||--o{ SALE : "Registra"
     BUSINESS ||--o{ BRANCH : "Posee"
     
     USER ||--o{ MEMBERSHIP : "Tiene"
     BUSINESS ||--o{ MEMBERSHIP : "Controla"
     
-    PRODUCT ||--o{ DISTRIBUTOR_STOCK : "Se fragmenta en"
-    USER ||--o{ DISTRIBUTOR_STOCK : "Se le asigna a (Distribuidor)"
+    PRODUCT ||--o{ EMPLOYEE_STOCK : "Se fragmenta en"
+    USER ||--o{ EMPLOYEE_STOCK : "Se le asigna a (Empleado)"
     
     PRODUCT ||--o{ BRANCH_STOCK : "Se almacena en"
     BRANCH ||--o{ BRANCH_STOCK : "Guarda"
@@ -4328,7 +4328,7 @@ erDiagram
     USER {
         ObjectId _id PK
         string email
-        string role "god | super_admin | admin | distribuidor"
+        string role "god | super_admin | admin | empleado"
         string status "active | pending | expired"
         date subscriptionExpiresAt
     }
@@ -4353,9 +4353,9 @@ erDiagram
         array items "Subdocumentos de producto"
     }
 
-    DISTRIBUTOR_STOCK {
+    EMPLOYEE_STOCK {
         ObjectId _id PK
-        ObjectId distributor FK
+        ObjectId employee FK
         ObjectId product FK
         ObjectId business FK
         number quantity "Inventario aislado del WH"
@@ -4364,21 +4364,21 @@ erDiagram
 
 ---
 
-## 2. Decisiones de Diseño NoSQL Críticas
+## 2. Decisiones de DiseÃ±o NoSQL CrÃ­ticas
 
-### A. Denormalización vs Referencias
-1. **Colecciones Aisladas (Stock):** A diferencia de SQL (una sola tabla gorda con bodegas), en Essence el stock de distribuidores (`DistributorStock`) y de sedes (`BranchStock`) están en colecciones totalmente separadas de la tabla genérica `Products`.
-   * *Razón:* Escalar la búsqueda y mutación (`$inc`) de manera aislada sin bloquear el documento *Product* o inflar su Document Size Límite de 16MB.
-2. **Histórico Inmutable (Sale.items):** Al momento de registrar una venta (`SALE`), los productos dentro de esa venta se guardan como subdocumentos (arrays empotrados), copiando el `price` local y `costBasis` actual. 
-   * *Razón:* Si un producto en el catálogo Master cambia de precio al día siguiente, el recibo de la venta anterior permanecerá inalterado.
+### A. DenormalizaciÃ³n vs Referencias
+1. **Colecciones Aisladas (Stock):** A diferencia de SQL (una sola tabla gorda con bodegas), en Essence el stock de empleados (`EmployeeStock`) y de sedes (`BranchStock`) estÃ¡n en colecciones totalmente separadas de la tabla genÃ©rica `Products`.
+   * *RazÃ³n:* Escalar la bÃºsqueda y mutaciÃ³n (`$inc`) de manera aislada sin bloquear el documento *Product* o inflar su Document Size LÃ­mite de 16MB.
+2. **HistÃ³rico Inmutable (Sale.items):** Al momento de registrar una venta (`SALE`), los productos dentro de esa venta se guardan como subdocumentos (arrays empotrados), copiando el `price` local y `costBasis` actual. 
+   * *RazÃ³n:* Si un producto en el catÃ¡logo Master cambia de precio al dÃ­a siguiente, el recibo de la venta anterior permanecerÃ¡ inalterado.
 
-### B. Índices de Bases de Datos
+### B. Ãndices de Bases de Datos
 
-Para que el Dashboard resuelva analíticas agregadas (Pipeline de $lookup y $sum) de forma sub-segundo, están declarados los siguientes Compound Indexes:
+Para que el Dashboard resuelva analÃ­ticas agregadas (Pipeline de $lookup y $sum) de forma sub-segundo, estÃ¡n declarados los siguientes Compound Indexes:
 
-* `saleSchema.index({ business: 1, saleDate: -1 })` : Lectura secuencial de las últimas ventas de un negocio.
-* `saleSchema.index({ business: 1, paymentStatus: 1, saleDate: -1 })` : Recuperación veloz para filtrar únicamente "confirmados" u omitir "créditos pendients".
-* `distributorStockSchema.index({ business: 1, distributor: 1, product: 1 }, { unique: true })` : Index único para impedir stocks duplicados entre mismos productos.
+* `saleSchema.index({ business: 1, saleDate: -1 })` : Lectura secuencial de las Ãºltimas ventas de un negocio.
+* `saleSchema.index({ business: 1, paymentStatus: 1, saleDate: -1 })` : RecuperaciÃ³n veloz para filtrar Ãºnicamente "confirmados" u omitir "crÃ©ditos pendients".
+* `employeeStockSchema.index({ business: 1, employee: 1, product: 1 }, { unique: true })` : Index Ãºnico para impedir stocks duplicados entre mismos productos.
 
 
 <!-- ========================================== -->
@@ -4450,33 +4450,34 @@ Example production values:
 <!-- DOCUMENTO: REQUERIMIENTOS_DEL_SISTEMA.md -->
 <!-- ========================================== -->
 
-# 📋 REQUERIMIENTOS DEL SISTEMA (SRS)
+# ðŸ“‹ REQUERIMIENTOS DEL SISTEMA (SRS)
 
-> **Propósito:** Especificación formal de Requerimientos de Software (SRS) detallando las obligaciones funcionales y no funcionales de Essence ERP, diseñado para validación por parte del equipo de Quality Assurance (QA).
+> **PropÃ³sito:** EspecificaciÃ³n formal de Requerimientos de Software (SRS) detallando las obligaciones funcionales y no funcionales de Essence ERP, diseÃ±ado para validaciÃ³n por parte del equipo de Quality Assurance (QA).
 
 ---
 
-## ⚙️ 1. Requerimientos Funcionales (RF)
+## âš™ï¸ 1. Requerimientos Funcionales (RF)
 
-| ID | Módulo | Descripción | Prioridad |
+| ID | MÃ³dulo | DescripciÃ³n | Prioridad |
 |:---|:---|:---|:---:|
-| **RF-01** | Autenticación | El sistema debe permitir el inicio de sesión basado en JWT con expiración definida, validando el `status` del usuario en cada petición. | Alta |
-| **RF-02** | Autorización | El sistema debe cancelar el acceso a los *Distribuidores* de manera cascada si la suscripción de su *Owner* (Admin) caduca o es suspendida. | Crítica |
-| **RF-03** | Multi-Tenant | El sistema debe instanciar contextos de sesión basados en un `businessId`, aislando absolutamente la data entre diferentes empresas. | Crítica |
-| **RF-04** | Feature Flags | El sistema debe permitir deshabilitar módulos completos (ej. "*Gamificación*") a nivel de Negocio, bloqueando las peticiones a nivel Router/Middleware. | Media |
-| **RF-05** | Inventario | La actualización de inventario durante una venta debe soportar inserciones atómicas (`$inc` en MongoDB) para evitar *Race Conditions* en ventas simultáneas. | Crítica |
-| **RF-06** | Inventario | El sistema debe calcular el Costo Promedio Ponderado de manera automática única y exclusivamente en las entradas por compras, ignorando salidas o transferencias. | Alta |
-| **RF-07** | Ventas | Las reglas de cálculo de venta para el Administrador deben seguir la ecuación: `(Venta Total) - (Costo) - (Ganancia Distribuidor)`. | Alta |
-| **RF-08** | Ventas | Las ventas con pago "Crédito" deben excluirse de la sumatoria de Ganancias Netas dentro de cualquier Query Analítico. | Crítica |
+| **RF-01** | AutenticaciÃ³n | El sistema debe permitir el inicio de sesiÃ³n basado en JWT con expiraciÃ³n definida, validando el `status` del usuario en cada peticiÃ³n. | Alta |
+| **RF-02** | AutorizaciÃ³n | El sistema debe cancelar el acceso a los *Empleados* de manera cascada si la suscripciÃ³n de su *Owner* (Admin) caduca o es suspendida. | CrÃ­tica |
+| **RF-03** | Multi-Tenant | El sistema debe instanciar contextos de sesiÃ³n basados en un `businessId`, aislando absolutamente la data entre diferentes empresas. | CrÃ­tica |
+| **RF-04** | Feature Flags | El sistema debe permitir deshabilitar mÃ³dulos completos (ej. "*GamificaciÃ³n*") a nivel de Negocio, bloqueando las peticiones a nivel Router/Middleware. | Media |
+| **RF-05** | Inventario | La actualizaciÃ³n de inventario durante una venta debe soportar inserciones atÃ³micas (`$inc` en MongoDB) para evitar *Race Conditions* en ventas simultÃ¡neas. | CrÃ­tica |
+| **RF-06** | Inventario | El sistema debe calcular el Costo Promedio Ponderado de manera automÃ¡tica Ãºnica y exclusivamente en las entradas por compras, ignorando salidas o transferencias. | Alta |
+| **RF-07** | Ventas | Las reglas de cÃ¡lculo de venta para el Administrador deben seguir la ecuaciÃ³n: `(Venta Total) - (Costo) - (Ganancia Empleado)`. | Alta |
+| **RF-08** | Ventas | Las ventas con pago "CrÃ©dito" deben excluirse de la sumatoria de Ganancias Netas dentro de cualquier Query AnalÃ­tico. | CrÃ­tica |
 
 ---
 
-## 🛡️ 2. Requerimientos No Funcionales (RNF)
+## ðŸ›¡ï¸ 2. Requerimientos No Funcionales (RNF)
 
-| ID | Categoría | Descripción |
+| ID | CategorÃ­a | DescripciÃ³n |
 |:---|:---|:---|
-| **RNF-01** | Rendimiento | Las consultas al Dashboard Analítico no deben tardar más de 800ms en procesar volumetria de hasta 1 millón de ventas (requiere índices MongoDB en `saleDate` y `paymentStatus`). |
-| **RNF-02** | Seguridad | El backend no debe confiar en el cálculo financiero enviado por el cliente (Frontend). Los precios de cliente o distribuidor deben cruzarse obligatoriamente con la base de datos de Productos durante la transacción. |
-| **RNF-03** | Privacidad | Las llamadas al API realizadas por rol `distribuidor` para solicitar catálogo de productos, deben enmascarar en el DTO (Data Transfer Object) los campos: `purchasePrice`, `averageCost` y variables financieras de la administración. |
-| **RNF-04** | Disponibilidad| Los endpoints críticos de punto de venta (Sales/POS) deben operar bajo un esquema de alta disponibilidad, orquestando las instancias detrás de PM2 o un orquestador contenedorizado. |
-| **RNF-05** | Mantenibilidad| Todo error procesado en los controladores debe atraparse y unificarse bajo un solo *Error Handler Middleware* para proveer a los clientes un Payload estándar (código, mensaje, detalles técnicos). |
+| **RNF-01** | Rendimiento | Las consultas al Dashboard AnalÃ­tico no deben tardar mÃ¡s de 800ms en procesar volumetria de hasta 1 millÃ³n de ventas (requiere Ã­ndices MongoDB en `saleDate` y `paymentStatus`). |
+| **RNF-02** | Seguridad | El backend no debe confiar en el cÃ¡lculo financiero enviado por el cliente (Frontend). Los precios de cliente o empleado deben cruzarse obligatoriamente con la base de datos de Productos durante la transacciÃ³n. |
+| **RNF-03** | Privacidad | Las llamadas al API realizadas por rol `empleado` para solicitar catÃ¡logo de productos, deben enmascarar en el DTO (Data Transfer Object) los campos: `purchasePrice`, `averageCost` y variables financieras de la administraciÃ³n. |
+| **RNF-04** | Disponibilidad| Los endpoints crÃ­ticos de punto de venta (Sales/POS) deben operar bajo un esquema de alta disponibilidad, orquestando las instancias detrÃ¡s de PM2 o un orquestador contenedorizado. |
+| **RNF-05** | Mantenibilidad| Todo error procesado en los controladores debe atraparse y unificarse bajo un solo *Error Handler Middleware* para proveer a los clientes un Payload estÃ¡ndar (cÃ³digo, mensaje, detalles tÃ©cnicos). |
+

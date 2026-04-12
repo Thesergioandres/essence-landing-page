@@ -29,8 +29,8 @@ const Login = lazy(() => import("./features/auth/pages/LoginPage"));
 const LoginAdmin = lazy(
   () => import("./features/auth/pages/LoginAdminRedirect")
 );
-const LoginDistributor = lazy(
-  () => import("./features/auth/pages/LoginDistributorRedirect")
+const LoginEmployee = lazy(
+  () => import("./features/auth/pages/LoginEmployeeRedirect")
 );
 const LoginGod = lazy(() => import("./features/auth/pages/LoginGodRedirect"));
 const Register = lazy(() => import("./features/auth/pages/RegisterPage"));
@@ -112,57 +112,57 @@ const PromotionSale = lazy(
   () => import("./features/sales/pages/PromotionSalePage")
 );
 
-// Distributors pages
-const Distributors = lazy(
-  () => import("./features/employees/pages/DistributorsPage")
+// Employees pages
+const Employees = lazy(
+  () => import("./features/employees/pages/EmployeesPage")
 );
-const AddDistributor = lazy(
-  () => import("./features/employees/pages/AddDistributorPage")
+const AddEmployee = lazy(
+  () => import("./features/employees/pages/AddEmployeePage")
 );
-const DistributorDetail = lazy(
-  () => import("./features/employees/pages/DistributorDetailPage")
+const EmployeeDetail = lazy(
+  () => import("./features/employees/pages/EmployeeDetailPage")
 );
-const EditDistributor = lazy(
-  () => import("./features/employees/pages/EditDistributorPage")
+const EditEmployee = lazy(
+  () => import("./features/employees/pages/EditEmployeePage")
 );
-const DistributorDashboard = lazy(
-  () => import("./features/employees/pages/DistributorDashboardPage")
+const EmployeeDashboard = lazy(
+  () => import("./features/employees/pages/EmployeeDashboardPage")
 );
-const DistributorDashboardLayout = lazy(
-  () => import("./features/employees/pages/DistributorDashboardLayout")
+const EmployeeDashboardLayout = lazy(
+  () => import("./features/employees/pages/EmployeeDashboardLayout")
 );
-const DistributorProducts = lazy(
-  () => import("./features/employees/pages/DistributorProductsPage")
+const EmployeeProducts = lazy(
+  () => import("./features/employees/pages/EmployeeProductsPage")
 );
-const DistributorSales = lazy(
-  () => import("./features/employees/pages/DistributorSalesPage")
+const EmployeeSales = lazy(
+  () => import("./features/employees/pages/EmployeeSalesPage")
 );
-const DistributorCredits = lazy(
-  () => import("./features/employees/pages/DistributorCreditsPage")
+const EmployeeCredits = lazy(
+  () => import("./features/employees/pages/EmployeeCreditsPage")
 );
-const DistributorStats = lazy(
-  () => import("./features/employees/pages/DistributorStatsPage")
+const EmployeeStats = lazy(
+  () => import("./features/employees/pages/EmployeeStatsPage")
 );
-const DistributorLevel = lazy(
-  () => import("./features/employees/pages/DistributorLevelPage")
+const EmployeeLevel = lazy(
+  () => import("./features/employees/pages/EmployeeLevelPage")
 );
-const DistributorCatalog = lazy(
-  () => import("./features/employees/pages/DistributorCatalogPage")
+const EmployeeCatalog = lazy(
+  () => import("./features/employees/pages/EmployeeCatalogPage")
 );
-const DistributorCatalogShare = lazy(
-  () => import("./features/employees/pages/DistributorCatalogSharePage")
+const EmployeeCatalogShare = lazy(
+  () => import("./features/employees/pages/EmployeeCatalogSharePage")
 );
-const DistributorShipments = lazy(
-  () => import("./features/employees/pages/DistributorShipmentsPage")
+const EmployeeShipments = lazy(
+  () => import("./features/employees/pages/EmployeeShipmentsPage")
 );
-const DistributorRequestDispatch = lazy(
-  () => import("./features/employees/pages/DistributorRequestDispatchPage")
+const EmployeeRequestDispatch = lazy(
+  () => import("./features/employees/pages/EmployeeRequestDispatchPage")
 );
-const PublicDistributorCatalog = lazy(
-  () => import("./features/employees/pages/PublicDistributorCatalogPage")
+const PublicEmployeeCatalog = lazy(
+  () => import("./features/employees/pages/PublicEmployeeCatalogPage")
 );
-const DistributorAdvertising = lazy(
-  () => import("./features/advertising/pages/DistributorAdvertisingPage")
+const EmployeeAdvertising = lazy(
+  () => import("./features/advertising/pages/EmployeeAdvertisingPage")
 );
 const OperativoStockManagement = lazy(
   () =>
@@ -346,12 +346,12 @@ export default function App() {
                     element={<CategoryProducts />}
                   />
                   <Route
-                    path="/staff-catalog/:distributorId"
-                    element={<PublicDistributorCatalog />}
+                    path="/staff-catalog/:employeeId"
+                    element={<PublicEmployeeCatalog />}
                   />
                   <Route
-                    path="/distributor-catalog/:distributorId"
-                    element={<PublicDistributorCatalog />}
+                    path="/employee-catalog/:employeeId"
+                    element={<PublicEmployeeCatalog />}
                   />
                   <Route path="/tienda/:slug" element={<PublicStorefront />} />
 
@@ -359,10 +359,10 @@ export default function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/login/admin" element={<LoginAdmin />} />
                   <Route path="/login/god" element={<LoginGod />} />
-                  <Route path="/login/staff" element={<LoginDistributor />} />
+                  <Route path="/login/staff" element={<LoginEmployee />} />
                   <Route
-                    path="/login/distributor"
-                    element={<LoginDistributor />}
+                    path="/login/employee"
+                    element={<LoginEmployee />}
                   />
                   <Route path="/register" element={<Register />} />
                   <Route
@@ -390,7 +390,7 @@ export default function App() {
                     }
                   />
 
-                  {/* Shared authenticated route - accessible by admin and distributor */}
+                  {/* Shared authenticated route - accessible by admin and employee */}
                   <Route path="/catalog" element={<Catalog />} />
 
                   {/* Admin Routes */}
@@ -463,18 +463,18 @@ export default function App() {
                         </BusinessGate>
                       }
                     />
-                    <Route path="distributors" element={<Distributors />} />
+                    <Route path="employees" element={<Employees />} />
                     <Route
-                      path="distributors/add"
-                      element={<AddDistributor />}
+                      path="employees/add"
+                      element={<AddEmployee />}
                     />
                     <Route
-                      path="distributors/:id"
-                      element={<DistributorDetail />}
+                      path="employees/:id"
+                      element={<EmployeeDetail />}
                     />
                     <Route
-                      path="distributors/:id/edit"
-                      element={<EditDistributor />}
+                      path="employees/:id/edit"
+                      element={<EditEmployee />}
                     />
                     <Route
                       path="stock-management"
@@ -738,24 +738,24 @@ export default function App() {
                     />
                   </Route>
 
-                  {/* Distributor Routes */}
+                  {/* Employee Routes */}
                   <Route
                     path="/staff"
                     element={
                       <ProtectedRoute allowedRoles={["employee"]}>
-                        <DistributorDashboardLayout />
+                        <EmployeeDashboardLayout />
                       </ProtectedRoute>
                     }
                   >
                     <Route
                       path="dashboard"
-                      element={<DistributorDashboard />}
+                      element={<EmployeeDashboard />}
                     />
                     <Route
                       path="products"
                       element={
                         <BusinessGate requiredFeature="inventory">
-                          <DistributorProducts />
+                          <EmployeeProducts />
                         </BusinessGate>
                       }
                     />
@@ -763,7 +763,7 @@ export default function App() {
                       path="catalog"
                       element={
                         <BusinessGate requiredFeature="inventory">
-                          <DistributorCatalog />
+                          <EmployeeCatalog />
                         </BusinessGate>
                       }
                     />
@@ -771,7 +771,7 @@ export default function App() {
                       path="share-catalog"
                       element={
                         <BusinessGate requiredFeature="inventory">
-                          <DistributorCatalogShare />
+                          <EmployeeCatalogShare />
                         </BusinessGate>
                       }
                     />
@@ -779,7 +779,7 @@ export default function App() {
                       path="advertising"
                       element={
                         <BusinessGate requiredFeature="inventory">
-                          <DistributorAdvertising />
+                          <EmployeeAdvertising />
                         </BusinessGate>
                       }
                     />
@@ -795,7 +795,7 @@ export default function App() {
                       path="request-dispatch"
                       element={
                         <BusinessGate requiredFeature="transfers">
-                          <DistributorRequestDispatch />
+                          <EmployeeRequestDispatch />
                         </BusinessGate>
                       }
                     />
@@ -803,7 +803,7 @@ export default function App() {
                       path="my-shipments"
                       element={
                         <BusinessGate requiredFeature="transfers">
-                          <DistributorShipments />
+                          <EmployeeShipments />
                         </BusinessGate>
                       }
                     />
@@ -915,7 +915,7 @@ export default function App() {
                       path="sales"
                       element={
                         <BusinessGate requiredFeature="sales">
-                          <DistributorSales />
+                          <EmployeeSales />
                         </BusinessGate>
                       }
                     />
@@ -923,7 +923,7 @@ export default function App() {
                       path="credits"
                       element={
                         <BusinessGate requiredFeature="sales">
-                          <DistributorCredits />
+                          <EmployeeCredits />
                         </BusinessGate>
                       }
                     />
@@ -931,7 +931,7 @@ export default function App() {
                       path="stats"
                       element={
                         <BusinessGate requiredFeature="reports">
-                          <DistributorStats />
+                          <EmployeeStats />
                         </BusinessGate>
                       }
                     />
@@ -939,7 +939,7 @@ export default function App() {
                       path="level"
                       element={
                         <BusinessGate requiredFeature="gamification">
-                          <DistributorLevel />
+                          <EmployeeLevel />
                         </BusinessGate>
                       }
                     />
@@ -962,7 +962,7 @@ export default function App() {
                   </Route>
 
                   <Route
-                    path="/distributor/*"
+                    path="/employee/*"
                     element={<Navigate to="/staff/dashboard" replace />}
                   />
 

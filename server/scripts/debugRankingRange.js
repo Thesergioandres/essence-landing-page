@@ -29,7 +29,7 @@ const run = async () => {
     },
     {
       $group: {
-        _id: "$distributor",
+        _id: "$employee",
         totalSales: { $sum: 1 },
         totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
         totalProfit: { $sum: "$totalProfit" },

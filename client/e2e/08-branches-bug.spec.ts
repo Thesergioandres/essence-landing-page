@@ -1,19 +1,19 @@
-/**
- * TEST: Verificar que el botón Guardar Cambios funcione
- * Este test verifica el bug reportado donde el botón no responde
+﻿/**
+ * TEST: Verificar que el botÃ³n Guardar Cambios funcione
+ * Este test verifica el bug reportado donde el botÃ³n no responde
  */
 
 import { expect, test } from "./fixtures";
 
-test.describe("🐛 BUG FIX: Guardar Cambios en Acceso a Bodegas", () => {
-  test("VERIFICACIÓN: Botón Guardar Cambios debe estar habilitado", async ({
+test.describe("ðŸ› BUG FIX: Guardar Cambios en Acceso a Bodegas", () => {
+  test("VERIFICACIÃ“N: BotÃ³n Guardar Cambios debe estar habilitado", async ({
     page,
     loginAsAdmin,
   }) => {
     await loginAsAdmin();
 
-    // Navegar a un distribuidor
-    await page.goto("/admin/distributors");
+    // Navegar a un empleado
+    await page.goto("/admin/employees");
     await page.waitForLoadState("networkidle");
 
     // Click en Ver Detalle
@@ -24,7 +24,7 @@ test.describe("🐛 BUG FIX: Guardar Cambios en Acceso a Bodegas", () => {
       await detailButton.click();
       await page.waitForLoadState("networkidle");
 
-      // Navegar a la pestaña "Acceso a Bodegas"
+      // Navegar a la pestaÃ±a "Acceso a Bodegas"
       const branchesTab = page.getByRole("tab", {
         name: /acceso a bodegas|bodegas/i,
       });
@@ -40,20 +40,20 @@ test.describe("🐛 BUG FIX: Guardar Cambios en Acceso a Bodegas", () => {
           // Toggle checkbox
           await branchCheckbox.click();
 
-          // Buscar el botón "Guardar Cambios"
+          // Buscar el botÃ³n "Guardar Cambios"
           const saveButton = page.getByRole("button", {
             name: /guardar cambios/i,
           });
 
-          // VERIFICAR: El botón debe estar visible
+          // VERIFICAR: El botÃ³n debe estar visible
           await expect(saveButton).toBeVisible({ timeout: 5000 });
 
-          // VERIFICAR: El botón NO debe estar deshabilitado
+          // VERIFICAR: El botÃ³n NO debe estar deshabilitado
           const isDisabled = await saveButton.isDisabled();
 
           if (isDisabled) {
-            console.log(
-              "❌ BUG CONFIRMADO: Botón está deshabilitado cuando debería estar habilitado"
+            console.warn("[Essence Debug]", 
+              "âŒ BUG CONFIRMADO: BotÃ³n estÃ¡ deshabilitado cuando deberÃ­a estar habilitado"
             );
 
             // Capturar el estado del membership
@@ -64,9 +64,9 @@ test.describe("🐛 BUG FIX: Guardar Cambios en Acceso a Bodegas", () => {
               };
             });
 
-            console.log("Estado del storage:", membershipData);
+            console.warn("[Essence Debug]", "Estado del storage:", membershipData);
           } else {
-            console.log("✅ Botón está habilitado correctamente");
+            console.warn("[Essence Debug]", "âœ… BotÃ³n estÃ¡ habilitado correctamente");
 
             // Intentar hacer click
             await saveButton.click();
@@ -74,7 +74,7 @@ test.describe("🐛 BUG FIX: Guardar Cambios en Acceso a Bodegas", () => {
             // Esperar respuesta
             await page.waitForTimeout(2000);
 
-            // Verificar mensaje de éxito
+            // Verificar mensaje de Ã©xito
             const successMessage = page.getByText(
               /actualizado correctamente|guardado/i
             );
@@ -86,30 +86,30 @@ test.describe("🐛 BUG FIX: Guardar Cambios en Acceso a Bodegas", () => {
             const hasError = await errorMessage.isVisible().catch(() => false);
 
             if (hasSuccess) {
-              console.log("✅ Cambios guardados exitosamente");
+              console.warn("[Essence Debug]", "âœ… Cambios guardados exitosamente");
             } else if (hasError) {
-              console.log("❌ Error al guardar cambios");
+              console.warn("[Essence Debug]", "âŒ Error al guardar cambios");
             } else {
-              console.log("⚠️ Sin mensaje de confirmación visible");
+              console.warn("[Essence Debug]", "âš ï¸ Sin mensaje de confirmaciÃ³n visible");
             }
           }
         } else {
-          console.log("⚠️ No hay checkboxes de bodegas disponibles");
+          console.warn("[Essence Debug]", "âš ï¸ No hay checkboxes de bodegas disponibles");
         }
       } else {
-        console.log("⚠️ Pestaña 'Acceso a Bodegas' no encontrada");
+        console.warn("[Essence Debug]", "âš ï¸ PestaÃ±a 'Acceso a Bodegas' no encontrada");
       }
     }
   });
 
-  test("VERIFICACIÓN: Membership debe cargarse correctamente", async ({
+  test("VERIFICACIÃ“N: Membership debe cargarse correctamente", async ({
     page,
     loginAsAdmin,
   }) => {
     await loginAsAdmin();
 
-    // Navegar a distribuidor
-    await page.goto("/admin/distributors");
+    // Navegar a empleado
+    await page.goto("/admin/employees");
     await page.waitForLoadState("networkidle");
 
     const detailButton = page
@@ -125,23 +125,23 @@ test.describe("🐛 BUG FIX: Guardar Cambios en Acceso a Bodegas", () => {
 
         if (url.includes("/members") && response.request().method() === "GET") {
           const status = response.status();
-          console.log(`📡 API /members - Status: ${status}`);
+          console.warn("[Essence Debug]", `ðŸ“¡ API /members - Status: ${status}`);
 
           if (status === 200) {
             try {
               const data = await response.json();
-              console.log(
-                `✅ Members response:`,
+              console.warn("[Essence Debug]", 
+                `âœ… Members response:`,
                 JSON.stringify(data, null, 2)
               );
             } catch (e) {
-              console.log("⚠️ No se pudo parsear respuesta de members");
+              console.warn("[Essence Debug]", "âš ï¸ No se pudo parsear respuesta de members");
             }
           }
         }
       });
 
-      // Ir a pestaña de bodegas para triggear la carga
+      // Ir a pestaÃ±a de bodegas para triggear la carga
       const branchesTab = page.getByRole("tab", {
         name: /acceso a bodegas|bodegas/i,
       });
@@ -152,3 +152,4 @@ test.describe("🐛 BUG FIX: Guardar Cambios en Acceso a Bodegas", () => {
     }
   });
 });
+

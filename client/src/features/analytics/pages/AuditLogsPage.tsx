@@ -117,8 +117,8 @@ export default function AuditLogs() {
       category_created: "Categoría Creada",
       category_updated: "Categoría Actualizada",
       category_deleted: "Categoría Eliminada",
-      distributor_created: "Distribuidor Creado",
-      distributor_updated: "Distribuidor Actualizado",
+      employee_created: "Empleado Creado",
+      employee_updated: "Empleado Actualizado",
       stock_assigned: "Stock Asignado",
       stock_withdrawn: "Stock Retirado",
       sale_registered: "Venta Registrada",
@@ -294,7 +294,7 @@ export default function AuditLogs() {
               <option value="auth">Autenticación</option>
               <option value="products">Productos</option>
               <option value="categories">Categorías</option>
-              <option value="distributors">Distribuidores</option>
+              <option value="employees">Empleados</option>
               <option value="stock">Stock</option>
               <option value="sales">Ventas</option>
               <option value="defective_products">Defectuosos</option>

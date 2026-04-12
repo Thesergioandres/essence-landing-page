@@ -21,7 +21,7 @@ const normalizeName = (value) =>
 async function buildUserMaps(businessIds) {
   const memberships = await Membership.find({
     business: { $in: businessIds },
-    role: { $in: ["admin", "distribuidor"] },
+    role: { $in: ["admin", "empleado"] },
     status: "active",
   })
     .select("business user role")
@@ -34,7 +34,7 @@ async function buildUserMaps(businessIds) {
   const usersById = new Map(users.map((u) => [String(u._id), u]));
 
   const adminByBusiness = new Map();
-  const distributorsByBusiness = new Map();
+  const employeesByBusiness = new Map();
 
   for (const membership of memberships) {
     const businessId = String(membership.business);
@@ -45,19 +45,19 @@ async function buildUserMaps(businessIds) {
       adminByBusiness.set(businessId, userId);
     }
 
-    if (membership.role === "distribuidor" && user?.name) {
+    if (membership.role === "empleado" && user?.name) {
       const key = normalizeName(user.name);
-      if (!distributorsByBusiness.has(businessId)) {
-        distributorsByBusiness.set(businessId, new Map());
+      if (!employeesByBusiness.has(businessId)) {
+        employeesByBusiness.set(businessId, new Map());
       }
-      const map = distributorsByBusiness.get(businessId);
+      const map = employeesByBusiness.get(businessId);
       if (!map.has(key)) {
         map.set(key, userId);
       }
     }
   }
 
-  return { adminByBusiness, distributorsByBusiness };
+  return { adminByBusiness, employeesByBusiness };
 }
 
 async function main() {
@@ -80,7 +80,7 @@ async function main() {
   ]);
 
   const businessIds = [...new Set(specialSales.map((s) => String(s.business)))];
-  const { adminByBusiness, distributorsByBusiness } =
+  const { adminByBusiness, employeesByBusiness } =
     await buildUserMaps(businessIds);
 
   const existingKeys = new Set(
@@ -110,14 +110,14 @@ async function main() {
     );
     const remainingProfit = Math.max(totalProfit - distributionSum, 0);
 
-    const distributorMap = distributorsByBusiness.get(businessId) || new Map();
+    const employeeMap = employeesByBusiness.get(businessId) || new Map();
 
     for (const dist of distribution) {
       const amount = Number(dist.amount) || 0;
       if (amount <= 0) continue;
 
       const nameKey = normalizeName(dist.name);
-      const userId = distributorMap.get(nameKey);
+      const userId = employeeMap.get(nameKey);
 
       if (!userId) {
         unresolved++;

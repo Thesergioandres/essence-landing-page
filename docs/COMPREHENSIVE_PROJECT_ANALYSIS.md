@@ -25,7 +25,7 @@
 
 ### 🎯 Visión General
 
-**Essence** es una plataforma full-stack de gestión empresarial para distribución de productos tecnológicos premium. Implementa un sistema multiempresarial (multi-tenant) con roles diferenciados (God, Admin, Distribuidor) y features avanzados de inventario, ventas, finanzas y gamificación.
+**Essence** es una plataforma full-stack de gestión empresarial para distribución de productos tecnológicos premium. Implementa un sistema multiempresarial (multi-tenant) con roles diferenciados (God, Admin, Empleado) y features avanzados de inventario, ventas, finanzas y gamificación.
 
 ### 📊 Métricas del Proyecto
 
@@ -138,7 +138,7 @@ client/
 │   │   ├── business/
 │   │   ├── common/
 │   │   ├── credits/
-│   │   ├── distributors/
+│   │   ├── employees/
 │   │   ├── inventory/
 │   │   ├── notifications/
 │   │   ├── sales/
@@ -155,7 +155,7 @@ client/
 
 **Patrón de Organización:**
 
-- **Feature-based**: Cada módulo (distributors, inventory, etc.) es autocontenido
+- **Feature-based**: Cada módulo (employees, inventory, etc.) es autocontenido
 - **Atomic Design**: Componentes UI reutilizables en shared/components
 - **Container/Presenter**: Separación lógica entre páginas y componentes
 
@@ -238,7 +238,7 @@ server/
 
 #### Modelos Core:
 
-1. **User** - Usuarios del sistema (god, admin, distribuidor)
+1. **User** - Usuarios del sistema (god, admin, empleado)
 2. **Business** - Empresas multiempresariales
 3. **Membership** - Relación User ↔ Business con roles
 4. **Product** - Catálogo de productos
@@ -249,7 +249,7 @@ server/
 
 #### Modelos de Inventario:
 
-9. **DistributorStock** - Stock asignado a distribuidores
+9. **EmployeeStock** - Stock asignado a empleados
 10. **BranchStock** - Stock en sucursales
 11. **Stock** - (Legacy) Stock global
 12. **InventoryEntry** - Entradas de inventario
@@ -279,7 +279,7 @@ server/
 #### Modelos de Reportes y Analytics:
 
 26. **ProfitHistory** - Historial de ganancias
-27. **DistributorStats** - Estadísticas de distribuidores
+27. **EmployeeStats** - Estadísticas de empleados
 28. **PeriodWinner** - Ganadores por período (gamificación)
 29. **AnalysisLog** - Logs de análisis
 
@@ -303,7 +303,7 @@ server/
 2. Loop por cada producto:
    a. Cargar producto
    b. Verificar stock (totalStock)
-   c. Calcular finanzas (distributorPrice, profits)
+   c. Calcular finanzas (employeePrice, profits)
    d. Deducir stock GLOBAL (totalStock)  ❌
    e. Crear registro de venta
 3. Retornar resumen
@@ -315,7 +315,7 @@ server/
    b. Verificar stock
    c. Calcular finanzas
    d. Deducir stock ESPECÍFICO:  ✅
-      - Si distributorId → DistributorStock.quantity
+      - Si employeeId → EmployeeStock.quantity
       - Si no → Product.warehouseStock
    e. Actualizar contador global (totalStock)
    f. Crear registro de venta
@@ -389,7 +389,7 @@ server/
 - Expiración configurable (access: 1h, refresh: 7d)
 
 // 3. AUTORIZACIÓN
-- Role-based: god, admin, distribuidor, cliente
+- Role-based: god, admin, empleado, cliente
 - Permission checks en middleware
 - Business-scoped data isolation (x-business-id header)
 
@@ -399,7 +399,7 @@ server/
 - Por-endpoint limits configurables
 
 // 5. PROTECCIÓN DE DATOS
-- Data Privacy: Cost fields ocultos para distribuidores
+- Data Privacy: Cost fields ocultos para empleados
 - Production Write Guard: Previene escrituras accidentales en prod
 - Database Operation Logger: Audita operaciones sensibles
 - Suspicious Request Detector: Detecta patrones maliciosos
@@ -442,9 +442,9 @@ Ventas (sales.routes.v2.js):
   DELETE /api/v2/sales/group/:groupId
 
 Inventario (stock.routes.v2.js):
-  POST   /api/v2/stock/assign-distributor
+  POST   /api/v2/stock/assign-employee
   POST   /api/v2/stock/assign-branch
-  GET    /api/v2/stock/distributor/:distributorId
+  GET    /api/v2/stock/employee/:employeeId
   GET    /api/v2/stock/branch/:branchId
   GET    /api/v2/stock/alerts
 
@@ -458,12 +458,12 @@ Advanced Analytics (advancedAnalytics.routes.v2.js):
   GET    /api/v2/analytics/sales-evolution
   GET    /api/v2/analytics/inventory-health
 
-Distribuidores (distributor.routes.v2.js):
-  GET    /api/v2/distributors
-  GET    /api/v2/distributors/:id
-  POST   /api/v2/distributors
-  PUT    /api/v2/distributors/:id
-  GET    /api/v2/distributors/:id/stats
+Empleados (employee.routes.v2.js):
+  GET    /api/v2/employees
+  GET    /api/v2/employees/:id
+  POST   /api/v2/employees
+  PUT    /api/v2/employees/:id
+  GET    /api/v2/employees/:id/stats
 
 ... (25+ route files más)
 ```
@@ -530,19 +530,19 @@ __tests__/
 - HomePage.tsx - Página de inicio con KPIs
 - CreateBusinessPage.tsx - Crear nuevo negocio
 
-**Distribuidores:**
+**Empleados:**
 
-- DistributorsPage.tsx - Lista de distribuidores
-- DistributorDetailPage.tsx - Detalle completo (661 líneas ⚠️)
-- AddDistributorPage.tsx - Agregar distribuidor
-- EditDistributorPage.tsx - Editar distribuidor (236 líneas)
-- DistributorDashboardPage.tsx - Dashboard del distribuidor
-- DistributorStatsPage.tsx - Estadísticas
-- DistributorSalesPage.tsx - Ventas del distribuidor
-- DistributorCreditsPage.tsx - Créditos del distribuidor
-- DistributorCatalogPage.tsx - Catálogo de productos
-- DistributorProductsPage.tsx - Productos asignados
-- PublicDistributorCatalogPage.tsx - Catálogo público
+- EmployeesPage.tsx - Lista de empleados
+- EmployeeDetailPage.tsx - Detalle completo (661 líneas ⚠️)
+- AddEmployeePage.tsx - Agregar empleado
+- EditEmployeePage.tsx - Editar empleado (236 líneas)
+- EmployeeDashboardPage.tsx - Dashboard del empleado
+- EmployeeStatsPage.tsx - Estadísticas
+- EmployeeSalesPage.tsx - Ventas del empleado
+- EmployeeCreditsPage.tsx - Créditos del empleado
+- EmployeeCatalogPage.tsx - Catálogo de productos
+- EmployeeProductsPage.tsx - Productos asignados
+- PublicEmployeeCatalogPage.tsx - Catálogo público
 
 **Inventario:**
 
@@ -719,8 +719,8 @@ dist/
 #### ⚠️ Componentes Grandes:
 
 ```
-DistributorDetailPage.tsx     → 661 líneas (REFACTORIZAR)
-EditDistributorPage.tsx       → 236 líneas (MEJORAR)
+EmployeeDetailPage.tsx     → 661 líneas (REFACTORIZAR)
+EditEmployeePage.tsx       → 236 líneas (MEJORAR)
 InventoryEntriesPage.tsx      → 577+ líneas (SIMPLIFICAR)
 ```
 
@@ -735,15 +735,15 @@ InventoryEntriesPage.tsx      → 577+ líneas (SIMPLIFICAR)
 ```
 User (1) ──< Membership >── (M) Business
   │
-  ├──< Sale (distributor)
-  ├──< DistributorStock
+  ├──< Sale (employee)
+  ├──< EmployeeStock
   ├──< Credit
   └──< AuditLog
 
 Business (1) ──< Product
   │           └──< Sale
   │           └──< InventoryEntry
-  │           └──< DistributorStock
+  │           └──< EmployeeStock
   │           └──< BranchStock
   │
   ├──< Category
@@ -758,7 +758,7 @@ Business (1) ──< Product
 
 Product (1) ──< InventoryEntry
   │          └──< Sale
-  │          └──< DistributorStock
+  │          └──< EmployeeStock
   │          └──< BranchStock
   │          └──< DefectiveProduct
   │
@@ -768,7 +768,7 @@ Sale (1) ──< Credit
   │      └──< CreditPayment
   │      └──< ProfitHistory
   │
-  └── Distributor (User)
+  └── Employee (User)
 ```
 
 ### 🔍 Índices Críticos
@@ -780,12 +780,12 @@ Sale (1) ──< Credit
   { business: 1, isActive: 1 } -
   // Sale
   { business: 1, saleDate: -1 } -
-  { business: 1, distributor: 1, saleDate: -1 } -
+  { business: 1, employee: 1, saleDate: -1 } -
   { business: 1, paymentStatus: 1 } -
   { saleGroupId: 1 } -
-  // DistributorStock
-  { business: 1, distributor: 1, product: 1 }(UNIQUE) -
-  { business: 1, distributor: 1, quantity: 1 } -
+  // EmployeeStock
+  { business: 1, employee: 1, product: 1 }(UNIQUE) -
+  { business: 1, employee: 1, quantity: 1 } -
   // Credit
   { business: 1, customer: 1 } -
   { business: 1, status: 1 } -
@@ -816,7 +816,7 @@ Colecciones Principales:
 - businesses: ~10-50 docs (10-50 KB)
 - products: ~1,000-5,000 docs (1-5 MB)
 - sales: ~10,000-100,000 docs (10-100 MB) 🔴 HEAVY
-- distributorstocks: ~5,000-20,000 docs (5-20 MB)
+- employeestocks: ~5,000-20,000 docs (5-20 MB)
 - credits: ~1,000-10,000 docs (1-10 MB)
 - auditlogs: ~50,000-500,000 docs (50-500 MB) 🔴 HEAVY
 
@@ -882,7 +882,7 @@ Refresh Token:
 
 ```javascript
 // Jerarquía de Roles:
-god > admin > distribuidor > cliente
+god > admin > empleado > cliente
 
 // Permisos por Rol:
 god:
@@ -894,12 +894,12 @@ god:
 admin:
   - Gestión completa de su business
   - CRUD de productos, ventas, inventario
-  - Gestión de distribuidores
+  - Gestión de empleados
   - Analytics completos
   - Configuración de métodos de pago/entrega
   - NO puede ver otros businesses
 
-distribuidor:
+empleado:
   - Ver productos asignados
   - Registrar ventas propias
   - Ver su inventario
@@ -980,7 +980,7 @@ const sales = await Sale.find({ business: businessId }).populate(
 
 **Ubicaciones con N+1:**
 
-- `DistributorRepository.getSalesWithDetails()` - ⚠️ Requiere optimización
+- `EmployeeRepository.getSalesWithDetails()` - ⚠️ Requiere optimización
 - `AnalyticsRepository.getTopProducts()` - ✅ Ya optimizado con aggregation
 - Loop manual en algunos controllers - ⚠️ Revisar
 
@@ -1105,7 +1105,7 @@ Frontend Performance:
    - **Impacto:** Crítico (estabilidad)
 
 3. **N+1 Queries en Varios Endpoints**
-   - `DistributorRepository.getSalesWithDetails()`
+   - `EmployeeRepository.getSalesWithDetails()`
    - Algunos loops manuales
    - **Esfuerzo:** 1 semana
    - **Impacto:** Alto (performance)
@@ -1113,7 +1113,7 @@ Frontend Performance:
 ### 🟡 Media (Arreglar Pronto)
 
 4. **Componentes Grandes (600+ líneas)**
-   - `DistributorDetailPage.tsx` (661 LOC)
+   - `EmployeeDetailPage.tsx` (661 LOC)
    - `InventoryEntriesPage.tsx` (577+ LOC)
    - **Esfuerzo:** 1-2 semanas
    - **Impacto:** Medio (mantenibilidad)
@@ -1280,14 +1280,14 @@ router.get("/products", paginate(), ProductController.getAll);
 #### 7. Refactorizar Componentes Grandes
 
 ```typescript
-// DistributorDetailPage.tsx (661 líneas)
+// EmployeeDetailPage.tsx (661 líneas)
 // Dividir en:
--DistributorHeader.tsx -
-  DistributorTabs.tsx -
-  DistributorStatsSection.tsx -
-  DistributorSalesSection.tsx -
-  DistributorInventorySection.tsx -
-  DistributorActions.tsx;
+-EmployeeHeader.tsx -
+  EmployeeTabs.tsx -
+  EmployeeStatsSection.tsx -
+  EmployeeSalesSection.tsx -
+  EmployeeInventorySection.tsx -
+  EmployeeActions.tsx;
 ```
 
 ### 📈 NICE TO HAVE (Mejoras Futuras)
@@ -1390,7 +1390,7 @@ Sentry.captureException(error);
 
 **Semana 7-8: Optimización Frontend**
 
-- [ ] Refactorizar DistributorDetailPage
+- [ ] Refactorizar EmployeeDetailPage
 - [ ] Refactorizar InventoryEntriesPage
 - [ ] Lazy load recharts + xlsx
 - [ ] Implementar React Query

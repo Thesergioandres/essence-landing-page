@@ -4,13 +4,13 @@ import type { Product } from "../features/inventory/types/product.types";
 interface ProductCardProps {
   product: Product;
   viewMode?: "grid" | "list";
-  showDistributorPrice?: boolean;
+  showEmployeePrice?: boolean;
 }
 
 export default function ProductCard({
   product,
   viewMode = "grid",
-  showDistributorPrice = false,
+  showEmployeePrice = false,
 }: ProductCardProps) {
   const navigate = useNavigate();
 
@@ -108,7 +108,7 @@ export default function ProductCard({
             </div>
           </div>
           <div className="text-right">
-            {showDistributorPrice ? (
+            {showEmployeePrice ? (
               <>
                 {product.isPromotion ? (
                   <>
@@ -122,7 +122,7 @@ export default function ProductCard({
                         "0.00"}
                     </p>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-green-600">
-                      B2B: ${product.distributorPrice?.toFixed(2) || "0.00"}
+                      B2B: ${product.employeePrice?.toFixed(2) || "0.00"}
                     </p>
                   </>
                 ) : (
@@ -134,10 +134,10 @@ export default function ProductCard({
                         "0.00"}
                     </p>
                     <p className="text-3xl font-bold text-green-400">
-                      ${product.distributorPrice?.toFixed(2) || "0.00"}
+                      ${product.employeePrice?.toFixed(2) || "0.00"}
                     </p>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-green-600">
-                      Precio Distribuidor
+                      Precio Empleado
                     </p>
                   </>
                 )}
@@ -284,7 +284,7 @@ export default function ProductCard({
         {/* Price and Stock */}
         <div className="flex items-end justify-between border-t border-gray-800/50 pt-4">
           <div>
-            {showDistributorPrice ? (
+            {showEmployeePrice ? (
               <>
                 {product.isPromotion ? (
                   <>
@@ -298,7 +298,7 @@ export default function ProductCard({
                         "0.00"}
                     </p>
                     <p className="text-xs text-green-500">
-                      B2B: ${product.distributorPrice?.toFixed(2) || "0.00"}
+                      B2B: ${product.employeePrice?.toFixed(2) || "0.00"}
                     </p>
                   </>
                 ) : (
@@ -307,7 +307,7 @@ export default function ProductCard({
                       Tu Precio (B2B)
                     </p>
                     <p className="text-2xl font-bold text-green-400">
-                      ${product.distributorPrice?.toFixed(2) || "0.00"}
+                      ${product.employeePrice?.toFixed(2) || "0.00"}
                     </p>
                     {product.clientPrice && (
                       <p className="text-xs text-gray-500 line-through">

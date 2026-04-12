@@ -1,10 +1,10 @@
-import User from "../src/infrastructure/database/models/User.js";
+﻿import User from "../src/infrastructure/database/models/User.js";
 
 /**
  * Cron job para verificar y expirar suscripciones vencidas
  * Este worker revisa:
  * 1. Usuarios con subscriptionExpiresAt pasada y status = "active"
- * 2. Marca automáticamente como "expired"
+ * 2. Marca automÃ¡ticamente como "expired"
  */
 
 /**
@@ -15,13 +15,13 @@ export const checkExpiredUserSubscriptions = async () => {
   const now = new Date();
   const requestId = `sub-expire-${Date.now()}`;
 
-  console.log("[WORKER JOB STARTED] checkExpiredUserSubscriptions", {
+  console.warn("[Essence Debug]", "[WORKER JOB STARTED] checkExpiredUserSubscriptions", {
     requestId,
     timestamp: now.toISOString(),
   });
 
   try {
-    // Buscar usuarios activos cuya suscripción ha expirado
+    // Buscar usuarios activos cuya suscripciÃ³n ha expirado
     const expiredUsers = await User.updateMany(
       {
         role: { $ne: "god" },
@@ -36,7 +36,7 @@ export const checkExpiredUserSubscriptions = async () => {
       }
     );
 
-    console.log("[WORKER JOB FINISHED] checkExpiredUserSubscriptions", {
+    console.warn("[Essence Debug]", "[WORKER JOB FINISHED] checkExpiredUserSubscriptions", {
       requestId,
       checked: expiredUsers.matchedCount,
       expired: expiredUsers.modifiedCount,
@@ -59,8 +59,8 @@ export const checkExpiredUserSubscriptions = async () => {
 };
 
 /**
- * Obtener usuarios con suscripciones próximas a expirar
- * @param {number} daysAhead - Días de anticipación para avisar
+ * Obtener usuarios con suscripciones prÃ³ximas a expirar
+ * @param {number} daysAhead - DÃ­as de anticipaciÃ³n para avisar
  * @returns {Promise<Array>}
  */
 export const getExpiringSubscriptions = async (daysAhead = 7) => {
@@ -77,7 +77,7 @@ export const getExpiringSubscriptions = async (daysAhead = 7) => {
       .sort({ subscriptionExpiresAt: 1 })
       .lean();
 
-    console.log("[WORKER JOB FINISHED] getExpiringSubscriptions", {
+    console.warn("[Essence Debug]", "[WORKER JOB FINISHED] getExpiringSubscriptions", {
       daysAhead,
       count: expiringUsers.length,
       timestamp: new Date().toISOString(),
@@ -96,12 +96,12 @@ export const getExpiringSubscriptions = async (daysAhead = 7) => {
 };
 
 /**
- * Ejecutar todas las verificaciones de suscripción
+ * Ejecutar todas las verificaciones de suscripciÃ³n
  * Llamar desde un cron job externo o endpoint protegido
  */
 export const runSubscriptionChecks = async () => {
   const requestId = `sub-checks-${Date.now()}`;
-  console.log("[WORKER JOB STARTED] runSubscriptionChecks", {
+  console.warn("[Essence Debug]", "[WORKER JOB STARTED] runSubscriptionChecks", {
     requestId,
     timestamp: new Date().toISOString(),
   });
@@ -123,7 +123,7 @@ export const runSubscriptionChecks = async () => {
     results.expiringIn3Days = await getExpiringSubscriptions(3);
     results.expiringToday = await getExpiringSubscriptions(1);
 
-    console.log("[WORKER JOB FINISHED] runSubscriptionChecks", {
+    console.warn("[Essence Debug]", "[WORKER JOB FINISHED] runSubscriptionChecks", {
       requestId,
       expired: results.expiredUsers.expired,
       expiringIn7Days: results.expiringIn7Days.length,
@@ -145,18 +145,18 @@ export const runSubscriptionChecks = async () => {
 };
 
 /**
- * Restaurar usuarios pausados que deberían estar activos
+ * Restaurar usuarios pausados que deberÃ­an estar activos
  * (caso edge: pausedRemainingMs > 0 pero status no es "paused")
  */
 export const cleanupInconsistentSubscriptions = async () => {
   const requestId = `sub-cleanup-${Date.now()}`;
-  console.log("[WORKER JOB STARTED] cleanupInconsistentSubscriptions", {
+  console.warn("[Essence Debug]", "[WORKER JOB STARTED] cleanupInconsistentSubscriptions", {
     requestId,
     timestamp: new Date().toISOString(),
   });
 
   try {
-    // Limpiar usuarios con pausedRemainingMs pero que no están pausados
+    // Limpiar usuarios con pausedRemainingMs pero que no estÃ¡n pausados
     const cleaned = await User.updateMany(
       {
         status: { $ne: "paused" },
@@ -167,7 +167,7 @@ export const cleanupInconsistentSubscriptions = async () => {
       }
     );
 
-    console.log("[WORKER JOB FINISHED] cleanupInconsistentSubscriptions", {
+    console.warn("[Essence Debug]", "[WORKER JOB FINISHED] cleanupInconsistentSubscriptions", {
       requestId,
       cleaned: cleaned.modifiedCount,
       timestamp: new Date().toISOString(),
@@ -184,3 +184,4 @@ export const cleanupInconsistentSubscriptions = async () => {
     throw error;
   }
 };
+

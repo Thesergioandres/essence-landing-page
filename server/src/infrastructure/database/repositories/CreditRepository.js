@@ -147,7 +147,7 @@ class CreditRepository {
       .populate({
         path: "sale",
         populate: [
-          { path: "distributor", select: "name email phone" },
+          { path: "employee", select: "name email phone" },
           {
             path: "product",
             select: "name image purchasePrice suggestedPrice",
@@ -283,7 +283,7 @@ class CreditRepository {
     if (
       ownsSession &&
       pendingGamification &&
-      saleForGamification?.distributor
+      saleForGamification?.employee
     ) {
       const product = saleForGamification.product
         ? await Product.findById(saleForGamification.product).lean()

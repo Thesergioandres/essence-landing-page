@@ -1,11 +1,11 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import { isCloudinaryConfigured } from "../../../../config/cloudinary.js";
 import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
 import { CreateProductUseCase } from "../../../application/use-cases/CreateProductUseCase.js";
 import { UpdateStockUseCase } from "../../../application/use-cases/UpdateStockUseCase.js";
 import { ProductPersistenceUseCase } from "../../../application/use-cases/repository-gateways/ProductPersistenceUseCase.js";
 import Business from "../../database/models/Business.js";
-import DistributorStock from "../../database/models/DistributorStock.js";
+import EmployeeStock from "../../database/models/EmployeeStock.js";
 import InventoryEntry from "../../database/models/InventoryEntry.js";
 
 const productRepository = new ProductPersistenceUseCase();
@@ -28,13 +28,13 @@ const sanitizeProductForFinancialPrivacy = (product = {}) => {
  */
 export const getAllProducts = async (req, res, next) => {
   try {
-    console.log("📦 GET /products - Headers:", req.headers["x-business-id"]);
-    console.log("📦 GET /products - businessId:", req.businessId);
-    console.log("📦 GET /products - user:", req.user?.id);
+    console.warn("[Essence Debug]", "ðŸ“¦ GET /products - Headers:", req.headers["x-business-id"]);
+    console.warn("[Essence Debug]", "ðŸ“¦ GET /products - businessId:", req.businessId);
+    console.warn("[Essence Debug]", "ðŸ“¦ GET /products - user:", req.user?.id);
 
     const businessId = req.headers["x-business-id"] || req.businessId;
     if (!businessId) {
-      console.log("❌ Business ID missing");
+      console.warn("[Essence Debug]", "âŒ Business ID missing");
       return res.status(400).json({
         success: false,
         message: "Business ID required",
@@ -49,16 +49,16 @@ export const getAllProducts = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
 
-    console.log("📦 Fetching products for business:", businessId);
+    console.warn("[Essence Debug]", "ðŸ“¦ Fetching products for business:", businessId);
     let products = await productRepository.findAll(businessId, filter);
-    console.log("✅ Found products:", products.length);
+    console.warn("[Essence Debug]", "âœ… Found products:", products.length);
 
     const financialPrivacy = resolveFinancialPrivacyContext(req);
     if (financialPrivacy.hideFinancialData) {
       products = products.map((product) =>
         sanitizeProductForFinancialPrivacy(product),
       );
-      console.log("🛡️ Sensitive cost fields excluded for distributor");
+      console.warn("[Essence Debug]", "ðŸ›¡ï¸ Sensitive cost fields excluded for employee");
     }
 
     const total = products.length;
@@ -75,7 +75,7 @@ export const getAllProducts = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error("❌ Error in getAllProducts:", error);
+    console.error("âŒ Error in getAllProducts:", error);
     console.error("Stack:", error.stack);
     res.status(500).json({
       success: false,
@@ -115,8 +115,8 @@ export const getPublicCatalog = async (req, res) => {
         supplierPrice,
         totalInventoryValue,
         profit,
-        distributorPrice,
-        distributorCommission,
+        employeePrice,
+        employeeCommission,
         ...safeProduct
       } = product;
       return safeProduct;
@@ -143,13 +143,13 @@ export const getPublicCatalog = async (req, res) => {
 };
 
 /**
- * Get Distributor Catalog (only products with stock > 0)
+ * Get Employee Catalog (only products with stock > 0)
  */
 export const getMyCatalog = async (req, res) => {
   try {
     if (req.user?.role !== "employee") {
       return res.status(403).json({
-        message: "Solo los distribuidores pueden acceder a su catálogo",
+        message: "Solo los empleados pueden acceder a su catÃ¡logo",
       });
     }
 
@@ -158,7 +158,7 @@ export const getMyCatalog = async (req, res) => {
       : req.headers["x-business-id"];
 
     const filter = {
-      distributor: req.user.id,
+      employee: req.user.id,
       quantity: { $gt: 0 },
     };
 
@@ -166,10 +166,10 @@ export const getMyCatalog = async (req, res) => {
       filter.business = req.businessId || businessHeader;
     }
 
-    const stockEntries = await DistributorStock.find(filter)
+    const stockEntries = await EmployeeStock.find(filter)
       .populate({
         path: "product",
-        select: "name description distributorPrice clientPrice image category",
+        select: "name description employeePrice clientPrice image category",
         populate: { path: "category", select: "name slug" },
       })
       .lean();
@@ -178,13 +178,13 @@ export const getMyCatalog = async (req, res) => {
       .filter((entry) => entry.product)
       .map((entry) => ({
         ...sanitizeProductForFinancialPrivacy(entry.product || {}),
-        distributorStock: entry.quantity,
+        employeeStock: entry.quantity,
       }));
 
     res.json(products);
   } catch (error) {
     res.status(500).json({
-      message: error.message || "Error al obtener el catálogo",
+      message: error.message || "Error al obtener el catÃ¡logo",
     });
   }
 };
@@ -248,7 +248,7 @@ export const getProductHistory = async (req, res) => {
       data: entries,
     });
   } catch (error) {
-    console.error("❌ Error in getProductHistory:", error);
+    console.error("âŒ Error in getProductHistory:", error);
     res.status(500).json({
       success: false,
       message: error.message || "Error al obtener el historial del producto",
@@ -261,11 +261,11 @@ export const getProductHistory = async (req, res) => {
  */
 export const createProduct = async (req, res, next) => {
   try {
-    console.log("🆕 POST /products - Creating product");
-    console.log("📦 Business ID:", req.headers["x-business-id"]);
-    console.log("👤 User ID:", req.user?.id);
-    console.log("📋 Body:", JSON.stringify(req.body, null, 2));
-    console.log("📁 File:", req.file ? "present" : "missing");
+    console.warn("[Essence Debug]", "ðŸ†• POST /products - Creating product");
+    console.warn("[Essence Debug]", "ðŸ“¦ Business ID:", req.headers["x-business-id"]);
+    console.warn("[Essence Debug]", "ðŸ‘¤ User ID:", req.user?.id);
+    console.warn("[Essence Debug]", "ðŸ“‹ Body:", JSON.stringify(req.body, null, 2));
+    console.warn("[Essence Debug]", "ðŸ“ File:", req.file ? "present" : "missing");
 
     // Process FormData - parse JSON arrays if they come as strings
     const productData = {
@@ -279,8 +279,8 @@ export const createProduct = async (req, res, next) => {
       productData.purchasePrice = Number(productData.purchasePrice);
     if (productData.suggestedPrice)
       productData.suggestedPrice = Number(productData.suggestedPrice);
-    if (productData.distributorPrice)
-      productData.distributorPrice = Number(productData.distributorPrice);
+    if (productData.employeePrice)
+      productData.employeePrice = Number(productData.employeePrice);
     if (productData.clientPrice)
       productData.clientPrice = Number(productData.clientPrice);
     if (productData.totalStock)
@@ -288,21 +288,21 @@ export const createProduct = async (req, res, next) => {
     if (productData.lowStockAlert)
       productData.lowStockAlert = Number(productData.lowStockAlert);
 
-    // 📦 STOCK INICIAL: Asignar el stock inicial directamente a bodega central
+    // ðŸ“¦ STOCK INICIAL: Asignar el stock inicial directamente a bodega central
     if (productData.totalStock) {
       productData.warehouseStock = productData.totalStock;
-      console.log(
-        `📦 Stock inicial asignado a bodega central: ${productData.warehouseStock} unidades`,
+      console.warn("[Essence Debug]", 
+        `ðŸ“¦ Stock inicial asignado a bodega central: ${productData.warehouseStock} unidades`,
       );
     }
 
     // Parse booleans
     if (productData.featured === "true") productData.featured = true;
     if (productData.featured === "false") productData.featured = false;
-    if (productData.distributorPriceManual === "true")
-      productData.distributorPriceManual = true;
-    if (productData.distributorPriceManual === "false")
-      productData.distributorPriceManual = false;
+    if (productData.employeePriceManual === "true")
+      productData.employeePriceManual = true;
+    if (productData.employeePriceManual === "false")
+      productData.employeePriceManual = false;
 
     // Parse arrays
     if (typeof productData.ingredients === "string") {
@@ -329,37 +329,37 @@ export const createProduct = async (req, res, next) => {
     // Handle image upload
     if (req.file) {
       if (isCloudinaryConfigured) {
-        // Cloudinary ya procesó la imagen mediante CloudinaryStorage
+        // Cloudinary ya procesÃ³ la imagen mediante CloudinaryStorage
         productData.image = {
           url: req.file.path, // Cloudinary URL
           publicId: req.file.filename, // Cloudinary public ID
         };
-        console.log("☁️ Image uploaded to Cloudinary:", req.file.path);
+        console.warn("[Essence Debug]", "â˜ï¸ Image uploaded to Cloudinary:", req.file.path);
       } else {
-        // Fallback a Base64 si Cloudinary no está configurado
+        // Fallback a Base64 si Cloudinary no estÃ¡ configurado
         const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
         productData.image = {
           url: base64Image,
           publicId: `product_${Date.now()}`,
         };
-        console.log("💾 Image stored as Base64 (Cloudinary disabled)");
+        console.warn("[Essence Debug]", "ðŸ’¾ Image stored as Base64 (Cloudinary disabled)");
       }
     }
 
-    console.log("📤 Executing CreateProductUseCase...");
-    console.log("📦 Processed data:", JSON.stringify(productData, null, 2));
+    console.warn("[Essence Debug]", "ðŸ“¤ Executing CreateProductUseCase...");
+    console.warn("[Essence Debug]", "ðŸ“¦ Processed data:", JSON.stringify(productData, null, 2));
 
     const useCase = new CreateProductUseCase();
-    // Para desarrollo local sin replica set, ejecutar sin sesión/transacción
+    // Para desarrollo local sin replica set, ejecutar sin sesiÃ³n/transacciÃ³n
     const product = await useCase.execute(productData, null);
-    console.log("✅ Product created:", product._id);
+    console.warn("[Essence Debug]", "âœ… Product created:", product._id);
 
     res.status(201).json({
       success: true,
       data: product,
     });
   } catch (error) {
-    console.error("❌ Error in createProduct:", error);
+    console.error("âŒ Error in createProduct:", error);
     console.error("Stack:", error.stack);
     res.status(500).json({
       success: false,
@@ -373,11 +373,11 @@ export const createProduct = async (req, res, next) => {
  */
 export const updateProduct = async (req, res, next) => {
   try {
-    console.log("🔄 PUT /products/:id - Updating product");
-    console.log("📦 Product ID:", req.params.id);
-    console.log("📦 Business ID:", req.headers["x-business-id"]);
-    console.log("📋 Body:", JSON.stringify(req.body, null, 2));
-    console.log("📁 File:", req.file ? "present" : "missing");
+    console.warn("[Essence Debug]", "ðŸ”„ PUT /products/:id - Updating product");
+    console.warn("[Essence Debug]", "ðŸ“¦ Product ID:", req.params.id);
+    console.warn("[Essence Debug]", "ðŸ“¦ Business ID:", req.headers["x-business-id"]);
+    console.warn("[Essence Debug]", "ðŸ“‹ Body:", JSON.stringify(req.body, null, 2));
+    console.warn("[Essence Debug]", "ðŸ“ File:", req.file ? "present" : "missing");
 
     const { id } = req.params;
     const businessId = req.headers["x-business-id"];
@@ -390,8 +390,8 @@ export const updateProduct = async (req, res, next) => {
       updateData.purchasePrice = Number(updateData.purchasePrice);
     if (updateData.suggestedPrice !== undefined)
       updateData.suggestedPrice = Number(updateData.suggestedPrice);
-    if (updateData.distributorPrice !== undefined)
-      updateData.distributorPrice = Number(updateData.distributorPrice);
+    if (updateData.employeePrice !== undefined)
+      updateData.employeePrice = Number(updateData.employeePrice);
     if (updateData.clientPrice !== undefined)
       updateData.clientPrice = Number(updateData.clientPrice);
     if (updateData.totalStock !== undefined)
@@ -404,10 +404,10 @@ export const updateProduct = async (req, res, next) => {
     // Parse booleans
     if (updateData.featured === "true") updateData.featured = true;
     if (updateData.featured === "false") updateData.featured = false;
-    if (updateData.distributorPriceManual === "true")
-      updateData.distributorPriceManual = true;
-    if (updateData.distributorPriceManual === "false")
-      updateData.distributorPriceManual = false;
+    if (updateData.employeePriceManual === "true")
+      updateData.employeePriceManual = true;
+    if (updateData.employeePriceManual === "false")
+      updateData.employeePriceManual = false;
 
     // Parse arrays
     if (typeof updateData.ingredients === "string") {
@@ -443,18 +443,18 @@ export const updateProduct = async (req, res, next) => {
           url: req.file.path,
           publicId: req.file.filename,
         };
-        console.log("☁️ Image uploaded to Cloudinary:", req.file.path);
+        console.warn("[Essence Debug]", "â˜ï¸ Image uploaded to Cloudinary:", req.file.path);
       } else {
         const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
         updateData.image = {
           url: base64Image,
           publicId: `product_${Date.now()}`,
         };
-        console.log("💾 Image stored as Base64 (Cloudinary disabled)");
+        console.warn("[Essence Debug]", "ðŸ’¾ Image stored as Base64 (Cloudinary disabled)");
       }
     }
 
-    console.log("📤 Updating product in database...");
+    console.warn("[Essence Debug]", "ðŸ“¤ Updating product in database...");
 
     const repository = new ProductPersistenceUseCase();
     const updatedProduct = await repository.updateWithManualStock(
@@ -471,14 +471,14 @@ export const updateProduct = async (req, res, next) => {
       });
     }
 
-    console.log("✅ Product updated:", updatedProduct._id);
+    console.warn("[Essence Debug]", "âœ… Product updated:", updatedProduct._id);
 
     res.json({
       success: true,
       data: updatedProduct,
     });
   } catch (error) {
-    console.error("❌ Error in updateProduct:", error);
+    console.error("âŒ Error in updateProduct:", error);
     console.error("Stack:", error.stack);
     res.status(500).json({
       success: false,
@@ -554,7 +554,7 @@ export const updateProductPrices = async (req, res) => {
     if (hasPrice && (!Number.isFinite(parsedPrice) || parsedPrice < 0)) {
       return res.status(400).json({
         success: false,
-        message: "price debe ser un número válido mayor o igual a 0",
+        message: "price debe ser un nÃºmero vÃ¡lido mayor o igual a 0",
       });
     }
 
@@ -564,7 +564,7 @@ export const updateProductPrices = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "wholesalePrice debe ser un número válido mayor o igual a 0",
+        message: "wholesalePrice debe ser un nÃºmero vÃ¡lido mayor o igual a 0",
       });
     }
 
@@ -573,7 +573,7 @@ export const updateProductPrices = async (req, res) => {
       businessId,
       {
         clientPrice: parsedPrice,
-        distributorPrice: parsedWholesale,
+        employeePrice: parsedWholesale,
       },
     );
 
@@ -605,9 +605,9 @@ export const deleteProduct = async (req, res, next) => {
     const { id } = req.params;
     const businessId = req.headers["x-business-id"];
 
-    console.log("🗑️ DELETE /products/:id - Deleting product");
-    console.log("📦 Product ID:", id);
-    console.log("📦 Business ID:", businessId);
+    console.warn("[Essence Debug]", "ðŸ—‘ï¸ DELETE /products/:id - Deleting product");
+    console.warn("[Essence Debug]", "ðŸ“¦ Product ID:", id);
+    console.warn("[Essence Debug]", "ðŸ“¦ Business ID:", businessId);
 
     if (!businessId) {
       return res.status(400).json({
@@ -617,7 +617,7 @@ export const deleteProduct = async (req, res, next) => {
     }
 
     const deletedProduct = await productRepository.delete(id, businessId);
-    console.log("✅ Product deleted:", deletedProduct.name);
+    console.warn("[Essence Debug]", "âœ… Product deleted:", deletedProduct.name);
 
     res.json({
       success: true,
@@ -625,10 +625,11 @@ export const deleteProduct = async (req, res, next) => {
       data: deletedProduct,
     });
   } catch (error) {
-    console.error("❌ Error in deleteProduct:", error);
+    console.error("âŒ Error in deleteProduct:", error);
     res.status(500).json({
       success: false,
       message: error.message || "Error al eliminar producto",
     });
   }
 };
+

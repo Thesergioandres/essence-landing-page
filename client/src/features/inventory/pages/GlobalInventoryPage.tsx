@@ -24,8 +24,8 @@ interface GlobalInventoryItem {
   warehouse: number;
   branches: number;
   branchDetails: StockDetail[];
-  distributors: number;
-  distributorDetails: StockDetail[];
+  employees: number;
+  employeeDetails: StockDetail[];
   total: number;
   systemTotal: number;
   unassigned: number;
@@ -66,7 +66,7 @@ export default function GlobalInventoryPage() {
                 : item.branches || 0;
 
             const calculatedTotal =
-              (item.warehouse || 0) + branches + (item.distributors || 0);
+              (item.warehouse || 0) + branches + (item.employees || 0);
 
             const systemTotal = item.systemTotal || 0;
             const unassigned = systemTotal - calculatedTotal;
@@ -76,8 +76,8 @@ export default function GlobalInventoryPage() {
               warehouse: item.warehouse || 0,
               branches,
               branchDetails: filteredBranchDetails,
-              distributors: item.distributors || 0,
-              distributorDetails: item.distributorDetails || [],
+              employees: item.employees || 0,
+              employeeDetails: item.employeeDetails || [],
               total: calculatedTotal,
               systemTotal: systemTotal,
               unassigned: unassigned,
@@ -106,11 +106,11 @@ export default function GlobalInventoryPage() {
     (acc, item) => ({
       warehouse: acc.warehouse + item.warehouse,
       branches: acc.branches + item.branches,
-      distributors: acc.distributors + item.distributors,
+      employees: acc.employees + item.employees,
       total: acc.total + item.total,
       unassigned: acc.unassigned + (item.unassigned > 0 ? item.unassigned : 0),
     }),
-    { warehouse: 0, branches: 0, distributors: 0, total: 0, unassigned: 0 }
+    { warehouse: 0, branches: 0, employees: 0, total: 0, unassigned: 0 }
   );
 
   if (loading) {
@@ -219,10 +219,10 @@ export default function GlobalInventoryPage() {
             </div>
             <div>
               <p className="text-xs font-medium uppercase text-orange-300">
-                En Distribuidores
+                En Empleados
               </p>
               <p className="text-2xl font-bold text-white">
-                {formatNumber(totals.distributors)}
+                {formatNumber(totals.employees)}
               </p>
             </div>
           </div>
@@ -280,7 +280,7 @@ export default function GlobalInventoryPage() {
                 </th>
                 <th className="px-6 py-4 text-center text-cyan-400">Sedes</th>
                 <th className="px-6 py-4 text-center text-orange-400">
-                  Distribuidores
+                  Empleados
                 </th>
                 <th className="px-6 py-4 text-center text-red-500">
                   Sin Asignar
@@ -343,11 +343,11 @@ export default function GlobalInventoryPage() {
                   <td className="bg-orange-500/5 px-6 py-4 text-center font-medium text-orange-300">
                     <div className="flex flex-col gap-1">
                       <span className="text-lg font-bold">
-                        {formatNumber(item.distributors)}
+                        {formatNumber(item.employees)}
                       </span>
-                      {item.distributorDetails?.length > 0 && (
+                      {item.employeeDetails?.length > 0 && (
                         <div className="flex flex-col gap-0.5 text-[10px] text-gray-400">
-                          {item.distributorDetails.map((d, i) => (
+                          {item.employeeDetails.map((d, i) => (
                             <span key={i}>
                               {d.name}: {d.quantity}
                             </span>

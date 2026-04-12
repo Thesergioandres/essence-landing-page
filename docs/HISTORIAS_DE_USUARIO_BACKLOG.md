@@ -19,12 +19,12 @@
 * **Quiero** poder listar usuarios pendientes y cambiar su estado a `active`,
 * **Para** autorizarlos a usar el sistema.
 
-**HU-1.3: Ceguera del Distribuidor**
+**HU-1.3: Ceguera del Empleado**
 * **Como** owner del negocio,
-* **Quiero** que cuando mis distribuidores ingresen al sistema,
+* **Quiero** que cuando mis empleados ingresen al sistema,
 * **Para** que no puedan ver mi `purchasePrice`, `averageCost`, ni márgenes de ganancia.
 * **CA:**
-  * CA1: El API debe mutilar estos campos financieros en los responses hacia JWTs con rol `distribuidor`.
+  * CA1: El API debe mutilar estos campos financieros en los responses hacia JWTs con rol `empleado`.
 
 ---
 
@@ -38,19 +38,19 @@
   * CA1: Si la bodega no tiene 50 unidades, arrojar error de validación.
   * CA2: La operación de resta y suma debe ser una transacción atómica; o pasan ambas o ninguna.
 
-**HU-2.2: Asignación a Distribuidores**
+**HU-2.2: Asignación a Empleados**
 * **Como** owner,
-* **Quiero** asignar stock específicamente a un distribuidor,
+* **Quiero** asignar stock específicamente a un empleado,
 * **Para** que él lo venda por su cuenta.
 * **CA:**
-  * CA1: Deduce de `warehouseStock` e incrementa el registro en `DistributorStock`.
+  * CA1: Deduce de `warehouseStock` e incrementa el registro en `EmployeeStock`.
 
 ---
 
 ## 🏔️ ÉPICA 3: Finanzas y Punto de Venta (POS)
 
 **HU-3.1: Comisiones Dinámicas por Ranking**
-* **Como** distribuidor,
+* **Como** empleado,
 * **Quiero** ganar más porcentaje si soy el vendedor número 1,
 * **Para** sentirme motivado.
 * **CA:**

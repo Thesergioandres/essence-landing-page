@@ -29,7 +29,7 @@ export interface PromotionComboItem {
         clientPrice?: number;
         suggestedPrice?: number;
         purchasePrice?: number;
-        distributorPrice?: number;
+        employeePrice?: number;
       }
     | string;
   quantity: number;
@@ -45,7 +45,7 @@ export interface PromotionRewardItem {
         clientPrice?: number;
         suggestedPrice?: number;
         purchasePrice?: number;
-        distributorPrice?: number;
+        employeePrice?: number;
       }
     | string;
   quantity: number;
@@ -70,15 +70,15 @@ export interface Promotion {
   branches?: Array<string | { _id: string; name?: string }>;
   allowAllLocations?: boolean;
   allowedLocations?: Array<string | { _id: string; name?: string }>;
-  allowAllDistributors?: boolean;
-  allowedDistributors?: Array<string | { _id: string; name?: string }>;
+  allowAllEmployees?: boolean;
+  allowedEmployees?: Array<string | { _id: string; name?: string }>;
   segments?: string[];
   customers?: unknown[] | string[];
   buyItems?: PromotionComboItem[];
   rewardItems?: PromotionRewardItem[];
   comboItems?: PromotionComboItem[];
   promotionPrice?: number;
-  distributorPrice?: number;
+  employeePrice?: number;
   originalPrice?: number;
   discount?: {
     type: "percentage" | "amount";
@@ -100,7 +100,7 @@ export interface Promotion {
   showInCatalog?: boolean;
   financialImpact?: {
     expectedMargin?: number;
-    distributorCommission?: number;
+    employeeCommission?: number;
     notes?: string;
   };
   usageCount?: number;

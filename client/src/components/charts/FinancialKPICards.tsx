@@ -1,4 +1,4 @@
-import { m as motion } from "framer-motion";
+﻿import { m as motion } from "framer-motion";
 import {
   DollarSign,
   ShoppingCart,
@@ -37,7 +37,7 @@ export const FinancialKPICards: React.FC<{
           startDate,
           endDate,
         });
-        console.log("Financial KPIs Response:", response);
+        console.warn("[Essence Debug]", "Financial KPIs Response:", response);
         setKpis(response);
       } catch (error) {
         console.error("Error al cargar KPIs financieros:", error);
@@ -117,7 +117,7 @@ export const FinancialKPICards: React.FC<{
           id: "rangeProfit",
           label: "Ganancia neta (rango)",
           tooltip:
-            "Ganancia neta de ventas en el rango (ventas - costo producto - costos adicionales - comision distribuidor - garantias).",
+            "Ganancia neta de ventas en el rango (ventas - costo producto - costos adicionales - comision empleado - garantias).",
           value: formatMoney(
             range.netProfit ??
               range.grossProfit ??
@@ -144,10 +144,10 @@ export const FinancialKPICards: React.FC<{
           color: "bg-orange-500",
         },
         {
-          id: "activeDistributors",
-          label: "Distribuidores activos",
-          tooltip: "Distribuidores con al menos una venta en el periodo.",
-          value: safeNumber(summary.totalActiveDistributors),
+          id: "activeEmployees",
+          label: "Empleados activos",
+          tooltip: "Empleados con al menos una venta en el periodo.",
+          value: safeNumber(summary.totalActiveEmployees),
           icon: <Users className="h-8 w-8" />,
           color: "bg-gray-600",
         },
@@ -260,10 +260,10 @@ export const FinancialKPICards: React.FC<{
           color: "bg-orange-500",
         },
         {
-          id: "activeDistributors",
-          label: "Distribuidores activos",
-          tooltip: "Distribuidores con al menos una venta en el periodo.",
-          value: safeNumber(summary.totalActiveDistributors),
+          id: "activeEmployees",
+          label: "Empleados activos",
+          tooltip: "Empleados con al menos una venta en el periodo.",
+          value: safeNumber(summary.totalActiveEmployees),
           icon: <Users className="h-8 w-8" />,
           color: "bg-gray-600",
         },
@@ -312,3 +312,4 @@ export const FinancialKPICards: React.FC<{
     </div>
   );
 };
+

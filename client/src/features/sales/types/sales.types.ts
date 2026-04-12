@@ -10,7 +10,7 @@ export interface SaleProduct {
   description?: string;
   image?: { url: string; publicId?: string };
   category?: { _id: string; name: string; slug?: string } | string;
-  distributorPrice?: number;
+  employeePrice?: number;
   clientPrice?: number;
   purchasePrice?: number;
 }
@@ -23,7 +23,7 @@ export interface SaleCustomer {
   address?: string;
 }
 
-export interface SaleDistributor {
+export interface SaleEmployee {
   _id: string;
   name: string;
   email?: string;
@@ -45,7 +45,7 @@ export interface Sale {
   salePrice: number;
   purchasePrice?: number;
   averageCostAtSale?: number;
-  distributor?: SaleDistributor | string | null;
+  employee?: SaleEmployee | string | null;
   customer?: SaleCustomer | string | null;
   customerName?: string;
   branch?: SaleBranch | string | null;
@@ -57,8 +57,8 @@ export interface Sale {
   paymentMethodName?: string;
   source?: "pos" | "catalog" | "special";
   adminProfit?: number;
-  distributorProfit?: number;
-  distributorProfitPercentage?: number;
+  employeeProfit?: number;
+  employeeProfitPercentage?: number;
   totalProfit?: number;
   totalGroupProfit?: number;
   netProfit?: number;
@@ -70,7 +70,7 @@ export interface Sale {
     amount: number;
   }>;
   totalAdditionalCosts?: number;
-  distributorPrice?: number;
+  employeePrice?: number;
   isPromotion?: boolean;
   promotion?: { _id: string; name?: string } | string | null;
   saleGroupId?: string;
@@ -81,7 +81,7 @@ export interface Sale {
   parentSaleGroupId?: string | null;
   notes?: string;
   saleDate: string;
-  sourceLocation?: "warehouse" | "branch" | "distributor";
+  sourceLocation?: "warehouse" | "branch" | "employee";
   paymentStatus: "pendiente" | "confirmado";
   paymentConfirmedAt?: string;
   paymentConfirmedBy?: unknown | string;
@@ -121,7 +121,7 @@ export interface SaleStats {
   totalSales: number;
   totalOrders?: number;
   totalQuantity: number;
-  totalDistributorProfit: number;
+  totalEmployeeProfit: number;
   totalAdminProfit: number;
   totalRevenue: number;
   confirmedRevenue?: number;

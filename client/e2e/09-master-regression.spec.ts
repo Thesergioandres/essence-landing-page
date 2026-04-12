@@ -1,31 +1,31 @@
-/**
+﻿/**
  * ============================================
- * 🤖 TERMINATOR E2E MASTER REGRESSION TEST SUITE
+ * ðŸ¤– TERMINATOR E2E MASTER REGRESSION TEST SUITE
  * ============================================
  *
  * THE COMPLETE APPLICATION LIFECYCLE VALIDATOR
  *
  * This monolithic test file validates the ENTIRE application
  * using existing development data. It simulates real user
- * behavior across Admin and Distributor roles.
+ * behavior across Admin and Employee roles.
  *
- * ✨ ENHANCED WITH GEMINI PRO AI ✨
+ * âœ¨ ENHANCED WITH GEMINI PRO AI âœ¨
  * Uses Google's Gemini Pro to generate realistic, dynamic
  * customer notes in Colombian Spanish for test data.
  *
- * 📱 MOBILE + DESKTOP TESTING
+ * ðŸ“± MOBILE + DESKTOP TESTING
  * Runs on both Desktop Chrome and Mobile Safari (iPhone 13)
  *
- * 💥 NETWORK CHAOS TESTING
+ * ðŸ’¥ NETWORK CHAOS TESTING
  * Tests app resilience against network failures, timeouts, and errors
  *
  * ACTORS:
  *   - ADMIN: prueba@gmail.com / prueba123
- *   - DISTRIBUTOR: distribuidorprueba@gmail.com / distribuidorprueba
+ *   - EMPLOYEE: empleadoprueba@gmail.com / empleadoprueba
  *
  * SCENARIOS:
  *   1. Admin Baseline Check
- *   2. Distributor Operations (Sales Flow with AI Notes)
+ *   2. Employee Operations (Sales Flow with AI Notes)
  *   3. Admin Financial Verification
  *   4. Network Chaos Resilience Test
  *
@@ -42,7 +42,7 @@ import {
 } from "@playwright/test";
 
 // ============================================
-// 🤖 GEMINI PRO AI CONFIGURATION
+// ðŸ¤– GEMINI PRO AI CONFIGURATION
 // ============================================
 
 // Playwright-compatible way to read environment variables
@@ -58,9 +58,9 @@ let geminiModel: ReturnType<GoogleGenerativeAI["getGenerativeModel"]> | null =
 if (GEMINI_API_KEY) {
   genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   geminiModel = genAI.getGenerativeModel({ model: "gemini-pro" });
-  console.log("🤖 Gemini Pro AI initialized successfully");
+  console.warn("[Essence Debug]", "ðŸ¤– Gemini Pro AI initialized successfully");
 } else {
-  console.warn("⚠️ GEMINI_API_KEY not found - using fallback notes");
+  console.warn("âš ï¸ GEMINI_API_KEY not found - using fallback notes");
 }
 
 // Store AI-generated note for cross-test verification
@@ -72,17 +72,17 @@ let lastGeneratedAINote: string = "";
  */
 async function generateAINote(): Promise<string> {
   if (!geminiModel) {
-    console.log("🔄 Using fallback note (no Gemini API key)");
+    console.warn("[Essence Debug]", "ðŸ”„ Using fallback note (no Gemini API key)");
     lastGeneratedAINote = AI_FALLBACK_NOTE;
     return AI_FALLBACK_NOTE;
   }
 
   try {
-    const prompt = `Genera una nota corta (máximo 10 palabras) y realista de un cliente colombiano que compra un Vape. 
+    const prompt = `Genera una nota corta (mÃ¡ximo 10 palabras) y realista de un cliente colombiano que compra un Vape. 
 Ejemplos de estilo:
 - "Porfa un sabor mango, gracias parcero"
-- "Entrega después de las 6pm que salgo tarde"
-- "El sabor más suave que tengan"
+- "Entrega despuÃ©s de las 6pm que salgo tarde"
+- "El sabor mÃ¡s suave que tengan"
 
 Responde SOLO con la nota, sin comillas ni explicaciones adicionales.`;
 
@@ -96,17 +96,17 @@ Responde SOLO con la nota, sin comillas ni explicaciones adicionales.`;
       generatedNote.length > 0 &&
       generatedNote.length < 100
     ) {
-      console.log(`🤖 AI Generated Note: "${generatedNote}"`);
+      console.warn("[Essence Debug]", `ðŸ¤– AI Generated Note: "${generatedNote}"`);
       lastGeneratedAINote = generatedNote;
       return generatedNote;
     } else {
-      console.warn("⚠️ AI response invalid, using fallback");
+      console.warn("âš ï¸ AI response invalid, using fallback");
       lastGeneratedAINote = AI_FALLBACK_NOTE;
       return AI_FALLBACK_NOTE;
     }
   } catch (error) {
-    console.error("❌ Gemini AI error:", error);
-    console.log("🔄 Using fallback note due to error");
+    console.error("âŒ Gemini AI error:", error);
+    console.warn("[Essence Debug]", "ðŸ”„ Using fallback note due to error");
     lastGeneratedAINote = AI_FALLBACK_NOTE;
     return AI_FALLBACK_NOTE;
   }
@@ -120,7 +120,7 @@ function getLastAINote(): string {
 }
 
 // ============================================
-// 🎯 TEST CONFIGURATION & ACTORS
+// ðŸŽ¯ TEST CONFIGURATION & ACTORS
 // ============================================
 
 const ACTORS = {
@@ -129,10 +129,10 @@ const ACTORS = {
     password: "prueba123",
     role: "admin",
   },
-  distributor: {
-    email: "distribuidorprueba@gmail.com",
-    password: "distribuidorprueba",
-    role: "distribuidor",
+  employee: {
+    email: "empleadoprueba@gmail.com",
+    password: "empleadoprueba",
+    role: "empleado",
   },
 };
 
@@ -148,7 +148,7 @@ const TEST_CONFIG = {
 };
 
 // ============================================
-// 📸 SCREENSHOT ON FAILURE HELPER
+// ðŸ“¸ SCREENSHOT ON FAILURE HELPER
 // ============================================
 
 async function takeScreenshotOnFailure(
@@ -163,12 +163,12 @@ async function takeScreenshotOnFailure(
       body: screenshot,
       contentType: "image/png",
     });
-    console.error(`❌ FAILURE at step: ${stepName}`);
+    console.error(`âŒ FAILURE at step: ${stepName}`);
   }
 }
 
 // ============================================
-// 🔐 LOGIN HELPERS
+// ðŸ” LOGIN HELPERS
 // ============================================
 
 async function loginAs(
@@ -191,7 +191,7 @@ async function loginAs(
 
   // Click login button
   const loginButton = page.getByRole("button", {
-    name: /iniciar sesión|login|entrar|acceder/i,
+    name: /iniciar sesiÃ³n|login|entrar|acceder/i,
   });
   await loginButton.click();
 
@@ -205,7 +205,7 @@ async function loginAs(
       timeout: TEST_CONFIG.timeouts.navigation,
     });
   } else {
-    await expect(page).toHaveURL(/\/(distributor|pos|dashboard)/, {
+    await expect(page).toHaveURL(/\/(employee|pos|dashboard)/, {
       timeout: TEST_CONFIG.timeouts.navigation,
     });
   }
@@ -214,7 +214,7 @@ async function loginAs(
   const token = await page.evaluate(() => localStorage.getItem("token"));
   expect(token).toBeTruthy();
 
-  console.log(`✅ Logged in as ${actor.role}: ${actor.email}`);
+  console.warn("[Essence Debug]", `âœ… Logged in as ${actor.role}: ${actor.email}`);
 }
 
 async function logout(page: Page) {
@@ -226,11 +226,11 @@ async function logout(page: Page) {
   });
   await page.goto("/login");
   await page.waitForLoadState("networkidle");
-  console.log("🚪 Logged out successfully");
+  console.warn("[Essence Debug]", "ðŸšª Logged out successfully");
 }
 
 // ============================================
-// 📊 DATA CAPTURE HELPERS
+// ðŸ“Š DATA CAPTURE HELPERS
 // ============================================
 
 interface DashboardMetrics {
@@ -257,7 +257,7 @@ async function captureDashboardMetrics(page: Page): Promise<DashboardMetrics> {
   );
   const kpiCount = await kpiCards.count();
 
-  console.log(`📊 Found ${kpiCount} KPI cards on dashboard`);
+  console.warn("[Essence Debug]", `ðŸ“Š Found ${kpiCount} KPI cards on dashboard`);
 
   // Try to find specific metrics by text patterns
   const pageText = await page.textContent("body");
@@ -274,15 +274,15 @@ async function captureDashboardMetrics(page: Page): Promise<DashboardMetrics> {
     metrics.netProfit = parseFloat(profitMatch[1].replace(/,/g, ""));
   }
 
-  console.log(
-    `📈 Captured metrics: Sales=${metrics.totalSales}, Profit=${metrics.netProfit}`
+  console.warn("[Essence Debug]", 
+    `ðŸ“ˆ Captured metrics: Sales=${metrics.totalSales}, Profit=${metrics.netProfit}`
   );
 
   return metrics;
 }
 
 // ============================================
-// 🧪 EXTENDED TEST FIXTURE
+// ðŸ§ª EXTENDED TEST FIXTURE
 // ============================================
 
 const test = base.extend<{
@@ -297,10 +297,10 @@ const test = base.extend<{
 });
 
 // ============================================
-// 🎬 SCENARIO 1: ADMIN BASELINE CHECK
+// ðŸŽ¬ SCENARIO 1: ADMIN BASELINE CHECK
 // ============================================
 
-test.describe.serial("🎬 SCENARIO 1: ADMIN BASELINE CHECK", () => {
+test.describe.serial("ðŸŽ¬ SCENARIO 1: ADMIN BASELINE CHECK", () => {
   let initialMetrics: DashboardMetrics;
   let productStock: number = 0;
 
@@ -319,7 +319,7 @@ test.describe.serial("🎬 SCENARIO 1: ADMIN BASELINE CHECK", () => {
     });
 
     await captureOnFailure("1.1-admin-login");
-    console.log("✅ STEP 1.1 PASSED: Admin logged in successfully");
+    console.warn("[Essence Debug]", "âœ… STEP 1.1 PASSED: Admin logged in successfully");
   });
 
   test("1.2 Navigate to Admin Dashboard", async ({
@@ -336,12 +336,12 @@ test.describe.serial("🎬 SCENARIO 1: ADMIN BASELINE CHECK", () => {
     await test.step("Verify dashboard loaded", async () => {
       // Wait for dashboard content
       await expect(
-        page.getByText(/dashboard|panel|estadísticas|resumen/i).first()
+        page.getByText(/dashboard|panel|estadÃ­sticas|resumen/i).first()
       ).toBeVisible({ timeout: TEST_CONFIG.timeouts.element });
     });
 
     await captureOnFailure("1.2-admin-dashboard");
-    console.log("✅ STEP 1.2 PASSED: Admin dashboard loaded");
+    console.warn("[Essence Debug]", "âœ… STEP 1.2 PASSED: Admin dashboard loaded");
   });
 
   test("1.3 Assert: Ganancia Neta is visible", async ({
@@ -367,7 +367,7 @@ test.describe.serial("🎬 SCENARIO 1: ADMIN BASELINE CHECK", () => {
       for (const indicator of profitIndicators) {
         if (await indicator.isVisible().catch(() => false)) {
           found = true;
-          console.log("💰 Found profit indicator on dashboard");
+          console.warn("[Essence Debug]", "ðŸ’° Found profit indicator on dashboard");
           break;
         }
       }
@@ -383,7 +383,7 @@ test.describe.serial("🎬 SCENARIO 1: ADMIN BASELINE CHECK", () => {
     initialMetrics = await captureDashboardMetrics(page);
 
     await captureOnFailure("1.3-ganancia-neta");
-    console.log("✅ STEP 1.3 PASSED: Ganancia Neta/Profit metrics visible");
+    console.warn("[Essence Debug]", "âœ… STEP 1.3 PASSED: Ganancia Neta/Profit metrics visible");
   });
 
   test("1.4 Navigate to Inventory", async ({ page, captureOnFailure }) => {
@@ -401,7 +401,7 @@ test.describe.serial("🎬 SCENARIO 1: ADMIN BASELINE CHECK", () => {
     });
 
     await captureOnFailure("1.4-inventory");
-    console.log("✅ STEP 1.4 PASSED: Inventory page loaded");
+    console.warn("[Essence Debug]", "âœ… STEP 1.4 PASSED: Inventory page loaded");
   });
 
   test("1.5 Assert: Vape Test exists with correct stock", async ({
@@ -430,7 +430,7 @@ test.describe.serial("🎬 SCENARIO 1: ADMIN BASELINE CHECK", () => {
       const isVisible = await productLocator.isVisible().catch(() => false);
 
       if (isVisible) {
-        console.log(`📦 Found product: ${TEST_CONFIG.productName}`);
+        console.warn("[Essence Debug]", `ðŸ“¦ Found product: ${TEST_CONFIG.productName}`);
       } else {
         // Check if any products are visible
         const anyProduct = page
@@ -439,7 +439,7 @@ test.describe.serial("🎬 SCENARIO 1: ADMIN BASELINE CHECK", () => {
         await expect(anyProduct).toBeVisible({
           timeout: TEST_CONFIG.timeouts.element,
         });
-        console.log("⚠️ Vape Test not found, but products are visible");
+        console.warn("[Essence Debug]", "âš ï¸ Vape Test not found, but products are visible");
       }
     });
 
@@ -454,7 +454,7 @@ test.describe.serial("🎬 SCENARIO 1: ADMIN BASELINE CHECK", () => {
         const stockMatch = text?.match(/(\d+)/);
         if (stockMatch) {
           productStock = parseInt(stockMatch[1], 10);
-          console.log(`📊 Current stock: ${productStock}`);
+          console.warn("[Essence Debug]", `ðŸ“Š Current stock: ${productStock}`);
           expect(productStock).toBeGreaterThanOrEqual(
             TEST_CONFIG.expectedMinStock
           );
@@ -463,7 +463,7 @@ test.describe.serial("🎬 SCENARIO 1: ADMIN BASELINE CHECK", () => {
     });
 
     await captureOnFailure("1.5-vape-test-stock");
-    console.log("✅ STEP 1.5 PASSED: Product inventory verified");
+    console.warn("[Essence Debug]", "âœ… STEP 1.5 PASSED: Product inventory verified");
   });
 
   test("1.6 Logout Admin", async ({ page, captureOnFailure }) => {
@@ -478,43 +478,43 @@ test.describe.serial("🎬 SCENARIO 1: ADMIN BASELINE CHECK", () => {
     });
 
     await captureOnFailure("1.6-admin-logout");
-    console.log("✅ STEP 1.6 PASSED: Admin logged out");
+    console.warn("[Essence Debug]", "âœ… STEP 1.6 PASSED: Admin logged out");
   });
 });
 
 // ============================================
-// 🎬 SCENARIO 2: DISTRIBUTOR OPERATIONS
+// ðŸŽ¬ SCENARIO 2: EMPLOYEE OPERATIONS
 // ============================================
 
 test.describe
-  .serial("🎬 SCENARIO 2: DISTRIBUTOR OPERATIONS (Sales Flow)", () => {
-  let distributorStockBefore: number = 0;
+  .serial("ðŸŽ¬ SCENARIO 2: EMPLOYEE OPERATIONS (Sales Flow)", () => {
+  let employeeStockBefore: number = 0;
 
-  test("2.1 Login as Distributor", async ({ page, captureOnFailure }) => {
+  test("2.1 Login as Employee", async ({ page, captureOnFailure }) => {
     await test.step("Navigate to login", async () => {
       await page.goto("/login");
       await page.waitForLoadState("networkidle");
     });
 
-    await test.step("Enter distributor credentials", async () => {
-      await loginAs(page, ACTORS.distributor);
+    await test.step("Enter employee credentials", async () => {
+      await loginAs(page, ACTORS.employee);
     });
 
-    await captureOnFailure("2.1-distributor-login");
-    console.log("✅ STEP 2.1 PASSED: Distributor logged in");
+    await captureOnFailure("2.1-employee-login");
+    console.warn("[Essence Debug]", "âœ… STEP 2.1 PASSED: Employee logged in");
   });
 
   test("2.2 Assert: Redirect to POS/Dashboard", async ({
     page,
     captureOnFailure,
   }) => {
-    await loginAs(page, ACTORS.distributor);
+    await loginAs(page, ACTORS.employee);
 
     await test.step("Verify landing page after login", async () => {
-      // Distributors typically land on POS, dashboard, or their inventory
+      // Employees typically land on POS, dashboard, or their inventory
       const url = page.url();
       const validPaths = [
-        "/distributor",
+        "/employee",
         "/pos",
         "/dashboard",
         "/vender",
@@ -524,25 +524,25 @@ test.describe
         validPaths.some(path => url.includes(path)) || url.includes("/");
 
       expect(isValidPath).toBe(true);
-      console.log(`📍 Distributor landed on: ${url}`);
+      console.warn("[Essence Debug]", `ðŸ“ Employee landed on: ${url}`);
     });
 
-    await captureOnFailure("2.2-distributor-redirect");
-    console.log("✅ STEP 2.2 PASSED: Distributor redirected correctly");
+    await captureOnFailure("2.2-employee-redirect");
+    console.warn("[Essence Debug]", "âœ… STEP 2.2 PASSED: Employee redirected correctly");
   });
 
   test("2.3 Check Stock: Mi Inventario shows items", async ({
     page,
     captureOnFailure,
   }) => {
-    await loginAs(page, ACTORS.distributor);
+    await loginAs(page, ACTORS.employee);
 
-    await test.step("Navigate to distributor inventory", async () => {
-      // Try different paths for distributor inventory
+    await test.step("Navigate to employee inventory", async () => {
+      // Try different paths for employee inventory
       const inventoryPaths = [
-        "/distributor/inventory",
+        "/employee/inventory",
         "/mi-inventario",
-        "/distributor/products",
+        "/employee/products",
         "/pos",
       ];
 
@@ -561,7 +561,7 @@ test.describe
 
         if (hasProducts) {
           found = true;
-          console.log(`📦 Found distributor inventory at: ${path}`);
+          console.warn("[Essence Debug]", `ðŸ“¦ Found employee inventory at: ${path}`);
           break;
         }
       }
@@ -588,32 +588,32 @@ test.describe
       );
       const count = await productItems.count();
 
-      console.log(`📦 Distributor sees ${count} products in inventory`);
+      console.warn("[Essence Debug]", `ðŸ“¦ Employee sees ${count} products in inventory`);
 
       // Capture current stock for comparison
       const stockText = await page.textContent("body");
       const stockMatch = stockText?.match(/stock[:\s]*(\d+)/i);
       if (stockMatch) {
-        distributorStockBefore = parseInt(stockMatch[1], 10);
+        employeeStockBefore = parseInt(stockMatch[1], 10);
       }
     });
 
-    await captureOnFailure("2.3-distributor-inventory");
-    console.log("✅ STEP 2.3 PASSED: Distributor inventory visible");
+    await captureOnFailure("2.3-employee-inventory");
+    console.warn("[Essence Debug]", "âœ… STEP 2.3 PASSED: Employee inventory visible");
   });
 
   test("2.4 CASE A: Happy Path Sale - Add product to cart", async ({
     page,
     captureOnFailure,
   }) => {
-    await loginAs(page, ACTORS.distributor);
+    await loginAs(page, ACTORS.employee);
 
     await test.step("Navigate to POS/Sales", async () => {
       // Try common POS paths
       const posPaths = [
         "/pos",
         "/vender",
-        "/distributor/sales/register",
+        "/employee/sales/register",
         "/nueva-venta",
       ];
 
@@ -629,7 +629,7 @@ test.describe
           .catch(() => false);
 
         if (hasSalesUI) {
-          console.log(`🛒 Found POS at: ${path}`);
+          console.warn("[Essence Debug]", `ðŸ›’ Found POS at: ${path}`);
           break;
         }
       }
@@ -672,33 +672,33 @@ test.describe
 
       // Click add to cart if there's an add button
       const addButton = page.getByRole("button", {
-        name: /agregar|añadir|add|\+/i,
+        name: /agregar|aÃ±adir|add|\+/i,
       });
       if (await addButton.isVisible().catch(() => false)) {
         await addButton.click();
       }
 
-      console.log("🛒 Product added to cart");
+      console.warn("[Essence Debug]", "ðŸ›’ Product added to cart");
     });
 
     await captureOnFailure("2.4-add-to-cart");
-    console.log("✅ STEP 2.4 PASSED: Product added to cart");
+    console.warn("[Essence Debug]", "âœ… STEP 2.4 PASSED: Product added to cart");
   });
 
   test("2.5 CASE A: Happy Path Sale - Select Payment and Confirm", async ({
     page,
     captureOnFailure,
   }) => {
-    await loginAs(page, ACTORS.distributor);
+    await loginAs(page, ACTORS.employee);
 
     // Navigate to POS and add a product first (repeat from previous step)
     await page.goto("/pos");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
 
-    await test.step("🤖 Generate AI-powered customer note", async () => {
+    await test.step("ðŸ¤– Generate AI-powered customer note", async () => {
       const aiNote = await generateAINote();
-      console.log(`🤖 Gemini Pro generated note: "${aiNote}"`);
+      console.warn("[Essence Debug]", `ðŸ¤– Gemini Pro generated note: "${aiNote}"`);
 
       // Look for notes/observations field
       const noteFieldSelectors = [
@@ -713,14 +713,14 @@ test.describe
       for (const noteField of noteFieldSelectors) {
         if (await noteField.isVisible().catch(() => false)) {
           await noteField.fill(aiNote);
-          console.log("✍️ AI note filled in customer observations field");
+          console.warn("[Essence Debug]", "âœï¸ AI note filled in customer observations field");
           break;
         }
       }
     });
 
-    await test.step("🔍 Multi-Selector Strategy: Find and Click Payment Method", async () => {
-      console.log("🔍 Searching for payment section...");
+    await test.step("ðŸ” Multi-Selector Strategy: Find and Click Payment Method", async () => {
+      console.warn("[Essence Debug]", "ðŸ” Searching for payment section...");
 
       // Wait for payment section to be visible
       const paymentSection = page
@@ -732,7 +732,7 @@ test.describe
         .waitFor({ state: "visible", timeout: 5000 })
         .catch(() => {
           console.warn(
-            "⚠️ Payment section not found by class, continuing anyway"
+            "âš ï¸ Payment section not found by class, continuing anyway"
           );
         });
 
@@ -769,7 +769,7 @@ test.describe
             await element.click();
             await page.waitForTimeout(800);
             paymentSelected = true;
-            console.log(`✅ Payment selected using: ${type}`);
+            console.warn("[Essence Debug]", `âœ… Payment selected using: ${type}`);
             break;
           }
         } catch (e) {
@@ -782,7 +782,7 @@ test.describe
         // Last resort: Take screenshot and list all buttons
         await captureOnFailure("payment-method-not-found");
         const allButtons = await page.locator("button").allTextContents();
-        console.error("❌ CRITICAL: Payment method selector not found!");
+        console.error("âŒ CRITICAL: Payment method selector not found!");
         console.error("Available buttons:", allButtons);
         throw new Error(
           "Payment method 'Efectivo' not found with any selector strategy"
@@ -790,7 +790,7 @@ test.describe
       }
     });
 
-    await test.step("⏱️ HARD ASSERT: Confirm Button MUST be Enabled", async () => {
+    await test.step("â±ï¸ HARD ASSERT: Confirm Button MUST be Enabled", async () => {
       // Give the app time to process payment selection
       await page.waitForTimeout(1000);
 
@@ -801,7 +801,7 @@ test.describe
       // HARD ASSERT: Button MUST be enabled or test fails immediately
       try {
         await expect(confirmButton).toBeEnabled({ timeout: 8000 });
-        console.log("✅ HARD ASSERT PASSED: Confirm button is enabled");
+        console.warn("[Essence Debug]", "âœ… HARD ASSERT PASSED: Confirm button is enabled");
       } catch (error) {
         // Take screenshot before failing
         await captureOnFailure("confirm-button-disabled");
@@ -812,7 +812,7 @@ test.describe
           .catch(() => "unknown");
         const isDisabled = await confirmButton.isDisabled().catch(() => true);
 
-        console.error("❌ HARD ASSERT FAILED: Confirm button is DISABLED");
+        console.error("âŒ HARD ASSERT FAILED: Confirm button is DISABLED");
         console.error(`Button text: "${buttonText}"`);
         console.error(`Button disabled state: ${isDisabled}`);
 
@@ -843,16 +843,16 @@ test.describe
           .catch(() => null);
 
         await confirmButton.click();
-        console.log("🎯 Confirm button clicked!");
+        console.warn("[Essence Debug]", "ðŸŽ¯ Confirm button clicked!");
 
         const response = await responsePromise;
         if (response) {
           expect(response.status()).toBeLessThan(400);
-          console.log("✅ Sale API returned success");
+          console.warn("[Essence Debug]", "âœ… Sale API returned success");
         }
       } else {
         console.error(
-          "❌ CRITICAL: Confirm button not enabled - sale will not proceed"
+          "âŒ CRITICAL: Confirm button not enabled - sale will not proceed"
         );
       }
     });
@@ -862,7 +862,7 @@ test.describe
       await page.waitForTimeout(1500);
 
       const successIndicators = [
-        page.getByText(/éxito|success|venta registrada|completada/i),
+        page.getByText(/Ã©xito|success|venta registrada|completada/i),
         page.locator("[class*='toast'][class*='success']"),
         page.locator("[class*='modal'][class*='success']"),
         page.locator("[class*='alert'][class*='success']"),
@@ -873,28 +873,28 @@ test.describe
       for (const indicator of successIndicators) {
         if (await indicator.isVisible().catch(() => false)) {
           foundSuccess = true;
-          console.log("🎉 Success indicator found!");
+          console.warn("[Essence Debug]", "ðŸŽ‰ Success indicator found!");
           break;
         }
       }
 
       // Don't fail if no toast - the sale might have redirected
       if (!foundSuccess) {
-        console.log(
-          "ℹ️ No explicit success toast, checking for redirect or state change"
+        console.warn("[Essence Debug]", 
+          "â„¹ï¸ No explicit success toast, checking for redirect or state change"
         );
       }
     });
 
     await captureOnFailure("2.5-confirm-sale");
-    console.log("✅ STEP 2.5 PASSED: Sale confirmed");
+    console.warn("[Essence Debug]", "âœ… STEP 2.5 PASSED: Sale confirmed");
   });
 
   test("2.6 Assert: Stock decreases visually", async ({
     page,
     captureOnFailure,
   }) => {
-    await loginAs(page, ACTORS.distributor);
+    await loginAs(page, ACTORS.employee);
 
     await test.step("Check updated stock", async () => {
       // Navigate back to inventory
@@ -910,37 +910,37 @@ test.describe
           .isVisible()
           .catch(() => false))
       ) {
-        await page.goto("/distributor/inventory");
+        await page.goto("/employee/inventory");
         await page.waitForLoadState("networkidle");
       }
 
       const pageText = await page.textContent("body");
       const currentStockMatch = pageText?.match(/stock[:\s]*(\d+)/i);
 
-      if (currentStockMatch && distributorStockBefore > 0) {
+      if (currentStockMatch && employeeStockBefore > 0) {
         const currentStock = parseInt(currentStockMatch[1], 10);
-        console.log(
-          `📊 Stock before: ${distributorStockBefore}, Stock after: ${currentStock}`
+        console.warn("[Essence Debug]", 
+          `ðŸ“Š Stock before: ${employeeStockBefore}, Stock after: ${currentStock}`
         );
 
         // Stock should have decreased (or we just verify it's visible)
         expect(currentStock).toBeDefined();
       } else {
-        console.log(
-          "ℹ️ Stock comparison not possible, but inventory is visible"
+        console.warn("[Essence Debug]", 
+          "â„¹ï¸ Stock comparison not possible, but inventory is visible"
         );
       }
     });
 
     await captureOnFailure("2.6-stock-decrease");
-    console.log("✅ STEP 2.6 PASSED: Stock update verified");
+    console.warn("[Essence Debug]", "âœ… STEP 2.6 PASSED: Stock update verified");
   });
 
   test("2.7 CASE B: Insufficient Stock Error", async ({
     page,
     captureOnFailure,
   }) => {
-    await loginAs(page, ACTORS.distributor);
+    await loginAs(page, ACTORS.employee);
 
     await test.step("Try to add excessive quantity", async () => {
       await page.goto("/pos");
@@ -956,7 +956,7 @@ test.describe
 
         // Try to add to cart
         const addButton = page.getByRole("button", {
-          name: /agregar|añadir|add/i,
+          name: /agregar|aÃ±adir|add/i,
         });
         if (await addButton.isVisible().catch(() => false)) {
           await addButton.click();
@@ -967,7 +967,7 @@ test.describe
         const errorMessages = [
           page.getByText(/stock insuficiente|insufficient stock/i),
           page.getByText(/no hay suficiente|not enough/i),
-          page.getByText(/error|límite|limit/i),
+          page.getByText(/error|lÃ­mite|limit/i),
           page.locator("[class*='error'], [class*='alert-danger']"),
         ];
 
@@ -975,7 +975,7 @@ test.describe
         for (const error of errorMessages) {
           if (await error.isVisible().catch(() => false)) {
             foundError = true;
-            console.log("🚫 Found insufficient stock error");
+            console.warn("[Essence Debug]", "ðŸš« Found insufficient stock error");
             break;
           }
         }
@@ -987,22 +987,22 @@ test.describe
         const isDisabled = await confirmButton.isDisabled().catch(() => false);
 
         if (!foundError && isDisabled) {
-          console.log("🚫 Confirm button is disabled (validation working)");
+          console.warn("[Essence Debug]", "ðŸš« Confirm button is disabled (validation working)");
           foundError = true;
         }
 
         expect(foundError).toBe(true);
       } else {
-        console.log("ℹ️ Quantity input not found - different UI pattern");
+        console.warn("[Essence Debug]", "â„¹ï¸ Quantity input not found - different UI pattern");
       }
     });
 
     await captureOnFailure("2.7-insufficient-stock");
-    console.log("✅ STEP 2.7 PASSED: Insufficient stock validation works");
+    console.warn("[Essence Debug]", "âœ… STEP 2.7 PASSED: Insufficient stock validation works");
   });
 
-  test("2.8 Logout Distributor", async ({ page, captureOnFailure }) => {
-    await loginAs(page, ACTORS.distributor);
+  test("2.8 Logout Employee", async ({ page, captureOnFailure }) => {
+    await loginAs(page, ACTORS.employee);
 
     await test.step("Perform logout", async () => {
       await logout(page);
@@ -1012,24 +1012,24 @@ test.describe
       await expect(page).toHaveURL(/\/login/);
     });
 
-    await captureOnFailure("2.8-distributor-logout");
-    console.log("✅ STEP 2.8 PASSED: Distributor logged out");
+    await captureOnFailure("2.8-employee-logout");
+    console.warn("[Essence Debug]", "âœ… STEP 2.8 PASSED: Employee logged out");
   });
 });
 
 // ============================================
-// 🎬 SCENARIO 3: ADMIN FINANCIAL VERIFICATION
+// ðŸŽ¬ SCENARIO 3: ADMIN FINANCIAL VERIFICATION
 // ============================================
 
 test.describe
-  .serial("🎬 SCENARIO 3: ADMIN FINANCIAL VERIFICATION (The Spy)", () => {
+  .serial("ðŸŽ¬ SCENARIO 3: ADMIN FINANCIAL VERIFICATION (The Spy)", () => {
   test("3.1 Login as Admin (Post-Sale)", async ({ page, captureOnFailure }) => {
     await test.step("Login as admin again", async () => {
       await loginAs(page, ACTORS.admin);
     });
 
     await captureOnFailure("3.1-admin-post-sale-login");
-    console.log("✅ STEP 3.1 PASSED: Admin logged in for verification");
+    console.warn("[Essence Debug]", "âœ… STEP 3.1 PASSED: Admin logged in for verification");
   });
 
   test("3.2 Navigate to Dashboard (Analytics)", async ({
@@ -1064,7 +1064,7 @@ test.describe
     });
 
     await captureOnFailure("3.2-admin-analytics");
-    console.log("✅ STEP 3.2 PASSED: Dashboard analytics visible");
+    console.warn("[Essence Debug]", "âœ… STEP 3.2 PASSED: Dashboard analytics visible");
   });
 
   test("3.3 Assert: Total Sales count verification", async ({
@@ -1077,13 +1077,13 @@ test.describe
     await test.step("Navigate to dashboard", async () => {
       await page.goto("/admin/dashboard");
       await page.waitForLoadState("networkidle");
-      console.log("📊 Initial dashboard load complete");
+      console.warn("[Essence Debug]", "ðŸ“Š Initial dashboard load complete");
     });
 
     let dashboardPassed = false;
 
     await test.step("Poll Dashboard for Sales Count with Retry", async () => {
-      console.log("🔄 Starting polling mechanism for sales count...");
+      console.warn("[Essence Debug]", "ðŸ”„ Starting polling mechanism for sales count...");
 
       try {
         // Use expect.poll to retry fetching sales count until it's >= 1
@@ -1101,12 +1101,12 @@ test.describe
 
               if (salesMatch) {
                 const salesCount = parseInt(salesMatch[1], 10);
-                console.log(`📊 Polling attempt - Sales Count: ${salesCount}`);
+                console.warn("[Essence Debug]", `ðŸ“Š Polling attempt - Sales Count: ${salesCount}`);
                 return salesCount;
               }
 
-              console.log(
-                "⚠️ Polling attempt - No sales count found, returning 0"
+              console.warn("[Essence Debug]", 
+                "âš ï¸ Polling attempt - No sales count found, returning 0"
               );
               return 0;
             },
@@ -1118,11 +1118,11 @@ test.describe
           )
           .toBeGreaterThanOrEqual(1);
 
-        console.log("✅ Sales count verified via polling!");
+        console.warn("[Essence Debug]", "âœ… Sales count verified via polling!");
         dashboardPassed = true;
       } catch (error) {
         console.warn(
-          "⚠️ Dashboard KPI polling timed out - trying fallback verification"
+          "âš ï¸ Dashboard KPI polling timed out - trying fallback verification"
         );
         dashboardPassed = false;
       }
@@ -1130,8 +1130,8 @@ test.describe
 
     // FALLBACK: Check Sales History if Dashboard KPI failed
     if (!dashboardPassed) {
-      await test.step("🔄 FALLBACK: Verify Sales in History Table", async () => {
-        console.log("🔍 Navigating to Sales History as fallback...");
+      await test.step("ðŸ”„ FALLBACK: Verify Sales in History Table", async () => {
+        console.warn("[Essence Debug]", "ðŸ” Navigating to Sales History as fallback...");
 
         // Navigate to sales history
         const salesPaths = [
@@ -1156,13 +1156,13 @@ test.describe
 
           if (hasTable) {
             foundSalesPage = true;
-            console.log(`📋 Found sales history at: ${path}`);
+            console.warn("[Essence Debug]", `ðŸ“‹ Found sales history at: ${path}`);
             break;
           }
         }
 
         if (!foundSalesPage) {
-          throw new Error("❌ Could not find sales history page");
+          throw new Error("âŒ Could not find sales history page");
         }
 
         // Count rows in the sales table (excluding header)
@@ -1171,35 +1171,35 @@ test.describe
         );
         const rowCount = await tableRows.count();
 
-        console.log(`📊 Found ${rowCount} sales in history table`);
+        console.warn("[Essence Debug]", `ðŸ“Š Found ${rowCount} sales in history table`);
 
         if (rowCount >= 1) {
           console.warn(
-            "⚠️ WARNING: Dashboard KPI is lagging, but Sale EXISTS in History!"
+            "âš ï¸ WARNING: Dashboard KPI is lagging, but Sale EXISTS in History!"
           );
-          console.log(
-            "✅ FALLBACK VERIFICATION PASSED: At least 1 sale found in table"
+          console.warn("[Essence Debug]", 
+            "âœ… FALLBACK VERIFICATION PASSED: At least 1 sale found in table"
           );
 
           // Get first sale details for logging
           const firstRow = tableRows.first();
           const firstRowText = await firstRow.textContent().catch(() => "");
-          console.log(
-            `📝 First sale preview: ${firstRowText?.substring(0, 100)}...`
+          console.warn("[Essence Debug]", 
+            `ðŸ“ First sale preview: ${firstRowText?.substring(0, 100)}...`
           );
 
           // Test passes via fallback
           expect(rowCount).toBeGreaterThanOrEqual(1);
         } else {
           throw new Error(
-            "❌ CRITICAL: No sales found in Dashboard KPI AND no sales in History table. The sale was never created!"
+            "âŒ CRITICAL: No sales found in Dashboard KPI AND no sales in History table. The sale was never created!"
           );
         }
       });
     }
 
     await captureOnFailure("3.3-sales-count");
-    console.log("✅ STEP 3.3 PASSED: Sales count verified");
+    console.warn("[Essence Debug]", "âœ… STEP 3.3 PASSED: Sales count verified");
   });
 
   test("3.4 Assert: Net Profit calculation", async ({
@@ -1217,15 +1217,15 @@ test.describe
       const count = await profitIndicators.count();
 
       expect(count).toBeGreaterThan(0);
-      console.log(`📊 Found ${count} profit-related metrics`);
+      console.warn("[Essence Debug]", `ðŸ“Š Found ${count} profit-related metrics`);
 
       // Try to extract actual profit value
       const pageText = await page.textContent("body");
-      const profitMatch = pageText?.match(/ganancia[^\d]*[\$€]?\s*([\d,\.]+)/i);
+      const profitMatch = pageText?.match(/ganancia[^\d]*[\$â‚¬]?\s*([\d,\.]+)/i);
 
       if (profitMatch) {
         const profit = parseFloat(profitMatch[1].replace(/,/g, ""));
-        console.log(`💰 Net Profit value: ${profit}`);
+        console.warn("[Essence Debug]", `ðŸ’° Net Profit value: ${profit}`);
 
         // Verify profit formula: (Price - Cost - Commission)
         // Just verify it's a positive number for now
@@ -1234,34 +1234,34 @@ test.describe
     });
 
     await captureOnFailure("3.4-net-profit");
-    console.log("✅ STEP 3.4 PASSED: Net profit calculation verified");
+    console.warn("[Essence Debug]", "âœ… STEP 3.4 PASSED: Net profit calculation verified");
   });
 
-  test("3.5 Navigate to Distributor Detail", async ({
+  test("3.5 Navigate to Employee Detail", async ({
     page,
     captureOnFailure,
   }) => {
     await loginAs(page, ACTORS.admin);
 
-    await test.step("Go to distributors list", async () => {
-      await page.goto("/admin/distributors");
+    await test.step("Go to employees list", async () => {
+      await page.goto("/admin/employees");
       await page.waitForLoadState("networkidle");
     });
 
-    await test.step("Find and click on distribuidor prueba", async () => {
-      // Search for the distributor
+    await test.step("Find and click on empleado prueba", async () => {
+      // Search for the employee
       const searchInput = page.getByPlaceholder(/buscar|search/i);
       if (await searchInput.isVisible().catch(() => false)) {
-        await searchInput.fill("distribuidorprueba");
+        await searchInput.fill("empleadoprueba");
         await page.waitForTimeout(500);
       }
 
-      // Look for the distributor card or row
-      const distributorCard = page
-        .getByText(/distribuidorprueba|prueba/i)
+      // Look for the employee card or row
+      const employeeCard = page
+        .getByText(/empleadoprueba|prueba/i)
         .first();
 
-      if (await distributorCard.isVisible().catch(() => false)) {
+      if (await employeeCard.isVisible().catch(() => false)) {
         // Click Ver Detalle button
         const detailButton = page
           .getByRole("button", { name: /ver detalle|detail/i })
@@ -1271,36 +1271,36 @@ test.describe
           await detailButton.click();
         } else {
           // Try clicking the card directly
-          await distributorCard.click();
+          await employeeCard.click();
         }
 
         await page.waitForLoadState("networkidle");
 
         // Verify we're on detail page
-        await expect(page).toHaveURL(/\/admin\/distributors\/[a-f0-9]+/i, {
+        await expect(page).toHaveURL(/\/admin\/employees\/[a-f0-9]+/i, {
           timeout: TEST_CONFIG.timeouts.navigation,
         });
       }
     });
 
-    await captureOnFailure("3.5-distributor-detail");
-    console.log("✅ STEP 3.5 PASSED: Distributor detail page accessible");
+    await captureOnFailure("3.5-employee-detail");
+    console.warn("[Essence Debug]", "âœ… STEP 3.5 PASSED: Employee detail page accessible");
   });
 
-  test("3.6 Assert: Distributor stock reflects the sale", async ({
+  test("3.6 Assert: Employee stock reflects the sale", async ({
     page,
     captureOnFailure,
   }) => {
     await loginAs(page, ACTORS.admin);
-    await page.goto("/admin/distributors");
+    await page.goto("/admin/employees");
     await page.waitForLoadState("networkidle");
 
-    await test.step("Check distributor stats", async () => {
-      // Find any distributor and check their stats
-      const distributorCards = page.locator(
-        "[class*='card'], [class*='distributor']"
+    await test.step("Check employee stats", async () => {
+      // Find any employee and check their stats
+      const employeeCards = page.locator(
+        "[class*='card'], [class*='employee']"
       );
-      const cardCount = await distributorCards.count();
+      const cardCount = await employeeCards.count();
 
       if (cardCount > 0) {
         // Look for stock information
@@ -1309,7 +1309,7 @@ test.describe
 
         if (stockMatch) {
           const stock = parseInt(stockMatch[1], 10);
-          console.log(`📦 Distributor stock: ${stock}`);
+          console.warn("[Essence Debug]", `ðŸ“¦ Employee stock: ${stock}`);
           // Just verify stock is displayed, actual value depends on previous operations
           expect(stock).toBeGreaterThanOrEqual(0);
         }
@@ -1317,13 +1317,13 @@ test.describe
         // Also check for sales stats
         const salesMatch = statsText?.match(/ventas[:\s]*(\d+)/i);
         if (salesMatch) {
-          console.log(`📊 Distributor sales: ${salesMatch[1]}`);
+          console.warn("[Essence Debug]", `ðŸ“Š Employee sales: ${salesMatch[1]}`);
         }
       }
     });
 
-    await captureOnFailure("3.6-distributor-stock");
-    console.log("✅ STEP 3.6 PASSED: Distributor stock verified");
+    await captureOnFailure("3.6-employee-stock");
+    console.warn("[Essence Debug]", "âœ… STEP 3.6 PASSED: Employee stock verified");
   });
 
   test("3.7 Assert: AI-Generated Note appears in order history", async ({
@@ -1354,19 +1354,19 @@ test.describe
 
         if (hasSalesTable) {
           found = true;
-          console.log(`📋 Found sales history at: ${path}`);
+          console.warn("[Essence Debug]", `ðŸ“‹ Found sales history at: ${path}`);
           break;
         }
       }
 
       if (!found) {
-        console.log("⚠️ Sales history page not found via direct navigation");
+        console.warn("[Essence Debug]", "âš ï¸ Sales history page not found via direct navigation");
       }
     });
 
-    await test.step("🤖 Verify AI-generated note in latest sale", async () => {
+    await test.step("ðŸ¤– Verify AI-generated note in latest sale", async () => {
       const aiNote = getLastAINote();
-      console.log(`🔍 Looking for AI note: "${aiNote}"`);
+      console.warn("[Essence Debug]", `ðŸ” Looking for AI note: "${aiNote}"`);
 
       // Click on latest sale to see details (if applicable)
       const latestSaleRow = page
@@ -1395,7 +1395,7 @@ test.describe
           .includes(aiNote.toLowerCase().substring(0, 20)) || false;
 
       if (noteFound) {
-        console.log("✅ AI-generated note found in order details!");
+        console.warn("[Essence Debug]", "âœ… AI-generated note found in order details!");
       } else {
         // Check in a modal if one opened
         const modal = page.locator("[class*='modal'], [role='dialog']");
@@ -1406,54 +1406,54 @@ test.describe
               ?.toLowerCase()
               .includes(aiNote.toLowerCase().substring(0, 20)) || false;
           if (noteInModal) {
-            console.log("✅ AI-generated note found in modal!");
+            console.warn("[Essence Debug]", "âœ… AI-generated note found in modal!");
           } else {
-            console.log(
-              `ℹ️ Note not found in current view. Note was: "${aiNote}"`
+            console.warn("[Essence Debug]", 
+              `â„¹ï¸ Note not found in current view. Note was: "${aiNote}"`
             );
           }
         } else {
-          console.log(`ℹ️ Could not verify note in UI. Note was: "${aiNote}"`);
+          console.warn("[Essence Debug]", `â„¹ï¸ Could not verify note in UI. Note was: "${aiNote}"`);
         }
       }
 
       // Log the AI note for manual verification if needed
-      console.log(`📝 AI Note for verification: "${aiNote}"`);
+      console.warn("[Essence Debug]", `ðŸ“ AI Note for verification: "${aiNote}"`);
     });
 
     await captureOnFailure("3.7-ai-note-verification");
-    console.log("✅ STEP 3.7 PASSED: AI note verification complete");
+    console.warn("[Essence Debug]", "âœ… STEP 3.7 PASSED: AI note verification complete");
   });
 });
 
 // ============================================
-// � SCENARIO 4: NETWORK CHAOS (RESILIENCE TEST)
+// ï¿½ SCENARIO 4: NETWORK CHAOS (RESILIENCE TEST)
 // ============================================
 
-test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
-  test("4.1 Login as Distributor for Chaos Test", async ({
+test.describe.serial("ðŸŽ¬ SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
+  test("4.1 Login as Employee for Chaos Test", async ({
     page,
     captureOnFailure,
   }) => {
-    await test.step("Login as distributor", async () => {
-      await loginAs(page, ACTORS.distributor);
+    await test.step("Login as employee", async () => {
+      await loginAs(page, ACTORS.employee);
     });
 
     await captureOnFailure("4.1-chaos-login");
-    console.log("✅ STEP 4.1 PASSED: Distributor logged in for chaos test");
+    console.warn("[Essence Debug]", "âœ… STEP 4.1 PASSED: Employee logged in for chaos test");
   });
 
   test("4.2 Add Product to Cart (Pre-Chaos)", async ({
     page,
     captureOnFailure,
   }) => {
-    await loginAs(page, ACTORS.distributor);
+    await loginAs(page, ACTORS.employee);
 
     await test.step("Navigate to POS", async () => {
       const posPaths = [
         "/pos",
         "/vender",
-        "/distributor/sales/register",
+        "/employee/sales/register",
         "/nueva-venta",
       ];
 
@@ -1468,7 +1468,7 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
           .catch(() => false);
 
         if (hasSalesUI) {
-          console.log(`🛒 Found POS at: ${path}`);
+          console.warn("[Essence Debug]", `ðŸ›’ Found POS at: ${path}`);
           break;
         }
       }
@@ -1504,24 +1504,24 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
 
       // Click add button if available
       const addButton = page.getByRole("button", {
-        name: /agregar|añadir|add|\+/i,
+        name: /agregar|aÃ±adir|add|\+/i,
       });
       if (await addButton.isVisible().catch(() => false)) {
         await addButton.click();
       }
 
-      console.log("🛒 Product added to cart for chaos test");
+      console.warn("[Essence Debug]", "ðŸ›’ Product added to cart for chaos test");
     });
 
     await captureOnFailure("4.2-chaos-cart");
-    console.log("✅ STEP 4.2 PASSED: Cart ready for chaos test");
+    console.warn("[Essence Debug]", "âœ… STEP 4.2 PASSED: Cart ready for chaos test");
   });
 
   test("4.3 CHAOS: Force API Failure (500 Error)", async ({
     page,
     captureOnFailure,
   }) => {
-    await loginAs(page, ACTORS.distributor);
+    await loginAs(page, ACTORS.employee);
 
     // Navigate to POS
     await page.goto("/pos");
@@ -1539,17 +1539,17 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
       if (cartMatch) {
         cartItemsBefore = parseInt(cartMatch[1], 10);
       }
-      console.log(
-        `🛒 Cart items before chaos: ${cartItemsBefore || "unknown"}`
+      console.warn("[Essence Debug]", 
+        `ðŸ›’ Cart items before chaos: ${cartItemsBefore || "unknown"}`
       );
     });
 
-    await test.step("🔥 Setup Network Chaos Trap", async () => {
+    await test.step("ðŸ”¥ Setup Network Chaos Trap", async () => {
       // Intercept the sales API endpoint and force a 500 error
       await page.route("**/api/v2/sales**", async route => {
         if (route.request().method() === "POST") {
-          console.log(
-            "💥 CHAOS: Intercepted sales POST request - returning 500"
+          console.warn("[Essence Debug]", 
+            "ðŸ’¥ CHAOS: Intercepted sales POST request - returning 500"
           );
           await route.fulfill({
             status: 500,
@@ -1568,7 +1568,7 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
       // Also intercept the v1 endpoint in case it's used
       await page.route("**/api/sales**", async route => {
         if (route.request().method() === "POST") {
-          console.log("💥 CHAOS: Intercepted sales POST (v1) - returning 500");
+          console.warn("[Essence Debug]", "ðŸ’¥ CHAOS: Intercepted sales POST (v1) - returning 500");
           await route.fulfill({
             status: 500,
             contentType: "application/json",
@@ -1582,7 +1582,7 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
         }
       });
 
-      console.log("🔥 Network chaos trap armed!");
+      console.warn("[Essence Debug]", "ðŸ”¥ Network chaos trap armed!");
     });
 
     await test.step("Click Confirmar Pedido (Trigger Chaos)", async () => {
@@ -1592,15 +1592,15 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
 
       if (await confirmButton.isEnabled().catch(() => false)) {
         await confirmButton.click();
-        console.log(
-          "💥 CHAOS TRIGGERED: Confirm button clicked with trap active"
+        console.warn("[Essence Debug]", 
+          "ðŸ’¥ CHAOS TRIGGERED: Confirm button clicked with trap active"
         );
       } else {
-        console.log("⚠️ Confirm button not enabled - adding product first");
+        console.warn("[Essence Debug]", "âš ï¸ Confirm button not enabled - adding product first");
 
         // Try to add a product first
         const addButton = page.getByRole("button", {
-          name: /agregar|añadir|add|\+/i,
+          name: /agregar|aÃ±adir|add|\+/i,
         });
         if (await addButton.isVisible().catch(() => false)) {
           await addButton.click();
@@ -1610,7 +1610,7 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
         // Try confirm again
         if (await confirmButton.isEnabled().catch(() => false)) {
           await confirmButton.click();
-          console.log("💥 CHAOS TRIGGERED after adding product");
+          console.warn("[Essence Debug]", "ðŸ’¥ CHAOS TRIGGERED after adding product");
         }
       }
 
@@ -1624,7 +1624,7 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
       const hasContent = bodyContent && bodyContent.length > 100;
 
       expect(hasContent).toBe(true);
-      console.log("✅ App did NOT crash - page still has content");
+      console.warn("[Essence Debug]", "âœ… App did NOT crash - page still has content");
 
       // Check for white screen indicators
       const isWhiteScreen =
@@ -1637,13 +1637,13 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
         })) || false;
 
       expect(isWhiteScreen).toBe(false);
-      console.log("✅ No white screen detected");
+      console.warn("[Essence Debug]", "âœ… No white screen detected");
     });
 
     await test.step("Assert: Error Toast/Message is visible", async () => {
       // Look for error feedback to the user
       const errorIndicators = [
-        page.getByText(/error|fallo|falló|problema|no se pudo/i),
+        page.getByText(/error|fallo|fallÃ³|problema|no se pudo/i),
         page.locator("[class*='toast'][class*='error']"),
         page.locator("[class*='toast'][class*='danger']"),
         page.locator("[class*='alert'][class*='error']"),
@@ -1657,25 +1657,25 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
       for (const indicator of errorIndicators) {
         if (await indicator.isVisible().catch(() => false)) {
           const text = await indicator.textContent();
-          console.log(`🚨 Error message found: "${text?.substring(0, 50)}..."`);
+          console.warn("[Essence Debug]", `ðŸš¨ Error message found: "${text?.substring(0, 50)}..."`);
           foundError = true;
           break;
         }
       }
 
       if (foundError) {
-        console.log("✅ User received error feedback");
+        console.warn("[Essence Debug]", "âœ… User received error feedback");
       } else {
         // Even if no explicit toast, check the page doesn't show success
         const successIndicators = page.getByText(
-          /éxito|completada|registrada correctamente/i
+          /Ã©xito|completada|registrada correctamente/i
         );
         const hasSuccess = await successIndicators
           .isVisible()
           .catch(() => false);
         expect(hasSuccess).toBe(false);
-        console.log(
-          "ℹ️ No explicit error toast, but no false success shown either"
+        console.warn("[Essence Debug]", 
+          "â„¹ï¸ No explicit error toast, but no false success shown either"
         );
       }
     });
@@ -1689,7 +1689,7 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
       const stillOnPOS = url.includes("/pos") || url.includes("/vender");
 
       if (stillOnPOS) {
-        console.log("✅ User still on POS page (not redirected away)");
+        console.warn("[Essence Debug]", "âœ… User still on POS page (not redirected away)");
       }
 
       // Look for cart content
@@ -1708,9 +1708,9 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
       }
 
       if (cartStillVisible) {
-        console.log("✅ Cart UI still visible after error");
+        console.warn("[Essence Debug]", "âœ… Cart UI still visible after error");
       } else {
-        console.log("ℹ️ Cart visibility could not be confirmed");
+        console.warn("[Essence Debug]", "â„¹ï¸ Cart visibility could not be confirmed");
       }
 
       // Most important: user should be able to retry
@@ -1718,17 +1718,17 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
         name: /confirmar|completar|finalizar|vender|registrar/i,
       });
       const buttonExists = await confirmButton.isVisible().catch(() => false);
-      console.log(
-        `✅ Retry possible: Confirm button visible = ${buttonExists}`
+      console.warn("[Essence Debug]", 
+        `âœ… Retry possible: Confirm button visible = ${buttonExists}`
       );
     });
 
     await captureOnFailure("4.3-chaos-result");
-    console.log("✅ STEP 4.3 PASSED: Network chaos resilience verified");
+    console.warn("[Essence Debug]", "âœ… STEP 4.3 PASSED: Network chaos resilience verified");
   });
 
   test("4.4 CHAOS: Force Network Abort", async ({ page, captureOnFailure }) => {
-    await loginAs(page, ACTORS.distributor);
+    await loginAs(page, ACTORS.employee);
     await page.goto("/pos");
     await page.waitForLoadState("networkidle");
 
@@ -1736,14 +1736,14 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
       // This simulates a complete network failure (connection dropped)
       await page.route("**/api/v2/sales**", async route => {
         if (route.request().method() === "POST") {
-          console.log("💥 CHAOS: Aborting request (simulating network drop)");
+          console.warn("[Essence Debug]", "ðŸ’¥ CHAOS: Aborting request (simulating network drop)");
           await route.abort("failed");
         } else {
           await route.continue();
         }
       });
 
-      console.log("🔥 Network abort trap armed!");
+      console.warn("[Essence Debug]", "ðŸ”¥ Network abort trap armed!");
     });
 
     await test.step("Trigger network abort", async () => {
@@ -1753,7 +1753,7 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
 
       if (await confirmButton.isEnabled().catch(() => false)) {
         await confirmButton.click();
-        console.log("💥 Network abort triggered");
+        console.warn("[Essence Debug]", "ðŸ’¥ Network abort triggered");
       }
 
       await page.waitForTimeout(2000);
@@ -1768,14 +1768,14 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
       );
       const spinnerCount = await spinners.count();
       if (spinnerCount > 0) {
-        console.log("⏳ Waiting for loading indicators to disappear...");
+        console.warn("[Essence Debug]", "â³ Waiting for loading indicators to disappear...");
         await page.waitForTimeout(2000);
       }
 
       // App should not crash
       const bodyContent = await page.textContent("body");
       expect(bodyContent && bodyContent.length > 50).toBe(true);
-      console.log("✅ App survived network abort");
+      console.warn("[Essence Debug]", "âœ… App survived network abort");
 
       // Should still be functional - relaxed check
       const interactiveElements = await page
@@ -1784,20 +1784,20 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
 
       // Just verify we have SOME interactive elements (relaxed from strict visibility)
       expect(interactiveElements).toBeGreaterThan(0);
-      console.log(
-        `✅ UI has ${interactiveElements} interactive elements after network abort`
+      console.warn("[Essence Debug]", 
+        `âœ… UI has ${interactiveElements} interactive elements after network abort`
       );
     });
 
     await captureOnFailure("4.4-network-abort");
-    console.log("✅ STEP 4.4 PASSED: Network abort resilience verified");
+    console.warn("[Essence Debug]", "âœ… STEP 4.4 PASSED: Network abort resilience verified");
   });
 
   test("4.5 CHAOS: Slow Network (Timeout Simulation)", async ({
     page,
     captureOnFailure,
   }) => {
-    await loginAs(page, ACTORS.distributor);
+    await loginAs(page, ACTORS.employee);
     await page.goto("/pos");
     await page.waitForLoadState("networkidle");
 
@@ -1805,7 +1805,7 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
       // Simulate a very slow response (will likely timeout)
       await page.route("**/api/v2/sales**", async route => {
         if (route.request().method() === "POST") {
-          console.log("🐢 CHAOS: Delaying response for 15 seconds");
+          console.warn("[Essence Debug]", "ðŸ¢ CHAOS: Delaying response for 15 seconds");
           await new Promise(resolve => setTimeout(resolve, 15000));
           await route.fulfill({
             status: 200,
@@ -1820,7 +1820,7 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
         }
       });
 
-      console.log("🐢 Slow network trap armed!");
+      console.warn("[Essence Debug]", "ðŸ¢ Slow network trap armed!");
     });
 
     await test.step("Trigger request on slow network", async () => {
@@ -1831,7 +1831,7 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
       if (await confirmButton.isEnabled().catch(() => false)) {
         // Don't wait for it to complete, just check UI behavior
         await confirmButton.click();
-        console.log("🐢 Request sent on slow network");
+        console.warn("[Essence Debug]", "ðŸ¢ Request sent on slow network");
       }
 
       // Wait a bit but not for full timeout
@@ -1851,7 +1851,7 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
       for (const indicator of loadingIndicators) {
         if (await indicator.isVisible().catch(() => false)) {
           hasLoadingState = true;
-          console.log("⏳ Loading state detected (good UX)");
+          console.warn("[Essence Debug]", "â³ Loading state detected (good UX)");
           break;
         }
       }
@@ -1865,19 +1865,19 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
         .catch(() => false);
 
       expect(isInteractive).toBe(true);
-      console.log("✅ UI responsive during slow network");
+      console.warn("[Essence Debug]", "âœ… UI responsive during slow network");
     });
 
     await captureOnFailure("4.5-slow-network");
-    console.log("✅ STEP 4.5 PASSED: Slow network resilience verified");
+    console.warn("[Essence Debug]", "âœ… STEP 4.5 PASSED: Slow network resilience verified");
   });
 
   test("4.6 Logout after Chaos Test", async ({ page, captureOnFailure }) => {
-    await loginAs(page, ACTORS.distributor);
+    await loginAs(page, ACTORS.employee);
 
     await test.step("Clear any routes", async () => {
       await page.unrouteAll();
-      console.log("🧹 Network routes cleared");
+      console.warn("[Essence Debug]", "ðŸ§¹ Network routes cleared");
     });
 
     await test.step("Logout", async () => {
@@ -1885,39 +1885,40 @@ test.describe.serial("🎬 SCENARIO 4: NETWORK CHAOS (Resilience Test)", () => {
     });
 
     await captureOnFailure("4.6-chaos-logout");
-    console.log("✅ STEP 4.6 PASSED: Chaos test cleanup complete");
+    console.warn("[Essence Debug]", "âœ… STEP 4.6 PASSED: Chaos test cleanup complete");
   });
 });
 
 // ============================================
-// 🏁 FINAL SUMMARY
+// ðŸ FINAL SUMMARY
 // ============================================
 
-test.describe("🏁 REGRESSION TEST SUMMARY", () => {
+test.describe("ðŸ REGRESSION TEST SUMMARY", () => {
   test("Final Report", async ({ page }) => {
     const aiNote = getLastAINote();
 
-    console.log(`
-╔══════════════════════════════════════════════════════════════════╗
-║                                                                  ║
-║   🤖 TERMINATOR E2E MASTER REGRESSION - COMPLETE                 ║
-║                                                                  ║
-║   ✅ Scenario 1: Admin Baseline Check                            ║
-║   ✅ Scenario 2: Distributor Operations + AI Notes               ║
-║   ✅ Scenario 3: Admin Financial Verification                    ║
-║   ✅ Scenario 4: Network Chaos Resilience                        ║
-║                                                                  ║
-║   🤖 GEMINI PRO AI Integration:                                  ║
-║   Generated Note: "${aiNote.substring(0, 40)}${aiNote.length > 40 ? "..." : ""}"
-║                                                                  ║
-║   📱 Mobile + Desktop validated!                                 ║
-║   💥 Network resilience tested!                                  ║
-║                                                                  ║
-║   All critical business flows validated!                         ║
-║                                                                  ║
-╚══════════════════════════════════════════════════════════════════╝
+    console.warn("[Essence Debug]", `
+â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+â•‘                                                                  â•‘
+â•‘   ðŸ¤– TERMINATOR E2E MASTER REGRESSION - COMPLETE                 â•‘
+â•‘                                                                  â•‘
+â•‘   âœ… Scenario 1: Admin Baseline Check                            â•‘
+â•‘   âœ… Scenario 2: Employee Operations + AI Notes               â•‘
+â•‘   âœ… Scenario 3: Admin Financial Verification                    â•‘
+â•‘   âœ… Scenario 4: Network Chaos Resilience                        â•‘
+â•‘                                                                  â•‘
+â•‘   ðŸ¤– GEMINI PRO AI Integration:                                  â•‘
+â•‘   Generated Note: "${aiNote.substring(0, 40)}${aiNote.length > 40 ? "..." : ""}"
+â•‘                                                                  â•‘
+â•‘   ðŸ“± Mobile + Desktop validated!                                 â•‘
+â•‘   ðŸ’¥ Network resilience tested!                                  â•‘
+â•‘                                                                  â•‘
+â•‘   All critical business flows validated!                         â•‘
+â•‘                                                                  â•‘
+â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     `);
 
     expect(true).toBe(true);
   });
 });
+

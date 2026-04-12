@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const planLimitsSchema = new mongoose.Schema(
   {
     branches: { type: Number, default: 1, min: 1 },
-    distributors: { type: Number, default: 2, min: 1 },
+    employees: { type: Number, default: 2, min: 1 },
   },
   { _id: false },
 );
@@ -56,7 +56,7 @@ const globalSettingsSchema = new mongoose.Schema(
           monthlyPrice: 19,
           yearlyPrice: 190,
           currency: "USD",
-          limits: { branches: 1, distributors: 2 },
+          limits: { branches: 1, employees: 2 },
           features: { businessAssistant: false },
         }),
       },
@@ -69,7 +69,7 @@ const globalSettingsSchema = new mongoose.Schema(
           monthlyPrice: 49,
           yearlyPrice: 490,
           currency: "USD",
-          limits: { branches: 3, distributors: 10 },
+          limits: { branches: 3, employees: 10 },
           features: { businessAssistant: false },
         }),
       },
@@ -82,7 +82,7 @@ const globalSettingsSchema = new mongoose.Schema(
           monthlyPrice: 99,
           yearlyPrice: 990,
           currency: "USD",
-          limits: { branches: 10, distributors: 50 },
+          limits: { branches: 10, employees: 50 },
           features: { businessAssistant: true },
         }),
       },

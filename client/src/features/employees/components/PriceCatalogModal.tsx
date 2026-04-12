@@ -124,7 +124,7 @@ export default function PriceCatalogModal() {
                             </td>
                             <td className="px-3 py-2 text-right text-blue-200">
                               {currency.format(
-                                Number(item.distributorPrice || 0)
+                                Number(item.employeePrice || 0)
                               )}
                             </td>
                             <td className="px-3 py-2 text-right text-gray-100">

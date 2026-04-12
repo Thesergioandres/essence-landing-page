@@ -30,7 +30,7 @@ async function main() {
   const [sales, existing] = await Promise.all([
     Sale.find({})
       .select(
-        "_id saleId distributor product quantity salePrice saleDate distributorProfit adminProfit distributorProfitPercentage commissionBonus"
+        "_id saleId employee product quantity salePrice saleDate employeeProfit adminProfit employeeProfitPercentage commissionBonus"
       )
       .sort({ saleDate: 1 })
       .lean(),
@@ -50,16 +50,16 @@ async function main() {
 
     const desired = [];
 
-    if (sale.distributor && sale.distributorProfit > 0) {
+    if (sale.employee && sale.employeeProfit > 0) {
       desired.push({
-        userId: sale.distributor,
-        amount: sale.distributorProfit,
+        userId: sale.employee,
+        amount: sale.employeeProfit,
         description: `Comisión por venta ${sale.saleId}`,
         metadata: {
           quantity: sale.quantity,
           salePrice: sale.salePrice,
           saleId: sale.saleId,
-          commission: sale.distributorProfitPercentage,
+          commission: sale.employeeProfitPercentage,
           commissionBonus: sale.commissionBonus,
         },
       });
@@ -69,8 +69,8 @@ async function main() {
       desired.push({
         userId: adminUser._id,
         amount: sale.adminProfit,
-        description: sale.distributor
-          ? `Ganancia de venta ${sale.saleId} (distribuidor)`
+        description: sale.employee
+          ? `Ganancia de venta ${sale.saleId} (empleado)`
           : `Venta directa ${sale.saleId}`,
         metadata: {
           quantity: sale.quantity,

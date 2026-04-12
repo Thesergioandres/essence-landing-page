@@ -24,7 +24,7 @@ export class DefectiveProductController {
     }
   }
 
-  async reportDistributor(req, res) {
+  async reportEmployee(req, res) {
     try {
       const businessId = req.businessId;
       if (!businessId) {
@@ -33,7 +33,7 @@ export class DefectiveProductController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
-      const report = await repository.reportFromDistributor(
+      const report = await repository.reportFromEmployee(
         req.body,
         businessId,
         req.user._id,
@@ -55,9 +55,9 @@ export class DefectiveProductController {
       }
 
       const role = req.membership?.role || req.user?.role;
-      const isDistributor = role === "employee";
+      const isEmployee = role === "employee";
 
-      if (isDistributor) {
+      if (isEmployee) {
         const allowedBranches = Array.isArray(req.membership?.allowedBranches)
           ? req.membership.allowedBranches.map((id) => id.toString())
           : [];
@@ -74,7 +74,7 @@ export class DefectiveProductController {
         req.body,
         businessId,
         req.user._id,
-        { isDistributor },
+        { isEmployee },
       );
       res.status(201).json({ success: true, data: report });
     } catch (error) {
@@ -83,7 +83,7 @@ export class DefectiveProductController {
     }
   }
 
-  async getDistributorReports(req, res) {
+  async getEmployeeReports(req, res) {
     try {
       const businessId = req.businessId;
       if (!businessId) {
@@ -92,17 +92,17 @@ export class DefectiveProductController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
-      const distributorId =
-        req.params.distributorId || req.user?._id || req.user?.id;
+      const employeeId =
+        req.params.employeeId || req.user?._id || req.user?.id;
 
-      if (!distributorId) {
+      if (!employeeId) {
         return res
           .status(400)
-          .json({ success: false, message: "Falta distribuidor" });
+          .json({ success: false, message: "Falta empleado" });
       }
 
       const result = await repository.findByBusiness(businessId, {
-        distributor: distributorId,
+        employee: employeeId,
         status: req.query.status,
       });
 
@@ -231,17 +231,17 @@ export class DefectiveProductController {
       }
 
       const role = req.membership?.role;
-      const isDistributor = role === "employee";
+      const isEmployee = role === "employee";
       const replacementSource = req.body?.replacementSource;
 
-      if (isDistributor && replacementSource === "warehouse") {
+      if (isEmployee && replacementSource === "warehouse") {
         return res.status(403).json({
           success: false,
           message: "No tienes acceso a la bodega",
         });
       }
 
-      if (isDistributor && replacementSource === "branch") {
+      if (isEmployee && replacementSource === "branch") {
         const allowedBranches = Array.isArray(req.membership?.allowedBranches)
           ? req.membership.allowedBranches.map((id) => id.toString())
           : [];

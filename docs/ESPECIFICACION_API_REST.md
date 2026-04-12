@@ -47,7 +47,7 @@ Todo Endpoint que no sea Login, requiere inyectarle al servidor:
 ### 🛒 Registro de Ventas (Sales)
 #### `POST /sales/register`
 - **Middlewares que pasan:** `[protect, businessContext, checkFeatures('sales')]`
-- **Rol requerdio:** `Admin` o `Distribuidor`.
+- **Rol requerdio:** `Admin` o `Empleado`.
 - **Body:**
 ```json
 {
@@ -65,5 +65,5 @@ Todo Endpoint que no sea Login, requiere inyectarle al servidor:
 #### `GET /products`
 - **Middlewares:** `[protect, businessContext]`
 - **QueryParams permitidos:** `?page=1&limit=20&search=celular`
-- **NOTA TÉCNICA (CEGUERA DISTRIBUIDOR):** Si este Endpoint lo invoca la ruta conteniendo el JWT de un "Distribuidor", el `SaleController` activará un `DTOFilter` el cual devolverá el objeto mutilado:
+- **NOTA TÉCNICA (CEGUERA EMPLEADO):** Si este Endpoint lo invoca la ruta conteniendo el JWT de un "Empleado", el `SaleController` activará un `DTOFilter` el cual devolverá el objeto mutilado:
 *Censurado = `{ "averageCost": null, "purchasePrice": null, "totalInventoryValue": null }`*.

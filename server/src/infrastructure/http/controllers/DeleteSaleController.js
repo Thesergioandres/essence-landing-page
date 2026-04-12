@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Delete Sale Controller
  * Handles deleting individual sales or sale groups with stock restoration
  */
@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 import BranchStock from "../../database/models/BranchStock.js";
 import Credit from "../../database/models/Credit.js";
 import DefectiveProduct from "../../database/models/DefectiveProduct.js";
-import DistributorStock from "../../database/models/DistributorStock.js";
+import EmployeeStock from "../../database/models/EmployeeStock.js";
 import Product from "../../database/models/Product.js";
 import ProfitHistory from "../../database/models/ProfitHistory.js";
 import Promotion from "../../database/models/Promotion.js";
@@ -28,8 +28,8 @@ const saleRepository = new SalePersistenceUseCase();
  */
 async function restoreStock(sale, session) {
   if (sale?.isComplementarySale) {
-    console.log(
-      "📦 [DELETE SALE] Complementary sale detected, skipping stock restore",
+    console.warn("[Essence Debug]", 
+      "ðŸ“¦ [DELETE SALE] Complementary sale detected, skipping stock restore",
     );
     return;
   }
@@ -39,7 +39,7 @@ async function restoreStock(sale, session) {
 
   if (!productId || !mongoose.isValidObjectId(productId)) {
     console.warn(
-      "⚠️ [DELETE SALE] Sale without product reference, skipping stock restore",
+      "âš ï¸ [DELETE SALE] Sale without product reference, skipping stock restore",
       {
         saleId: sale?._id,
         saleGroupId: sale?.saleGroupId,
@@ -50,7 +50,7 @@ async function restoreStock(sale, session) {
 
   if (quantity <= 0) {
     console.warn(
-      "⚠️ [DELETE SALE] Sale without valid quantity, skipping stock restore",
+      "âš ï¸ [DELETE SALE] Sale without valid quantity, skipping stock restore",
       {
         saleId: sale?._id,
         saleGroupId: sale?.saleGroupId,
@@ -65,20 +65,20 @@ async function restoreStock(sale, session) {
 
   // Determine where stock came from and restore it
   if (
-    sourceLocation === "distributor" ||
-    (!sourceLocation && sale.distributor)
+    sourceLocation === "employee" ||
+    (!sourceLocation && sale.employee)
   ) {
-    await DistributorStock.findOneAndUpdate(
+    await EmployeeStock.findOneAndUpdate(
       {
-        distributor: sale.distributor,
+        employee: sale.employee,
         product: productId,
         ...(businessId ? { business: businessId } : {}),
       },
       { $inc: { quantity } },
       { session, upsert: true },
     );
-    console.log(
-      `📦 Restored ${quantity} to DistributorStock for distributor ${sale.distributor}`,
+    console.warn("[Essence Debug]", 
+      `ðŸ“¦ Restored ${quantity} to EmployeeStock for employee ${sale.employee}`,
     );
   } else if (sourceLocation === "branch" || (!sourceLocation && sale.branch)) {
     await BranchStock.findOneAndUpdate(
@@ -90,8 +90,8 @@ async function restoreStock(sale, session) {
       { $inc: { quantity } },
       { session, upsert: true },
     );
-    console.log(
-      `📦 Restored ${quantity} to BranchStock for branch ${sale.branch}`,
+    console.warn("[Essence Debug]", 
+      `ðŸ“¦ Restored ${quantity} to BranchStock for branch ${sale.branch}`,
     );
   } else {
     await Product.findByIdAndUpdate(
@@ -103,7 +103,7 @@ async function restoreStock(sale, session) {
       },
       { session },
     );
-    console.log(`📦 Restored ${quantity} to Warehouse`);
+    console.warn("[Essence Debug]", `ðŸ“¦ Restored ${quantity} to Warehouse`);
   }
 
   // Always restore global totalStock counter (only once)
@@ -169,18 +169,18 @@ async function restoreDefectiveStock(reports, session) {
     const branchId = isCustomerWarranty
       ? report.replacementBranch
       : report.branch;
-    const distributorId = isCustomerWarranty
-      ? report.replacementDistributor
-      : report.distributor;
+    const employeeId = isCustomerWarranty
+      ? report.replacementEmployee
+      : report.employee;
 
     if (!productId || !mongoose.isValidObjectId(productId) || quantity <= 0) {
       continue;
     }
 
-    if (stockOrigin === "distributor" && distributorId) {
-      await DistributorStock.findOneAndUpdate(
+    if (stockOrigin === "employee" && employeeId) {
+      await EmployeeStock.findOneAndUpdate(
         {
-          distributor: distributorId,
+          employee: employeeId,
           product: productId,
           ...(report.business ? { business: report.business } : {}),
         },
@@ -338,7 +338,7 @@ async function rollbackPromotionMetricsForGroup({
  * Delete a single sale
  */
 export async function deleteSale(req, res) {
-  console.log("🗑️  [DELETE SALE] Función llamada");
+  console.warn("[Essence Debug]", "ðŸ—‘ï¸  [DELETE SALE] FunciÃ³n llamada");
   const runDelete = async (useTransaction) => {
     const session = useTransaction ? await mongoose.startSession() : null;
 
@@ -361,7 +361,7 @@ export async function deleteSale(req, res) {
         });
       }
 
-      console.log("🗑️  [DELETE SALE] Params:", {
+      console.warn("[Essence Debug]", "ðŸ—‘ï¸  [DELETE SALE] Params:", {
         saleId,
         businessId,
         hasBusiness: !!req.business,
@@ -434,8 +434,8 @@ export async function deleteSale(req, res) {
       if (useTransaction) {
         await session.abortTransaction();
       }
-      console.error("❌ [DELETE SALE] Error:", error);
-      console.error("❌ Stack:", error.stack);
+      console.error("âŒ [DELETE SALE] Error:", error);
+      console.error("âŒ Stack:", error.stack);
 
       if (error.message === "Venta no encontrada") {
         return res.status(404).json({
@@ -446,7 +446,7 @@ export async function deleteSale(req, res) {
 
       if (useTransaction && error?.code === 20) {
         console.warn(
-          "⚠️ [DELETE SALE] Transactions not supported, retrying without transaction",
+          "âš ï¸ [DELETE SALE] Transactions not supported, retrying without transaction",
         );
         return runDelete(false);
       }
@@ -472,7 +472,7 @@ export async function deleteSale(req, res) {
  * Delete all sales in a group (cart transaction)
  */
 export async function deleteSaleGroup(req, res) {
-  console.log("🗑️  [DELETE GROUP] Función llamada");
+  console.warn("[Essence Debug]", "ðŸ—‘ï¸  [DELETE GROUP] FunciÃ³n llamada");
   const runDelete = async (useTransaction) => {
     const session = useTransaction ? await mongoose.startSession() : null;
 
@@ -495,7 +495,7 @@ export async function deleteSaleGroup(req, res) {
         });
       }
 
-      console.log("🗑️  [DELETE GROUP] Params:", {
+      console.warn("[Essence Debug]", "ðŸ—‘ï¸  [DELETE GROUP] Params:", {
         saleGroupId,
         businessId,
         hasBusiness: !!req.business,
@@ -577,8 +577,8 @@ export async function deleteSaleGroup(req, res) {
       if (useTransaction) {
         await session.abortTransaction();
       }
-      console.error("❌ [DELETE GROUP] Error:", error);
-      console.error("❌ Stack:", error.stack);
+      console.error("âŒ [DELETE GROUP] Error:", error);
+      console.error("âŒ Stack:", error.stack);
 
       if (error.message === "Grupo de ventas no encontrado") {
         return res.status(404).json({
@@ -589,7 +589,7 @@ export async function deleteSaleGroup(req, res) {
 
       if (useTransaction && error?.code === 20) {
         console.warn(
-          "⚠️ [DELETE GROUP] Transactions not supported, retrying without transaction",
+          "âš ï¸ [DELETE GROUP] Transactions not supported, retrying without transaction",
         );
         return runDelete(false);
       }
@@ -609,3 +609,4 @@ export async function deleteSaleGroup(req, res) {
 
   return runDelete(true);
 }
+

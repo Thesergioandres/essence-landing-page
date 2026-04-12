@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Push Notification Service
  * Maneja registro de service worker y suscripciones push
  */
@@ -8,7 +8,7 @@ import { pushSubscriptionService } from "./notification.service";
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || "";
 
 /**
- * Obtiene la clave VAPID del servidor si no está configurada localmente
+ * Obtiene la clave VAPID del servidor si no estÃ¡ configurada localmente
  */
 async function getVapidPublicKey(): Promise<string> {
   if (VAPID_PUBLIC_KEY) {
@@ -50,7 +50,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
       scope: "/",
     });
 
-    console.log("[UI INFO] Service worker registered:", registration.scope);
+    console.warn("[Essence Debug]", "[UI INFO] Service worker registered:", registration.scope);
 
     // Wait for the service worker to be ready
     await navigator.serviceWorker.ready;
@@ -82,7 +82,7 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 
   try {
     const permission = await Notification.requestPermission();
-    console.log("[UI INFO] Notification permission:", permission);
+    console.warn("[Essence Debug]", "[UI INFO] Notification permission:", permission);
     return permission;
   } catch (error) {
     console.error(
@@ -128,7 +128,7 @@ export async function subscribeToPush(
     let subscription = await registration.pushManager.getSubscription();
 
     if (subscription) {
-      console.log("[UI INFO] Existing push subscription found");
+      console.warn("[Essence Debug]", "[UI INFO] Existing push subscription found");
       return subscription;
     }
 
@@ -138,7 +138,7 @@ export async function subscribeToPush(
       applicationServerKey: urlBase64ToUint8Array(vapidKey),
     });
 
-    console.log("[UI INFO] Push subscription created");
+    console.warn("[Essence Debug]", "[UI INFO] Push subscription created");
 
     // Send subscription to server
     await sendSubscriptionToServer(subscription);
@@ -168,7 +168,7 @@ export async function unsubscribeFromPush(
 
     // Unsubscribe
     const result = await subscription.unsubscribe();
-    console.log("[UI INFO] Push unsubscribed:", result);
+    console.warn("[Essence Debug]", "[UI INFO] Push unsubscribed:", result);
 
     return result;
   } catch (error) {
@@ -178,7 +178,7 @@ export async function unsubscribeFromPush(
 }
 
 /**
- * Envía la suscripción al servidor
+ * EnvÃ­a la suscripciÃ³n al servidor
  */
 async function sendSubscriptionToServer(
   subscription: PushSubscription
@@ -196,14 +196,14 @@ async function sendSubscriptionToServer(
       },
     });
 
-    console.log("[UI INFO] Subscription saved to server");
+    console.warn("[Essence Debug]", "[UI INFO] Subscription saved to server");
   } catch (error) {
     console.error("[UI ERROR] Failed to save subscription:", error);
   }
 }
 
 /**
- * Elimina la suscripción del servidor
+ * Elimina la suscripciÃ³n del servidor
  */
 async function removeSubscriptionFromServer(
   subscription: PushSubscription
@@ -211,14 +211,14 @@ async function removeSubscriptionFromServer(
   try {
     await pushSubscriptionService.unsubscribe(subscription.endpoint);
 
-    console.log("[UI INFO] Subscription removed from server");
+    console.warn("[Essence Debug]", "[UI INFO] Subscription removed from server");
   } catch (error) {
     console.error("[UI ERROR] Failed to remove subscription:", error);
   }
 }
 
 /**
- * Muestra una notificación local (sin push server)
+ * Muestra una notificaciÃ³n local (sin push server)
  */
 export function showLocalNotification(
   title: string,
@@ -277,3 +277,4 @@ export async function initPushNotifications(): Promise<{
 
   return result;
 }
+

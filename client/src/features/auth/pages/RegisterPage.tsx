@@ -13,7 +13,7 @@ type PlanOption = {
   monthlyPrice: number;
   yearlyPrice: number;
   currency: string;
-  limits: { branches: number; distributors: number };
+  limits: { branches: number; employees: number };
 };
 
 const fallbackPlans: PlanOption[] = [
@@ -24,7 +24,7 @@ const fallbackPlans: PlanOption[] = [
     monthlyPrice: 19,
     yearlyPrice: 190,
     currency: "USD",
-    limits: { branches: 1, distributors: 2 },
+    limits: { branches: 1, employees: 2 },
   },
   {
     id: "pro",
@@ -33,7 +33,7 @@ const fallbackPlans: PlanOption[] = [
     monthlyPrice: 49,
     yearlyPrice: 490,
     currency: "USD",
-    limits: { branches: 3, distributors: 10 },
+    limits: { branches: 3, employees: 10 },
   },
   {
     id: "enterprise",
@@ -42,7 +42,7 @@ const fallbackPlans: PlanOption[] = [
     monthlyPrice: 99,
     yearlyPrice: 990,
     currency: "USD",
-    limits: { branches: 10, distributors: 50 },
+    limits: { branches: 10, employees: 50 },
   },
 ];
 
@@ -361,7 +361,7 @@ export default function RegisterPage() {
                   </div>
                   <p className="mt-2 text-xs text-gray-300">
                     Incluye hasta {plan.limits.branches} sede(s) y{" "}
-                    {plan.limits.distributors} distribuidor(es).
+                    {plan.limits.employees} empleado(es).
                   </p>
                   <Button
                     type="button"

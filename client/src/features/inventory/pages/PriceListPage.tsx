@@ -58,7 +58,7 @@ export default function PriceListPage() {
         data.forEach((item: Product) => {
           initialDrafts[item._id] = {
             price: String(item.clientPrice ?? 0),
-            wholesalePrice: String(item.distributorPrice ?? 0),
+            wholesalePrice: String(item.employeePrice ?? 0),
           };
         });
         setDrafts(initialDrafts);
@@ -226,7 +226,7 @@ export default function PriceListPage() {
         ...prev,
         [id]: {
           price: String(product.clientPrice ?? 0),
-          wholesalePrice: String(product.distributorPrice ?? 0),
+          wholesalePrice: String(product.employeePrice ?? 0),
         },
       }));
     }
@@ -304,7 +304,7 @@ export default function PriceListPage() {
                 <th className="px-4 py-3 text-left">Producto</th>
                 <th className="px-4 py-3 text-right">Costo adquisición</th>
                 <th className="px-4 py-3 text-right">Precio público</th>
-                <th className="px-4 py-3 text-right">Precio distribuidor</th>
+                <th className="px-4 py-3 text-right">Precio empleado</th>
                 <th className="px-4 py-3 text-right">Margen proyectado</th>
                 <th className="px-4 py-3 text-center">Acción</th>
               </tr>
@@ -334,7 +334,7 @@ export default function PriceListPage() {
                   const isSaving = savingId === item._id;
                   const draft = drafts[item._id] || {
                     price: String(item.clientPrice ?? 0),
-                    wholesalePrice: String(item.distributorPrice ?? 0),
+                    wholesalePrice: String(item.employeePrice ?? 0),
                   };
 
                   const projectedPrice = isEditing
@@ -404,7 +404,7 @@ export default function PriceListPage() {
                             className="w-32 rounded-lg border border-white/15 bg-black/20 px-2 py-1 text-right text-sm text-white"
                           />
                         ) : (
-                          currency.format(toSafeNumber(item.distributorPrice))
+                          currency.format(toSafeNumber(item.employeePrice))
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -490,7 +490,7 @@ export default function PriceListPage() {
                 <th className="px-4 py-3 text-left">Vigencia</th>
                 <th className="px-4 py-3 text-right">Precio original</th>
                 <th className="px-4 py-3 text-right">Precio promo</th>
-                <th className="px-4 py-3 text-right">Precio distribuidor</th>
+                <th className="px-4 py-3 text-right">Precio empleado</th>
                 <th className="px-4 py-3 text-left">Descuento</th>
                 <th className="px-4 py-3 text-left">Reglas e items</th>
                 <th className="px-4 py-3 text-right">Stock / Uso</th>
@@ -565,9 +565,9 @@ export default function PriceListPage() {
                           : "-"}
                       </td>
                       <td className="px-4 py-3 text-right text-gray-200">
-                        {promo.distributorPrice
+                        {promo.employeePrice
                           ? currency.format(
-                              toSafeNumber(promo.distributorPrice)
+                              toSafeNumber(promo.employeePrice)
                             )
                           : "-"}
                       </td>

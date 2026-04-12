@@ -93,7 +93,7 @@
             - paragraph [ref=e100]: Módulo
             - heading "Catálogo distribuido" [level=3] [ref=e101]
           - generic [ref=e102]: Actívalo
-        - paragraph [ref=e103]: Comparte catálogos, controla comisiones y permisos por negocio o distribuidor.
+        - paragraph [ref=e103]: Comparte catálogos, controla comisiones y permisos por negocio o empleado.
         - generic [ref=e104]:
           - generic [ref=e105]: Roles y scopes
           - generic [ref=e106]: Comisiones

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================
  * TEST SUITE 5: CREDITS (FIADOS) MANAGEMENT
  * ============================================
@@ -14,7 +14,7 @@
 
 import { expect, generateTestData, test } from "./fixtures";
 
-test.describe("💳 Credits (Fiados) Management Tests", () => {
+test.describe("ðŸ’³ Credits (Fiados) Management Tests", () => {
   const testData = generateTestData();
 
   test.beforeEach(async ({ page, loginAsAdmin }) => {
@@ -28,10 +28,10 @@ test.describe("💳 Credits (Fiados) Management Tests", () => {
 
     // Should see credits page
     await expect(
-      page.getByText(/créditos|fiados|cuentas por cobrar/i).first()
+      page.getByText(/crÃ©ditos|fiados|cuentas por cobrar/i).first()
     ).toBeVisible({ timeout: 10000 });
 
-    console.log("✅ Credits list loaded");
+    console.warn("[Essence Debug]", "âœ… Credits list loaded");
   });
 
   test("should display credit summary cards", async ({ page }) => {
@@ -44,13 +44,13 @@ test.describe("💳 Credits (Fiados) Management Tests", () => {
       .first();
 
     if (await summaryCard.isVisible()) {
-      console.log("✅ Credit summary cards visible");
+      console.warn("[Essence Debug]", "âœ… Credit summary cards visible");
     }
 
     // Look for total amounts
     const totalAmount = page.getByText(/\$\d+/);
     if (await totalAmount.isVisible()) {
-      console.log("✅ Credit amounts displayed");
+      console.warn("[Essence Debug]", "âœ… Credit amounts displayed");
     }
   });
 
@@ -70,7 +70,7 @@ test.describe("💳 Credits (Fiados) Management Tests", () => {
       (await paidFilter.isVisible().catch(() => false));
 
     if (hasFilters) {
-      console.log("✅ Credit status filters available");
+      console.warn("[Essence Debug]", "âœ… Credit status filters available");
     }
   });
 
@@ -94,7 +94,7 @@ test.describe("💳 Credits (Fiados) Management Tests", () => {
         .isVisible();
 
       if (isOnDetail || hasModal) {
-        console.log("✅ Credit detail accessible");
+        console.warn("[Essence Debug]", "âœ… Credit detail accessible");
       }
     }
   });
@@ -114,7 +114,7 @@ test.describe("💳 Credits (Fiados) Management Tests", () => {
         /historial de pagos|pagos|abonos/i
       );
       if (await paymentsSection.isVisible()) {
-        console.log("✅ Payment history section visible");
+        console.warn("[Essence Debug]", "âœ… Payment history section visible");
       }
     }
   });
@@ -140,7 +140,7 @@ test.describe("💳 Credits (Fiados) Management Tests", () => {
         (await paymentInput.isVisible().catch(() => false));
 
       if (hasPaymentOption) {
-        console.log("✅ Payment registration available");
+        console.warn("[Essence Debug]", "âœ… Payment registration available");
       }
     }
   });
@@ -150,12 +150,12 @@ test.describe("💳 Credits (Fiados) Management Tests", () => {
     await page.waitForLoadState("networkidle");
 
     // Look for overdue indicators
-    const overdueIndicator = page.getByText(/vencido|overdue|atrasado|⚠️|🔴/i);
+    const overdueIndicator = page.getByText(/vencido|overdue|atrasado|âš ï¸|ðŸ”´/i);
 
     if (await overdueIndicator.isVisible()) {
-      console.log("✅ Overdue credits indicator visible");
+      console.warn("[Essence Debug]", "âœ… Overdue credits indicator visible");
     } else {
-      console.log("ℹ️ No overdue credits currently");
+      console.warn("[Essence Debug]", "â„¹ï¸ No overdue credits currently");
     }
   });
 
@@ -172,7 +172,8 @@ test.describe("💳 Credits (Fiados) Management Tests", () => {
       .isVisible();
 
     if ((await customerInfo.isVisible()) || hasCustomerNames) {
-      console.log("✅ Customer information displayed in credits");
+      console.warn("[Essence Debug]", "âœ… Customer information displayed in credits");
     }
   });
 });
+

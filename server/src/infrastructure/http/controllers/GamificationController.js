@@ -5,7 +5,7 @@ const repository = new GamificationPersistenceUseCase();
 export class GamificationController {
   async getAdjustedCommission(req, res) {
     try {
-      const { distributorId } = req.params;
+      const { employeeId } = req.params;
       const businessId = req.businessId;
 
       if (!businessId) {
@@ -14,19 +14,19 @@ export class GamificationController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
-      const allowedDistributors =
-        await repository.getBusinessDistributorIds(businessId);
+      const allowedEmployees =
+        await repository.getBusinessEmployeeIds(businessId);
       if (
-        allowedDistributors.length &&
-        !allowedDistributors.some((id) => id.toString() === distributorId)
+        allowedEmployees.length &&
+        !allowedEmployees.some((id) => id.toString() === employeeId)
       ) {
         return res
           .status(403)
-          .json({ success: false, message: "Distribuidor fuera del negocio" });
+          .json({ success: false, message: "Empleado fuera del negocio" });
       }
 
       const info = await repository.getAdjustedCommission(
-        distributorId,
+        employeeId,
         businessId,
       );
       res.json({ success: true, data: info });
@@ -85,16 +85,16 @@ export class GamificationController {
     }
   }
 
-  async getDistributorStats(req, res) {
+  async getEmployeeStats(req, res) {
     try {
-      const { distributorId } = req.params;
+      const { employeeId } = req.params;
       const { recalculate } = req.query;
       const businessId = req.businessId;
 
       if (recalculate === "true" && businessId) {
-        await repository.recalculatePoints(businessId, distributorId);
+        await repository.recalculatePoints(businessId, employeeId);
       }
-      const stats = await repository.getDistributorStats(distributorId);
+      const stats = await repository.getEmployeeStats(employeeId);
       res.json({ success: true, data: stats });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -149,10 +149,10 @@ export class GamificationController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
-      const distributorId = req.body?.distributorId || null;
+      const employeeId = req.body?.employeeId || null;
       const result = await repository.recalculatePoints(
         businessId,
-        distributorId,
+        employeeId,
       );
 
       res.json({ success: true, data: result });

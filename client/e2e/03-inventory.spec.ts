@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================
  * TEST SUITE 3: INVENTORY MANAGEMENT
  * ============================================
@@ -9,13 +9,13 @@
  * - Edit product
  * - View product detail
  * - Inventory entries
- * - Assign stock to distributor
+ * - Assign stock to employee
  * - Verify stock deduction
  */
 
 import { expect, generateTestData, test } from "./fixtures";
 
-test.describe("📦 Inventory Management Tests", () => {
+test.describe("ðŸ“¦ Inventory Management Tests", () => {
   const testData = generateTestData();
 
   test.beforeEach(async ({ page, loginAsAdmin }) => {
@@ -33,7 +33,7 @@ test.describe("📦 Inventory Management Tests", () => {
       timeout: 10000,
     });
 
-    console.log("✅ Products list loaded");
+    console.warn("[Essence Debug]", "âœ… Products list loaded");
   });
 
   test("should display product cards or table", async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe("📦 Inventory Management Tests", () => {
 
     expect(hasCards || hasTable).toBe(true);
 
-    console.log(`✅ Products displayed as ${hasCards ? "cards" : "table"}`);
+    console.warn("[Essence Debug]", `âœ… Products displayed as ${hasCards ? "cards" : "table"}`);
   });
 
   test("should navigate to add product page", async ({ page }) => {
@@ -73,7 +73,7 @@ test.describe("📦 Inventory Management Tests", () => {
       timeout: 5000,
     });
 
-    console.log("✅ Add product form accessible");
+    console.warn("[Essence Debug]", "âœ… Add product form accessible");
   });
 
   test("should create a new product", async ({ page }) => {
@@ -117,7 +117,7 @@ test.describe("📦 Inventory Management Tests", () => {
     // Wait for redirect or success message
     await expect(page).toHaveURL(/\/admin\/products/, { timeout: 10000 });
 
-    console.log(`✅ Created product: ${testData.productName}`);
+    console.warn("[Essence Debug]", `âœ… Created product: ${testData.productName}`);
   });
 
   test("should view product detail", async ({ page }) => {
@@ -137,7 +137,7 @@ test.describe("📦 Inventory Management Tests", () => {
         timeout: 10000,
       });
 
-      console.log("✅ Product detail page accessible");
+      console.warn("[Essence Debug]", "âœ… Product detail page accessible");
     }
   });
 
@@ -151,7 +151,7 @@ test.describe("📦 Inventory Management Tests", () => {
       page.getByText(/entradas|inventario|movimientos/i).first()
     ).toBeVisible({ timeout: 10000 });
 
-    console.log("✅ Inventory entries page loaded");
+    console.warn("[Essence Debug]", "âœ… Inventory entries page loaded");
   });
 
   test("should navigate to global inventory view", async ({ page }) => {
@@ -164,14 +164,14 @@ test.describe("📦 Inventory Management Tests", () => {
       timeout: 10000,
     });
 
-    console.log("✅ Global inventory page loaded");
+    console.warn("[Essence Debug]", "âœ… Global inventory page loaded");
   });
 
-  test("should assign stock to distributor from detail page", async ({
+  test("should assign stock to employee from detail page", async ({
     page,
   }) => {
-    // First go to distributor detail
-    await page.goto("/admin/distributors");
+    // First go to employee detail
+    await page.goto("/admin/employees");
     await page.waitForLoadState("networkidle");
 
     const detailButton = page
@@ -181,7 +181,7 @@ test.describe("📦 Inventory Management Tests", () => {
       await detailButton.click();
 
       // Wait for detail page
-      await expect(page).toHaveURL(/\/admin\/distributors\/[a-f0-9]+/i, {
+      await expect(page).toHaveURL(/\/admin\/employees\/[a-f0-9]+/i, {
         timeout: 10000,
       });
 
@@ -193,11 +193,11 @@ test.describe("📦 Inventory Management Tests", () => {
 
       if (await stockTab.isVisible()) {
         await stockTab.click();
-        console.log("✅ Stock tab accessible");
+        console.warn("[Essence Debug]", "âœ… Stock tab accessible");
       }
 
       if (await assignButton.isVisible()) {
-        console.log("✅ Assign stock button found");
+        console.warn("[Essence Debug]", "âœ… Assign stock button found");
       }
     }
   });
@@ -210,13 +210,13 @@ test.describe("📦 Inventory Management Tests", () => {
     const stockValues = page.locator("[class*='stock'], [class*='quantity']");
 
     if ((await stockValues.count()) > 0) {
-      console.log("✅ Stock values visible in inventory");
+      console.warn("[Essence Debug]", "âœ… Stock values visible in inventory");
     }
 
     // Check for warehouse stock specifically
     const warehouseStock = page.getByText(/bodega|warehouse|sede/i);
     if (await warehouseStock.isVisible()) {
-      console.log("✅ Warehouse stock section found");
+      console.warn("[Essence Debug]", "âœ… Warehouse stock section found");
     }
   });
 
@@ -225,12 +225,13 @@ test.describe("📦 Inventory Management Tests", () => {
     await page.waitForLoadState("networkidle");
 
     // Look for alerts section
-    const alertsSection = page.getByText(/alertas|bajo stock|low stock|⚠️/i);
+    const alertsSection = page.getByText(/alertas|bajo stock|low stock|âš ï¸/i);
 
     if (await alertsSection.isVisible()) {
-      console.log("✅ Stock alerts section visible");
+      console.warn("[Essence Debug]", "âœ… Stock alerts section visible");
     } else {
-      console.log("ℹ️ No low stock alerts (stock levels are OK)");
+      console.warn("[Essence Debug]", "â„¹ï¸ No low stock alerts (stock levels are OK)");
     }
   });
 });
+

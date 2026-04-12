@@ -155,25 +155,25 @@ class AuditService {
   }
 
   /**
-   * Log de operaciones con distribuidores
+   * Log de operaciones con empleados
    */
-  static async logDistributor(user, action, distributor, req = null) {
+  static async logEmployee(user, action, employee, req = null) {
     const descriptions = {
-      distributor_created: `Distribuidor "${distributor.name}" creado`,
-      distributor_updated: `Distribuidor "${distributor.name}" actualizado`,
-      distributor_deleted: `Distribuidor "${distributor.name}" eliminado`,
-      distributor_activated: `Distribuidor "${distributor.name}" activado`,
-      distributor_deactivated: `Distribuidor "${distributor.name}" desactivado`,
+      employee_created: `Empleado "${employee.name}" creado`,
+      employee_updated: `Empleado "${employee.name}" actualizado`,
+      employee_deleted: `Empleado "${employee.name}" eliminado`,
+      employee_activated: `Empleado "${employee.name}" activado`,
+      employee_deactivated: `Empleado "${employee.name}" desactivado`,
     };
 
     return this.log({
       user,
       action,
-      module: "distributors",
+      module: "employees",
       description: descriptions[action],
       entityType: "User",
-      entityId: distributor._id,
-      entityName: distributor.name,
+      entityId: employee._id,
+      entityName: employee.name,
       req,
     });
   }
@@ -184,14 +184,14 @@ class AuditService {
   static async logStock(user, action, stock, metadata = {}, req = null) {
     const productName =
       stock.product?.name || metadata.productName || "Producto";
-    const distributorName =
-      stock.distributor?.name || metadata.distributorName || "Distribuidor";
+    const employeeName =
+      stock.employee?.name || metadata.employeeName || "Empleado";
     const quantity = metadata.quantity || stock.quantity;
 
     const descriptions = {
-      stock_assigned: `${quantity} unidades de "${productName}" asignadas a ${distributorName}`,
-      stock_withdrawn: `${quantity} unidades de "${productName}" retiradas de ${distributorName}`,
-      stock_adjusted: `Stock de "${productName}" ajustado para ${distributorName}`,
+      stock_assigned: `${quantity} unidades de "${productName}" asignadas a ${employeeName}`,
+      stock_withdrawn: `${quantity} unidades de "${productName}" retiradas de ${employeeName}`,
+      stock_adjusted: `Stock de "${productName}" ajustado para ${employeeName}`,
     };
 
     return this.log({
@@ -199,13 +199,13 @@ class AuditService {
       action,
       module: "stock",
       description: descriptions[action],
-      entityType: "DistributorStock",
+      entityType: "EmployeeStock",
       entityId: stock._id,
       metadata: {
         productId: stock.product?._id || metadata.productId,
         productName,
-        distributorId: stock.distributor?._id || metadata.distributorId,
-        distributorName,
+        employeeId: stock.employee?._id || metadata.employeeId,
+        employeeName,
         quantity,
         ...metadata,
       },

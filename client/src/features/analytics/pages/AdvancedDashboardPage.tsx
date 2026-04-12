@@ -15,7 +15,7 @@ import ProfitHistoryView from "../../../components/analytics/ProfitHistoryView";
 import {
   CategoryDistributionChart,
   ComparativeAnalysisView,
-  DistributorRankingsTable,
+  EmployeeRankingsTable,
   FinancialKPICards,
   LowStockAlertsVisual,
   SalesTimelineChart,
@@ -42,7 +42,7 @@ import { saleService } from "../../sales/services/sales.service";
 export default function AdvancedDashboard() {
   const { hideFinancialData } = useFinancialPrivacy();
   // Feature flags
-  const distributorsEnabled = useFeature("distributors");
+  const employeesEnabled = useFeature("employees");
   const creditsEnabled = useFeature("credits");
 
   const [overviewRange, setOverviewRange] = useState({
@@ -60,7 +60,7 @@ export default function AdvancedDashboard() {
     startDate: format(subDays(new Date(), 30), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
   });
-  const [distributorsRange, setDistributorsRange] = useState({
+  const [employeesRange, setEmployeesRange] = useState({
     startDate: format(subDays(new Date(), 30), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
   });
@@ -167,7 +167,7 @@ export default function AdvancedDashboard() {
   const overviewRangeError = validateRange(overviewRange);
   const timelineRangeError = validateRange(timelineRange);
   const productsRangeError = validateRange(productsRange);
-  const distributorsRangeError = validateRange(distributorsRange);
+  const employeesRangeError = validateRange(employeesRange);
 
   useEffect(() => {
     if (hideFinancialData) {
@@ -380,9 +380,9 @@ export default function AdvancedDashboard() {
 
   const handleExportRankings = async (format: "pdf" | "excel") => {
     try {
-      const response = await advancedAnalyticsService.getDistributorRankings({
-        startDate: distributorsRange.startDate || undefined,
-        endDate: distributorsRange.endDate || undefined,
+      const response = await advancedAnalyticsService.getEmployeeRankings({
+        startDate: employeesRange.startDate || undefined,
+        endDate: employeesRange.endDate || undefined,
       });
 
       if (format === "pdf") {
@@ -434,7 +434,7 @@ export default function AdvancedDashboard() {
       const [
         salesResponse,
         inventoryResponse,
-        distributorPerf,
+        employeePerf,
         expensesResult,
       ] = await Promise.all([
         saleService.getAllSales({
@@ -443,9 +443,9 @@ export default function AdvancedDashboard() {
           limit: 5000,
         }),
         stockService.getGlobalInventory(),
-        analyticsService.getProfitByDistributor({
-          startDate: distributorsRange.startDate || undefined,
-          endDate: distributorsRange.endDate || undefined,
+        analyticsService.getProfitByEmployee({
+          startDate: employeesRange.startDate || undefined,
+          endDate: employeesRange.endDate || undefined,
         }),
         expenses.length > 0
           ? Promise.resolve({ expenses })
@@ -498,11 +498,11 @@ export default function AdvancedDashboard() {
                 0
               )
             : Number(item?.branches || item?.branchStock || 0);
-          const distributors = Number(
-            item?.distributors || item?.distributorStock || 0
+          const employees = Number(
+            item?.employees || item?.employeeStock || 0
           );
           const total = Number(
-            item?.total || warehouse + branchTotal + distributors
+            item?.total || warehouse + branchTotal + employees
           );
           const branchDetail = Array.isArray(item?.branches)
             ? item.branches
@@ -517,7 +517,7 @@ export default function AdvancedDashboard() {
             Producto: productName,
             Bodega: warehouse,
             Sedes: branchTotal,
-            Distribuidores: distributors,
+            Empleados: employees,
             Total: total,
             "Detalle Sedes": branchDetail,
           };
@@ -543,14 +543,14 @@ export default function AdvancedDashboard() {
         }
       );
 
-      const distributorRows = (distributorPerf?.distributors || []).map(
+      const employeeRows = (employeePerf?.employees || []).map(
         dist => ({
-          Distribuidor: dist.distributorName || "Sin nombre",
+          Empleado: dist.employeeName || "Sin nombre",
           "Total Ventas": Number(dist.totalSales || 0),
           Ingresos: Number(dist.totalRevenue || 0),
           "Profit Total": Number(dist.totalProfit || 0),
           "Profit Admin": Number(dist.adminProfit || 0),
-          "Profit Distribuidor": Number(dist.distributorProfit || 0),
+          "Profit Empleado": Number(dist.employeeProfit || 0),
         })
       );
 
@@ -560,7 +560,7 @@ export default function AdvancedDashboard() {
       appendSheet(workbook, XLSX, "Ventas Totales", salesRows);
       appendSheet(workbook, XLSX, "Inventario Actual", inventoryRows);
       appendSheet(workbook, XLSX, "Gastos y Garantias", expenseRows);
-      appendSheet(workbook, XLSX, "Distribuidores", distributorRows);
+      appendSheet(workbook, XLSX, "Empleados", employeeRows);
 
       XLSX.writeFile(
         workbook,
@@ -1666,26 +1666,26 @@ export default function AdvancedDashboard() {
           </div>
         </section>
 
-        {/* === SECCIÓN 4: DISTRIBUIDORES === */}
-        {distributorsEnabled && (
+        {/* === SECCIÓN 4: EMPLEADOS === */}
+        {employeesEnabled && (
           <section>
             <div className="mb-4 flex items-center gap-2 border-b border-gray-800 pb-2">
               <TrendingUp className="h-6 w-6 text-orange-500" />
-              <h2 className="text-2xl font-bold text-white">Distribuidores</h2>
+              <h2 className="text-2xl font-bold text-white">Empleados</h2>
             </div>
             <div className="space-y-8">
               <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4">
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   <div>
                     <label className="mb-1 block text-sm text-gray-300">
-                      Fecha inicio (Distribuidores)
+                      Fecha inicio (Empleados)
                     </label>
                     <input
                       type="date"
-                      value={distributorsRange.startDate}
+                      value={employeesRange.startDate}
                       onChange={e =>
-                        setDistributorsRange({
-                          ...distributorsRange,
+                        setEmployeesRange({
+                          ...employeesRange,
                           startDate: e.target.value,
                         })
                       }
@@ -1698,10 +1698,10 @@ export default function AdvancedDashboard() {
                     </label>
                     <input
                       type="date"
-                      value={distributorsRange.endDate}
+                      value={employeesRange.endDate}
                       onChange={e =>
-                        setDistributorsRange({
-                          ...distributorsRange,
+                        setEmployeesRange({
+                          ...employeesRange,
                           endDate: e.target.value,
                         })
                       }
@@ -1710,7 +1710,7 @@ export default function AdvancedDashboard() {
                   </div>
                   <div>
                     <label className="mb-1 block text-sm text-gray-300">
-                      Buscar distribuidor
+                      Buscar empleado
                     </label>
                     <div className="relative">
                       <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
@@ -1726,19 +1726,19 @@ export default function AdvancedDashboard() {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
-                    onClick={() => applyQuickRange(setDistributorsRange, 30)}
+                    onClick={() => applyQuickRange(setEmployeesRange, 30)}
                     className="rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-100 transition hover:border-purple-500"
                   >
                     30d
                   </button>
                   <button
-                    onClick={() => applyQuickRange(setDistributorsRange, 90)}
+                    onClick={() => applyQuickRange(setEmployeesRange, 90)}
                     className="rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-100 transition hover:border-purple-500"
                   >
                     90d
                   </button>
                   <button
-                    onClick={() => applyCurrentMonth(setDistributorsRange)}
+                    onClick={() => applyCurrentMonth(setEmployeesRange)}
                     className="rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-100 transition hover:border-purple-500"
                   >
                     Mes actual
@@ -1755,9 +1755,9 @@ export default function AdvancedDashboard() {
                     ))}
                   </select>
                 </div>
-                {distributorsRangeError && (
+                {employeesRangeError && (
                   <p className="mt-2 text-sm text-red-300">
-                    {distributorsRangeError}
+                    {employeesRangeError}
                   </p>
                 )}
               </div>
@@ -1786,9 +1786,9 @@ export default function AdvancedDashboard() {
 
               {/* Rankings */}
               {deferHeavy && (
-                <DistributorRankingsTable
-                  startDate={distributorsRange.startDate || undefined}
-                  endDate={distributorsRange.endDate || undefined}
+                <EmployeeRankingsTable
+                  startDate={employeesRange.startDate || undefined}
+                  endDate={employeesRange.endDate || undefined}
                   limit={rankingLimit}
                   search={rankingSearch}
                   reloadKey={reloadKey}

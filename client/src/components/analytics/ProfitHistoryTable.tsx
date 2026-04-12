@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
-  ProfitHistoryAdminDistributor,
+  ProfitHistoryAdminEmployee,
   ProfitHistoryAdminEntry,
   ProfitHistoryAdminOverview,
 } from "../../features/analytics/types/analytics.types";
@@ -11,7 +11,7 @@ import InfoTooltip from "../InfoTooltip";
 interface ProfitHistoryTableProps {
   dateRange: { startDate: string; endDate: string };
   hideFinancialData?: boolean;
-  scopeDistributorId?: string;
+  scopeEmployeeId?: string;
 }
 
 const formatCurrency = (amount: number) =>
@@ -36,34 +36,34 @@ const isValidObjectId = (value: string) => /^[a-f\d]{24}$/i.test(value);
 export default function ProfitHistoryTable({
   dateRange,
   hideFinancialData = false,
-  scopeDistributorId = "",
+  scopeEmployeeId = "",
 }: ProfitHistoryTableProps) {
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<ProfitHistoryAdminOverview | null>(
     null
   );
-  const [selectedDistributor, setSelectedDistributor] = useState<string>("");
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [limit, setLimit] = useState(150);
 
-  const distributorsEnabled = useFeature("distributors");
+  const employeesEnabled = useFeature("employees");
 
   useEffect(() => {
-    if (scopeDistributorId && selectedDistributor !== scopeDistributorId) {
-      setSelectedDistributor(scopeDistributorId);
+    if (scopeEmployeeId && selectedEmployee !== scopeEmployeeId) {
+      setSelectedEmployee(scopeEmployeeId);
     }
-  }, [scopeDistributorId, selectedDistributor]);
+  }, [scopeEmployeeId, selectedEmployee]);
 
   const loadOverview = useCallback(async () => {
     try {
       setLoading(true);
-      const distributorFilter = scopeDistributorId
-        ? scopeDistributorId
-        : selectedDistributor || undefined;
+      const employeeFilter = scopeEmployeeId
+        ? scopeEmployeeId
+        : selectedEmployee || undefined;
 
       const data = await profitHistoryService.getAdminOverview({
         startDate: dateRange.startDate || undefined,
         endDate: dateRange.endDate || undefined,
-        distributorId: distributorFilter,
+        employeeId: employeeFilter,
         limit,
       });
       setOverview(data);
@@ -72,47 +72,47 @@ export default function ProfitHistoryTable({
     } finally {
       setLoading(false);
     }
-  }, [dateRange, selectedDistributor, limit, scopeDistributorId]);
+  }, [dateRange, selectedEmployee, limit, scopeEmployeeId]);
 
   useEffect(() => {
     void loadOverview();
   }, [loadOverview]);
 
-  const distributors = useMemo<ProfitHistoryAdminDistributor[]>(() => {
+  const employees = useMemo<ProfitHistoryAdminEmployee[]>(() => {
     if (!overview) return [];
-    return overview.distributors;
+    return overview.employees;
   }, [overview]);
 
-  const distributorOptions = useMemo(() => {
+  const employeeOptions = useMemo(() => {
     const seen = new Set<string>();
-    return distributors.filter(dist => {
+    return employees.filter(dist => {
       const allow = dist.id === "admin" || isValidObjectId(dist.id);
       if (!allow) return false;
       if (seen.has(dist.id)) return false;
       seen.add(dist.id);
       return true;
     });
-  }, [distributors]);
+  }, [employees]);
 
-  const emptyColSpan = hideFinancialData ? 4 : distributorsEnabled ? 7 : 5;
+  const emptyColSpan = hideFinancialData ? 4 : employeesEnabled ? 7 : 5;
 
   return (
     <div className="space-y-6">
-      {/* Filtros Internos de la Tabla (Distribuidor / Límite) */}
+      {/* Filtros Internos de la Tabla (Empleado / Límite) */}
       <div className="flex flex-wrap items-end gap-4 rounded-xl border border-gray-800 bg-gray-900/40 p-4">
-        {distributorsEnabled && !hideFinancialData && (
+        {employeesEnabled && !hideFinancialData && (
           <div className="min-w-[200px] flex-1">
             <label className="mb-1 block text-sm font-medium text-gray-300">
-              Filtrar por Distribuidor
+              Filtrar por Empleado
             </label>
             <select
-              value={selectedDistributor}
-              onChange={e => setSelectedDistributor(e.target.value)}
+              value={selectedEmployee}
+              onChange={e => setSelectedEmployee(e.target.value)}
               className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
             >
               <option value="">Todos</option>
               <option value="admin">Solo ventas admin</option>
-              {distributorOptions
+              {employeeOptions
                 .filter(d => d.id !== "admin")
                 .map(d => (
                   <option key={d.id} value={d.id}>
@@ -163,20 +163,20 @@ export default function ProfitHistoryTable({
                   Venta / Evento
                   <InfoTooltip text="Tipo de transaccion registrada." />
                 </th>
-                {distributorsEnabled && !hideFinancialData && (
+                {employeesEnabled && !hideFinancialData && (
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Distribuidor
-                    <InfoTooltip text="Distribuidor asociado a la venta." />
+                    Empleado
+                    <InfoTooltip text="Empleado asociado a la venta." />
                   </th>
                 )}
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Producto
                   <InfoTooltip text="Producto o concepto asociado a la transaccion." />
                 </th>
-                {distributorsEnabled && !hideFinancialData && (
+                {employeesEnabled && !hideFinancialData && (
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Ganancia Dist
-                    <InfoTooltip text="Comision del distribuidor en la transaccion." />
+                    <InfoTooltip text="Comision del empleado en la transaccion." />
                   </th>
                 )}
                 <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -185,14 +185,14 @@ export default function ProfitHistoryTable({
                     text={
                       hideFinancialData
                         ? "Ganancia personal del usuario actual."
-                        : "Suma de la utilidad de tus ventas directas + la diferencia del precio B2B de tus distribuidores."
+                        : "Suma de la utilidad de tus ventas directas + la diferencia del precio B2B de tus empleados."
                     }
                   />
                 </th>
                 {!hideFinancialData && (
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Total
-                    <InfoTooltip text="Suma de ganancia admin y comision de distribuidor." />
+                    <InfoTooltip text="Suma de ganancia admin y comision de empleado." />
                   </th>
                 )}
               </tr>
@@ -232,8 +232,8 @@ export default function ProfitHistoryTable({
                     {/** En modo privado priorizamos comisión; si no existe, usar admin/total. */}
                     {(() => {
                       const ownProfit =
-                        (entry.distributorProfit || 0) > 0
-                          ? entry.distributorProfit
+                        (entry.employeeProfit || 0) > 0
+                          ? entry.employeeProfit
                           : (entry.adminProfit ?? entry.totalProfit ?? 0);
 
                       return (
@@ -267,15 +267,15 @@ export default function ProfitHistoryTable({
                               </span>
                             </div>
                           </td>
-                          {distributorsEnabled && !hideFinancialData && (
+                          {employeesEnabled && !hideFinancialData && (
                             <td className="px-6 py-4 text-sm text-gray-300">
-                              {entry.distributorName ? (
+                              {entry.employeeName ? (
                                 <div className="flex flex-col">
                                   <span className="text-white">
-                                    {entry.distributorName}
+                                    {entry.employeeName}
                                   </span>
                                   <span className="text-xs text-gray-500">
-                                    {entry.distributorEmail || "Admin"}
+                                    {entry.employeeEmail || "Admin"}
                                   </span>
                                 </div>
                               ) : (
@@ -288,9 +288,9 @@ export default function ProfitHistoryTable({
                           <td className="px-6 py-4 text-sm text-gray-300">
                             {entry.productName || "-"}
                           </td>
-                          {distributorsEnabled && !hideFinancialData && (
+                          {employeesEnabled && !hideFinancialData && (
                             <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-cyan-400">
-                              {formatCurrency(entry.distributorProfit)}
+                              {formatCurrency(entry.employeeProfit)}
                             </td>
                           )}
                           <td
@@ -307,7 +307,7 @@ export default function ProfitHistoryTable({
                               {formatCurrency(
                                 entry.totalProfit ??
                                   (entry.adminProfit || 0) +
-                                    (entry.distributorProfit || 0)
+                                    (entry.employeeProfit || 0)
                               )}
                             </td>
                           )}

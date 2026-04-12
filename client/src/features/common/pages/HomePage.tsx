@@ -33,7 +33,7 @@ type PricingPlan = {
   currency: string;
   limits: {
     branches: number;
-    distributors: number;
+    employees: number;
   };
 };
 
@@ -110,7 +110,7 @@ const painPoints = [
 ];
 
 const solutionOutcomes = [
-  "Inventario unificado por bodega, sede y distribuidor.",
+  "Inventario unificado por bodega, sede y empleado.",
   "Precios y promociones alineados con rentabilidad real.",
   "Cobranza, cartera y comisiones bajo un mismo flujo.",
   "Tablero ejecutivo para actuar el mismo dia.",
@@ -138,7 +138,7 @@ const operatingPillars: Array<{
   {
     title: "Ventas Omnicanal",
     description:
-      "Gestiona ventas de mostrador, distribuidores y promociones con una sola trazabilidad.",
+      "Gestiona ventas de mostrador, empleados y promociones con una sola trazabilidad.",
     icon: ShoppingCart,
     tag: "Ventas",
     highlights: ["Precio por canal", "Carrito agil", "Control de descuentos"],
@@ -280,7 +280,7 @@ export default function Home() {
         monthlyPrice: 19,
         yearlyPrice: 190,
         currency: "USD",
-        limits: { branches: 1, distributors: 2 },
+        limits: { branches: 1, employees: 2 },
       },
       {
         id: "pro",
@@ -289,7 +289,7 @@ export default function Home() {
         monthlyPrice: 49,
         yearlyPrice: 490,
         currency: "USD",
-        limits: { branches: 3, distributors: 10 },
+        limits: { branches: 3, employees: 10 },
       },
       {
         id: "enterprise",
@@ -298,7 +298,7 @@ export default function Home() {
         monthlyPrice: 99,
         yearlyPrice: 990,
         currency: "USD",
-        limits: { branches: 10, distributors: 50 },
+        limits: { branches: 10, employees: 50 },
       },
     ];
   }, [plans]);
@@ -640,7 +640,7 @@ export default function Home() {
           </h2>
           <p className="mx-auto mt-2 max-w-3xl text-sm text-slate-300 sm:text-base">
             Elige un plan segun tu operacion actual y expande sedes o
-            distribuidores cuando el negocio lo necesite.
+            empleados cuando el negocio lo necesite.
           </p>
 
           <div className="mt-5 inline-flex rounded-full border border-white/15 bg-white/5 p-1">
@@ -721,7 +721,7 @@ export default function Home() {
                   <li className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 text-emerald-300" />
                     <span>
-                      {plan.limits.distributors} distribuidores incluidos
+                      {plan.limits.employees} empleados incluidos
                     </span>
                   </li>
                   <li className="flex items-start gap-2">

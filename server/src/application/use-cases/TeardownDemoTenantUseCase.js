@@ -12,8 +12,8 @@ import Customer from "../../infrastructure/database/models/Customer.js";
 import DefectiveProduct from "../../infrastructure/database/models/DefectiveProduct.js";
 import DeliveryMethod from "../../infrastructure/database/models/DeliveryMethod.js";
 import DispatchRequest from "../../infrastructure/database/models/DispatchRequest.js";
-import DistributorStats from "../../infrastructure/database/models/DistributorStats.js";
-import DistributorStock from "../../infrastructure/database/models/DistributorStock.js";
+import EmployeeStats from "../../infrastructure/database/models/EmployeeStats.js";
+import EmployeeStock from "../../infrastructure/database/models/EmployeeStock.js";
 import Expense from "../../infrastructure/database/models/Expense.js";
 import InventoryEntry from "../../infrastructure/database/models/InventoryEntry.js";
 import InventoryMovement from "../../infrastructure/database/models/InventoryMovement.js";
@@ -67,8 +67,8 @@ const scopedModels = [
   ["defectiveProducts", DefectiveProduct],
   ["deliveryMethods", DeliveryMethod],
   ["dispatchRequests", DispatchRequest],
-  ["distributorStats", DistributorStats],
-  ["distributorStocks", DistributorStock],
+  ["employeeStats", EmployeeStats],
+  ["employeeStocks", EmployeeStock],
   ["expenses", Expense],
   ["inventoryEntries", InventoryEntry],
   ["inventoryMovements", InventoryMovement],
@@ -122,7 +122,7 @@ export class TeardownDemoTenantUseCase {
     const strictDemoUserIds = normalizeIdList([
       ...demoUserIds,
       metadataDemo.adminUserId,
-      metadataDemo.distributorUserId,
+      metadataDemo.employeeUserId,
       ...(Array.isArray(metadataDemo.userIds) ? metadataDemo.userIds : []),
     ]);
 

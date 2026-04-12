@@ -11,11 +11,14 @@ Estas reglas son dogmas del proyecto. Cualquier desviación o excepción debe se
 ## 1. 🏗️ Arquitectura Estricta (Backend Hexagonal & Frontend Clean)
 
 - **Backend (Node.js + Express):**
-  - **Prohibido:** Lógica de negocio o consultas a MongoDB directamente en los Controladores (`src/infrastructure/http/controllers`).
-  - **Flujo Obligatorio:** Rutas -> Controladores -> Casos de Uso (`src/application/use-cases`) -> Repositorios/Gateways (`src/infrastructure/database/repositories`).
+  - **Controladores Delgados (Thin Controllers):** Los controladores son adaptadores HTTP. Solo deben extraer input, delegar al Caso de Uso y mapear la respuesta/error.
+  - **Prohibido:** Lógica de negocio, cálculos financieros, reglas de comisiones, validaciones de dominio o consultas MongoDB directas en controladores (`src/infrastructure/http/controllers`).
+  - **Flujo Obligatorio:** Rutas -> Thin Controllers (delegados) -> Casos de Uso (`src/application/use-cases`) -> Repositorios/Gateways (`src/infrastructure/database/repositories`).
+  - **Transacciones en Core:** Toda transacción crítica (pagos, anulación de venta, movimientos de stock, canjes) se abre, confirma y revierte estrictamente en el Caso de Uso, nunca en la capa de rutas/controlador.
 - **Frontend (React + Tailwind + Vite):**
   - Patrón basado en Features (`client/src/features/`).
   - Separación de responsabilidades: Hooks personalizados para lógica de estado, Componentes puros para UI.
+  - **Caché Anti-Ráfagas (Anti-429):** Para endpoints sensibles a bursts (auth/profile, memberships, global-settings), aplicar dedupe de requests en vuelo + caché TTL + cooldown por `Retry-After` + fallback stale.
 
 ## 2. 🛡️ Seguridad y "La Fortaleza Fantasma"
 
@@ -28,7 +31,7 @@ Estas reglas son dogmas del proyecto. Cualquier desviación o excepción debe se
 
 ## 3. 💰 Reglas de Negocio Financiero (Blindaje)
 
-- **Atomicidad (Race Conditions):** - Todo flujo crítico (Ventas, Traslados de Stock, Canje de Gamificación) DEBE ejecutarse dentro de una Transacción de MongoDB (`session.startTransaction()`).
+- **Atomicidad (Race Conditions):** - Todo flujo crítico (Ventas, Pagos, Anulaciones, Traslados de Stock, Canje de Gamificación) DEBE ejecutarse dentro de una Transacción de MongoDB (`session.startTransaction()`) iniciada y controlada desde el Caso de Uso.
 - **Data Scrubbing (Privacidad):**
   - Si un usuario tiene `HIDE_FINANCIAL_DATA: true`, los campos `purchasePrice`, `averageCost`, `supplierId` y `profit` DEBEN setearse a `null` antes de responder en la API.
 - **Precios Incorruptibles:**
@@ -50,8 +53,10 @@ Estas reglas son dogmas del proyecto. Cualquier desviación o excepción debe se
 ## 5. ✅ Checklist Final antes de cada Commit
 
 1. [ ] ¿La lógica de negocio está aislada en un Caso de Uso y NO en el Controlador?
-2. [ ] ¿El endpoint verifica el `businessId` (Anti-IDOR)?
-3. [ ] ¿Si es una venta o movimiento de stock, usa `session.startTransaction()`?
-4. [ ] ¿Se ocultan los datos si el flag `HIDE_FINANCIAL_DATA` está activo?
-5. [ ] ¿El UI respeta el _Safe Area_ en móviles y no solapa botones?
-6. [ ] ¿El "Modo Fantasma" (Rol GOD) puede operar sin causar errores de tenant o dejar logs?
+2. [ ] ¿El controlador es realmente Thin Controller (delegado sin reglas de negocio ni acceso DB)?
+3. [ ] ¿El endpoint verifica el `businessId` (Anti-IDOR)?
+4. [ ] ¿Si es venta/pago/anulación/movimiento de stock, usa `session.startTransaction()` dentro del Use Case?
+5. [ ] ¿El frontend aplica Caché Anti-Ráfagas para evitar spam y 429 en endpoints críticos?
+6. [ ] ¿Se ocultan los datos si el flag `HIDE_FINANCIAL_DATA` está activo?
+7. [ ] ¿El UI respeta el _Safe Area_ en móviles y no solapa botones?
+8. [ ] ¿El "Modo Fantasma" (Rol GOD) puede operar sin causar errores de tenant o dejar logs?

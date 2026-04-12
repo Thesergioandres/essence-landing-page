@@ -76,7 +76,7 @@ export interface AnalyticsPayload {
 // ==================== MONTHLY PROFIT TYPES ====================
 export interface MonthlyProfitPeriod {
   adminProfit: number;
-  distributorProfit: number;
+  employeeProfit: number;
   totalProfit: number;
   netProfit: number;
   netOperationProfit?: number;
@@ -110,7 +110,7 @@ export interface ProfitHistoryEntry {
   saleId: string;
   date: string;
   source: "normal" | "special";
-  type: "venta_admin" | "venta_distribuidor";
+  type: "venta_admin" | "venta_empleado";
   productName: string;
   eventName?: string;
   quantity: number;
@@ -146,12 +146,12 @@ export interface ProfitHistoryAdminEntry {
   saleId: string;
   date: string;
   source: "normal" | "special";
-  distributorId: string | null;
-  distributorName: string;
-  distributorEmail: string | null;
-  type: "venta_distribuidor" | "venta_admin";
+  employeeId: string | null;
+  employeeName: string;
+  employeeEmail: string | null;
+  type: "venta_empleado" | "venta_admin";
   adminProfit: number;
-  distributorProfit: number;
+  employeeProfit: number;
   totalProfit: number;
   netProfit?: number;
   totalDeductions?: number;
@@ -161,13 +161,13 @@ export interface ProfitHistoryAdminEntry {
   paymentStatus?: string;
 }
 
-export interface ProfitHistoryAdminDistributor {
+export interface ProfitHistoryAdminEmployee {
   // Campos del backend
-  distributorId?: string;
-  distributorName?: string;
-  distributorEmail?: string;
+  employeeId?: string;
+  employeeName?: string;
+  employeeEmail?: string;
   totalAdminProfit?: number;
-  totalDistributorProfit?: number;
+  totalEmployeeProfit?: number;
   totalProfit?: number;
   salesCount?: number;
   quantitySold?: number;
@@ -176,26 +176,26 @@ export interface ProfitHistoryAdminDistributor {
   name: string;
   email?: string;
   sales?: number;
-  distributorProfit?: number;
+  employeeProfit?: number;
   adminProfit?: number;
 }
 
 export interface ProfitHistoryAdminOverview {
   // Campos originales
   totalAdminProfit?: number;
-  totalDistributorProfit?: number;
+  totalEmployeeProfit?: number;
   totalProfit: number;
   grossProfit?: number;
   totalExpenses?: number;
   netProfit?: number;
   averageMargin?: number;
   salesCount?: number;
-  distributorCount?: number;
-  distributorBreakdown?: ProfitHistoryAdminDistributor[];
+  employeeCount?: number;
+  employeeBreakdown?: ProfitHistoryAdminEmployee[];
   // Campos del backend (getAdminOverview)
   totalEntries: number;
-  totalDistributorCommissions: number;
-  distributorCommissionEntries: number;
+  totalEmployeeCommissions: number;
+  employeeCommissionEntries: number;
   byType?: Record<string, { total: number; count: number }>;
   topUsers?: Array<{
     userId: string;
@@ -205,7 +205,7 @@ export interface ProfitHistoryAdminOverview {
   }>;
   recentEntries: ProfitHistoryAdminEntry[];
   entries?: ProfitHistoryAdminEntry[]; // Alias para compatibilidad
-  distributors?: ProfitHistoryAdminDistributor[]; // Lista de distribuidores
+  employees?: ProfitHistoryAdminEmployee[]; // Lista de empleados
   filters?: {
     startDate?: string;
     endDate?: string;
@@ -216,7 +216,7 @@ export interface ProfitHistoryAdminOverview {
 // ==================== FINANCIAL SUMMARY TYPES ====================
 export interface Averages {
   avgAdminProfit: number;
-  avgDistributorProfit: number;
+  avgEmployeeProfit: number;
   avgTotalProfit: number;
   avgNetProfit?: number;
   avgQuantity: number;
@@ -226,7 +226,7 @@ export interface Averages {
 export interface TimelineData {
   date: string;
   adminProfit: number;
-  distributorProfit: number;
+  employeeProfit: number;
   totalProfit: number;
   netProfit?: number;
   salesCount: number;
@@ -237,7 +237,7 @@ export interface TimelineData {
 
 export interface FinancialSummary {
   totalAdminProfit: number;
-  totalDistributorProfit: number;
+  totalEmployeeProfit: number;
   totalProfit: number;
   totalNetProfit?: number;
   totalDeductions?: number;
@@ -311,7 +311,7 @@ export interface AnalyticsDashboard {
     totalQuantity: number;
     totalProfit: number;
   }>;
-  topDistributors: Array<{
+  topEmployees: Array<{
     _id: string;
     name: string;
     totalSales: number;
@@ -333,14 +333,14 @@ export interface AnalyticsDashboard {
   };
 }
 
-// ==================== DISTRIBUTOR PROFIT TYPES ====================
-export interface DistributorProfit {
-  distributorId: string;
-  distributorName: string;
+// ==================== EMPLOYEE PROFIT TYPES ====================
+export interface EmployeeProfit {
+  employeeId: string;
+  employeeName: string;
   totalQuantity: number;
   totalRevenue: number;
   totalProfit: number;
   totalAdminProfit: number;
-  totalDistributorProfit: number;
+  totalEmployeeProfit: number;
   totalSales?: number;
 }

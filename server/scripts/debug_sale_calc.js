@@ -39,7 +39,7 @@ const debugSale = async () => {
     }
 
     console.log("quantity:", sale.quantity);
-    console.log("distributorProfit:", sale.distributorProfit);
+    console.log("employeeProfit:", sale.employeeProfit);
     console.log("purchasePrice:", sale.purchasePrice);
     console.log("averageCostAtSale:", sale.averageCostAtSale);
     console.log("shippingCost:", sale.shippingCost);
@@ -49,7 +49,7 @@ const debugSale = async () => {
     console.log("netProfit (DB):", sale.netProfit);
 
     const grossRevenue =
-      sale.salePrice * sale.quantity - (sale.distributorProfit || 0);
+      sale.salePrice * sale.quantity - (sale.employeeProfit || 0);
     let unitCost = sale.averageCostAtSale || sale.purchasePrice || 0;
     const productCost = unitCost * sale.quantity;
 

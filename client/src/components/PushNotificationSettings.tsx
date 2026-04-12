@@ -1,4 +1,4 @@
-import { Bell, BellOff, Check, Settings, X } from "lucide-react";
+﻿import { Bell, BellOff, Check, Settings, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { pushSubscriptionService } from "../features/notifications/services";
 
@@ -71,20 +71,20 @@ export default function PushNotificationSettings() {
   const subscribe = async () => {
     setLoading(true);
     try {
-      // Registrar service worker si no está registrado
+      // Registrar service worker si no estÃ¡ registrado
       const registration = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
 
-      // Obtener la clave pública VAPID del servidor
+      // Obtener la clave pÃºblica VAPID del servidor
       const config = await pushSubscriptionService.getVapidPublicKey();
 
-      // Crear suscripción push
+      // Crear suscripciÃ³n push
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(config.publicKey),
       });
 
-      // Enviar suscripción al servidor
+      // Enviar suscripciÃ³n al servidor
       await pushSubscriptionService.subscribe({
         subscription: subscription.toJSON(),
         preferences,
@@ -92,7 +92,7 @@ export default function PushNotificationSettings() {
       });
 
       setSubscribed(true);
-      console.log("[UI INFO] push_subscribed");
+      console.warn("[Essence Debug]", "[UI INFO] push_subscribed");
     } catch (error) {
       console.error("[UI ERROR] push_subscribe_failed", error);
     } finally {
@@ -112,7 +112,7 @@ export default function PushNotificationSettings() {
       }
 
       setSubscribed(false);
-      console.log("[UI INFO] push_unsubscribed");
+      console.warn("[Essence Debug]", "[UI INFO] push_unsubscribed");
     } catch (error) {
       console.error("[UI ERROR] push_unsubscribe_failed", error);
     } finally {
@@ -134,7 +134,7 @@ export default function PushNotificationSettings() {
             updated
           );
         }
-        console.log("[UI INFO] push_preferences_updated");
+        console.warn("[Essence Debug]", "[UI INFO] push_preferences_updated");
       } catch (error) {
         console.error("[UI ERROR] push_preferences_update_failed", error);
       }
@@ -161,7 +161,7 @@ export default function PushNotificationSettings() {
         <div className="flex items-center gap-3 text-gray-500">
           <BellOff className="h-5 w-5" />
           <span className="text-sm">
-            Las notificaciones push no están soportadas en este navegador
+            Las notificaciones push no estÃ¡n soportadas en este navegador
           </span>
         </div>
       </div>
@@ -183,7 +183,7 @@ export default function PushNotificationSettings() {
             </h3>
             <p className="text-sm text-gray-500">
               {subscribed
-                ? "Recibirás alertas en tiempo real"
+                ? "RecibirÃ¡s alertas en tiempo real"
                 : permission === "denied"
                   ? "Notificaciones bloqueadas en el navegador"
                   : "Activa para recibir alertas importantes"}
@@ -239,11 +239,11 @@ export default function PushNotificationSettings() {
           </h4>
           <div className="grid gap-2 sm:grid-cols-2">
             {[
-              { key: "sales", label: "Nuevas ventas", icon: "💰" },
-              { key: "stock", label: "Stock bajo", icon: "📦" },
-              { key: "credits", label: "Créditos por vencer", icon: "💳" },
-              { key: "subscriptions", label: "Membresías", icon: "👤" },
-              { key: "gamification", label: "Logros y metas", icon: "🏆" },
+              { key: "sales", label: "Nuevas ventas", icon: "ðŸ’°" },
+              { key: "stock", label: "Stock bajo", icon: "ðŸ“¦" },
+              { key: "credits", label: "CrÃ©ditos por vencer", icon: "ðŸ’³" },
+              { key: "subscriptions", label: "MembresÃ­as", icon: "ðŸ‘¤" },
+              { key: "gamification", label: "Logros y metas", icon: "ðŸ†" },
             ].map(({ key, label, icon }) => (
               <label
                 key={key}
@@ -279,3 +279,4 @@ export default function PushNotificationSettings() {
     </div>
   );
 }
+

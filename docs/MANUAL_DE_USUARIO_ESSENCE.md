@@ -6,7 +6,7 @@
 
 ## 👑 1. Guía del Administrador (Owner)
 
-El nivel Administrador tiene control absoluto de su inventario, finanzas corporativas y distribuidores adscritos.
+El nivel Administrador tiene control absoluto de su inventario, finanzas corporativas y empleados adscritos.
 
 #### A. ¿Cómo registrar el primer inventario?
 1. Dirígete a **Módulo de Inventario > Productos**.
@@ -15,21 +15,21 @@ El nivel Administrador tiene control absoluto de su inventario, finanzas corpora
 4. Ingresa el modelo de costeo: Deja por defecto el *Costo Promedio*. El sistema registrará el costo de tu inversión y todo lo demás será automatizado.
 5. Presiona Guardar. El stock ingresado viajará directamente a tu "Bodega Principal" (`warehouseStock`).
 
-#### B. ¿Cómo asignar mercancía a mis distribuidores?
-1. Dirígete a **Equipo > Distribuidores**.
+#### B. ¿Cómo asignar mercancía a mis empleados?
+1. Dirígete a **Equipo > Empleados**.
 2. Dale al botón "Transferir Mercancía".
-3. Identifica al distribuidor y el producto. Ingresa la cantidad (ej. 100).
-4. El sistema restará mágicamente tus 100 de tu *Bodega Principal* de manera inmediata para protegerte de vender un producto físico dos veces, y le dotará esas 100 unidades al celular o portátil del distribuidor de cara a su inicio de sesión en terreno.
+3. Identifica al empleado y el producto. Ingresa la cantidad (ej. 100).
+4. El sistema restará mágicamente tus 100 de tu *Bodega Principal* de manera inmediata para protegerte de vender un producto físico dos veces, y le dotará esas 100 unidades al celular o portátil del empleado de cara a su inicio de sesión en terreno.
 
 #### C. Control Financiero Diario.
 1. Accede al **Dashboard**.
-2. Todo lo visualizado en "Ganancia Neta" ya tiene exentos: envíos, comisiones pagadas a distribuidores y ventas que no te han entrado dinero (Fiados). Tienes una contabilidad pura.
+2. Todo lo visualizado en "Ganancia Neta" ya tiene exentos: envíos, comisiones pagadas a empleados y ventas que no te han entrado dinero (Fiados). Tienes una contabilidad pura.
 
 ---
 
-## 🏃 2. Guía del Distribuidor (Vendedor)
+## 🏃 2. Guía del Empleado (Vendedor)
 
-El distribuidor no ve costos de compra, operaciones del dueño o ganancias administrativas. El distribuidor solo utiliza Essence ERP como su POS personal optimizado.
+El empleado no ve costos de compra, operaciones del dueño o ganancias administrativas. El empleado solo utiliza Essence ERP como su POS personal optimizado.
 
 #### A. Inicio de Jornada y Venta
 1. Al Iniciar Sesión, observarás una vista diferente. Sólo verás un resumen de "Mis Comisiones" ganadas en el mes o día.
@@ -38,5 +38,5 @@ El distribuidor no ve costos de compra, operaciones del dueño o ganancias admin
 4. Configura porcentaje extra si le cobras envío al cliente y presiona generar venta.
 
 #### B. ¿Por qué se ha suspendido mi acceso al ingresar el lunes?
-El ERP trabaja mediante un sistema dependiente. Si tu Patrono Oficial (El Owner) ha dejado caducar la subscripción corporativa de la empresa, el panel no dejará iniciar sesión a ningún distribuidor por regulaciones preventivas del servidor de datos.
+El ERP trabaja mediante un sistema dependiente. Si tu Patrono Oficial (El Owner) ha dejado caducar la subscripción corporativa de la empresa, el panel no dejará iniciar sesión a ningún empleado por regulaciones preventivas del servidor de datos.
 > *"Contacta al Dueño del ERP para reactivar operaciones."*

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================
  * TEST SUITE 1: AUTHENTICATION
  * ============================================
@@ -13,7 +13,7 @@
 
 import { expect, test } from "./fixtures";
 
-test.describe("🔐 Authentication Tests", () => {
+test.describe("ðŸ” Authentication Tests", () => {
   test.beforeEach(async ({ page }) => {
     // Clear any existing session
     await page.goto("/login");
@@ -30,7 +30,7 @@ test.describe("🔐 Authentication Tests", () => {
     await expect(page.locator('input[name="email"]')).toBeVisible();
     await expect(page.locator('input[name="password"]')).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /iniciar sesión|login|entrar/i })
+      page.getByRole("button", { name: /iniciar sesiÃ³n|login|entrar/i })
     ).toBeVisible();
   });
 
@@ -47,7 +47,7 @@ test.describe("🔐 Authentication Tests", () => {
     const token = await page.evaluate(() => localStorage.getItem("token"));
     expect(token).toBeTruthy();
 
-    console.log("✅ Admin login successful");
+    console.warn("[Essence Debug]", "âœ… Admin login successful");
   });
 
   test("should persist session across page reloads", async ({
@@ -62,7 +62,7 @@ test.describe("🔐 Authentication Tests", () => {
     // Should still be on dashboard (not redirected to login)
     await expect(page).not.toHaveURL(/\/login/);
 
-    console.log("✅ Session persistence works");
+    console.warn("[Essence Debug]", "âœ… Session persistence works");
   });
 
   test("should show error for invalid credentials", async ({ page }) => {
@@ -71,19 +71,19 @@ test.describe("🔐 Authentication Tests", () => {
     await page.locator('input[name="email"]').fill("invalid@test.com");
     await page.locator('input[name="password"]').fill("wrongpassword");
     await page
-      .getByRole("button", { name: /iniciar sesión|login|entrar/i })
+      .getByRole("button", { name: /iniciar sesiÃ³n|login|entrar/i })
       .click();
 
     // Wait for error message
     const errorMessage = page.getByText(
-      /error|credenciales|inválid|incorrect/i
+      /error|credenciales|invÃ¡lid|incorrect/i
     );
     await expect(errorMessage).toBeVisible({ timeout: 5000 });
 
     // Should still be on login page
     await expect(page).toHaveURL(/\/login/);
 
-    console.log("✅ Invalid credentials handled correctly");
+    console.warn("[Essence Debug]", "âœ… Invalid credentials handled correctly");
   });
 
   test("should logout and redirect to login", async ({
@@ -103,7 +103,7 @@ test.describe("🔐 Authentication Tests", () => {
     const token = await page.evaluate(() => localStorage.getItem("token"));
     expect(token).toBeFalsy();
 
-    console.log("✅ Logout successful");
+    console.warn("[Essence Debug]", "âœ… Logout successful");
   });
 
   test("should protect admin routes from unauthenticated access", async ({
@@ -114,6 +114,7 @@ test.describe("🔐 Authentication Tests", () => {
     // Should redirect to login
     await expect(page).toHaveURL(/\/login/, { timeout: 5000 });
 
-    console.log("✅ Route protection works");
+    console.warn("[Essence Debug]", "âœ… Route protection works");
   });
 });
+

@@ -6,13 +6,13 @@ import { RegisterStandardSaleUseCase } from "../../../application/use-cases/sale
  * Register Sale Controller
  * Entry point for the Sales Registration (Hexagonal Adapter)
  */
-const buildSaleInput = (req, distributorId) => ({
+const buildSaleInput = (req, employeeId) => ({
   user: req.user,
   businessId:
     req.businessId ||
     req.business?._id?.toString?.() ||
     req.headers["x-business-id"],
-  distributorId,
+  employeeId,
   locationType: req.body.locationType || req.body.sourceLocation,
   branchId: req.body.branchId || req.body.branch,
   items: req.body.items,
@@ -29,10 +29,10 @@ const buildSaleInput = (req, distributorId) => ({
   additionalCosts: req.body.additionalCosts,
   warranties: req.body.warranties,
   notes: req.body.notes,
-  distributorProfitPercentage: req.body.distributorProfitPercentage,
+  employeeProfitPercentage: req.body.employeeProfitPercentage,
 });
 
-const resolveDistributorId = (req) => {
+const resolveEmployeeId = (req) => {
   const userId = req.user?.id || req.user?._id;
   const membershipRole = req.membership?.role;
 
@@ -40,8 +40,8 @@ const resolveDistributorId = (req) => {
     return userId;
   }
 
-  if (req.body.distributorId) {
-    return req.body.distributorId;
+  if (req.body.employeeId) {
+    return req.body.employeeId;
   }
 
   return null;
@@ -76,11 +76,11 @@ const runRegisterSale = async (req, res, next, UseCaseClass) => {
     session.startTransaction();
 
     // 2. Extract Data (Adapter)
-    // Determine distributorId based on user role:
-    // - If user is distributor: use their ID
-    // - If user is admin: only set distributorId if explicitly provided in body
-    const distributorId = resolveDistributorId(req);
-    const input = buildSaleInput(req, distributorId);
+    // Determine employeeId based on user role:
+    // - If user is employee: use their ID
+    // - If user is admin: only set employeeId if explicitly provided in body
+    const employeeId = resolveEmployeeId(req);
+    const input = buildSaleInput(req, employeeId);
 
     // 3. Invoke Application Use Case
     const useCase = new UseCaseClass();

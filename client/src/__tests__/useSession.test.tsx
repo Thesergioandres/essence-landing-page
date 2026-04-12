@@ -28,7 +28,7 @@ describe("useSession", () => {
     vi.clearAllMocks();
   });
 
-  it("asigna businessId automáticamente para distribuidor con único membership", async () => {
+  it("asigna businessId automáticamente para empleado con único membership", async () => {
     localStorage.setItem("token", "tkn");
     mockedAuth.getCurrentUser.mockReturnValue({
       role: "employee",

@@ -310,7 +310,7 @@ const Rankings = () => {
                   </div>
                   <div className="mt-2 text-center">
                     <p className="font-bold text-white">
-                      {rankings[1]?.distributorName}
+                      {rankings[1]?.employeeName}
                     </p>
                     <p className="text-sm text-gray-400">
                       {formatCurrency(rankings[1]?.totalRevenue || 0)}
@@ -331,7 +331,7 @@ const Rankings = () => {
                   </div>
                   <div className="mt-2 text-center">
                     <p className="font-bold text-white">
-                      {rankings[0]?.distributorName}
+                      {rankings[0]?.employeeName}
                     </p>
                     <p className="text-sm text-gray-400">
                       {formatCurrency(rankings[0]?.totalRevenue || 0)}
@@ -352,7 +352,7 @@ const Rankings = () => {
                   </div>
                   <div className="mt-2 text-center">
                     <p className="font-bold text-white">
-                      {rankings[2]?.distributorName}
+                      {rankings[2]?.employeeName}
                     </p>
                     <p className="text-sm text-gray-400">
                       {formatCurrency(rankings[2]?.totalRevenue || 0)}
@@ -375,7 +375,7 @@ const Rankings = () => {
                     Posición
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
-                    Distribuidor
+                    Empleado
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                     Nivel
@@ -410,7 +410,7 @@ const Rankings = () => {
                 ) : (
                   rankings.map(rank => (
                     <tr
-                      key={rank.distributorId}
+                      key={rank.employeeId}
                       className={`hover:bg-gray-700 ${
                         rank.position <= 3 ? "border-l-4 bg-yellow-900/30" : ""
                       } ${
@@ -443,10 +443,10 @@ const Rankings = () => {
                         <div className="flex items-center gap-2">
                           <div>
                             <div className="font-medium text-white">
-                              {rank.distributorName}
+                              {rank.employeeName}
                             </div>
                             <div className="text-sm text-gray-400">
-                              {rank.distributorEmail}
+                              {rank.employeeEmail}
                             </div>
                           </div>
                         </div>

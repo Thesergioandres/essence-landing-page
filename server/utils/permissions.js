@@ -35,7 +35,7 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     defectiveProducts: ALL_ACTIONS,
     sales: ALL_ACTIONS,
     promotions: ALL_ACTIONS,
-    distributors: ALL_ACTIONS,
+    employees: ALL_ACTIONS,
     providers: ALL_ACTIONS,
     clients: ALL_ACTIONS,
     expenses: ALL_ACTIONS,
@@ -45,7 +45,7 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     credits: ALL_ACTIONS,
     financial: { view_costs: true },
   },
-  distribuidor: {
+  empleado: {
     products: { read: true },
     inventory: { read: true, update: true },
     defectiveProducts: {
@@ -56,7 +56,7 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     },
     sales: { read: true, create: true },
     promotions: { read: true },
-    distributors: { read: true },
+    employees: { read: true },
     providers: { read: false },
     clients: { read: true, create: false, update: false, delete: false },
     expenses: { read: false },
@@ -72,7 +72,7 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     defectiveProducts: { read: true },
     sales: { read: true },
     promotions: { read: true },
-    distributors: { read: false },
+    employees: { read: false },
     providers: { read: true },
     clients: { read: true },
     expenses: { read: true },

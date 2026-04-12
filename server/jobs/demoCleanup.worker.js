@@ -1,4 +1,4 @@
-import Business from "../src/infrastructure/database/models/Business.js";
+﻿import Business from "../src/infrastructure/database/models/Business.js";
 import { TeardownDemoTenantUseCase } from "../src/application/use-cases/TeardownDemoTenantUseCase.js";
 
 const DEFAULT_SWEEP_MS = 5 * 60 * 1000;
@@ -46,7 +46,7 @@ const sweepExpiredDemoBusinesses = async () => {
           skipBusinessValidation: true,
         });
 
-        console.log(
+        console.warn("[Essence Debug]", 
           `[DEMO TTL] Demo expirado limpiado: ${business.name} (${business._id}) -> ${JSON.stringify(result.deletedCounts)}`,
         );
       } catch (cleanupError) {
@@ -86,7 +86,7 @@ export const startDemoCleanupWorker = () => {
     void sweepExpiredDemoBusinesses();
   }, 20 * 1000);
 
-  console.log(
+  console.warn("[Essence Debug]", 
     `[DEMO TTL] Worker activo. Barrido cada ${Math.round(sweepMs / 1000)}s`,
   );
 };
@@ -99,3 +99,4 @@ export const stopDemoCleanupWorker = () => {
   clearInterval(sweepInterval);
   sweepInterval = null;
 };
+

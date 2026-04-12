@@ -12,9 +12,9 @@ export interface Expense {
   expenseDate: string;
   product?: string | { _id: string; name?: string } | null;
   quantity?: number | null;
-  sourceType?: "warehouse" | "branch" | "distributor" | null;
+  sourceType?: "warehouse" | "branch" | "employee" | null;
   sourceBranch?: string | { _id: string; name?: string } | null;
-  sourceDistributor?: string | { _id: string; name?: string } | null;
+  sourceEmployee?: string | { _id: string; name?: string } | null;
   createdBy?: unknown | string;
   createdAt?: string;
   updatedAt?: string;
@@ -46,7 +46,7 @@ export interface IssueReport {
 
 export interface DefectiveProduct {
   _id: string;
-  distributor?: { _id: string; name: string; email?: string } | string | null;
+  employee?: { _id: string; name: string; email?: string } | string | null;
   branch?: { _id: string; name: string } | string | null;
   product:
     | { _id: string; name: string; image?: { url: string; publicId?: string } }

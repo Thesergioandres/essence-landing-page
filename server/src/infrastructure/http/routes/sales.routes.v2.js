@@ -21,11 +21,11 @@ const router = express.Router();
 const branchFromReq = (req) =>
   req.body?.branch || req.body?.branchId || req.params?.branchId;
 
-// GET /api/v2/sales/distributor/:distributorId - List sales for specific distributor
-// GET /api/v2/sales/distributor - List sales for current user (if distributor)
-// NOTE: These routes MUST be before /:saleId to avoid matching "distributor" as saleId
+// GET /api/v2/sales/employee/:employeeId - List sales for specific employee
+// GET /api/v2/sales/employee - List sales for current user (if employee)
+// NOTE: These routes MUST be before /:saleId to avoid matching "employee" as saleId
 router.get(
-  "/distributor/:distributorId?",
+  "/employee/:employeeId?",
   protect,
   businessContext,
   requireFeature("sales"),

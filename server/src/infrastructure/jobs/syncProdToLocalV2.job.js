@@ -101,8 +101,8 @@ const COLLECTIONS_TO_SYNC = [
   // Nivel 3: Dependencias de nivel 2
   { name: "stocks", priority: 3, timestampField: "updatedAt" },
   { name: "branchstocks", priority: 3, timestampField: "updatedAt" },
-  { name: "distributorstocks", priority: 3, timestampField: "updatedAt" },
-  { name: "distributorsstats", priority: 3, timestampField: "updatedAt" },
+  { name: "employeestocks", priority: 3, timestampField: "updatedAt" },
+  { name: "employeesstats", priority: 3, timestampField: "updatedAt" },
 
   // Nivel 4: Transacciones
   { name: "sales", priority: 4, timestampField: "createdAt" },

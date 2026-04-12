@@ -42,7 +42,7 @@ export default function ProtectedRoute({
     activeMembershipRole || user?.role
   );
 
-  const operativoAdminToDistributorMap: Record<string, string> = {
+  const operativoAdminToEmployeeMap: Record<string, string> = {
     "/admin/stock-management": "/staff/operativo/stock-management",
     "/admin/global-inventory": "/staff/operativo/global-inventory",
     "/admin/branches": "/staff/operativo/branches",
@@ -54,13 +54,13 @@ export default function ProtectedRoute({
     "/admin/team": "/staff/operativo/team",
   };
 
-  const distributorAdminPrefixRedirects: Array<{
+  const employeeAdminPrefixRedirects: Array<{
     prefix: string;
     target: string;
   }> = [
     { prefix: "/admin/products", target: "/staff/products" },
     { prefix: "/admin/add-product", target: "/staff/products" },
-    { prefix: "/admin/distributors", target: "/staff/operativo/team" },
+    { prefix: "/admin/employees", target: "/staff/operativo/team" },
     { prefix: "/admin/credits", target: "/staff/credits" },
     { prefix: "/admin/register-sale", target: "/staff/register-sale" },
     {
@@ -70,14 +70,14 @@ export default function ProtectedRoute({
   ];
 
   if (effectiveRole === "employee") {
-    const distributorOperativoTarget =
-      operativoAdminToDistributorMap[location.pathname];
+    const employeeOperativoTarget =
+      operativoAdminToEmployeeMap[location.pathname];
 
-    if (distributorOperativoTarget) {
-      return <Navigate to={distributorOperativoTarget} replace />;
+    if (employeeOperativoTarget) {
+      return <Navigate to={employeeOperativoTarget} replace />;
     }
 
-    const prefixMatch = distributorAdminPrefixRedirects.find(({ prefix }) =>
+    const prefixMatch = employeeAdminPrefixRedirects.find(({ prefix }) =>
       location.pathname.startsWith(prefix)
     );
 

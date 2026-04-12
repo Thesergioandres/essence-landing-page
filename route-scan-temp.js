@@ -1,4 +1,4 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 const dir = "server/src/infrastructure/http/routes";
 const files = fs.readdirSync(dir).filter((f) => f.endsWith(".js")).sort();
@@ -17,5 +17,6 @@ rows.sort((a, b) => {
   return a.method.localeCompare(b.method);
 });
 for (const r of rows) {
-  console.log(`${r.file}\t${r.method}\t${r.path}`);
+  console.warn("[Essence Debug]", `${r.file}\t${r.method}\t${r.path}`);
 }
+

@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 
 /**
  * Modelo Notification
- * Sistema de notificaciones internas de la aplicación
+ * Sistema de notificaciones internas de la aplicaciÃ³n
  */
 const notificationSchema = new mongoose.Schema(
   {
@@ -17,22 +17,22 @@ const notificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    // Rol destinatario (si aplica a un rol específico)
+    // Rol destinatario (si aplica a un rol especÃ­fico)
     targetRole: {
       type: String,
       enum: ["admin", "employee", "all"],
     },
-    // Tipo de notificación
+    // Tipo de notificaciÃ³n
     type: {
       type: String,
       enum: [
         "sale", // Nueva venta
         "low_stock", // Stock bajo
-        "stock_entry", // Entrada de mercancía
-        "promotion", // Promoción activa
+        "stock_entry", // Entrada de mercancÃ­a
+        "promotion", // PromociÃ³n activa
         "credit_overdue", // Fiado vencido
         "credit_payment", // Pago de fiado recibido
-        "subscription", // Cambio de suscripción
+        "subscription", // Cambio de suscripciÃ³n
         "incident", // Nueva incidencia
         "achievement", // Logro desbloqueado
         "ranking", // Cambio en ranking
@@ -41,10 +41,10 @@ const notificationSchema = new mongoose.Schema(
       ],
       required: true,
     },
-    // Título de la notificación
+    // TÃ­tulo de la notificaciÃ³n
     title: {
       type: String,
-      required: [true, "El título es obligatorio"],
+      required: [true, "El tÃ­tulo es obligatorio"],
       trim: true,
       maxlength: 100,
     },
@@ -70,7 +70,7 @@ const notificationSchema = new mongoose.Schema(
     readAt: {
       type: Date,
     },
-    // Enlace relacionado (navegación interna)
+    // Enlace relacionado (navegaciÃ³n interna)
     link: {
       type: String,
       trim: true,
@@ -91,11 +91,11 @@ const notificationSchema = new mongoose.Schema(
       },
       id: mongoose.Schema.Types.ObjectId,
     },
-    // Datos adicionales para la notificación
+    // Datos adicionales para la notificaciÃ³n
     data: {
       type: mongoose.Schema.Types.Mixed,
     },
-    // Expiración de la notificación
+    // ExpiraciÃ³n de la notificaciÃ³n
     expiresAt: {
       type: Date,
     },
@@ -110,16 +110,16 @@ const notificationSchema = new mongoose.Schema(
   }
 );
 
-// Índices para consultas eficientes
+// Ãndices para consultas eficientes
 notificationSchema.index({ business: 1, user: 1, read: 1, createdAt: -1 });
 notificationSchema.index({ business: 1, targetRole: 1, read: 1 });
 notificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 notificationSchema.index({ type: 1, business: 1 });
 
-// Método estático para crear notificación con log
+// MÃ©todo estÃ¡tico para crear notificaciÃ³n con log
 notificationSchema.statics.createWithLog = async function (data, requestId) {
   const notification = await this.create(data);
-  console.log("[API INFO] notification_created", {
+  console.warn("[Essence Debug]", "[API INFO] notification_created", {
     module: "notification",
     requestId,
     businessId: data.business?.toString(),
@@ -132,3 +132,4 @@ notificationSchema.statics.createWithLog = async function (data, requestId) {
 const Notification = mongoose.model("Notification", notificationSchema);
 
 export default Notification;
+

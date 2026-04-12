@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import DispatchRequest from "../models/DispatchRequest.js";
-import DistributorStock from "../models/DistributorStock.js";
+import EmployeeStock from "../models/EmployeeStock.js";
 import InventoryMovement from "../models/InventoryMovement.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
@@ -71,11 +71,11 @@ const buildDateRange = (startDate, endDate) => {
 
 class DispatchRepository {
   async createRequest(data, businessId, requesterId) {
-    const distributorId = data?.distributorId || requesterId;
+    const employeeId = data?.employeeId || requesterId;
     const items = Array.isArray(data?.items) ? data.items : [];
 
-    if (!mongoose.isValidObjectId(distributorId)) {
-      throw new Error("Distribuidor inválido para la solicitud");
+    if (!mongoose.isValidObjectId(employeeId)) {
+      throw new Error("Empleado inválido para la solicitud");
     }
 
     if (items.length === 0) {
@@ -106,7 +106,7 @@ class DispatchRepository {
 
     const request = await DispatchRequest.create({
       business: businessId,
-      distributor: distributorId,
+      employee: employeeId,
       requestedBy: requesterId,
       items: normalizedItems.map((item) => ({
         product: item.productId,
@@ -122,7 +122,7 @@ class DispatchRepository {
 
   async findById(requestId, businessId) {
     return DispatchRequest.findOne({ _id: requestId, business: businessId })
-      .populate("distributor", "name email")
+      .populate("employee", "name email")
       .populate("requestedBy", "name email")
       .populate("dispatchedBy", "name email")
       .populate("receivedBy", "name email")
@@ -142,10 +142,10 @@ class DispatchRepository {
     }
 
     if (
-      filters.distributorId &&
-      mongoose.isValidObjectId(filters.distributorId)
+      filters.employeeId &&
+      mongoose.isValidObjectId(filters.employeeId)
     ) {
-      query.distributor = filters.distributorId;
+      query.employee = filters.employeeId;
     }
 
     if (filters.requestedBy && mongoose.isValidObjectId(filters.requestedBy)) {
@@ -159,7 +159,7 @@ class DispatchRepository {
 
     const [requests, total] = await Promise.all([
       DispatchRequest.find(query)
-        .populate("distributor", "name email")
+        .populate("employee", "name email")
         .populate("requestedBy", "name email")
         .populate("dispatchedBy", "name email")
         .populate("receivedBy", "name email")
@@ -221,17 +221,17 @@ class DispatchRepository {
             );
           }
 
-          await DistributorStock.findOneAndUpdate(
+          await EmployeeStock.findOneAndUpdate(
             {
               business: businessId,
-              distributor: request.distributor,
+              employee: request.employee,
               product: item.product,
             },
             {
               $inc: { inTransitQuantity: item.quantity },
               $setOnInsert: {
                 business: businessId,
-                distributor: request.distributor,
+                employee: request.employee,
                 product: item.product,
                 quantity: 0,
               },
@@ -252,8 +252,8 @@ class DispatchRepository {
                 },
                 toLocation: {
                   type: "transit",
-                  id: request.distributor,
-                  name: "En tránsito a distribuidor",
+                  id: request.employee,
+                  name: "En tránsito a empleado",
                 },
                 referenceModel: "DispatchRequest",
                 referenceId: request._id,
@@ -305,19 +305,19 @@ class DispatchRepository {
           throw new Error("No hay un despacho pendiente de recepción");
         }
 
-        if (!allowGodBypass && String(request.distributor) !== String(userId)) {
+        if (!allowGodBypass && String(request.employee) !== String(userId)) {
           const err = new Error(
-            "Solo el distribuidor destino o GOD puede confirmar recepción",
+            "Solo el empleado destino o GOD puede confirmar recepción",
           );
           err.statusCode = 403;
           throw err;
         }
 
         for (const item of request.items) {
-          const updatedStock = await DistributorStock.findOneAndUpdate(
+          const updatedStock = await EmployeeStock.findOneAndUpdate(
             {
               business: businessId,
-              distributor: request.distributor,
+              employee: request.employee,
               product: item.product,
               inTransitQuantity: { $gte: item.quantity },
             },
@@ -345,13 +345,13 @@ class DispatchRepository {
                 movementType: "DISPATCH_RECEIVED",
                 fromLocation: {
                   type: "transit",
-                  id: request.distributor,
+                  id: request.employee,
                   name: "Tránsito logístico",
                 },
                 toLocation: {
-                  type: "distributor",
-                  id: request.distributor,
-                  name: "Stock disponible de distribuidor",
+                  type: "employee",
+                  id: request.employee,
+                  name: "Stock disponible de empleado",
                 },
                 referenceModel: "DispatchRequest",
                 referenceId: request._id,
@@ -386,10 +386,10 @@ class DispatchRepository {
     };
 
     if (
-      options.distributorId &&
-      mongoose.isValidObjectId(options.distributorId)
+      options.employeeId &&
+      mongoose.isValidObjectId(options.employeeId)
     ) {
-      query.distributor = options.distributorId;
+      query.employee = options.employeeId;
     }
 
     return DispatchRequest.countDocuments(query);
@@ -410,12 +410,12 @@ class DispatchRepository {
       ...(dateRange ? { saleDate: dateRange } : {}),
     };
 
-    const [distributorRows, branchRows] = await Promise.all([
+    const [employeeRows, branchRows] = await Promise.all([
       Sale.aggregate([
-        { $match: { ...baseMatch, distributor: { $ne: null } } },
+        { $match: { ...baseMatch, employee: { $ne: null } } },
         {
           $group: {
-            _id: "$distributor",
+            _id: "$employee",
             units: { $sum: "$quantity" },
             revenue: {
               $sum: {
@@ -435,12 +435,12 @@ class DispatchRepository {
             from: "users",
             localField: "_id",
             foreignField: "_id",
-            as: "distributorInfo",
+            as: "employeeInfo",
           },
         },
         {
           $unwind: {
-            path: "$distributorInfo",
+            path: "$employeeInfo",
             preserveNullAndEmptyArrays: true,
           },
         },
@@ -483,8 +483,8 @@ class DispatchRepository {
 
     const normalizeZone = (entry, type) => {
       const zoneName =
-        type === "distributor"
-          ? entry.distributorInfo?.name || "Distribuidor sin nombre"
+        type === "employee"
+          ? entry.employeeInfo?.name || "Empleado sin nombre"
           : entry.branchInfo?.name ||
             entry.branchNameSnapshot ||
             "Sede sin nombre";
@@ -503,8 +503,8 @@ class DispatchRepository {
 
     return {
       canViewFinancialMargins,
-      distributors: distributorRows.map((entry) =>
-        normalizeZone(entry, "distributor"),
+      employees: employeeRows.map((entry) =>
+        normalizeZone(entry, "employee"),
       ),
       branches: branchRows.map((entry) => normalizeZone(entry, "branch")),
     };

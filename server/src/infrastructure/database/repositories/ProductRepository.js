@@ -1,6 +1,6 @@
 import Branch from "../models/Branch.js";
 import BranchStock from "../models/BranchStock.js";
-import DistributorStock from "../models/DistributorStock.js";
+import EmployeeStock from "../models/EmployeeStock.js";
 import InventoryEntry from "../models/InventoryEntry.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
@@ -253,11 +253,11 @@ export class ProductRepository {
     );
 
     if (hasTotalStock || hasWarehouseStock) {
-      const distStocks = await DistributorStock.find({
+      const distStocks = await EmployeeStock.find({
         product: id,
         business: businessId,
       });
-      const totalDistributor = distStocks.reduce(
+      const totalEmployee = distStocks.reduce(
         (sum, item) => sum + (item.quantity || 0),
         0,
       );
@@ -294,7 +294,7 @@ export class ProductRepository {
         desiredWarehouse = Number(providedWarehouse);
       } else if (hasTotalStock) {
         const desiredTotal = Number(updateData.totalStock);
-        desiredWarehouse = desiredTotal - totalDistributor - totalBranch;
+        desiredWarehouse = desiredTotal - totalEmployee - totalBranch;
       }
 
       if (Number.isNaN(desiredWarehouse) || desiredWarehouse < 0) {
@@ -302,7 +302,7 @@ export class ProductRepository {
       }
 
       updateData.warehouseStock = desiredWarehouse;
-      updateData.totalStock = desiredWarehouse + totalDistributor + totalBranch;
+      updateData.totalStock = desiredWarehouse + totalEmployee + totalBranch;
 
       const diff = desiredWarehouse - currentWarehouse;
       if (diff !== 0) {
@@ -341,10 +341,10 @@ export class ProductRepository {
   }
 
   /**
-   * Update product public/distributor prices.
+   * Update product public/employee prices.
    * @param {string} id
    * @param {string} businessId
-   * @param {{ clientPrice?: number, distributorPrice?: number }} priceData
+   * @param {{ clientPrice?: number, employeePrice?: number }} priceData
    * @returns {Promise<Object|null>}
    */
   async updatePrices(id, businessId, priceData) {
@@ -354,9 +354,9 @@ export class ProductRepository {
       updateData.clientPrice = priceData.clientPrice;
     }
 
-    if (typeof priceData.distributorPrice === "number") {
-      updateData.distributorPrice = priceData.distributorPrice;
-      updateData.distributorPriceManual = true;
+    if (typeof priceData.employeePrice === "number") {
+      updateData.employeePrice = priceData.employeePrice;
+      updateData.employeePriceManual = true;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -386,7 +386,7 @@ export class ProductRepository {
 
     await Promise.all([
       BranchStock.deleteMany({ business: businessId, product: id }),
-      DistributorStock.deleteMany({ business: businessId, product: id }),
+      EmployeeStock.deleteMany({ business: businessId, product: id }),
       InventoryEntry.updateMany(
         { business: businessId, product: id, deleted: { $ne: true } },
         { $set: { deleted: true, deletedAt } },

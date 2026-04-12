@@ -1,10 +1,10 @@
-/**
+﻿/**
  * ============================================================================
  * SYNC LOGGER - Sistema de Logging Profesional para Pipeline V2
  * ============================================================================
  *
  * Proporciona logging estructurado y colorizado para todas las operaciones
- * de sincronización, validación y protección de la arquitectura dual de BD.
+ * de sincronizaciÃ³n, validaciÃ³n y protecciÃ³n de la arquitectura dual de BD.
  *
  * @version 2.0.0
  * @date 2026-01-22
@@ -18,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ============================================================================
-// CONFIGURACIÓN DE COLORES (ANSI)
+// CONFIGURACIÃ“N DE COLORES (ANSI)
 // ============================================================================
 
 const COLORS = {
@@ -52,35 +52,35 @@ const COLORS = {
 // ============================================================================
 
 const ICONS = {
-  sync: "🔄",
-  prod: "🔴",
-  local: "🟢",
-  success: "✅",
-  error: "❌",
-  warning: "⚠️",
-  info: "ℹ️",
-  database: "🗄️",
-  lock: "🔒",
-  unlock: "🔓",
-  clock: "⏱️",
-  document: "📄",
-  folder: "📁",
-  check: "✓",
-  cross: "✗",
-  arrow: "→",
-  bullet: "•",
-  star: "⭐",
-  fire: "🔥",
-  rocket: "🚀",
-  shield: "🛡️",
-  key: "🔑",
-  gear: "⚙️",
-  chart: "📊",
-  package: "📦",
+  sync: "ðŸ”„",
+  prod: "ðŸ”´",
+  local: "ðŸŸ¢",
+  success: "âœ…",
+  error: "âŒ",
+  warning: "âš ï¸",
+  info: "â„¹ï¸",
+  database: "ðŸ—„ï¸",
+  lock: "ðŸ”’",
+  unlock: "ðŸ”“",
+  clock: "â±ï¸",
+  document: "ðŸ“„",
+  folder: "ðŸ“",
+  check: "âœ“",
+  cross: "âœ—",
+  arrow: "â†’",
+  bullet: "â€¢",
+  star: "â­",
+  fire: "ðŸ”¥",
+  rocket: "ðŸš€",
+  shield: "ðŸ›¡ï¸",
+  key: "ðŸ”‘",
+  gear: "âš™ï¸",
+  chart: "ðŸ“Š",
+  package: "ðŸ“¦",
 };
 
 // ============================================================================
-// CONFIGURACIÓN DEL LOGGER
+// CONFIGURACIÃ“N DEL LOGGER
 // ============================================================================
 
 const CONFIG = {
@@ -132,18 +132,18 @@ function colorize(text, color) {
 }
 
 /**
- * Formatea un número con separadores de miles
- * @param {number} num - Número a formatear
- * @returns {string} Número formateado
+ * Formatea un nÃºmero con separadores de miles
+ * @param {number} num - NÃºmero a formatear
+ * @returns {string} NÃºmero formateado
  */
 function formatNumber(num) {
   return num.toLocaleString("es-ES");
 }
 
 /**
- * Formatea duración en milisegundos a formato legible
+ * Formatea duraciÃ³n en milisegundos a formato legible
  * @param {number} ms - Milisegundos
- * @returns {string} Duración formateada
+ * @returns {string} DuraciÃ³n formateada
  */
 function formatDuration(ms) {
   if (ms < 1000) return `${ms}ms`;
@@ -156,7 +156,7 @@ function formatDuration(ms) {
 /**
  * Formatea bytes a formato legible
  * @param {number} bytes - Bytes
- * @returns {string} Tamaño formateado
+ * @returns {string} TamaÃ±o formateado
  */
 function formatBytes(bytes) {
   if (bytes === 0) return "0 B";
@@ -167,7 +167,7 @@ function formatBytes(bytes) {
 }
 
 /**
- * Escribe en archivo de log si está habilitado
+ * Escribe en archivo de log si estÃ¡ habilitado
  * @param {string} level - Nivel de log
  * @param {string} message - Mensaje
  */
@@ -188,7 +188,7 @@ function writeToFile(level, message) {
 }
 
 /**
- * Verifica si debe loggear según el nivel
+ * Verifica si debe loggear segÃºn el nivel
  * @param {string} level - Nivel del mensaje
  * @returns {boolean} true si debe loggear
  */
@@ -201,26 +201,26 @@ function shouldLog(level) {
 // ============================================================================
 
 /**
- * Log de sincronización
+ * Log de sincronizaciÃ³n
  * @param {string} message - Mensaje
  */
 function sync(message) {
   if (!shouldLog("info")) return;
   const prefix = colorize(`[SYNC]`, "cyan");
   const icon = ICONS.sync;
-  console.log(`${icon} ${prefix} ${message}`);
+  console.warn("[Essence Debug]", `${icon} ${prefix} ${message}`);
   writeToFile("sync", message);
 }
 
 /**
- * Log de producción
+ * Log de producciÃ³n
  * @param {string} message - Mensaje
  */
 function prod(message) {
   if (!shouldLog("info")) return;
   const prefix = colorize(`[PROD]`, "red");
   const icon = ICONS.prod;
-  console.log(`${icon} ${prefix} ${message}`);
+  console.warn("[Essence Debug]", `${icon} ${prefix} ${message}`);
   writeToFile("prod", message);
 }
 
@@ -232,29 +232,29 @@ function local(message) {
   if (!shouldLog("info")) return;
   const prefix = colorize(`[LOCAL]`, "green");
   const icon = ICONS.local;
-  console.log(`${icon} ${prefix} ${message}`);
+  console.warn("[Essence Debug]", `${icon} ${prefix} ${message}`);
   writeToFile("local", message);
 }
 
 /**
- * Log de información
+ * Log de informaciÃ³n
  * @param {string} message - Mensaje
  */
 function info(message) {
   if (!shouldLog("info")) return;
   const prefix = colorize(`[INFO]`, "blue");
-  console.log(`${ICONS.info} ${prefix} ${message}`);
+  console.warn("[Essence Debug]", `${ICONS.info} ${prefix} ${message}`);
   writeToFile("info", message);
 }
 
 /**
- * Log de éxito
+ * Log de Ã©xito
  * @param {string} message - Mensaje
  */
 function success(message) {
   if (!shouldLog("info")) return;
   const coloredMessage = colorize(message, "green");
-  console.log(`${ICONS.success} ${coloredMessage}`);
+  console.warn("[Essence Debug]", `${ICONS.success} ${coloredMessage}`);
   writeToFile("success", message);
 }
 
@@ -265,7 +265,7 @@ function success(message) {
 function warn(message) {
   if (!shouldLog("warn")) return;
   const prefix = colorize(`[WARN]`, "yellow");
-  console.log(`${ICONS.warning} ${prefix} ${colorize(message, "yellow")}`);
+  console.warn("[Essence Debug]", `${ICONS.warning} ${prefix} ${colorize(message, "yellow")}`);
   writeToFile("warn", message);
 }
 
@@ -288,34 +288,34 @@ function debug(message) {
   if (!shouldLog("debug")) return;
   const prefix = colorize(`[DEBUG]`, "gray");
   const timestamp = colorize(`[${getShortTimestamp()}]`, "gray");
-  console.log(`${timestamp} ${prefix} ${colorize(message, "gray")}`);
+  console.warn("[Essence Debug]", `${timestamp} ${prefix} ${colorize(message, "gray")}`);
   writeToFile("debug", message);
 }
 
 /**
- * Log de sección (encabezado)
- * @param {string} title - Título de la sección
+ * Log de secciÃ³n (encabezado)
+ * @param {string} title - TÃ­tulo de la secciÃ³n
  */
 function section(title) {
-  const line = "═".repeat(60);
-  console.log("");
-  console.log(colorize(line, "cyan"));
-  console.log(colorize(`  ${title}`, "cyan"));
-  console.log(colorize(line, "cyan"));
-  console.log("");
+  const line = "â•".repeat(60);
+  console.warn("[Essence Debug]", "");
+  console.warn("[Essence Debug]", colorize(line, "cyan"));
+  console.warn("[Essence Debug]", colorize(`  ${title}`, "cyan"));
+  console.warn("[Essence Debug]", colorize(line, "cyan"));
+  console.warn("[Essence Debug]", "");
   writeToFile("section", title);
 }
 
 /**
- * Log de subsección
- * @param {string} title - Título
+ * Log de subsecciÃ³n
+ * @param {string} title - TÃ­tulo
  */
 function subsection(title) {
-  const line = "─".repeat(50);
-  console.log("");
-  console.log(colorize(line, "gray"));
-  console.log(colorize(`  ${title}`, "white"));
-  console.log(colorize(line, "gray"));
+  const line = "â”€".repeat(50);
+  console.warn("[Essence Debug]", "");
+  console.warn("[Essence Debug]", colorize(line, "gray"));
+  console.warn("[Essence Debug]", colorize(`  ${title}`, "white"));
+  console.warn("[Essence Debug]", colorize(line, "gray"));
   writeToFile("subsection", title);
 }
 
@@ -323,20 +323,20 @@ function subsection(title) {
  * Log de separador
  */
 function separator() {
-  console.log(colorize("─".repeat(60), "gray"));
+  console.warn("[Essence Debug]", colorize("â”€".repeat(60), "gray"));
 }
 
 /**
- * Log de línea vacía
+ * Log de lÃ­nea vacÃ­a
  */
 function blank() {
-  console.log("");
+  console.warn("[Essence Debug]", "");
 }
 
 /**
- * Log de colección sincronizada
- * @param {string} name - Nombre de la colección
- * @param {Object} stats - Estadísticas
+ * Log de colecciÃ³n sincronizada
+ * @param {string} name - Nombre de la colecciÃ³n
+ * @param {Object} stats - EstadÃ­sticas
  */
 function collection(name, stats) {
   const {
@@ -364,7 +364,7 @@ function collection(name, stats) {
   const skippedFormatted = colorize(`~${formatNumber(skippedCount)}`, "gray");
   const durationFormatted = colorize(`(${formatDuration(duration)})`, "dim");
 
-  console.log(
+  console.warn("[Essence Debug]", 
     `   ${statusIcon} ${nameFormatted} ${newFormatted} nuevos, ${skippedFormatted} omitidos ${durationFormatted}`,
   );
   writeToFile(
@@ -374,8 +374,8 @@ function collection(name, stats) {
 }
 
 /**
- * Log de resumen de sincronización
- * @param {Object} summary - Resumen de la sincronización
+ * Log de resumen de sincronizaciÃ³n
+ * @param {Object} summary - Resumen de la sincronizaciÃ³n
  */
 function syncSummary(summary) {
   const {
@@ -387,36 +387,36 @@ function syncSummary(summary) {
   } = summary;
 
   separator();
-  console.log("");
-  console.log(colorize("📋 RESUMEN DE SINCRONIZACIÓN", "bright"));
+  console.warn("[Essence Debug]", "");
+  console.warn("[Essence Debug]", colorize("ðŸ“‹ RESUMEN DE SINCRONIZACIÃ“N", "bright"));
   separator();
 
-  console.log(
+  console.warn("[Essence Debug]", 
     `   ${ICONS.success} Documentos nuevos insertados: ${colorize(formatNumber(totalNew), "green")}`,
   );
-  console.log(
-    `   ${ICONS.arrow} Documentos omitidos (ya existían): ${colorize(formatNumber(totalSkipped), "gray")}`,
+  console.warn("[Essence Debug]", 
+    `   ${ICONS.arrow} Documentos omitidos (ya existÃ­an): ${colorize(formatNumber(totalSkipped), "gray")}`,
   );
 
   if (totalErrors > 0) {
-    console.log(
+    console.warn("[Essence Debug]", 
       `   ${ICONS.error} Errores: ${colorize(formatNumber(totalErrors), "red")}`,
     );
   }
 
-  console.log(
+  console.warn("[Essence Debug]", 
     `   ${ICONS.folder} Colecciones procesadas: ${colorize(formatNumber(collectionsProcessed), "blue")}`,
   );
-  console.log(
+  console.warn("[Essence Debug]", 
     `   ${ICONS.clock} Tiempo total: ${colorize(formatDuration(duration), "cyan")}`,
   );
 
   separator();
-  console.log("");
+  console.warn("[Essence Debug]", "");
 
   writeToFile(
     "summary",
-    `Sincronización completada: ${totalNew} nuevos, ${totalSkipped} omitidos, ${totalErrors} errores en ${formatDuration(duration)}`,
+    `SincronizaciÃ³n completada: ${totalNew} nuevos, ${totalSkipped} omitidos, ${totalErrors} errores en ${formatDuration(duration)}`,
   );
 }
 
@@ -430,25 +430,25 @@ function progress(current, total, label = "") {
   const percentage = Math.round((current / total) * 100);
   const filled = Math.round(percentage / 5);
   const empty = 20 - filled;
-  const bar = "█".repeat(filled) + "░".repeat(empty);
+  const bar = "â–ˆ".repeat(filled) + "â–‘".repeat(empty);
 
   process.stdout.write(`\r   ${ICONS.sync} [${bar}] ${percentage}% ${label}`);
 
   if (current === total) {
-    console.log(""); // Nueva línea al completar
+    console.warn("[Essence Debug]", ""); // Nueva lÃ­nea al completar
   }
 }
 
 /**
- * Log de estado de última sincronización
- * @param {Date|string} lastSync - Fecha de última sincronización
+ * Log de estado de Ãºltima sincronizaciÃ³n
+ * @param {Date|string} lastSync - Fecha de Ãºltima sincronizaciÃ³n
  */
 function lastSyncStatus(lastSync) {
   const date = lastSync ? new Date(lastSync) : null;
 
   if (!date || isNaN(date.getTime())) {
-    console.log(
-      `   ${ICONS.clock} Última sincronización: ${colorize("Nunca", "yellow")}`,
+    console.warn("[Essence Debug]", 
+      `   ${ICONS.clock} Ãšltima sincronizaciÃ³n: ${colorize("Nunca", "yellow")}`,
     );
   } else {
     const formatted = date.toLocaleString("es-ES", {
@@ -459,38 +459,38 @@ function lastSyncStatus(lastSync) {
       minute: "2-digit",
       second: "2-digit",
     });
-    console.log(
-      `   ${ICONS.clock} Última sincronización: ${colorize(formatted, "cyan")}`,
+    console.warn("[Essence Debug]", 
+      `   ${ICONS.clock} Ãšltima sincronizaciÃ³n: ${colorize(formatted, "cyan")}`,
     );
   }
 }
 
 /**
- * Log de conexión establecida
+ * Log de conexiÃ³n establecida
  * @param {string} type - 'prod' o 'local'
- * @param {Object} info - Información de conexión
+ * @param {Object} info - InformaciÃ³n de conexiÃ³n
  */
 function connectionEstablished(type, info = {}) {
   const { host = "unknown", database = "unknown" } = info;
 
   if (type === "prod") {
-    console.log(
+    console.warn("[Essence Debug]", 
       `   ${ICONS.prod} ${colorize("[PROD-RO]", "red")} Conectado a: ${colorize(host, "white")}`,
     );
-    console.log(`      Base de datos: ${colorize(database, "gray")}`);
-    console.log(`      Modo: ${colorize("SOLO LECTURA", "yellow")}`);
+    console.warn("[Essence Debug]", `      Base de datos: ${colorize(database, "gray")}`);
+    console.warn("[Essence Debug]", `      Modo: ${colorize("SOLO LECTURA", "yellow")}`);
   } else {
-    console.log(
+    console.warn("[Essence Debug]", 
       `   ${ICONS.local} ${colorize("[LOCAL-RW]", "green")} Conectado a: ${colorize(host, "white")}`,
     );
-    console.log(`      Base de datos: ${colorize(database, "gray")}`);
-    console.log(`      Modo: ${colorize("LECTURA + ESCRITURA", "green")}`);
+    console.warn("[Essence Debug]", `      Base de datos: ${colorize(database, "gray")}`);
+    console.warn("[Essence Debug]", `      Modo: ${colorize("LECTURA + ESCRITURA", "green")}`);
   }
 }
 
 /**
  * Log de batch procesado
- * @param {number} batchNumber - Número de batch
+ * @param {number} batchNumber - NÃºmero de batch
  * @param {number} documentsInBatch - Documentos en el batch
  * @param {number} totalProcessed - Total procesado
  */
@@ -501,13 +501,13 @@ function batchProcessed(batchNumber, documentsInBatch, totalProcessed) {
 }
 
 /**
- * Log de protección activada
- * @param {string} operation - Operación bloqueada
- * @param {string} collection - Colección afectada
+ * Log de protecciÃ³n activada
+ * @param {string} operation - OperaciÃ³n bloqueada
+ * @param {string} collection - ColecciÃ³n afectada
  */
 function protectionTriggered(operation, collection) {
   warn(
-    `Operación bloqueada: ${operation} en ${collection} (conexión de producción)`,
+    `OperaciÃ³n bloqueada: ${operation} en ${collection} (conexiÃ³n de producciÃ³n)`,
   );
   writeToFile("protection", `Bloqueado: ${operation} en ${collection}`);
 }
@@ -518,18 +518,18 @@ function protectionTriggered(operation, collection) {
  * @param {string} mode - Modo (development, production)
  */
 function serverStarted(port, mode) {
-  console.log("");
-  console.log(`${ICONS.rocket} ${colorize("Servidor iniciado", "green")}`);
-  console.log(`   ${ICONS.gear} Puerto: ${colorize(String(port), "cyan")}`);
-  console.log(`   ${ICONS.gear} Modo: ${colorize(mode, "yellow")}`);
-  console.log(
+  console.warn("[Essence Debug]", "");
+  console.warn("[Essence Debug]", `${ICONS.rocket} ${colorize("Servidor iniciado", "green")}`);
+  console.warn("[Essence Debug]", `   ${ICONS.gear} Puerto: ${colorize(String(port), "cyan")}`);
+  console.warn("[Essence Debug]", `   ${ICONS.gear} Modo: ${colorize(mode, "yellow")}`);
+  console.warn("[Essence Debug]", 
     `   ${ICONS.gear} URL: ${colorize(`http://localhost:${port}`, "blue")}`,
   );
-  console.log("");
+  console.warn("[Essence Debug]", "");
 }
 
 /**
- * Log de tabla de estadísticas
+ * Log de tabla de estadÃ­sticas
  * @param {Array<Object>} data - Datos de la tabla
  */
 function table(data) {
@@ -557,7 +557,7 @@ export const syncLogger = {
   separator,
   blank,
 
-  // Específicos de sincronización
+  // EspecÃ­ficos de sincronizaciÃ³n
   collection,
   syncSummary,
   progress,
@@ -580,3 +580,4 @@ export const syncLogger = {
 };
 
 export default syncLogger;
+

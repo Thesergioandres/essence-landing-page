@@ -32,7 +32,7 @@ export class EmployeeController {
       const result = await repository.findByBusiness(businessId, req.query);
       res.json({
         success: true,
-        data: result.distributors,
+        data: result.employees,
         pagination: result.pagination,
       });
     } catch (error) {
@@ -149,7 +149,7 @@ export class EmployeeController {
       res.json({
         success: true,
         products: result.products,
-        distributor: result.distributor,
+        employee: result.employee,
         business: result.business || null,
       });
     } catch (error) {

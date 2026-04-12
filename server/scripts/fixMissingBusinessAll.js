@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import AuditLog from "../src/infrastructure/database/models/AuditLog.js";
 import Category from "../src/infrastructure/database/models/Category.js";
 import DefectiveProduct from "../src/infrastructure/database/models/DefectiveProduct.js";
-import DistributorStock from "../src/infrastructure/database/models/DistributorStock.js";
+import EmployeeStock from "../src/infrastructure/database/models/EmployeeStock.js";
 import Expense from "../src/infrastructure/database/models/Expense.js";
 import Product from "../src/infrastructure/database/models/Product.js";
 import ProfitHistory from "../src/infrastructure/database/models/ProfitHistory.js";
@@ -33,7 +33,7 @@ const models = [
   { label: "AuditLog", Model: AuditLog },
   { label: "Category", Model: Category },
   { label: "DefectiveProduct", Model: DefectiveProduct },
-  { label: "DistributorStock", Model: DistributorStock },
+  { label: "EmployeeStock", Model: EmployeeStock },
   { label: "Expense", Model: Expense },
   { label: "Product", Model: Product },
   { label: "ProfitHistory", Model: ProfitHistory },

@@ -1,4 +1,4 @@
-import bcrypt from "bcryptjs";
+﻿import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import User from "./src/infrastructure/database/models/User.js";
@@ -10,18 +10,18 @@ const createAdminUser = async () => {
     // Conectar a MongoDB
     const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
     await mongoose.connect(mongoUri);
-    console.log("✅ Conectado a MongoDB");
+    console.warn("[Essence Debug]", "âœ… Conectado a MongoDB");
 
     // Verificar si el usuario ya existe
     const userExists = await User.findOne({ email: "serguito2003@gmail.com" });
 
     if (userExists) {
-      console.log("⚠️  El usuario ya existe");
+      console.warn("[Essence Debug]", "âš ï¸  El usuario ya existe");
       await mongoose.connection.close();
       return;
     }
 
-    // Hash de la contraseña
+    // Hash de la contraseÃ±a
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash("Serra_1707", salt);
 
@@ -33,8 +33,8 @@ const createAdminUser = async () => {
       role: "admin",
     });
 
-    console.log("✅ Usuario administrador creado exitosamente:");
-    console.log({
+    console.warn("[Essence Debug]", "âœ… Usuario administrador creado exitosamente:");
+    console.warn("[Essence Debug]", {
       id: adminUser._id,
       name: adminUser.name,
       email: adminUser.email,
@@ -42,11 +42,12 @@ const createAdminUser = async () => {
     });
 
     await mongoose.connection.close();
-    console.log("✅ Conexión cerrada");
+    console.warn("[Essence Debug]", "âœ… ConexiÃ³n cerrada");
   } catch (error) {
-    console.error("❌ Error:", error.message);
+    console.error("âŒ Error:", error.message);
     process.exit(1);
   }
 };
 
 createAdminUser();
+

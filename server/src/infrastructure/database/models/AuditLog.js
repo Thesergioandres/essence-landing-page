@@ -48,12 +48,12 @@ const auditLogSchema = new mongoose.Schema(
         "category_updated",
         "category_deleted",
 
-        // Distribuidores
-        "distributor_created",
-        "distributor_updated",
-        "distributor_deleted",
-        "distributor_activated",
-        "distributor_deactivated",
+        // Empleados
+        "employee_created",
+        "employee_updated",
+        "employee_deleted",
+        "employee_activated",
+        "employee_deactivated",
 
         // Stock
         "stock_assigned",
@@ -98,7 +98,7 @@ const auditLogSchema = new mongoose.Schema(
         "auth",
         "products",
         "categories",
-        "distributors",
+        "employees",
         "stock",
         "sales",
         "promotions",
@@ -124,7 +124,7 @@ const auditLogSchema = new mongoose.Schema(
         "Category",
         "User",
         "Sale",
-        "DistributorStock",
+        "EmployeeStock",
         "DefectiveProduct",
         "Promotion",
         "Customer",

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBusiness } from "../../../context/BusinessContext";
 import { Button, PlanLimitModal } from "../../../shared/components/ui";
 import { branchService } from "../../branches/services";
@@ -57,9 +57,9 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
   );
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitDetails, setLimitDetails] = useState({
-    title: "Límite de sedes alcanzado",
+    title: "LÃ­mite de sedes alcanzado",
     description:
-      "Tu plan actual ya alcanzó el máximo de sedes permitidas. Actualiza tu plan para crear nuevas sedes.",
+      "Tu plan actual ya alcanzÃ³ el mÃ¡ximo de sedes permitidas. Actualiza tu plan para crear nuevas sedes.",
     usage: 0,
     limit: 0,
   });
@@ -141,9 +141,9 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
 
     if (planSnapshot && planSnapshot.remaining.branches <= 0) {
       setLimitDetails({
-        title: "Límite de sedes alcanzado",
+        title: "LÃ­mite de sedes alcanzado",
         description:
-          "Tu plan actual ya alcanzó el máximo de sedes permitidas. Actualiza tu plan para crear nuevas sedes.",
+          "Tu plan actual ya alcanzÃ³ el mÃ¡ximo de sedes permitidas. Actualiza tu plan para crear nuevas sedes.",
         usage: planSnapshot.usage.branches,
         limit: planSnapshot.limits.branches,
       });
@@ -196,10 +196,10 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
         const usage = apiError.response?.data?.usage?.branches ?? 0;
         const limit = apiError.response?.data?.limits?.branches ?? 0;
         setLimitDetails({
-          title: "Límite de sedes alcanzado",
+          title: "LÃ­mite de sedes alcanzado",
           description:
             apiError.response?.data?.message ||
-            "Tu plan actual alcanzó su límite de sedes.",
+            "Tu plan actual alcanzÃ³ su lÃ­mite de sedes.",
           usage,
           limit,
         });
@@ -235,7 +235,7 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
 
   const handleDelete = async (branch: Branch) => {
     const confirmDelete = window.confirm(
-      `¿Eliminar la sede "${branch.name}"? Esta acción no se puede deshacer.`
+      `Â¿Eliminar la sede "${branch.name}"? Esta acciÃ³n no se puede deshacer.`
     );
     if (!confirmDelete) return;
     setError("");
@@ -266,10 +266,10 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
     setSearchStock("");
 
     try {
-      console.log(
+      console.warn("[Essence Debug]", 
         `[DEBUG] Cargando inventario para sede: ${branch.name} (${branch._id})`
       );
-      console.log(`[DEBUG] isWarehouse: ${branch.isWarehouse}`);
+      console.warn("[Essence Debug]", `[DEBUG] isWarehouse: ${branch.isWarehouse}`);
 
       if (branch.isWarehouse) {
         // Para bodega, cargar desde warehouseStock de los productos
@@ -286,14 +286,14 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
             branch: branch._id,
             lowStockAlert: p.lowStockAlert || 10,
           }));
-        console.log(`[DEBUG] Warehouse stock items: ${warehouseStock.length}`);
+        console.warn("[Essence Debug]", `[DEBUG] Warehouse stock items: ${warehouseStock.length}`);
         setBranchStock(warehouseStock);
       } else {
         // Para sedes normales, cargar desde BranchStock
         const stockData = await stockService.getBranchStock(branch._id);
         const stockList = Array.isArray(stockData) ? stockData : [];
-        console.log(`[DEBUG] Stock recibido:`, stockList);
-        console.log(`[DEBUG] Cantidad de items: ${stockList.length || 0}`);
+        console.warn("[Essence Debug]", `[DEBUG] Stock recibido:`, stockList);
+        console.warn("[Essence Debug]", `[DEBUG] Cantidad de items: ${stockList.length || 0}`);
         setBranchStock(stockList);
       }
     } catch (err) {
@@ -316,21 +316,21 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
     0
   );
 
-  // Valor invertido: lo que costó comprar el inventario
+  // Valor invertido: lo que costÃ³ comprar el inventario
   const totalInvested = branchStock.reduce((sum, item) => {
     const product = typeof item.product === "object" ? item.product : null;
     const purchasePrice = product?.purchasePrice || 0;
     return sum + purchasePrice * (item.quantity || 0);
   }, 0);
 
-  // Valor de venta estimado: lo que se recibiría vendiendo todo
+  // Valor de venta estimado: lo que se recibirÃ­a vendiendo todo
   const totalSalesValue = branchStock.reduce((sum, item) => {
     const product = typeof item.product === "object" ? item.product : null;
     const clientPrice = product?.clientPrice || 0;
     return sum + clientPrice * (item.quantity || 0);
   }, 0);
 
-  // Ganancia estimada: diferencia entre venta e inversión
+  // Ganancia estimada: diferencia entre venta e inversiÃ³n
   const totalEstimatedProfit = totalSalesValue - totalInvested;
 
   return (
@@ -338,7 +338,7 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
       <div>
         <h1 className="text-3xl font-bold text-white">Sedes</h1>
         <p className="mt-2 text-gray-400">
-          Crea y administra las sedes desde las que venderás y llevarás
+          Crea y administra las sedes desde las que venderÃ¡s y llevarÃ¡s
           inventario.
         </p>
       </div>
@@ -392,7 +392,7 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-300">
-                Dirección
+                DirecciÃ³n
               </label>
               <input
                 type="text"
@@ -420,7 +420,7 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-300">
-                  Teléfono
+                  TelÃ©fono
                 </label>
                 <input
                   type="tel"
@@ -529,12 +529,12 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
                         </span>
                       </div>
                       <p className="text-sm text-gray-400">
-                        {branch.address || "Sin dirección"}
+                        {branch.address || "Sin direcciÃ³n"}
                       </p>
                       <p className="text-xs text-gray-500">
                         {branch.contactName || "Sin contacto"}
-                        {branch.contactPhone ? ` · ${branch.contactPhone}` : ""}
-                        {branch.contactEmail ? ` · ${branch.contactEmail}` : ""}
+                        {branch.contactPhone ? ` Â· ${branch.contactPhone}` : ""}
+                        {branch.contactEmail ? ` Â· ${branch.contactEmail}` : ""}
                       </p>
                       <p className="text-xs text-gray-500">{branch.timezone}</p>
                     </div>
@@ -593,7 +593,7 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
                   Inventario - {selectedBranchInventory.name}
                 </h2>
                 <p className="mt-1 truncate text-xs text-gray-400 sm:text-sm">
-                  {selectedBranchInventory.address || "Sin dirección"}
+                  {selectedBranchInventory.address || "Sin direcciÃ³n"}
                 </p>
               </div>
               <button
@@ -669,7 +669,7 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-medium text-green-400 sm:text-sm">
-                        💰 Ganancia Estimada Total
+                        ðŸ’° Ganancia Estimada Total
                       </p>
                       <p className="mt-0.5 text-xs text-green-500 sm:text-sm">
                         Si vendes todo el inventario
@@ -737,7 +737,7 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
                   </p>
                   <p className="mt-2 px-4 text-xs text-gray-500 sm:text-sm">
                     {branchStock.length === 0 && !searchStock
-                      ? "Para agregar inventario a esta sede, ve a Inventario → Transferencias o registra una entrada de stock."
+                      ? "Para agregar inventario a esta sede, ve a Inventario â†’ Transferencias o registra una entrada de stock."
                       : ""}
                   </p>
                 </div>
@@ -758,7 +758,7 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
                               P. Cliente Final
                             </th>
                             <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
-                              P. Distribuidor
+                              P. Empleado
                             </th>
                           </>
                         ) : (
@@ -784,8 +784,8 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
                             : null;
                         const purchasePrice = product?.purchasePrice || 0;
                         const clientPrice = product?.clientPrice || 0;
-                        const distributorPrice =
-                          product?.distributorPrice || clientPrice;
+                        const employeePrice =
+                          product?.employeePrice || clientPrice;
                         const quantity = item.quantity || 0;
                         const profitPerUnit = clientPrice - purchasePrice;
                         const totalProfit = profitPerUnit * quantity;
@@ -827,7 +827,7 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
                                   ${clientPrice.toLocaleString()}
                                 </td>
                                 <td className="px-3 py-2.5 text-right text-xs text-blue-300 sm:px-4 sm:py-3 sm:text-sm">
-                                  ${distributorPrice.toLocaleString()}
+                                  ${employeePrice.toLocaleString()}
                                 </td>
                               </>
                             ) : (
@@ -872,3 +872,4 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
     </div>
   );
 }
+

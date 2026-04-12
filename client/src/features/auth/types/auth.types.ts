@@ -6,8 +6,8 @@ export interface User {
     | "admin"
     | "super_admin"
     | "employee"
-    | "distributor"
-    | "distribuidor"
+    | "employee"
+    | "empleado"
     | "god"
     | "user";
   status?: "pending" | "active" | "expired" | "suspended" | "paused";

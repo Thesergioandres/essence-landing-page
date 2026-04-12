@@ -1,4 +1,4 @@
-import compression from "compression";
+﻿import compression from "compression";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
@@ -27,7 +27,7 @@ import { connectDB } from "./src/infrastructure/database/connection.js";
 import { listPublicPlans } from "./src/infrastructure/services/planLimits.service.js";
 
 // ============================================================================
-// 🛡️ MIDDLEWARE IMPORTS
+// ðŸ›¡ï¸ MIDDLEWARE IMPORTS
 // ============================================================================
 import {
   databaseOperationLogger,
@@ -41,8 +41,8 @@ import {
 } from "./middleware/security.middleware.js";
 
 // ============================================================================
-// 🟢 V2 CORE MODULES (Hexagonal Architecture)
-// These routes use the new Domain → Application → Infrastructure pattern
+// ðŸŸ¢ V2 CORE MODULES (Hexagonal Architecture)
+// These routes use the new Domain â†’ Application â†’ Infrastructure pattern
 // ============================================================================
 import analyticsRoutesV2 from "./src/infrastructure/http/routes/analytics.routes.v2.js";
 import authRoutesV2 from "./src/infrastructure/http/routes/auth.routes.v2.js";
@@ -52,7 +52,6 @@ import businessAssistantRoutesV2 from "./src/infrastructure/http/routes/business
 import categoryRoutesV2 from "./src/infrastructure/http/routes/category.routes.v2.js";
 import creditRoutesV2 from "./src/infrastructure/http/routes/credit.routes.v2.js";
 import customerRoutesV2 from "./src/infrastructure/http/routes/customer.routes.v2.js";
-import distributorRoutesLegacyV2 from "./src/infrastructure/http/routes/distributor.routes.v2.js";
 import employeeRoutesV2 from "./src/infrastructure/http/routes/employee.routes.v2.js";
 import expenseRoutesV2 from "./src/infrastructure/http/routes/expense.routes.v2.js";
 import gamificationRoutesV2 from "./src/infrastructure/http/routes/gamification.routes.v2.js";
@@ -60,7 +59,6 @@ import globalSettingsRoutesV2 from "./src/infrastructure/http/routes/globalSetti
 import inventoryRoutesV2 from "./src/infrastructure/http/routes/inventory.routes.v2.js";
 import productRoutesV2 from "./src/infrastructure/http/routes/product.routes.v2.js";
 import providerRoutesV2 from "./src/infrastructure/http/routes/provider.routes.v2.js";
-import publicDistributorRoutesV2 from "./src/infrastructure/http/routes/publicDistributor.routes.v2.js";
 import publicEmployeeRoutesV2 from "./src/infrastructure/http/routes/publicEmployee.routes.v2.js";
 import publicStorefrontRoutesV2 from "./src/infrastructure/http/routes/publicStorefront.routes.v2.js";
 import saleRoutesV2 from "./src/infrastructure/http/routes/sales.routes.v2.js";
@@ -68,7 +66,7 @@ import stockRoutesV2 from "./src/infrastructure/http/routes/stock.routes.v2.js";
 import userRoutesV2 from "./src/infrastructure/http/routes/user.routes.v2.js";
 
 // ============================================================================
-// � V2 BATCH 3 - UTILITIES & REPORTS (Hexagonal Architecture)
+// ï¿½ V2 BATCH 3 - UTILITIES & REPORTS (Hexagonal Architecture)
 // ============================================================================
 import advancedAnalyticsRoutesV2 from "./src/infrastructure/http/routes/advancedAnalytics.routes.v2.js";
 import auditRoutesV2 from "./src/infrastructure/http/routes/audit.routes.v2.js";
@@ -82,7 +80,7 @@ import promotionRoutesV2 from "./src/infrastructure/http/routes/promotion.routes
 import specialSaleRoutesV2 from "./src/infrastructure/http/routes/specialSale.routes.v2.js";
 
 // ============================================================================
-// 🟢 V2 BATCH 4 - UTILITIES & CONFIG (Hexagonal Architecture)
+// ðŸŸ¢ V2 BATCH 4 - UTILITIES & CONFIG (Hexagonal Architecture)
 // ============================================================================
 import customerPointsRoutesV2 from "./src/infrastructure/http/routes/customerPoints.routes.v2.js";
 import deliveryMethodRoutesV2 from "./src/infrastructure/http/routes/deliveryMethod.routes.v2.js";
@@ -93,12 +91,12 @@ import segmentRoutesV2 from "./src/infrastructure/http/routes/segment.routes.v2.
 import { startProductionBackupWorker } from "./src/infrastructure/jobs/productionBackup.job.js";
 
 // ============================================================================
-// � V2 BATCH 5 - FINAL BOSS (Hexagonal Architecture - 100% Migration)
+// ï¿½ V2 BATCH 5 - FINAL BOSS (Hexagonal Architecture - 100% Migration)
 // ============================================================================
 import godRoutesV2 from "./src/infrastructure/http/routes/god.routes.v2.js";
 import uploadRoutesV2 from "./src/infrastructure/http/routes/upload.routes.v2.js";
 
-// Configuración
+// ConfiguraciÃ³n
 dotenv.config();
 
 const app = express();
@@ -108,7 +106,7 @@ if (process.env.NODE_ENV === "production") {
   app.set("trust proxy", 1);
 }
 
-// Configurar orígenes permitidos
+// Configurar orÃ­genes permitidos
 const normalizeOrigin = (origin = "") =>
   String(origin).trim().replace(/\/+$/, "").toLowerCase();
 
@@ -142,7 +140,7 @@ const corsOptions = {
     if (isAllowed) {
       callback(null, true);
     } else {
-      console.log("Origin bloqueado:", origin);
+      console.warn("[Essence Debug]", "Origin bloqueado:", origin);
       if (process.env.NODE_ENV === "production") {
         callback(new Error("No permitido por CORS"));
       } else {
@@ -167,11 +165,7 @@ const corsOptions = {
 await connectDB();
 initRedis();
 
-// 🔄 Sincronizar inventario al inicio (Single Source of Truth)
-// import { syncAllProductStocks } from "./controllers/stock.controller.js";
-// syncAllProductStocks().catch(console.error);
-
-// 🛡️ Validar seguridad de base de datos antes de continuar
+// ðŸ›¡ï¸ Validar seguridad de base de datos antes de continuar
 if (process.env.NODE_ENV === "development") {
   try {
     validateDatabaseSecurity();
@@ -191,8 +185,8 @@ if (process.env.DEBT_WORKER_ENABLED === "true") {
   startDebtNotificationWorker();
 }
 
-// Worker de backups automáticos (cada 6 horas, mantiene 30 días)
-// Habilitado por defecto en desarrollo y producción, deshabilitado en tests
+// Worker de backups automÃ¡ticos (cada 6 horas, mantiene 30 dÃ­as)
+// Habilitado por defecto en desarrollo y producciÃ³n, deshabilitado en tests
 if (
   process.env.NODE_ENV !== "test" &&
   process.env.BACKUP_WORKER_DISABLED !== "true"
@@ -246,7 +240,7 @@ app.use(helmet.hidePoweredBy());
 app.use(mongoSanitize());
 app.use(xss());
 
-// Límite de carga
+// LÃ­mite de carga
 app.use(express.json({ limit: "15kb" }));
 app.use(express.urlencoded({ extended: true, limit: "15kb" }));
 
@@ -254,7 +248,7 @@ app.use(securityHeaders);
 app.use(sanitizeHeaders);
 app.use(suspiciousRequestDetector);
 
-// 🛡️ Protección anti-escritura en producción
+// ðŸ›¡ï¸ ProtecciÃ³n anti-escritura en producciÃ³n
 app.use(productionWriteGuard);
 if (process.env.DEBUG_DB === "true") {
   app.use(databaseOperationLogger);
@@ -263,7 +257,7 @@ if (process.env.DEBUG_DB === "true") {
 // Middlewares - CORS Configuration v5.0 - Enhanced for Production
 app.use(cors(corsOptions));
 
-// Manejo explícito de preflight requests
+// Manejo explÃ­cito de preflight requests
 app.options("*", cors(corsOptions));
 
 // Logging de request/res con requestId
@@ -283,7 +277,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// Documentación Swagger
+// DocumentaciÃ³n Swagger
 app.use(
   "/api-docs",
   swaggerUi.serve,
@@ -294,7 +288,7 @@ app.use(
   }),
 );
 
-// JSON de la especificación OpenAPI
+// JSON de la especificaciÃ³n OpenAPI
 app.get("/api-docs.json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);
@@ -303,7 +297,7 @@ app.get("/api-docs.json", (_req, res) => {
 // Aplicar rate limiting global a la API (excepto auth que tiene su propio limiter)
 app.use("/api", apiLimiter);
 
-// Endpoint público de configuración SaaS (sin autenticación)
+// Endpoint pÃºblico de configuraciÃ³n SaaS (sin autenticaciÃ³n)
 app.get("/api/v2/global-settings/public", async (_req, res) => {
   try {
     const data = await listPublicPlans();
@@ -328,10 +322,6 @@ app.use("/api/v2/employee", publicEmployeeRoutesV2);
 app.use("/api/v2/employees", publicEmployeeRoutesV2);
 app.use("/api/v2/employee", employeeRoutesV2);
 app.use("/api/v2/employees", employeeRoutesV2);
-app.use("/api/v2/distributor", publicDistributorRoutesV2);
-app.use("/api/v2/distributors", publicDistributorRoutesV2);
-app.use("/api/v2/distributor", distributorRoutesLegacyV2);
-app.use("/api/v2/distributors", distributorRoutesLegacyV2);
 app.use("/api/v2/expenses", expenseRoutesV2);
 app.use("/api/v2/gamification", gamificationRoutesV2);
 app.use("/api/v2/global-settings", globalSettingsRoutesV2);
@@ -345,7 +335,7 @@ app.use("/api/v2/analytics", analyticsRoutesV2);
 app.use("/api/v2/users", userRoutesV2);
 
 // ============================================================================
-// � V2 BATCH 3 - UTILITIES & REPORTS
+// ï¿½ V2 BATCH 3 - UTILITIES & REPORTS
 // ============================================================================
 app.use("/api/v2/advanced-analytics", advancedAnalyticsRoutesV2);
 app.use("/api/v2/audit", auditRoutesV2);
@@ -358,7 +348,7 @@ app.use("/api/v2/promotions", promotionRoutesV2);
 app.use("/api/v2/special-sales", specialSaleRoutesV2);
 
 // ============================================================================
-// 🟢 V2 BATCH 4 - UTILITIES & CONFIG
+// ðŸŸ¢ V2 BATCH 4 - UTILITIES & CONFIG
 // ============================================================================
 app.use("/api/v2", customerPointsRoutesV2);
 app.use("/api/v2/delivery-methods", deliveryMethodRoutesV2);
@@ -368,13 +358,13 @@ app.use("/api/v2/push", pushSubscriptionRoutesV2);
 app.use("/api/v2/segments", segmentRoutesV2);
 
 // ============================================================================
-// 🎯 V2 BATCH 5 - FINAL BOSS (100% Hexagonal Architecture Achieved)
+// ðŸŽ¯ V2 BATCH 5 - FINAL BOSS (100% Hexagonal Architecture Achieved)
 // ============================================================================
 app.use("/api/v2/god", godRoutesV2);
 app.use("/api/v2/upload", uploadLimiter, uploadRoutesV2);
 
 // ============================================================================
-// 🎉 MIGRATION COMPLETE - All modules now use Hexagonal Architecture
+// ðŸŽ‰ MIGRATION COMPLETE - All modules now use Hexagonal Architecture
 // Legacy server/controllers and server/routes folders have been eliminated
 // ============================================================================
 
@@ -386,15 +376,18 @@ export default app;
 // Iniciar servidor (evitar escuchar en entorno de tests)
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.warn(
+      "[Essence Debug]",
+      `Servidor corriendo en http://localhost:${PORT}`,
+    );
   });
 
   // Capturar errores no manejados
   process.on("unhandledRejection", (reason, promise) => {
-    console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+    console.error("âŒ Unhandled Rejection at:", promise, "reason:", reason);
   });
 
   process.on("uncaughtException", (error) => {
-    console.error("❌ Uncaught Exception:", error);
+    console.error("âŒ Uncaught Exception:", error);
   });
 }

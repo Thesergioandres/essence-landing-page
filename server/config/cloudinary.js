@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from "cloudinary";
+﻿import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 
@@ -20,15 +20,15 @@ if (isCloudinaryConfigured) {
   });
 } else if (cloudinaryEnabled) {
   console.warn(
-    "⚠️  Cloudinary habilitado pero faltan CLOUDINARY_*; se deshabilita la subida de imágenes.",
+    "âš ï¸  Cloudinary habilitado pero faltan CLOUDINARY_*; se deshabilita la subida de imÃ¡genes.",
   );
 } else {
-  console.log(
-    "ℹ️  Cloudinary deshabilitado en este entorno (ENABLE_CLOUDINARY != true)",
+  console.warn("[Essence Debug]", 
+    "â„¹ï¸  Cloudinary deshabilitado en este entorno (ENABLE_CLOUDINARY != true)",
   );
 }
 
-// Configurar storage de Multer con Cloudinary cuando está disponible.
+// Configurar storage de Multer con Cloudinary cuando estÃ¡ disponible.
 // Si no, usamos memoryStorage para que el POST no falle por el middleware.
 const storage = isCloudinaryConfigured
   ? new CloudinaryStorage({
@@ -56,33 +56,33 @@ export const upload = multer({
   },
 });
 
-// Función para eliminar imagen de Cloudinary
+// FunciÃ³n para eliminar imagen de Cloudinary
 export const deleteImage = async (publicId) => {
   try {
     if (!isCloudinaryConfigured) {
       console.warn(
-        "⚠️  deleteImage llamado sin Cloudinary configurado; se omite la eliminación.",
+        "âš ï¸  deleteImage llamado sin Cloudinary configurado; se omite la eliminaciÃ³n.",
         publicId,
       );
       return;
     }
     await cloudinary.uploader.destroy(publicId);
-    console.log(`✅ Imagen eliminada de Cloudinary: ${publicId}`);
+    console.warn("[Essence Debug]", `âœ… Imagen eliminada de Cloudinary: ${publicId}`);
   } catch (error) {
-    console.error("❌ Error eliminando imagen de Cloudinary:", error);
+    console.error("âŒ Error eliminando imagen de Cloudinary:", error);
   }
 };
 
 // Alias para compatibilidad
 export const deleteFromCloudinary = deleteImage;
 
-// Función para subir imagen desde base64
+// FunciÃ³n para subir imagen desde base64
 export const uploadToCloudinary = async (
   base64String,
   folder = "essence-products",
 ) => {
   if (!isCloudinaryConfigured) {
-    throw new Error("Cloudinary no está configurado");
+    throw new Error("Cloudinary no estÃ¡ configurado");
   }
 
   try {
@@ -92,9 +92,10 @@ export const uploadToCloudinary = async (
     });
     return result;
   } catch (error) {
-    console.error("❌ Error subiendo imagen a Cloudinary:", error);
+    console.error("âŒ Error subiendo imagen a Cloudinary:", error);
     throw error;
   }
 };
 
 export default cloudinary;
+

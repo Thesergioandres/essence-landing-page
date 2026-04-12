@@ -30,7 +30,7 @@ const main = async () => {
     if (!businessId && Array.isArray(winner.topPerformers)) {
       for (const performer of winner.topPerformers) {
         const m = await Membership.findOne({
-          user: performer.distributor,
+          user: performer.employee,
           status: "active",
         }).select("business");
         if (m?.business) {

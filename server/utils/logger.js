@@ -1,4 +1,4 @@
-const colorize = (text) => `\x1b[31m${text}\x1b[0m`;
+﻿const colorize = (text) => `\x1b[31m${text}\x1b[0m`;
 const yellow = (text) => `\x1b[33m${text}\x1b[0m`;
 const green = (text) => `\x1b[32m${text}\x1b[0m`;
 const cyan = (text) => `\x1b[36m${text}\x1b[0m`;
@@ -34,7 +34,7 @@ const baseLog = ({
   } else if (level === "warn") {
     console.warn(yellow(`${prefix} ${message}`), payload);
   } else {
-    console.log(`${prefix} ${message}`, payload);
+    console.warn("[Essence Debug]", `${prefix} ${message}`, payload);
   }
 };
 
@@ -53,7 +53,7 @@ export const logAuthError = (params) =>
 // Worker logging functions
 export const logWorkerJobStarted = (params) => {
   const { jobName, jobId, businessId, extra } = params;
-  console.log(cyan(`[WORKER JOB STARTED] ${jobName}`), {
+  console.warn("[Essence Debug]", cyan(`[WORKER JOB STARTED] ${jobName}`), {
     jobId,
     businessId,
     timestamp: new Date().toISOString(),
@@ -63,7 +63,7 @@ export const logWorkerJobStarted = (params) => {
 
 export const logWorkerJobFinished = (params) => {
   const { jobName, jobId, businessId, success = true, extra } = params;
-  console.log(green(`[WORKER JOB FINISHED] ${jobName}`), {
+  console.warn("[Essence Debug]", green(`[WORKER JOB FINISHED] ${jobName}`), {
     jobId,
     businessId,
     success,
@@ -108,3 +108,4 @@ export const logFiadoWarn = (params) =>
 
 export const logFiadoError = (params) =>
   baseLog({ ...params, prefix: "[FIADO ERROR]", level: "error" });
+

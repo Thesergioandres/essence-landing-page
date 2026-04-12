@@ -1,4 +1,4 @@
-import {
+﻿import {
   Building2,
   Edit,
   Loader2,
@@ -79,10 +79,10 @@ export default function Providers() {
     try {
       if (editingProvider) {
         await providerService.update(editingProvider._id, formData);
-        console.log("[UI INFO] provider_updated", { id: editingProvider._id });
+        console.warn("[Essence Debug]", "[UI INFO] provider_updated", { id: editingProvider._id });
       } else {
         await providerService.create(formData);
-        console.log("[UI INFO] provider_created");
+        console.warn("[Essence Debug]", "[UI INFO] provider_created");
       }
       setShowModal(false);
       setEditingProvider(null);
@@ -110,11 +110,11 @@ export default function Providers() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Estás seguro de eliminar este proveedor?")) return;
+    if (!confirm("Â¿EstÃ¡s seguro de eliminar este proveedor?")) return;
 
     try {
       await providerService.delete(id);
-      console.log("[UI INFO] provider_deleted", { id });
+      console.warn("[Essence Debug]", "[UI INFO] provider_deleted", { id });
       fetchProviders();
     } catch (err) {
       console.error("[UI ERROR] provider_delete_failed", err);
@@ -156,7 +156,7 @@ export default function Providers() {
             Proveedores
           </h1>
           <p className="text-gray-500 dark:text-gray-400">
-            Gestiona tus proveedores y sus métricas
+            Gestiona tus proveedores y sus mÃ©tricas
           </p>
         </div>
         <button
@@ -252,7 +252,7 @@ export default function Providers() {
               )}
             </div>
 
-            {/* Métricas */}
+            {/* MÃ©tricas */}
             <div className="mt-4 flex gap-4 border-t border-gray-100 pt-4 dark:border-gray-700">
               <div className="flex items-center gap-2">
                 <Package className="h-4 w-4 text-blue-500" />
@@ -277,7 +277,7 @@ export default function Providers() {
           <p className="text-gray-500 dark:text-gray-400">
             {searchTerm
               ? "No se encontraron proveedores"
-              : "Aún no hay proveedores registrados"}
+              : "AÃºn no hay proveedores registrados"}
           </p>
         </div>
       )}
@@ -322,7 +322,7 @@ export default function Providers() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Teléfono
+                    TelÃ©fono
                   </label>
                   <input
                     type="tel"
@@ -349,7 +349,7 @@ export default function Providers() {
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Dirección
+                  DirecciÃ³n
                 </label>
                 <input
                   type="text"
@@ -400,3 +400,4 @@ export default function Providers() {
     </div>
   );
 }
+

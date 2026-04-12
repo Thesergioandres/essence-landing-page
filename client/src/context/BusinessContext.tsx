@@ -1,4 +1,4 @@
-import {
+﻿import {
   createContext,
   useCallback,
   useContext,
@@ -49,7 +49,7 @@ const defaultFeatures: BusinessFeatures = {
   assistant: false,
   reports: true,
   transfers: true,
-  distributors: true,
+  employees: true,
   rankings: true,
   branches: true,
   credits: true,
@@ -197,7 +197,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   const [businessId, setBusinessId] = useState<string | null>(
     localStorage.getItem("businessId")
   );
-  // 🔑 FIX: Initialize memberships from localStorage to prevent redirect flash
+  // ðŸ”‘ FIX: Initialize memberships from localStorage to prevent redirect flash
   const [memberships, setMemberships] = useState<Membership[]>(
     getInitialMemberships
   );
@@ -339,7 +339,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        console.log(
+        console.warn("[Essence Debug]", 
           "[BusinessContext] Fetched memberships:",
           fetched?.length,
           fetched
@@ -361,7 +361,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
             : effectiveMemberships
         );
 
-        // Safe Retry Logic: Si devuelve vacío y no hemos reintentado, prueba una vez más
+        // Safe Retry Logic: Si devuelve vacÃ­o y no hemos reintentado, prueba una vez mÃ¡s
         if ((!fetched || fetched.length === 0) && retryRef.current < 1) {
           logBusinessContextWarn(
             "Refresh devolvio membresias vacias; se reintentara una vez",
@@ -378,7 +378,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Si éxito, limpiar reintentos
+        // Si Ã©xito, limpiar reintentos
         if (fetched && fetched.length > 0) {
           retryRef.current = 0;
         }
@@ -422,8 +422,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
           status === 429 ||
           isTransientServerError;
 
-        // Si el token quedó viejo/ilegal y el backend responde 401, limpia sesión
-        // Para 403, solo limpiar si NO es "owner_inactive" ni "pending" (usuario recién registrado)
+        // Si el token quedÃ³ viejo/ilegal y el backend responde 401, limpia sesiÃ³n
+        // Para 403, solo limpiar si NO es "owner_inactive" ni "pending" (usuario reciÃ©n registrado)
         const isPendingUser = code === "pending";
         const isOwnerInactive = code === "owner_inactive";
 
@@ -478,7 +478,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
           syncBusinessId(null);
           setMemberships(prev => (prev.length > 0 ? [] : prev));
         } else if (status === 403 && !isOwnerInactive && !isPendingUser) {
-          // 403 por otras razones (token inválido, etc) - limpiar sesión
+          // 403 por otras razones (token invÃ¡lido, etc) - limpiar sesiÃ³n
           logBusinessContextWarn(
             "Refresh denegado (403) fuera de owner_inactive/pending; limpiando sesion",
             { code }
@@ -488,7 +488,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
           syncBusinessId(null);
           setMemberships(prev => (prev.length > 0 ? [] : prev));
         }
-        // Si es usuario pending (recién registrado), NO limpiar token - solo marcar memberships vacías
+        // Si es usuario pending (reciÃ©n registrado), NO limpiar token - solo marcar memberships vacÃ­as
         if (!silent && (isPendingUser || status === 403)) {
           logBusinessContextWarn(
             "Refresh sin membresias por estado pending/403; se mantiene sesion",
@@ -620,3 +620,4 @@ export const useBusiness = () => {
   }
   return ctx;
 };
+

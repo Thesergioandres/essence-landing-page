@@ -10,12 +10,19 @@ describe("UpdateStockUseCase", () => {
   it("lanza error cuando el producto no existe", async () => {
     const useCase = new UpdateStockUseCase();
     useCase.productRepository = {
-      findById: jest.fn().mockResolvedValue(null),
-      updateStock: jest.fn(),
+      findByIdForBusiness: jest.fn().mockResolvedValue(null),
+      updateStockForBusiness: jest.fn(),
     };
 
     await expect(
-      useCase.execute({ productId: "missing", quantityChange: 1 }, null),
+      useCase.execute(
+        {
+          productId: "missing",
+          quantityChange: 1,
+          businessId: "business-1",
+        },
+        null,
+      ),
     ).rejects.toThrow("Product not found");
   });
 
@@ -32,8 +39,8 @@ describe("UpdateStockUseCase", () => {
 
     const useCase = new UpdateStockUseCase();
     useCase.productRepository = {
-      findById: findByIdMock,
-      updateStock: updateStockMock,
+      findByIdForBusiness: findByIdMock,
+      updateStockForBusiness: updateStockMock,
     };
 
     const session = { id: "session-1" };
@@ -47,8 +54,17 @@ describe("UpdateStockUseCase", () => {
     );
 
     expect(calculateSpy).toHaveBeenCalledWith(10, -2);
-    expect(findByIdMock).toHaveBeenCalledWith("product-1");
-    expect(updateStockMock).toHaveBeenCalledWith("product-1", -2, session);
+    expect(findByIdMock).toHaveBeenCalledWith("product-1", "business-1", {
+      bypassBusinessScope: false,
+      session,
+    });
+    expect(updateStockMock).toHaveBeenCalledWith(
+      "product-1",
+      "business-1",
+      -2,
+      session,
+      { bypassBusinessScope: false },
+    );
     expect(result).toEqual({ _id: "product-1", totalStock: 8 });
   });
 });

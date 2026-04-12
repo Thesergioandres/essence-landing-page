@@ -55,14 +55,14 @@ export interface CreditProfitInfo {
   unitCost: number;
   totalCost: number;
   adminProfit: number;
-  distributorProfit: number;
+  employeeProfit: number;
   totalProfit: number;
-  distributorProfitPercentage: number;
+  employeeProfitPercentage: number;
   profitMarginPercentage: number;
-  isDistributorSale: boolean;
-  distributorName?: string | null;
-  distributorEmail?: string | null;
-  amountDistributorOwesToAdmin?: number;
+  isEmployeeSale: boolean;
+  employeeName?: string | null;
+  employeeEmail?: string | null;
+  amountEmployeeOwesToAdmin?: number;
   profitRealized: boolean;
   realizedProfit: number;
   pendingProfit: number;
@@ -119,7 +119,7 @@ export interface CreditMetrics {
     count: number;
     totalAmount: number;
     adminProfit: number;
-    distributorProfit: number;
+    employeeProfit: number;
     totalProfit: number;
   };
   pendingCreditsProfit?: {
@@ -127,7 +127,7 @@ export interface CreditMetrics {
     totalAmount: number;
     remainingAmount: number;
     adminProfit: number;
-    distributorProfit: number;
+    employeeProfit: number;
     totalProfit: number;
   };
 }

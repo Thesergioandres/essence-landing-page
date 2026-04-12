@@ -1,4 +1,4 @@
-import type { AxiosError, InternalAxiosRequestConfig } from "axios";
+﻿import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import axios from "axios";
 
 const getApiBaseUrl = () => {
@@ -83,11 +83,11 @@ const logApiError = (error: AxiosError | Error) => {
     status === 403 &&
     typeof url === "string" &&
     (url.includes("/advanced-analytics/") || url.startsWith("/providers"));
-  const isExpectedDistributorFallbackNotFound =
+  const isExpectedEmployeeFallbackNotFound =
     status === 404 &&
     method === "get" &&
     typeof url === "string" &&
-    (url.startsWith("/employees") || url.startsWith("/distributors"));
+    (url.startsWith("/employees") || url.startsWith("/employees"));
   const isExpectedSessionBootstrapAuthError =
     (status === 401 || status === 403) && isSessionBootstrapEndpoint;
   const isExpectedSessionBootstrapRateLimit =
@@ -120,8 +120,8 @@ const logApiError = (error: AxiosError | Error) => {
     return;
   }
 
-  if (isExpectedDistributorFallbackNotFound) {
-    logAxiosWarn("404 esperado en fallback employees/distributors", {
+  if (isExpectedEmployeeFallbackNotFound) {
+    logAxiosWarn("404 esperado en fallback employees/employees", {
       url,
       method,
       status,
@@ -243,7 +243,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Intentar refresh automático en 401 (excepto en rutas de auth)
+    // Intentar refresh automÃ¡tico en 401 (excepto en rutas de auth)
     const isPublicSettings401 = originalRequest.url?.includes(
       "/global-settings/public"
     );
@@ -302,7 +302,7 @@ api.interceptors.response.use(
 
           processQueue(null, newToken);
 
-          console.log("[UI INFO] Token refreshed successfully");
+          console.warn("[Essence Debug]", "[UI INFO] Token refreshed successfully");
 
           return api(originalRequest);
         } catch (refreshError) {
@@ -321,7 +321,7 @@ api.interceptors.response.use(
           isRefreshing = false;
         }
       } else {
-        // No hay refresh token, limpiar y redirigir a login si había token
+        // No hay refresh token, limpiar y redirigir a login si habÃ­a token
         const token = localStorage.getItem("token");
         if (token) {
           logAxiosWarn("401 sin refresh token disponible; limpiando sesion", {
@@ -351,3 +351,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+

@@ -45,7 +45,7 @@ async function testPaymentMethodResolution() {
     const input = {
       user: admin,
       businessId: business._id.toString(),
-      distributorId: null, // Admin sale
+      employeeId: null, // Admin sale
       items: [
         {
           productId: product._id.toString(),
@@ -57,7 +57,7 @@ async function testPaymentMethodResolution() {
       paymentMethodId: "cash", // String code, should be resolved to ObjectId
       deliveryMethodId: null,
       shippingCost: 0,
-      distributorProfitPercentage: 20,
+      employeeProfitPercentage: 20,
     };
 
     try {

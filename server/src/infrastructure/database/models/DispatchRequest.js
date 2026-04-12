@@ -24,7 +24,7 @@ const dispatchRequestSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    distributor: {
+    employee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -96,6 +96,6 @@ const dispatchRequestSchema = new mongoose.Schema(
 );
 
 dispatchRequestSchema.index({ business: 1, status: 1, createdAt: -1 });
-dispatchRequestSchema.index({ business: 1, distributor: 1, createdAt: -1 });
+dispatchRequestSchema.index({ business: 1, employee: 1, createdAt: -1 });
 
 export default mongoose.model("DispatchRequest", dispatchRequestSchema);

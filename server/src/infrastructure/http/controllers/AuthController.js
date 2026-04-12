@@ -1,4 +1,4 @@
-import { LoginUseCase } from "../../../application/use-cases/LoginUseCase.js";
+﻿import { LoginUseCase } from "../../../application/use-cases/LoginUseCase.js";
 import { RegisterUserUseCase } from "../../../application/use-cases/RegisterUserUseCase.js";
 import { UserPersistenceUseCase } from "../../../application/use-cases/repository-gateways/UserPersistenceUseCase.js";
 import Membership from "../../database/models/Membership.js";
@@ -25,7 +25,7 @@ export const getProfile = async (req, res) => {
     }
     res.json({ success: true, data: user });
   } catch (error) {
-    console.error("❌ CRITICAL ERROR in getProfile:", error);
+    console.error("âŒ CRITICAL ERROR in getProfile:", error);
     console.error("Stack:", error.stack);
     res.status(500).json({ success: false, message: error.message });
   }
@@ -85,12 +85,12 @@ export const refreshAccessToken = async (req, res) => {
     try {
       decoded = jwtTokenService.verifyRefreshToken(refreshToken);
     } catch {
-      return res.status(401).json({ message: "Refresh token inválido" });
+      return res.status(401).json({ message: "Refresh token invÃ¡lido" });
     }
 
     const userId = decoded?.id || decoded?.userId;
     if (!userId) {
-      return res.status(401).json({ message: "Refresh token inválido" });
+      return res.status(401).json({ message: "Refresh token invÃ¡lido" });
     }
 
     const user = await userRepository.findById(userId);
@@ -133,7 +133,7 @@ export const refreshAccessToken = async (req, res) => {
  * Logout endpoint (stateless token model)
  */
 export const logout = async (_req, res) => {
-  return res.json({ success: true, message: "Sesión cerrada" });
+  return res.json({ success: true, message: "SesiÃ³n cerrada" });
 };
 
 /**
@@ -149,7 +149,7 @@ export const selectPlan = async (req, res) => {
     }
 
     if (!VALID_BUSINESS_PLANS.includes(plan)) {
-      return res.status(400).json({ success: false, message: "Plan inválido" });
+      return res.status(400).json({ success: false, message: "Plan invÃ¡lido" });
     }
 
     const user = await User.findById(userId);
@@ -176,9 +176,9 @@ export const selectPlan = async (req, res) => {
   }
 };
 
-export const impersonateDistributor = async (req, res) => {
+export const impersonateEmployee = async (req, res) => {
   try {
-    const { distributorId } = req.params;
+    const { employeeId } = req.params;
     const requesterId = req.user?.id || req.user?.userId;
     const businessId = req.businessId;
 
@@ -192,8 +192,8 @@ export const impersonateDistributor = async (req, res) => {
         .json({ success: false, message: "Falta x-business-id" });
     }
 
-    const distributorMembership = await Membership.findOne({
-      user: distributorId,
+    const employeeMembership = await Membership.findOne({
+      user: employeeId,
       business: businessId,
       role: "employee",
       status: "active",
@@ -201,26 +201,26 @@ export const impersonateDistributor = async (req, res) => {
       .populate("business", "_id name")
       .lean();
 
-    if (!distributorMembership) {
+    if (!employeeMembership) {
       return res.status(404).json({
         success: false,
-        message: "Distribuidor no encontrado en este negocio",
+        message: "Empleado no encontrado en este negocio",
       });
     }
 
-    const distributor = await User.findById(distributorId)
+    const employee = await User.findById(employeeId)
       .select("-password")
       .lean();
 
-    if (!distributor || distributor.role !== "employee") {
+    if (!employee || employee.role !== "employee") {
       return res.status(404).json({
         success: false,
-        message: "Usuario destino inválido para suplantación",
+        message: "Usuario destino invÃ¡lido para suplantaciÃ³n",
       });
     }
 
     const memberships = await Membership.find({
-      user: distributor._id,
+      user: employee._id,
       status: "active",
     })
       .populate(
@@ -230,32 +230,32 @@ export const impersonateDistributor = async (req, res) => {
       .lean();
 
     const token = jwtTokenService.generateAccessToken(
-      distributor._id,
-      distributor.role,
+      employee._id,
+      employee.role,
       businessId,
     );
 
-    console.log(
-      `[IMPERSONATION] Admin ${requesterId} está suplantando al distribuidor ${distributor._id} en negocio ${businessId}`,
+    console.warn("[Essence Debug]", 
+      `[IMPERSONATION] Admin ${requesterId} estÃ¡ suplantando al empleado ${employee._id} en negocio ${businessId}`,
     );
 
     return res.json({
       success: true,
-      message: "Suplantación iniciada",
+      message: "SuplantaciÃ³n iniciada",
       token,
       user: {
-        _id: distributor._id,
-        name: distributor.name,
-        email: distributor.email,
-        role: distributor.role,
-        status: distributor.status,
-        active: distributor.active,
-        subscriptionExpiresAt: distributor.subscriptionExpiresAt,
+        _id: employee._id,
+        name: employee.name,
+        email: employee.email,
+        role: employee.role,
+        status: employee.status,
+        active: employee.active,
+        subscriptionExpiresAt: employee.subscriptionExpiresAt,
         memberships,
       },
     });
   } catch (error) {
-    console.error("❌ ERROR impersonating distributor:", error);
+    console.error("âŒ ERROR impersonating employee:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -279,7 +279,7 @@ export const revertImpersonation = async (req, res) => {
     if (!adminId) {
       return res
         .status(401)
-        .json({ success: false, message: "Token original inválido" });
+        .json({ success: false, message: "Token original invÃ¡lido" });
     }
 
     const adminUser = await User.findById(adminId).select("-password").lean();
@@ -315,7 +315,7 @@ export const revertImpersonation = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Sesión de administrador restaurada",
+      message: "SesiÃ³n de administrador restaurada",
       token: restoredToken,
       user: {
         _id: adminUser._id,
@@ -329,10 +329,11 @@ export const revertImpersonation = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ ERROR reverting impersonation:", error);
+    console.error("âŒ ERROR reverting impersonation:", error);
     return res.status(401).json({
       success: false,
-      message: "No se pudo restaurar la sesión original",
+      message: "No se pudo restaurar la sesiÃ³n original",
     });
   }
 };
+

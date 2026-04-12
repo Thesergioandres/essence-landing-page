@@ -30,7 +30,7 @@ export const productsService = {
     if (data.description) formData.append("description", data.description);
     formData.append("purchasePrice", data.purchasePrice.toString());
     formData.append("clientPrice", data.clientPrice.toString());
-    formData.append("distributorPrice", data.distributorPrice.toString());
+    formData.append("employeePrice", data.employeePrice.toString());
     if (data.suggestedPrice)
       formData.append("suggestedPrice", data.suggestedPrice.toString());
     formData.append("category", data.categoryId);

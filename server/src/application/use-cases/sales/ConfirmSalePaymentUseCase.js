@@ -101,7 +101,7 @@ export class ConfirmSalePaymentUseCase {
           : confirmedSale;
 
       shouldApplyGamification = Boolean(
-        responseSale?.distributor && alreadyConfirmed === false,
+        responseSale?.employee && alreadyConfirmed === false,
       );
     };
 
@@ -137,22 +137,22 @@ export class ConfirmSalePaymentUseCase {
   }
 
   async upsertProfitHistoryEntries(sale, businessId, saleDate, session) {
-    if (sale?.distributor && Number(sale.distributorProfit || 0) > 0) {
-      const distributorToken = buildConfirmationToken(sale._id, "distributor");
+    if (sale?.employee && Number(sale.employeeProfit || 0) > 0) {
+      const employeeToken = buildConfirmationToken(sale._id, "employee");
 
       await ProfitHistory.updateOne(
         {
           business: businessId,
           sale: sale._id,
-          user: sale.distributor,
-          "metadata.confirmationToken": distributorToken,
+          user: sale.employee,
+          "metadata.confirmationToken": employeeToken,
         },
         {
           $setOnInsert: {
             business: businessId,
-            user: sale.distributor,
+            user: sale.employee,
             type: "venta_normal",
-            amount: Number(sale.distributorProfit || 0),
+            amount: Number(sale.employeeProfit || 0),
             sale: sale._id,
             product: sale.product,
             description: `Comisión por venta ${sale.saleId || sale._id}`,
@@ -161,8 +161,8 @@ export class ConfirmSalePaymentUseCase {
               quantity: Number(sale.quantity || 0),
               salePrice: Number(sale.salePrice || 0),
               saleId: sale.saleId,
-              commission: sale.distributorProfitPercentage,
-              confirmationToken: distributorToken,
+              commission: sale.employeeProfitPercentage,
+              confirmationToken: employeeToken,
             },
           },
         },
@@ -204,8 +204,8 @@ export class ConfirmSalePaymentUseCase {
           amount: Number(sale.adminProfit || 0),
           sale: sale._id,
           product: sale.product,
-          description: sale.distributor
-            ? `Ganancia de venta ${sale.saleId || sale._id} (distribuidor)`
+          description: sale.employee
+            ? `Ganancia de venta ${sale.saleId || sale._id} (empleado)`
             : `Venta directa ${sale.saleId || sale._id}`,
           date: saleDate,
           metadata: {

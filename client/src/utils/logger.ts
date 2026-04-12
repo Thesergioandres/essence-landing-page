@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Utilidad de logging estandarizado para el frontend
  * Cumple con el requerimiento de logs [UI ERROR], [UI WARN], [UI INFO]
  */
@@ -45,7 +45,7 @@ const log = (level: LogLevel, message: string, context?: LogContext) => {
 
   switch (level) {
     case "info":
-      console.log(formatMessage("[UI INFO]", message), payload);
+      console.warn("[Essence Debug]", formatMessage("[UI INFO]", message), payload);
       break;
     case "warn":
       console.warn(formatMessage("[UI WARN]", message), payload);
@@ -66,15 +66,15 @@ export const logUI = {
   },
 
   /**
-   * Log de advertencia para situaciones anómalas pero no críticas
-   * @example logUI.warn("Sin conexión, usando caché", { module: "api" })
+   * Log de advertencia para situaciones anÃ³malas pero no crÃ­ticas
+   * @example logUI.warn("Sin conexiÃ³n, usando cachÃ©", { module: "api" })
    */
   warn: (message: string, context?: LogContext) => {
     log("warn", message, context);
   },
 
   /**
-   * Log de error para fallos críticos
+   * Log de error para fallos crÃ­ticos
    * @example logUI.error("Error al cargar datos", { module: "credits", error: err })
    */
   error: (message: string, context?: LogContext & { error?: unknown }) => {
@@ -108,3 +108,4 @@ export const logComponentError = (
 };
 
 export default logUI;
+

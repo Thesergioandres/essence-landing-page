@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "../../auth/types/auth.types";
-import { distributorService } from "../../employees/services";
+import { employeeService } from "../../employees/services";
 import {
   productService,
   stockService,
@@ -9,8 +9,8 @@ import type { Product } from "../../inventory/types/product.types";
 
 interface StockTransfer {
   _id: string;
-  fromDistributor: User;
-  toDistributor?: User | null;
+  fromEmployee: User;
+  toEmployee?: User | null;
   toBranch?: { _id: string; name: string } | null;
   product: Product;
   quantity: number;
@@ -24,13 +24,13 @@ interface StockTransfer {
 
 export default function TransferHistory() {
   const [transfers, setTransfers] = useState<StockTransfer[]>([]);
-  const [distributors, setDistributors] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filtros
-  const [fromDistributor, setFromDistributor] = useState("");
-  const [toDistributor, setToDistributor] = useState("");
+  const [fromEmployee, setFromEmployee] = useState("");
+  const [toEmployee, setToEmployee] = useState("");
   const [product, setProduct] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -44,10 +44,10 @@ export default function TransferHistory() {
   const loadFiltersData = useCallback(async () => {
     try {
       const [distData, prodData] = await Promise.all([
-        distributorService.getAll({}),
+        employeeService.getAll({}),
         productService.getAll(),
       ]);
-      setDistributors(Array.isArray(distData) ? distData : distData.data || []);
+      setEmployees(Array.isArray(distData) ? distData : distData.data || []);
       setProducts(Array.isArray(prodData) ? prodData : prodData.data || []);
     } catch (error) {
       console.error("Error cargando datos de filtros:", error);
@@ -62,8 +62,8 @@ export default function TransferHistory() {
     try {
       setLoading(true);
       const params: any = { page, limit: 20 };
-      if (fromDistributor) params.fromDistributor = fromDistributor;
-      if (toDistributor) params.toDistributor = toDistributor;
+      if (fromEmployee) params.fromEmployee = fromEmployee;
+      if (toEmployee) params.toEmployee = toEmployee;
       if (product) params.product = product;
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
@@ -80,8 +80,8 @@ export default function TransferHistory() {
     }
   }, [
     page,
-    fromDistributor,
-    toDistributor,
+    fromEmployee,
+    toEmployee,
     product,
     startDate,
     endDate,
@@ -97,8 +97,8 @@ export default function TransferHistory() {
   }, [loadTransfers]);
 
   const clearFilters = useCallback(() => {
-    setFromDistributor("");
-    setToDistributor("");
+    setFromEmployee("");
+    setToEmployee("");
     setProduct("");
     setStartDate("");
     setEndDate("");
@@ -125,8 +125,8 @@ export default function TransferHistory() {
             📋 Historial de Transferencias
           </h1>
           <p className="text-sm text-gray-400 sm:text-base">
-            Registro de movimientos de stock: bodega → distribuidor,
-            distribuidor → distribuidor, distribuidor → sede
+            Registro de movimientos de stock: bodega → empleado,
+            empleado → empleado, empleado → sede
           </p>
         </div>
 
@@ -197,12 +197,12 @@ export default function TransferHistory() {
                 Origen
               </label>
               <select
-                value={fromDistributor}
-                onChange={e => setFromDistributor(e.target.value)}
+                value={fromEmployee}
+                onChange={e => setFromEmployee(e.target.value)}
                 className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none sm:px-4"
               >
                 <option value="">Todos</option>
-                {distributors.map(d => (
+                {employees.map(d => (
                   <option key={d._id} value={d._id}>
                     {d.name}
                   </option>
@@ -215,12 +215,12 @@ export default function TransferHistory() {
                 Destino
               </label>
               <select
-                value={toDistributor}
-                onChange={e => setToDistributor(e.target.value)}
+                value={toEmployee}
+                onChange={e => setToEmployee(e.target.value)}
                 className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none sm:px-4"
               >
                 <option value="">Todos</option>
-                {distributors.map(d => (
+                {employees.map(d => (
                   <option key={d._id} value={d._id}>
                     {d.name}
                   </option>
@@ -360,7 +360,7 @@ export default function TransferHistory() {
                         <td className="px-6 py-4">
                           <div>
                             <p className="text-sm font-medium text-white">
-                              {transfer.fromDistributor.name}
+                              {transfer.fromEmployee.name}
                             </p>
                             <p className="text-xs text-gray-400">
                               {transfer.fromStockBefore} →{" "}
@@ -372,7 +372,7 @@ export default function TransferHistory() {
                           <div>
                             <p className="text-sm font-medium text-white">
                               {transfer.toBranch?.name ||
-                                transfer.toDistributor?.name ||
+                                transfer.toEmployee?.name ||
                                 "Destino"}
                             </p>
                             <p className="text-xs text-gray-400">
@@ -450,7 +450,7 @@ export default function TransferHistory() {
                         <span className="text-gray-400">Origen</span>
                         <div className="text-right">
                           <p className="font-semibold text-white">
-                            {transfer.fromDistributor.name}
+                            {transfer.fromEmployee.name}
                           </p>
                           <p className="text-xs text-gray-400">
                             {transfer.fromStockBefore} →{" "}
@@ -463,7 +463,7 @@ export default function TransferHistory() {
                         <div className="text-right">
                           <p className="font-semibold text-white">
                             {transfer.toBranch?.name ||
-                              transfer.toDistributor?.name ||
+                              transfer.toEmployee?.name ||
                               "Destino"}
                           </p>
                           <p className="text-xs text-gray-400">

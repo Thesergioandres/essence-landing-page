@@ -18,8 +18,8 @@ erDiagram
     USER ||--o{ MEMBERSHIP : "Tiene"
     BUSINESS ||--o{ MEMBERSHIP : "Controla"
     
-    PRODUCT ||--o{ DISTRIBUTOR_STOCK : "Se fragmenta en"
-    USER ||--o{ DISTRIBUTOR_STOCK : "Se le asigna a (Distribuidor)"
+    PRODUCT ||--o{ EMPLOYEE_STOCK : "Se fragmenta en"
+    USER ||--o{ EMPLOYEE_STOCK : "Se le asigna a (Empleado)"
     
     PRODUCT ||--o{ BRANCH_STOCK : "Se almacena en"
     BRANCH ||--o{ BRANCH_STOCK : "Guarda"
@@ -36,7 +36,7 @@ erDiagram
     USER {
         ObjectId _id PK
         string email
-        string role "god | super_admin | admin | distribuidor"
+        string role "god | super_admin | admin | empleado"
         string status "active | pending | expired"
         date subscriptionExpiresAt
     }
@@ -61,9 +61,9 @@ erDiagram
         array items "Subdocumentos de producto"
     }
 
-    DISTRIBUTOR_STOCK {
+    EMPLOYEE_STOCK {
         ObjectId _id PK
-        ObjectId distributor FK
+        ObjectId employee FK
         ObjectId product FK
         ObjectId business FK
         number quantity "Inventario aislado del WH"
@@ -75,7 +75,7 @@ erDiagram
 ## 2. Decisiones de Diseño NoSQL Críticas
 
 ### A. Denormalización vs Referencias
-1. **Colecciones Aisladas (Stock):** A diferencia de SQL (una sola tabla gorda con bodegas), en Essence el stock de distribuidores (`DistributorStock`) y de sedes (`BranchStock`) están en colecciones totalmente separadas de la tabla genérica `Products`.
+1. **Colecciones Aisladas (Stock):** A diferencia de SQL (una sola tabla gorda con bodegas), en Essence el stock de empleados (`EmployeeStock`) y de sedes (`BranchStock`) están en colecciones totalmente separadas de la tabla genérica `Products`.
    * *Razón:* Escalar la búsqueda y mutación (`$inc`) de manera aislada sin bloquear el documento *Product* o inflar su Document Size Límite de 16MB.
 2. **Histórico Inmutable (Sale.items):** Al momento de registrar una venta (`SALE`), los productos dentro de esa venta se guardan como subdocumentos (arrays empotrados), copiando el `price` local y `costBasis` actual. 
    * *Razón:* Si un producto en el catálogo Master cambia de precio al día siguiente, el recibo de la venta anterior permanecerá inalterado.
@@ -86,4 +86,4 @@ Para que el Dashboard resuelva analíticas agregadas (Pipeline de $lookup y $sum
 
 * `saleSchema.index({ business: 1, saleDate: -1 })` : Lectura secuencial de las últimas ventas de un negocio.
 * `saleSchema.index({ business: 1, paymentStatus: 1, saleDate: -1 })` : Recuperación veloz para filtrar únicamente "confirmados" u omitir "créditos pendients".
-* `distributorStockSchema.index({ business: 1, distributor: 1, product: 1 }, { unique: true })` : Index único para impedir stocks duplicados entre mismos productos.
+* `employeeStockSchema.index({ business: 1, employee: 1, product: 1 }, { unique: true })` : Index único para impedir stocks duplicados entre mismos productos.

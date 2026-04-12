@@ -42,12 +42,12 @@ describe("requirePermission middleware", () => {
     expect(nextCalled).toBe(true);
   });
 
-  it("bloquea create de products a distribuidor sin override", async () => {
+  it("bloquea create de products a empleado sin override", async () => {
     const { statusCode, payload, nextCalled } = await run(
       requirePermission({ module: "products", action: "create" }),
       {
-        user: { role: "distribuidor" },
-        membership: { role: "distribuidor", permissions: {} },
+        user: { role: "empleado" },
+        membership: { role: "empleado", permissions: {} },
       }
     );
     expect(nextCalled).toBe(false);
@@ -59,9 +59,9 @@ describe("requirePermission middleware", () => {
     const { nextCalled, statusCode } = await run(
       requirePermission({ module: "products", action: "create" }),
       {
-        user: { role: "distribuidor" },
+        user: { role: "empleado" },
         membership: {
-          role: "distribuidor",
+          role: "empleado",
           permissions: { products: { create: true } },
         },
       }
@@ -82,9 +82,9 @@ describe("requirePermission middleware", () => {
 
     const deniedResult = await run(mw, {
       body: { branchId: denied },
-      user: { role: "distribuidor" },
+      user: { role: "empleado" },
       membership: {
-        role: "distribuidor",
+        role: "empleado",
         permissions: { sales: { create: true } },
         allowedBranches: [allowed],
       },
@@ -94,9 +94,9 @@ describe("requirePermission middleware", () => {
 
     const allowedResult = await run(mw, {
       body: { branchId: allowed },
-      user: { role: "distribuidor" },
+      user: { role: "empleado" },
       membership: {
-        role: "distribuidor",
+        role: "empleado",
         permissions: { sales: { create: true } },
         allowedBranches: [allowed],
       },

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================
  * TEST SUITE 6: DASHBOARD & ANALYTICS
  * ============================================
@@ -13,7 +13,7 @@
 
 import { expect, test } from "./fixtures";
 
-test.describe("📊 Dashboard & Analytics Tests", () => {
+test.describe("ðŸ“Š Dashboard & Analytics Tests", () => {
   test.beforeEach(async ({ page, loginAsAdmin }) => {
     await loginAsAdmin();
   });
@@ -30,7 +30,7 @@ test.describe("📊 Dashboard & Analytics Tests", () => {
     const count = await kpiCards.count();
 
     expect(count).toBeGreaterThan(0);
-    console.log(`✅ Dashboard displays ${count} KPI cards`);
+    console.warn("[Essence Debug]", `âœ… Dashboard displays ${count} KPI cards`);
   });
 
   test("should show revenue metrics", async ({ page }) => {
@@ -41,7 +41,7 @@ test.describe("📊 Dashboard & Analytics Tests", () => {
     const revenueText = page.getByText(/ventas|ingresos|revenue|\$\d/i);
 
     if (await revenueText.first().isVisible()) {
-      console.log("✅ Revenue metrics visible");
+      console.warn("[Essence Debug]", "âœ… Revenue metrics visible");
     }
   });
 
@@ -53,7 +53,7 @@ test.describe("📊 Dashboard & Analytics Tests", () => {
     const profitText = page.getByText(/ganancia|utilidad|profit|margen/i);
 
     if (await profitText.first().isVisible()) {
-      console.log("✅ Profit metrics visible");
+      console.warn("[Essence Debug]", "âœ… Profit metrics visible");
     }
   });
 
@@ -74,9 +74,9 @@ test.describe("📊 Dashboard & Analytics Tests", () => {
     const hasSvgCharts = (await svgCharts.count()) > 0;
 
     if (hasChartContainers || hasSvgCharts) {
-      console.log("✅ Charts rendered on dashboard");
+      console.warn("[Essence Debug]", "âœ… Charts rendered on dashboard");
     } else {
-      console.log("ℹ️ No charts visible (might be loading or no data)");
+      console.warn("[Essence Debug]", "â„¹ï¸ No charts visible (might be loading or no data)");
     }
   });
 
@@ -86,11 +86,11 @@ test.describe("📊 Dashboard & Analytics Tests", () => {
 
     // Look for top products
     const topProducts = page.getByText(
-      /top productos|productos más vendidos|más vendidos/i
+      /top productos|productos mÃ¡s vendidos|mÃ¡s vendidos/i
     );
 
     if (await topProducts.isVisible()) {
-      console.log("✅ Top products section visible");
+      console.warn("[Essence Debug]", "âœ… Top products section visible");
     }
   });
 
@@ -100,7 +100,7 @@ test.describe("📊 Dashboard & Analytics Tests", () => {
 
     // Look for date filters
     const dateFilter = page.getByRole("button", {
-      name: /hoy|semana|mes|año|today|week|month/i,
+      name: /hoy|semana|mes|aÃ±o|today|week|month/i,
     });
     const dateInputs = page.locator("input[type='date']");
 
@@ -111,7 +111,7 @@ test.describe("📊 Dashboard & Analytics Tests", () => {
     const hasDateInputs = (await dateInputs.count()) > 0;
 
     if (hasDateFilter || hasDateInputs) {
-      console.log("✅ Date range filter available");
+      console.warn("[Essence Debug]", "âœ… Date range filter available");
     }
   });
 
@@ -132,7 +132,7 @@ test.describe("📊 Dashboard & Analytics Tests", () => {
         await page.waitForTimeout(1000);
       }
 
-      console.log("✅ Date range buttons work");
+      console.warn("[Essence Debug]", "âœ… Date range buttons work");
     }
   });
 
@@ -144,9 +144,9 @@ test.describe("📊 Dashboard & Analytics Tests", () => {
     const expenses = page.getByText(/gastos|expenses|egresos/i);
 
     if (await expenses.isVisible()) {
-      console.log("✅ Expense summary visible");
+      console.warn("[Essence Debug]", "âœ… Expense summary visible");
     } else {
-      console.log("ℹ️ Expenses not shown on main dashboard");
+      console.warn("[Essence Debug]", "â„¹ï¸ Expenses not shown on main dashboard");
     }
   });
 
@@ -158,7 +158,7 @@ test.describe("📊 Dashboard & Analytics Tests", () => {
     const netProfit = page.getByText(/utilidad neta|net profit|ganancia neta/i);
 
     if (await netProfit.isVisible()) {
-      console.log("✅ Net profit KPI visible (MASTER FIX verified)");
+      console.warn("[Essence Debug]", "âœ… Net profit KPI visible (MASTER FIX verified)");
     }
   });
 
@@ -166,15 +166,16 @@ test.describe("📊 Dashboard & Analytics Tests", () => {
     await page.goto("/admin/dashboard");
     await page.waitForLoadState("networkidle");
 
-    // Look for "ver más" or analytics link
+    // Look for "ver mÃ¡s" or analytics link
     const analyticsLink = page.getByRole("link", {
-      name: /ver más|analytics|análisis|detalle/i,
+      name: /ver mÃ¡s|analytics|anÃ¡lisis|detalle/i,
     });
 
     if (await analyticsLink.isVisible()) {
       await analyticsLink.click();
       await page.waitForLoadState("networkidle");
-      console.log("✅ Detailed analytics accessible");
+      console.warn("[Essence Debug]", "âœ… Detailed analytics accessible");
     }
   });
 });
+

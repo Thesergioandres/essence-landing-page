@@ -297,36 +297,36 @@ class ProfitHistoryRepository {
       startDate,
       endDate,
       limit = 150,
-      distributorId,
+      employeeId,
       hideFinancialData = false,
     } = options;
     const dateRange = this.buildDateRange(startDate, endDate);
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
-    const distributorObjectId =
-      distributorId && mongoose.isValidObjectId(distributorId)
-        ? new mongoose.Types.ObjectId(distributorId)
+    const employeeObjectId =
+      employeeId && mongoose.isValidObjectId(employeeId)
+        ? new mongoose.Types.ObjectId(employeeId)
         : null;
-    const isScopedDistributorView = Boolean(distributorObjectId);
+    const isScopedEmployeeView = Boolean(employeeObjectId);
 
     const filter = {
       business: businessObjectId,
       ...(dateRange ? { date: dateRange } : {}),
-      ...(isScopedDistributorView ? { user: distributorObjectId } : {}),
+      ...(isScopedEmployeeView ? { user: employeeObjectId } : {}),
     };
     const recentEntriesFilter = {
       ...filter,
     };
 
-    // Get distributor user IDs for this business
-    const distributorMemberships = await Membership.find({
+    // Get employee user IDs for this business
+    const employeeMemberships = await Membership.find({
       business: businessObjectId,
       role: "employee",
       status: "active",
     })
       .select("user")
       .lean();
-    const distributorUserIds = distributorMemberships.map((m) => m.user);
-    const distributorUserObjectIds = distributorUserIds
+    const employeeUserIds = employeeMemberships.map((m) => m.user);
+    const employeeUserObjectIds = employeeUserIds
       .filter((id) => id != null)
       .map((id) => {
         if (id instanceof mongoose.Types.ObjectId) return id;
@@ -339,27 +339,27 @@ class ProfitHistoryRepository {
 
     const commissionMatch = {
       ...filter,
-      ...(isScopedDistributorView ? { user: distributorObjectId } : {}),
+      ...(isScopedEmployeeView ? { user: employeeObjectId } : {}),
       $or: [
         { "metadata.commission": { $gt: 0 } },
         { description: { $regex: /comisi[oó]n/i } },
-        ...(distributorUserObjectIds.length > 0
-          ? [{ user: { $in: distributorUserObjectIds } }]
+        ...(employeeUserObjectIds.length > 0
+          ? [{ user: { $in: employeeUserObjectIds } }]
           : []),
       ],
     };
 
-    const saleScopeMatch = isScopedDistributorView
+    const saleScopeMatch = isScopedEmployeeView
       ? {
           $or: [
-            { distributor: distributorObjectId },
-            { createdBy: distributorObjectId },
+            { employee: employeeObjectId },
+            { createdBy: employeeObjectId },
           ],
         }
       : {};
 
-    const specialSaleScopeMatch = isScopedDistributorView
-      ? { createdBy: distributorObjectId }
+    const specialSaleScopeMatch = isScopedEmployeeView
+      ? { createdBy: employeeObjectId }
       : {};
 
     const [
@@ -367,8 +367,8 @@ class ProfitHistoryRepository {
       recentEntries,
       byType,
       byUser,
-      distributorCommissions,
-      distributorBreakdown,
+      employeeCommissions,
+      employeeBreakdown,
       salesNetProfit,
       specialSalesNetProfit,
     ] = await Promise.all([
@@ -427,14 +427,14 @@ class ProfitHistoryRepository {
         {
           $lookup: {
             from: "users",
-            localField: "saleInfo.distributor",
+            localField: "saleInfo.employee",
             foreignField: "_id",
-            as: "saleDistributorInfo",
+            as: "saleEmployeeInfo",
           },
         },
         {
           $unwind: {
-            path: "$saleDistributorInfo",
+            path: "$saleEmployeeInfo",
             preserveNullAndEmptyArrays: true,
           },
         },
@@ -488,8 +488,8 @@ class ProfitHistoryRepository {
                 },
               ],
             },
-            distributorNameField: { $ifNull: ["$userInfo.name", "Admin"] },
-            distributorEmailField: { $ifNull: ["$userInfo.email", ""] },
+            employeeNameField: { $ifNull: ["$userInfo.name", "Admin"] },
+            employeeEmailField: { $ifNull: ["$userInfo.email", ""] },
             entryDate: {
               $ifNull: [
                 "$createdAt",
@@ -517,23 +517,23 @@ class ProfitHistoryRepository {
                 regex: /comisi[oó]n/i,
               },
             },
-            isDistributorUser: {
+            isEmployeeUser: {
               $or: [
-                { $in: ["$user", distributorUserObjectIds] },
+                { $in: ["$user", employeeUserObjectIds] },
                 { $eq: ["$userInfo.role", "employee"] },
               ],
             },
             isCommissionType: { $eq: ["$type", "commission"] },
             amountSafe: { $ifNull: ["$amount", 0] },
-            isPromotionDistributor: {
+            isPromotionEmployee: {
               $and: [
                 { $eq: ["$saleInfo.isPromotion", true] },
-                { $ne: ["$saleInfo.distributor", null] },
+                { $ne: ["$saleInfo.employee", null] },
               ],
             },
             saleAdminProfit: { $ifNull: ["$saleInfo.adminProfit", null] },
-            saleDistributorProfit: {
-              $ifNull: ["$saleInfo.distributorProfit", null],
+            saleEmployeeProfit: {
+              $ifNull: ["$saleInfo.employeeProfit", null],
             },
             saleTotalProfit: { $ifNull: ["$saleInfo.totalProfit", null] },
             saleNetProfit: { $ifNull: ["$saleInfo.netProfit", null] },
@@ -560,10 +560,10 @@ class ProfitHistoryRepository {
         },
         {
           $addFields: {
-            resolvedSaleDistributor: {
+            resolvedSaleEmployee: {
               $ifNull: [
-                "$saleInfo.distributor",
-                "$saleInfoBySaleId.distributor",
+                "$saleInfo.employee",
+                "$saleInfoBySaleId.employee",
               ],
             },
             resolvedSaleIsPromotion: {
@@ -575,10 +575,10 @@ class ProfitHistoryRepository {
             saleAdminProfit: {
               $ifNull: ["$saleAdminProfit", "$saleInfoBySaleId.adminProfit"],
             },
-            saleDistributorProfit: {
+            saleEmployeeProfit: {
               $ifNull: [
-                "$saleDistributorProfit",
-                "$saleInfoBySaleId.distributorProfit",
+                "$saleEmployeeProfit",
+                "$saleInfoBySaleId.employeeProfit",
               ],
             },
             saleTotalProfit: {
@@ -605,10 +605,10 @@ class ProfitHistoryRepository {
                 { $ifNull: ["$saleInfoBySaleId.shippingCost", 0] },
               ],
             },
-            isPromotionDistributor: {
+            isPromotionEmployee: {
               $and: [
                 { $eq: ["$resolvedSaleIsPromotion", true] },
-                { $ne: ["$resolvedSaleDistributor", null] },
+                { $ne: ["$resolvedSaleEmployee", null] },
               ],
             },
           },
@@ -622,24 +622,24 @@ class ProfitHistoryRepository {
         },
         {
           $addFields: {
-            isDistributorCommission: {
+            isEmployeeCommission: {
               $or: [
                 "$isCommissionType",
                 "$isCommissionEntry",
-                "$isDistributorUser",
+                "$isEmployeeUser",
               ],
             },
-            hasDistributorContext: {
+            hasEmployeeContext: {
               $or: [
-                "$isDistributorCommission",
-                { $ne: ["$resolvedSaleDistributor", null] },
+                "$isEmployeeCommission",
+                { $ne: ["$resolvedSaleEmployee", null] },
               ],
             },
-            distributorProfit: {
-              $cond: ["$isDistributorCommission", "$amountSafe", 0],
+            employeeProfit: {
+              $cond: ["$isEmployeeCommission", "$amountSafe", 0],
             },
             adminProfit: {
-              $cond: ["$isDistributorCommission", 0, "$amountSafe"],
+              $cond: ["$isEmployeeCommission", 0, "$amountSafe"],
             },
           },
         },
@@ -651,26 +651,26 @@ class ProfitHistoryRepository {
             saleId: { $first: "$saleIdField" },
             source: { $first: "$source" },
             eventName: { $first: "$eventNameField" },
-            distributorName: {
+            employeeName: {
               $first: {
-                $ifNull: ["$saleDistributorInfo.name", "$distributorNameField"],
+                $ifNull: ["$saleEmployeeInfo.name", "$employeeNameField"],
               },
             },
-            distributorEmail: {
+            employeeEmail: {
               $first: {
                 $ifNull: [
-                  "$saleDistributorInfo.email",
-                  "$distributorEmailField",
+                  "$saleEmployeeInfo.email",
+                  "$employeeEmailField",
                 ],
               },
             },
             productName: { $first: "$productNameField" },
-            distributorProfitSum: { $sum: "$distributorProfit" },
+            employeeProfitSum: { $sum: "$employeeProfit" },
             totalProfitSum: { $sum: "$amountSafe" },
-            hasDistributorContext: { $max: "$hasDistributorContext" },
-            isPromotionDistributor: { $max: "$isPromotionDistributor" },
+            hasEmployeeContext: { $max: "$hasEmployeeContext" },
+            isPromotionEmployee: { $max: "$isPromotionEmployee" },
             saleAdminProfit: { $first: "$saleAdminProfit" },
-            saleDistributorProfit: { $first: "$saleDistributorProfit" },
+            saleEmployeeProfit: { $first: "$saleEmployeeProfit" },
             saleTotalProfit: { $first: "$saleTotalProfit" },
             saleNetProfit: { $first: "$saleNetProfit" },
             saleAdditionalCosts: { $first: "$saleAdditionalCosts" },
@@ -680,14 +680,14 @@ class ProfitHistoryRepository {
         },
         {
           $addFields: {
-            distributorProfit: {
+            employeeProfit: {
               $cond: [
-                "$isPromotionDistributor",
+                "$isPromotionEmployee",
                 {
-                  $ifNull: ["$saleDistributorProfit", "$distributorProfitSum"],
+                  $ifNull: ["$saleEmployeeProfit", "$employeeProfitSum"],
                 },
                 {
-                  $ifNull: ["$saleDistributorProfit", "$distributorProfitSum"],
+                  $ifNull: ["$saleEmployeeProfit", "$employeeProfitSum"],
                 },
               ],
             },
@@ -729,25 +729,25 @@ class ProfitHistoryRepository {
                     "$saleNetProfit",
                     {
                       $cond: [
-                        "$isPromotionDistributor",
+                        "$isPromotionEmployee",
                         {
                           $ifNull: [
                             "$saleAdminProfit",
                             {
                               $subtract: [
                                 "$totalProfitSum",
-                                "$distributorProfitSum",
+                                "$employeeProfitSum",
                               ],
                             },
                           ],
                         },
                         {
                           $cond: [
-                            "$hasDistributorContext",
+                            "$hasEmployeeContext",
                             {
                               $subtract: [
                                 "$totalProfitSum",
-                                "$distributorProfitSum",
+                                "$employeeProfitSum",
                               ],
                             },
                             "$totalProfitSum",
@@ -765,12 +765,12 @@ class ProfitHistoryRepository {
           $addFields: {
             totalProfit: {
               $cond: [
-                "$hasDistributorContext",
+                "$hasEmployeeContext",
                 {
                   $cond: [
                     { $lt: ["$adminProfit", 0] },
-                    "$distributorProfit",
-                    { $add: ["$distributorProfit", "$adminProfit"] },
+                    "$employeeProfit",
+                    { $add: ["$employeeProfit", "$adminProfit"] },
                   ],
                 },
                 "$adminProfit",
@@ -800,10 +800,10 @@ class ProfitHistoryRepository {
             saleId: 1,
             source: 1,
             eventName: 1,
-            distributorName: 1,
-            distributorEmail: 1,
+            employeeName: 1,
+            employeeEmail: 1,
             productName: 1,
-            distributorProfit: 1,
+            employeeProfit: 1,
             adminProfit: 1,
             totalProfit: 1,
           },
@@ -852,7 +852,7 @@ class ProfitHistoryRepository {
         { $sort: { total: -1 } },
         { $limit: 10 },
       ]),
-      // Distributor commissions total
+      // Employee commissions total
       ProfitHistory.aggregate([
         { $match: commissionMatch },
         {
@@ -863,7 +863,7 @@ class ProfitHistoryRepository {
           },
         },
       ]),
-      // Distributor commission breakdown (ranking)
+      // Employee commission breakdown (ranking)
       ProfitHistory.aggregate([
         { $match: commissionMatch },
         {
@@ -897,13 +897,13 @@ class ProfitHistoryRepository {
         {
           $project: {
             id: { $toString: "$_id" },
-            name: { $ifNull: ["$userInfo.name", "Distribuidor"] },
+            name: { $ifNull: ["$userInfo.name", "Empleado"] },
             email: "$userInfo.email",
             sales: 1,
-            distributorProfit: "$total",
+            employeeProfit: "$total",
           },
         },
-        { $sort: { distributorProfit: -1 } },
+        { $sort: { employeeProfit: -1 } },
         { $limit: 10 },
       ]),
       Sale.aggregate([
@@ -966,7 +966,7 @@ class ProfitHistoryRepository {
       totalExpenses: 0,
       totalEntries: 0,
     };
-    const commissions = distributorCommissions[0] || { total: 0, count: 0 };
+    const commissions = employeeCommissions[0] || { total: 0, count: 0 };
     const typeBreakdown = byType.reduce((acc, item) => {
       acc[item._id] = { total: item.total, count: item.count };
       return acc;
@@ -977,7 +977,7 @@ class ProfitHistoryRepository {
     const adminNetFromSales = salesNetTotal + specialNetTotal;
     const totalAdminProfit = adminNetFromSales;
 
-    if (isScopedDistributorView || hideFinancialData) {
+    if (isScopedEmployeeView || hideFinancialData) {
       const scopedProfit =
         commissions.total || totals.netProfit || totals.grossProfit || 0;
 
@@ -987,11 +987,11 @@ class ProfitHistoryRepository {
         totalExpenses: 0,
         netProfit: scopedProfit,
         totalAdminProfit: 0,
-        totalDistributorProfit: scopedProfit,
+        totalEmployeeProfit: scopedProfit,
         totalEntries: recentEntries.length,
-        totalDistributorCommissions: commissions.total,
-        distributorCommissionEntries: commissions.count,
-        distributors: distributorBreakdown,
+        totalEmployeeCommissions: commissions.total,
+        employeeCommissionEntries: commissions.count,
+        employees: employeeBreakdown,
         byType: typeBreakdown,
         topUsers: byUser,
         recentEntries,
@@ -999,20 +999,20 @@ class ProfitHistoryRepository {
           startDate,
           endDate,
           limit,
-          distributorId: distributorObjectId
-            ? String(distributorObjectId)
+          employeeId: employeeObjectId
+            ? String(employeeObjectId)
             : undefined,
         },
       };
     }
 
-    const distributorsWithAdmin = [
-      ...distributorBreakdown,
+    const employeesWithAdmin = [
+      ...employeeBreakdown,
       {
         id: "admin",
         name: "Admin",
         adminProfit: totalAdminProfit,
-        distributorProfit: 0,
+        employeeProfit: 0,
         sales: 0,
       },
     ];
@@ -1023,11 +1023,11 @@ class ProfitHistoryRepository {
       totalExpenses: totals.totalExpenses,
       netProfit: totalAdminProfit,
       totalAdminProfit,
-      totalDistributorProfit: commissions.total,
+      totalEmployeeProfit: commissions.total,
       totalEntries: recentEntries.length,
-      totalDistributorCommissions: commissions.total,
-      distributorCommissionEntries: commissions.count,
-      distributors: distributorsWithAdmin,
+      totalEmployeeCommissions: commissions.total,
+      employeeCommissionEntries: commissions.count,
+      employees: employeesWithAdmin,
       byType: typeBreakdown,
       topUsers: byUser,
       recentEntries,

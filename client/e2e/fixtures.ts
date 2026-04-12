@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================
  * ESSENCE E2E TEST SUITE - ENVIRONMENT CHECK
  * ============================================
@@ -15,8 +15,8 @@ export const TEST_USERS = {
     email: "serguito2003@gmail.com", // Usuario god encontrado en la BD
     password: "123456",
   },
-  distributor: {
-    email: "diegocaycedo80@gmail.com", // Distribuidor encontrado en la BD
+  employee: {
+    email: "diegocaycedo80@gmail.com", // Empleado encontrado en la BD
     password: "test123",
   },
 };
@@ -32,7 +32,7 @@ let currentBusinessId: string | null = null;
  */
 export const test = base.extend<{
   loginAsAdmin: () => Promise<void>;
-  loginAsDistributor: () => Promise<void>;
+  loginAsEmployee: () => Promise<void>;
   logout: () => Promise<void>;
   getBusinessId: () => string | null;
 }>({
@@ -44,7 +44,7 @@ export const test = base.extend<{
       await emailInput.fill(TEST_USERS.admin.email);
       await passwordInput.fill(TEST_USERS.admin.password);
       await page
-        .getByRole("button", { name: /iniciar sesión|login|entrar/i })
+        .getByRole("button", { name: /iniciar sesiÃ³n|login|entrar/i })
         .click();
 
       // Wait for redirect to dashboard
@@ -58,17 +58,17 @@ export const test = base.extend<{
     await use(login);
   },
 
-  loginAsDistributor: async ({ page }, use) => {
+  loginAsEmployee: async ({ page }, use) => {
     const login = async () => {
       await page.goto("/login");
-      await page.getByLabel(/email/i).fill(TEST_USERS.distributor.email);
+      await page.getByLabel(/email/i).fill(TEST_USERS.employee.email);
       await page
-        .getByLabel(/contraseña|password/i)
-        .fill(TEST_USERS.distributor.password);
+        .getByLabel(/contraseÃ±a|password/i)
+        .fill(TEST_USERS.employee.password);
       await page
-        .getByRole("button", { name: /iniciar sesión|login|entrar/i })
+        .getByRole("button", { name: /iniciar sesiÃ³n|login|entrar/i })
         .click();
-      await expect(page).toHaveURL(/\/(distributor|dashboard)/, {
+      await expect(page).toHaveURL(/\/(employee|dashboard)/, {
         timeout: 15000,
       });
     };
@@ -123,13 +123,13 @@ export async function validateDevelopmentEnvironment(page: Page) {
 
   if (!response.ok()) {
     console.warn(
-      "⚠️ Backend health check failed - make sure server is running"
+      "âš ï¸ Backend health check failed - make sure server is running"
     );
   }
 
   // The test should only proceed if we can confirm dev environment
-  console.log(
-    "✅ Environment check passed - running against development database"
+  console.warn("[Essence Debug]", 
+    "âœ… Environment check passed - running against development database"
   );
 }
 
@@ -139,9 +139,10 @@ export async function validateDevelopmentEnvironment(page: Page) {
 export function generateTestData() {
   const timestamp = Date.now();
   return {
-    distributorName: `DistriTest_${timestamp}`,
-    distributorEmail: `distri_${timestamp}@test.com`,
+    employeeName: `DistriTest_${timestamp}`,
+    employeeEmail: `distri_${timestamp}@test.com`,
     productName: `TestProduct_${timestamp}`,
     customerName: `Customer_${timestamp}`,
   };
 }
+

@@ -13,7 +13,7 @@ export type DispatchHotSector = CoreDispatchHotSector;
 
 export const dispatchService = {
   async createRequest(data: {
-    distributorId: string;
+    employeeId: string;
     items: Array<{ productId: string; quantity: number }>;
     notes?: string;
   }): Promise<DispatchRequest> {
@@ -22,7 +22,7 @@ export const dispatchService = {
 
   async getRequests(params?: {
     status?: DispatchStatus;
-    distributorId?: string;
+    employeeId?: string;
     page?: number;
     limit?: number;
     startDate?: string;
@@ -68,7 +68,7 @@ export const dispatchService = {
     limit?: number;
   }): Promise<{
     canViewFinancialMargins: boolean;
-    distributors: DispatchHotSector[];
+    employees: DispatchHotSector[];
     branches: DispatchHotSector[];
   }> {
     return dispatchUseCases.getHotSectors(params);

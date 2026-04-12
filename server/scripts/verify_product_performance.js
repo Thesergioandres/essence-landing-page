@@ -56,7 +56,7 @@ const runVerification = async () => {
     const Business = (await import("../src/infrastructure/database/models/Business.js")).default;
     const Category = (await import("../src/infrastructure/database/models/Category.js")).default;
     const Product = (await import("../src/infrastructure/database/models/Product.js")).default;
-    const DistributorStock = (await import("../src/infrastructure/database/models/DistributorStock.js"))
+    const EmployeeStock = (await import("../src/infrastructure/database/models/EmployeeStock.js"))
       .default;
     const Sale = (await import("../src/infrastructure/database/models/Sale.js")).default;
     const GamificationConfig = (await import("../src/infrastructure/database/models/GamificationConfig.js"))
@@ -120,14 +120,14 @@ const runVerification = async () => {
       }
     };
 
-    // Inline implementation of getDistributorCatalogOptimized
-    const getDistributorCatalogOptimizedInline = async (req, res) => {
+    // Inline implementation of getEmployeeCatalogOptimized
+    const getEmployeeCatalogOptimizedInline = async (req, res) => {
       try {
         const businessId = req.businessId;
-        const distributorId = req.user.userId || req.user.id;
+        const employeeId = req.user.userId || req.user.id;
 
-        const distributorStocks = await DistributorStock.find({
-          distributor: distributorId,
+        const employeeStocks = await EmployeeStock.find({
+          employee: employeeId,
           business: businessId,
           quantity: { $gt: 0 },
         })
@@ -137,11 +137,11 @@ const runVerification = async () => {
           })
           .lean();
 
-        const products = distributorStocks
+        const products = employeeStocks
           .filter((stock) => stock.product)
           .map((stock) => ({
             ...stock.product,
-            distributorStock: stock.quantity,
+            employeeStock: stock.quantity,
           }));
 
         res.setHeader("Cache-Control", "no-store");
@@ -156,15 +156,15 @@ const runVerification = async () => {
     const business = await Business.findOne();
     if (!business) throw new Error("No business found");
 
-    const distributor = await User.findOne({
+    const employee = await User.findOne({
       business: business._id,
-      role: "distribuidor",
+      role: "empleado",
     });
-    if (!distributor)
-      throw new Error("No distributor found. Run seed_products.js first.");
+    if (!employee)
+      throw new Error("No employee found. Run seed_products.js first.");
 
     console.log(
-      `Testing with Business: ${business.name}, Distributor: ${distributor.name}`,
+      `Testing with Business: ${business.name}, Employee: ${employee.name}`,
     );
 
     // ==========================================
@@ -189,19 +189,19 @@ const runVerification = async () => {
     console.log("Result:", resInit2.data);
 
     // ==========================================
-    // TEST 2: Get Distributor Catalog (Inline Optimized)
+    // TEST 2: Get Employee Catalog (Inline Optimized)
     // ==========================================
-    console.log("\n🧪 TEST 2: Get Distributor Catalog (Inline Optimized)");
+    console.log("\n🧪 TEST 2: Get Employee Catalog (Inline Optimized)");
 
     const reqCat = createMockReq(business._id, {
-      id: distributor._id,
-      userId: distributor._id,
-      role: "distribuidor",
+      id: employee._id,
+      userId: employee._id,
+      role: "empleado",
     });
 
     const resCat2 = createMockRes();
     const timeCat2 = await measure("Optimized Catalog", async () => {
-      await getDistributorCatalogOptimizedInline(reqCat, resCat2);
+      await getEmployeeCatalogOptimizedInline(reqCat, resCat2);
     });
     console.log(`⏱️ Optimized Catalog Time: ${timeCat2}ms`);
     console.log(`Items returned: ${resCat2.data?.length || 0}`);

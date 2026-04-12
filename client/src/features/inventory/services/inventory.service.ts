@@ -9,7 +9,7 @@ import { invalidateProductCache } from "../../../hooks";
 import type {
   BranchStock,
   Category,
-  DistributorStock,
+  EmployeeStock,
   InventoryEntry,
   Product,
   ProductHistoryEntry,
@@ -155,24 +155,24 @@ export const productService = {
     return response.data;
   },
 
-  async getDistributorPrice(
+  async getEmployeePrice(
     productId: string,
-    distributorId: string
+    employeeId: string
   ): Promise<{
     productId: string;
-    distributorId: string;
+    employeeId: string;
     purchasePrice: number;
-    distributorPrice: number;
+    employeePrice: number;
     profitPercentage: number;
     rankingPosition: number;
   }> {
     const response = await api.get(
-      `/products/${productId}/distributor-price/${distributorId}`
+      `/products/${productId}/employee-price/${employeeId}`
     );
     return response.data;
   },
 
-  async getDistributorProducts(): Promise<{ data: Product[] }> {
+  async getEmployeeProducts(): Promise<{ data: Product[] }> {
     const response = await api.get("/products/my-catalog");
     return {
       data: Array.isArray(response.data)
@@ -202,7 +202,7 @@ export const productService = {
     return response.data;
   },
 
-  async createDistributorOrder(data: {
+  async createEmployeeOrder(data: {
     items: Array<{ id: string; quantity: number; isPromotion: boolean }>;
     paymentMethodId?: string;
     paymentProof?: string;
@@ -263,36 +263,36 @@ export const categoryService = {
 
 // ==================== STOCK SERVICE ====================
 export const stockService = {
-  async assignToDistributor(data: {
-    distributorId: string;
+  async assignToEmployee(data: {
+    employeeId: string;
     productId: string;
     quantity: number;
   }): Promise<{
     message: string;
-    distributorStock: DistributorStock;
+    employeeStock: EmployeeStock;
     warehouseStock: number;
   }> {
     const response = await api.post("/stock/assign", data);
     return response.data;
   },
 
-  async withdrawFromDistributor(data: {
-    distributorId: string;
+  async withdrawFromEmployee(data: {
+    employeeId: string;
     productId: string;
     quantity: number;
   }): Promise<{
     message: string;
-    distributorStock: DistributorStock;
+    employeeStock: EmployeeStock;
     warehouseStock: number;
   }> {
     const response = await api.post("/stock/withdraw", data);
     return response.data;
   },
 
-  async getDistributorStock(
-    distributorId: string
-  ): Promise<DistributorStock[]> {
-    const response = await api.get(`/stock/staff/${distributorId}`);
+  async getEmployeeStock(
+    employeeId: string
+  ): Promise<EmployeeStock[]> {
+    const response = await api.get(`/stock/staff/${employeeId}`);
 
     let data: any[] = [];
     if (Array.isArray(response.data)) {
@@ -314,30 +314,30 @@ export const stockService = {
         typeof item.product === "object" &&
         item.quantity !== undefined
       ) {
-        return item as DistributorStock;
+        return item as EmployeeStock;
       }
       if (
         item.name &&
-        (item.distributorStock !== undefined || item.totalStock !== undefined)
+        (item.employeeStock !== undefined || item.totalStock !== undefined)
       ) {
         return {
           _id: item._id || "generated-id",
-          distributor: distributorId,
+          employee: employeeId,
           product: item,
-          quantity: item.distributorStock ?? item.totalStock ?? 0,
+          quantity: item.employeeStock ?? item.totalStock ?? 0,
           inTransitQuantity: item.inTransitQuantity ?? 0,
           lowStockAlert: item.lowStockAlert || 5,
           isLowStock: item.isLowStock,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
-        } as DistributorStock;
+        } as EmployeeStock;
       }
-      return item as DistributorStock;
+      return item as EmployeeStock;
     });
   },
 
-  async getAllStock(): Promise<DistributorStock[]> {
-    const response = await api.get<DistributorStock[]>("/stock/all");
+  async getAllStock(): Promise<EmployeeStock[]> {
+    const response = await api.get<EmployeeStock[]>("/stock/all");
     return response.data;
   },
 
@@ -357,15 +357,15 @@ export const stockService = {
   },
 
   async transferStock(data: {
-    toDistributorId: string;
+    toEmployeeId: string;
     productId: string;
     quantity: number;
   }): Promise<{
     success: boolean;
     message: string;
     transfer: {
-      from: { distributorId: string; name: string; remainingStock: number };
-      to: { distributorId: string; name: string; newStock: number };
+      from: { employeeId: string; name: string; remainingStock: number };
+      to: { employeeId: string; name: string; newStock: number };
       product: { id: string; name: string };
       quantity: number;
     };
@@ -384,8 +384,8 @@ export const stockService = {
   },
 
   async getTransferHistory(params: {
-    fromDistributor?: string;
-    toDistributor?: string;
+    fromEmployee?: string;
+    toEmployee?: string;
     product?: string;
     startDate?: string;
     endDate?: string;
@@ -439,7 +439,7 @@ export const stockService = {
           name: string;
           image?: string;
           clientPrice?: number;
-          distributorPrice?: number;
+          employeePrice?: number;
         };
         quantity: number;
       }>;

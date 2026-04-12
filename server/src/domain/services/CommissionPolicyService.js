@@ -80,7 +80,7 @@ export class CommissionPolicyService {
     return { startDate, endDate };
   }
 
-  static resolveDistributorCommission({
+  static resolveEmployeeCommission({
     isCommissionFixed = false,
     customCommissionRate = null,
     baseCommissionRate = null,
@@ -101,7 +101,7 @@ export class CommissionPolicyService {
 
       return {
         baseCommissionPercentage: protectedFixedRate,
-        distributorCommissionBonus: 0,
+        employeeCommissionBonus: 0,
         isCommissionFixed: true,
       };
     }
@@ -121,7 +121,7 @@ export class CommissionPolicyService {
 
     return {
       baseCommissionPercentage: normalizedVariableRate,
-      distributorCommissionBonus: normalizedBonus,
+      employeeCommissionBonus: normalizedBonus,
       isCommissionFixed: false,
     };
   }

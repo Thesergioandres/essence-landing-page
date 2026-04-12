@@ -15,7 +15,7 @@ const featureFlagsSchema = new mongoose.Schema(
     assistant: { type: Boolean, default: false },
     reports: { type: Boolean, default: true },
     transfers: { type: Boolean, default: true },
-    distributors: { type: Boolean, default: true },
+    employees: { type: Boolean, default: true },
     rankings: { type: Boolean, default: true },
     branches: { type: Boolean, default: true },
     credits: { type: Boolean, default: true },
@@ -28,7 +28,7 @@ const featureFlagsSchema = new mongoose.Schema(
 const customLimitsSchema = new mongoose.Schema(
   {
     branches: { type: Number, min: 1 },
-    distributors: { type: Number, min: 1 },
+    employees: { type: Number, min: 1 },
   },
   { _id: false },
 );

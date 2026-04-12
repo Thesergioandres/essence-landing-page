@@ -14,7 +14,7 @@ async function checkSales() {
     await mongoose.connect(mongoUri);
 
     const sales = await Sale.find({})
-      .select("saleId distributor createdBy saleDate")
+      .select("saleId employee createdBy saleDate")
       .sort({ saleDate: -1 })
       .limit(10)
       .lean();
@@ -22,17 +22,17 @@ async function checkSales() {
     console.log("Recent Sales:");
     sales.forEach((s) =>
       console.log(
-        `  ${s.saleId} - distributor: ${s.distributor || "null"} - createdBy: ${s.createdBy || "null"}`,
+        `  ${s.saleId} - employee: ${s.employee || "null"} - createdBy: ${s.createdBy || "null"}`,
       ),
     );
 
     const totalSales = await Sale.countDocuments();
     const distSales = await Sale.countDocuments({
-      distributor: { $exists: true, $ne: null },
+      employee: { $exists: true, $ne: null },
     });
 
     console.log(
-      `\nTotal: ${totalSales} sales, ${distSales} with distributor field`,
+      `\nTotal: ${totalSales} sales, ${distSales} with employee field`,
     );
 
     await mongoose.disconnect();

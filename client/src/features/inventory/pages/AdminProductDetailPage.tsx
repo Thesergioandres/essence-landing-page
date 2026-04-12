@@ -10,7 +10,7 @@ import type { Product, ProductHistoryEntry } from "../types/product.types";
 
 type StockSummary = {
   warehouse: number;
-  distributors: number;
+  employees: number;
 };
 
 const formatCurrency = (value: number) =>
@@ -55,7 +55,7 @@ export default function AdminProductDetailPage() {
   const [history, setHistory] = useState<ProductHistoryEntry[]>([]);
   const [stockSummary, setStockSummary] = useState<StockSummary>({
     warehouse: 0,
-    distributors: 0,
+    employees: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -85,7 +85,7 @@ export default function AdminProductDetailPage() {
         setStockSummary({
           warehouse:
             inventoryMatch?.warehouse ?? productData.warehouseStock ?? 0,
-          distributors: inventoryMatch?.distributors ?? 0,
+          employees: inventoryMatch?.employees ?? 0,
         });
       } catch (err) {
         console.error("Error loading product detail:", err);
@@ -186,7 +186,7 @@ export default function AdminProductDetailPage() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">Precio B2B</span>
                   <span className="font-semibold text-white">
-                    {formatCurrency(Number(product.distributorPrice || 0))}
+                    {formatCurrency(Number(product.employeePrice || 0))}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
@@ -214,9 +214,9 @@ export default function AdminProductDetailPage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Distribuidores</span>
+                  <span className="text-gray-400">Empleados</span>
                   <span className="font-semibold text-white">
-                    {stockSummary.distributors} uds
+                    {stockSummary.employees} uds
                   </span>
                 </div>
               </div>

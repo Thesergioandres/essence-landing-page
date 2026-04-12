@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Upload Controller V2 - HTTP Layer
  * Handles file upload operations (Base64)
  */
@@ -10,34 +10,34 @@ class UploadController {
    */
   async uploadImage(req, res) {
     try {
-      console.log("📤 Upload request received");
-      console.log("📂 File object:", req.file ? "exists" : "missing");
-      console.log("👤 User:", req.user?.id);
+      console.warn("[Essence Debug]", "ðŸ“¤ Upload request received");
+      console.warn("[Essence Debug]", "ðŸ“‚ File object:", req.file ? "exists" : "missing");
+      console.warn("[Essence Debug]", "ðŸ‘¤ User:", req.user?.id);
 
       if (!req.file) {
-        console.log("❌ No file in request");
+        console.warn("[Essence Debug]", "âŒ No file in request");
         return res.status(400).json({
           success: false,
-          message: "No se proporcionó ninguna imagen",
+          message: "No se proporcionÃ³ ninguna imagen",
         });
       }
 
       // Verify image size (max 5MB for Base64)
       if (req.file.size > 5 * 1024 * 1024) {
-        console.log("❌ File too large:", req.file.size);
+        console.warn("[Essence Debug]", "âŒ File too large:", req.file.size);
         return res.status(400).json({
           success: false,
-          message: "La imagen es muy grande. Máximo 5MB.",
+          message: "La imagen es muy grande. MÃ¡ximo 5MB.",
         });
       }
 
       // Save as Base64 in MongoDB
-      console.log("💾 Guardando imagen en Base64 (MongoDB)");
+      console.warn("[Essence Debug]", "ðŸ’¾ Guardando imagen en Base64 (MongoDB)");
       const base64Image = `data:${
         req.file.mimetype
       };base64,${req.file.buffer.toString("base64")}`;
 
-      console.log("✅ Image processed successfully");
+      console.warn("[Essence Debug]", "âœ… Image processed successfully");
       res.json({
         success: true,
         data: {
@@ -46,7 +46,7 @@ class UploadController {
         },
       });
     } catch (error) {
-      console.error("❌ Error uploading image:", error);
+      console.error("âŒ Error uploading image:", error);
       console.error("Stack:", error.stack);
       res.status(500).json({
         success: false,
@@ -72,8 +72,8 @@ class UploadController {
       }
 
       // Base64 images are stored in MongoDB, nothing to delete externally
-      console.log(
-        "💾 Imagen Base64 - se elimina automáticamente con el producto",
+      console.warn("[Essence Debug]", 
+        "ðŸ’¾ Imagen Base64 - se elimina automÃ¡ticamente con el producto",
       );
 
       res.json({
@@ -91,3 +91,4 @@ class UploadController {
 }
 
 export default new UploadController();
+

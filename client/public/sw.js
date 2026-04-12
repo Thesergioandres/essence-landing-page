@@ -1,4 +1,4 @@
-/// <reference lib="webworker" />
+﻿/// <reference lib="webworker" />
 
 const CACHE_NAME = "essence-cache-v1";
 const STATIC_ASSETS = [
@@ -11,10 +11,10 @@ const STATIC_ASSETS = [
 
 // Install event - cache static assets
 self.addEventListener("install", event => {
-  console.log("[SW] Installing service worker...");
+  console.warn("[Essence Debug]", "[SW] Installing service worker...");
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log("[SW] Caching static assets");
+      console.warn("[Essence Debug]", "[SW] Caching static assets");
       return cache.addAll(STATIC_ASSETS);
     })
   );
@@ -23,14 +23,14 @@ self.addEventListener("install", event => {
 
 // Activate event - cleanup old caches
 self.addEventListener("activate", event => {
-  console.log("[SW] Activating service worker...");
+  console.warn("[Essence Debug]", "[SW] Activating service worker...");
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames
           .filter(name => name !== CACHE_NAME)
           .map(name => {
-            console.log("[SW] Deleting old cache:", name);
+            console.warn("[Essence Debug]", "[SW] Deleting old cache:", name);
             return caches.delete(name);
           })
       );
@@ -77,11 +77,11 @@ self.addEventListener("fetch", event => {
 
 // Push notification event
 self.addEventListener("push", event => {
-  console.log("[SW] Push notification received");
+  console.warn("[Essence Debug]", "[SW] Push notification received");
 
   let data = {
     title: "Essence",
-    body: "Nueva notificación",
+    body: "Nueva notificaciÃ³n",
     icon: "/icons/icon-192x192.png",
     badge: "/icons/icon-72x72.png",
     tag: "default",
@@ -115,7 +115,7 @@ self.addEventListener("push", event => {
 
 // Notification click event
 self.addEventListener("notificationclick", event => {
-  console.log("[SW] Notification clicked:", event.action);
+  console.warn("[Essence Debug]", "[SW] Notification clicked:", event.action);
 
   event.notification.close();
 
@@ -141,7 +141,7 @@ self.addEventListener("notificationclick", event => {
 
 // Background sync event
 self.addEventListener("sync", event => {
-  console.log("[SW] Background sync:", event.tag);
+  console.warn("[Essence Debug]", "[SW] Background sync:", event.tag);
 
   if (event.tag === "sync-sales") {
     event.waitUntil(syncPendingSales());
@@ -169,7 +169,7 @@ async function syncPendingSales() {
 
       await cache.delete(request);
     }
-    console.log("[SW] Pending sales synced");
+    console.warn("[Essence Debug]", "[SW] Pending sales synced");
   } catch (error) {
     console.error("[SW] Failed to sync sales:", error);
   }
@@ -193,8 +193,9 @@ async function syncPendingStock() {
 
       await cache.delete(request);
     }
-    console.log("[SW] Pending stock synced");
+    console.warn("[Essence Debug]", "[SW] Pending stock synced");
   } catch (error) {
     console.error("[SW] Failed to sync stock:", error);
   }
 }
+

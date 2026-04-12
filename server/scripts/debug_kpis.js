@@ -46,7 +46,7 @@ const debugKPIs = async () => {
         purchasePrice: 1,
         averageCostAtSale: 1,
         shippingCost: 1,
-        distributorProfit: 1,
+        employeeProfit: 1,
         discount: 1,
         totalAdditionalCosts: 1,
 
@@ -78,7 +78,7 @@ const debugKPIs = async () => {
                     else: { $ifNull: ["$shippingCost", 0] },
                   },
                 },
-                { $ifNull: ["$distributorProfit", 0] },
+                { $ifNull: ["$employeeProfit", 0] },
                 { $ifNull: ["$discount", 0] },
                 { $ifNull: ["$totalAdditionalCosts", 0] },
               ],

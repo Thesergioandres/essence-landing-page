@@ -1,6 +1,6 @@
 # Essence ERP
 
-ERP modular para operar múltiples negocios con inventario, catálogos, comisiones, garantías y analítica en un solo panel.
+ERP modular Multi-Tenant para operar múltiples negocios con inventario, catálogos, comisiones, garantías y analítica en un solo panel.
 
 Este documento consolida la guía técnica para desarrollo y despliegue, junto con el manual de procesos clave del negocio.
 
@@ -11,7 +11,7 @@ Este documento consolida la guía técnica para desarrollo y despliegue, junto c
 - [3. Estructura del repositorio](#3-estructura-del-repositorio)
 - [4. Scripts de utilidad](#4-scripts-de-utilidad)
 - [5. Manual de procesos de negocio](#5-manual-de-procesos-de-negocio)
-- [6. Guía de usuario por rol](#6-guía-de-usuario-por-rol)
+- [6. Guía de usuario por perfil Multi-Tenant](#6-guía-de-usuario-por-perfil-multi-tenant)
 - [7. Setup local](#7-setup-local)
 - [8. Despliegue en Railway](#8-despliegue-en-railway)
 - [9. Operación y troubleshooting](#9-operación-y-troubleshooting)
@@ -33,7 +33,7 @@ Este documento consolida la guía técnica para desarrollo y despliegue, junto c
 ### Backend
 
 - Node.js + Express
-- Arquitectura híbrida: Hexagonal V2 + módulos legacy controlados
+- Arquitectura Hexagonal estricta (Thin Controllers + Use Cases)
 - Mongoose sobre MongoDB
 - JWT para autenticación y autorización
 
@@ -47,6 +47,18 @@ Este documento consolida la guía técnica para desarrollo y despliegue, junto c
 - Frontend orientado a `feature modules` (`client/src/features/...`).
 - Backend organizado por capas (`application`, `domain`, `infrastructure`) y repositorios por agregado.
 - Seguridad por middleware de autenticación, contexto de negocio (`x-business-id`) y permisos por módulo/acción.
+
+### Modelo Multi-Tenant y perfiles operativos
+
+- El Tenant es el negocio (`businessId`) y cada request autenticada opera dentro de ese contexto.
+- El lenguaje funcional del producto se unifica en perfiles Multi-Tenant: empleados, staff, barberos y vendedores.
+- Los perfiles operativos consumen el mismo núcleo transaccional, con permisos diferenciados por membresía y rol.
+- El header `x-business-id` y la membresía activa determinan el alcance permitido de lectura/escritura.
+
+### Características críticas de seguridad y consistencia
+
+- **Transacciones ACID de MongoDB:** ventas, pagos, anulaciones, traslados y movimientos críticos de stock se ejecutan dentro de una transacción (`session.startTransaction()`) para garantizar atomicidad y rollback.
+- **Escudo Anti-IDOR (Aislamiento por Negocio):** toda lectura/escritura sensible se filtra por `businessId` para evitar cruce de datos entre negocios; el rol GOD mantiene bypass controlado según política de seguridad.
 
 ---
 
@@ -148,7 +160,7 @@ El flujo de garantías de cliente se soporta sobre el módulo de defectuosos y r
 
 1. Buscar venta (`saleId`/`saleGroupId`) con lookup de garantía.
 2. Seleccionar ítem vendido, cantidad defectuosa y producto de reemplazo.
-3. Elegir origen de reemplazo (`warehouse`, `branch`, `distributor`).
+3. Elegir origen de reemplazo (`warehouse`, `branch`, `employee`).
 4. El sistema descuenta stock del origen seleccionado.
 5. Se crea reporte de defectuoso tipo `customer_warranty`.
 6. Si aplica, se genera venta complementaria por diferencia de precio (upsell).
@@ -177,7 +189,7 @@ El flujo de garantías de cliente se soporta sobre el módulo de defectuosos y r
 
 - **Warehouse:** descuenta `warehouseStock` y `totalStock`.
 - **Branch:** descuenta `BranchStock` y actualiza `totalStock` global.
-- **Distributor:** descuenta `DistributorStock` del distribuidor autenticado y actualiza `totalStock`.
+- **Employee:** descuenta `EmployeeStock` del empleado autenticado y actualiza `totalStock`.
 
 ### Tribunal de Defectuosos (Admin)
 
@@ -192,13 +204,13 @@ Panel operativo para administración de reportes defectuosos/garantías:
 
 ## 5.2 Módulo de Impersonation (Soporte Admin)
 
-Permite a `admin/super_admin` suplantar a un distribuidor para soporte operativo sin pedir credenciales al distribuidor.
+Permite a `admin/super_admin` suplantar a un empleado para soporte operativo sin pedir credenciales al empleado.
 
 ### Flujo seguro
 
-1. Admin autenticado inicia suplantación (`/auth/impersonate/:distributorId`).
+1. Admin autenticado inicia suplantación (`/auth/impersonate/:employeeId`).
 2. Frontend guarda token original en `localStorage` bajo `admin_original_token`.
-3. Se aplica sesión del distribuidor (nuevo JWT + perfil).
+3. Se aplica sesión del empleado (nuevo JWT + perfil).
 4. Banner visual fijo indica “MODO SOPORTE”.
 5. Al revertir, se usa `admin_original_token` para restaurar sesión admin (`/auth/impersonate/revert`).
 
@@ -220,15 +232,15 @@ Jerarquía operativa de stock:
    - `BranchStock` por `branch + product`
    - Útil para operación descentralizada y reposición local.
 
-3. **Distribuidores**
-   - `DistributorStock` por `distributor + product`
-   - Base para ventas del distribuidor y garantías en modo distribuidor.
+3. **Empleados**
+   - `EmployeeStock` por `employee + product`
+   - Base para ventas del empleado y garantías en modo empleado.
 
 Regla de oro: cada operación debe registrar y devolver stock al origen correcto para preservar simetría de inventario.
 
 ---
 
-## 6. Guía de usuario por rol
+## 6. Guía de usuario por perfil Multi-Tenant
 
 ## 6.1 Admin
 
@@ -238,7 +250,7 @@ Capacidades principales:
 - Gestión multi-negocio (contexto por membresía/empresa).
 - Control de inventario global (bodega, sedes, transferencias, productos).
 - Tribunal de defectuosos y auditoría de garantías.
-- Soporte por impersonation sobre distribuidores.
+- Soporte por impersonation sobre empleados.
 
 Flujos sugeridos diarios:
 
@@ -247,7 +259,7 @@ Flujos sugeridos diarios:
 3. Validar reportes defectuosos pendientes.
 4. Confirmar ventas críticas y conciliaciones.
 
-## 6.2 Distribuidor
+## 6.2 Empleado / Staff / Barbero / Vendedor
 
 Capacidades principales:
 
@@ -255,6 +267,7 @@ Capacidades principales:
 - Consulta de stock asignado.
 - Solicitud de garantías para ventas propias.
 - Visualización de comisiones, utilidad y desempeño.
+- Operación diaria en contexto de su negocio activo (tenant seleccionado).
 
 Restricciones clave:
 

@@ -26,10 +26,10 @@ export interface Product {
   description?: string;
   purchasePrice: number;
   suggestedPrice?: number;
-  distributorPrice: number;
-  distributorPriceManual?: boolean;
+  employeePrice: number;
+  employeePriceManual?: boolean;
   clientPrice?: number;
-  distributorCommission?: number;
+  employeeCommission?: number;
   category?: Category | string;
   image?: ProductImage;
   featured?: boolean;
@@ -47,9 +47,9 @@ export interface Product {
 }
 
 // ==================== STOCK TYPES ====================
-export interface DistributorStock {
+export interface EmployeeStock {
   _id: string;
-  distributor: unknown | string;
+  employee: unknown | string;
   product: Product | string;
   quantity: number;
   inTransitQuantity?: number;
@@ -74,7 +74,7 @@ export interface BranchStock {
 
 export interface StockAlert {
   warehouseAlerts: Product[];
-  distributorAlerts: DistributorStock[];
+  employeeAlerts: EmployeeStock[];
 }
 
 // Re-export Branch from business types for convenience
@@ -83,7 +83,7 @@ export type { Branch } from "../../business/types/business.types";
 // ==================== DEFECTIVE PRODUCT TYPES ====================
 export interface DefectiveProduct {
   _id: string;
-  distributor?: { _id: string; name: string; email?: string } | string | null;
+  employee?: { _id: string; name: string; email?: string } | string | null;
   branch?: { _id: string; name: string } | string | null;
   product: { _id: string; name: string; image?: ProductImage } | string | null;
   quantity: number;
@@ -118,9 +118,9 @@ export interface DefectiveProduct {
   replacementTotal?: number;
   priceDifference?: number;
   cashRefund?: number;
-  replacementStockOrigin?: "warehouse" | "branch" | "distributor";
+  replacementStockOrigin?: "warehouse" | "branch" | "employee";
   replacementBranch?: { _id: string; name: string } | string | null;
-  replacementDistributor?: { _id: string; name: string } | string | null;
+  replacementEmployee?: { _id: string; name: string } | string | null;
   upsellSale?:
     | { _id: string; saleId?: string; salePrice?: number; quantity?: number }
     | string
@@ -149,7 +149,7 @@ export interface ProductFormData {
   description?: string;
   purchasePrice: number;
   clientPrice: number;
-  distributorPrice: number;
+  employeePrice: number;
   suggestedPrice?: number;
   categoryId: string;
   image?: File | null;
@@ -165,10 +165,10 @@ export interface ProductPayload {
   description: string;
   purchasePrice: number;
   suggestedPrice?: number;
-  distributorPrice: number;
-  distributorPriceManual?: boolean;
+  employeePrice: number;
+  employeePriceManual?: boolean;
   clientPrice?: number;
-  distributorCommission?: number;
+  employeeCommission?: number;
   category: string;
   totalStock: number;
   warehouseStock?: number;

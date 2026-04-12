@@ -23,7 +23,7 @@ function toAdProduct(p: Product): AdProduct {
   return {
     _id: p._id,
     name: p.name,
-    price: p.clientPrice ?? p.suggestedPrice ?? p.distributorPrice,
+    price: p.clientPrice ?? p.suggestedPrice ?? p.employeePrice,
     originalPrice: p.suggestedPrice ?? undefined,
     image: p.image?.url,
     category:
@@ -56,7 +56,7 @@ function hashText(value: string): number {
 
 function getMarginScore(product: Product): number {
   const salePrice =
-    product.clientPrice ?? product.suggestedPrice ?? product.distributorPrice;
+    product.clientPrice ?? product.suggestedPrice ?? product.employeePrice;
   if (!salePrice || !product.purchasePrice) return 0;
   const margin = salePrice - product.purchasePrice;
   if (margin <= 0) return 0;
@@ -137,7 +137,7 @@ export default function AdvertisingPage() {
       const productPrice =
         product.clientPrice ??
         product.suggestedPrice ??
-        product.distributorPrice;
+        product.employeePrice;
       return typeof productPrice === "number" && productPrice > 0;
     });
 

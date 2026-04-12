@@ -101,18 +101,18 @@ class GlobalSettingsController {
 
       if (customLimits !== undefined) {
         const branches = Number(customLimits?.branches);
-        const distributors = Number(customLimits?.distributors);
+        const employees = Number(customLimits?.employees);
 
         business.customLimits = {
           ...(Number.isFinite(branches) && branches > 0 ? { branches } : {}),
-          ...(Number.isFinite(distributors) && distributors > 0
-            ? { distributors }
+          ...(Number.isFinite(employees) && employees > 0
+            ? { employees }
             : {}),
         };
 
         if (
           !business.customLimits?.branches &&
-          !business.customLimits?.distributors
+          !business.customLimits?.employees
         ) {
           business.customLimits = undefined;
         }
@@ -188,10 +188,10 @@ class GlobalSettingsController {
                 Number(planInput.limits.branches) || 1,
               );
             }
-            if (planInput.limits.distributors !== undefined) {
-              targetPlan.limits.distributors = Math.max(
+            if (planInput.limits.employees !== undefined) {
+              targetPlan.limits.employees = Math.max(
                 1,
-                Number(planInput.limits.distributors) || 1,
+                Number(planInput.limits.employees) || 1,
               );
             }
           }

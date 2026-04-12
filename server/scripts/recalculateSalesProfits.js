@@ -58,16 +58,16 @@ const projection = {
   saleId: 1,
   saleDate: 1,
   isPromotion: 1,
-  distributor: 1,
+  employee: 1,
   quantity: 1,
   salePrice: 1,
   purchasePrice: 1,
   averageCostAtSale: 1,
-  distributorPrice: 1,
-  distributorProfitPercentage: 1,
+  employeePrice: 1,
+  employeeProfitPercentage: 1,
   commissionBonus: 1,
   commissionBonusAmount: 1,
-  distributorProfit: 1,
+  employeeProfit: 1,
   adminProfit: 1,
   totalProfit: 1,
   totalGroupProfit: 1,
@@ -124,31 +124,31 @@ const buildSaleUpdates = (sale) => {
 
   const discount = Math.max(0, toNumber(sale.discount, 0));
   const shippingCost = Math.max(0, toNumber(sale.shippingCost, 0));
-  const isDistributorSale = Boolean(sale.distributor);
+  const isEmployeeSale = Boolean(sale.employee);
 
-  const rawPct = toNumber(sale.distributorProfitPercentage, 20);
-  const cappedPct = isDistributorSale ? clamp(rawPct, 0, 95) : 0;
+  const rawPct = toNumber(sale.employeeProfitPercentage, 20);
+  const cappedPct = isEmployeeSale ? clamp(rawPct, 0, 95) : 0;
 
-  let distributorPrice = toNumber(sale.distributorPrice, salePrice);
+  let employeePrice = toNumber(sale.employeePrice, salePrice);
 
-  if (isDistributorSale) {
+  if (isEmployeeSale) {
     if (sale.isPromotion) {
-      if (distributorPrice <= 0) {
-        distributorPrice = salePrice * ((100 - cappedPct) / 100);
+      if (employeePrice <= 0) {
+        employeePrice = salePrice * ((100 - cappedPct) / 100);
       }
     } else {
-      distributorPrice = salePrice * ((100 - cappedPct) / 100);
+      employeePrice = salePrice * ((100 - cappedPct) / 100);
     }
   } else {
-    distributorPrice = salePrice;
+    employeePrice = salePrice;
   }
 
-  const distributorProfit = isDistributorSale
-    ? (salePrice - distributorPrice) * quantity
+  const employeeProfit = isEmployeeSale
+    ? (salePrice - employeePrice) * quantity
     : 0;
 
-  const adminProfit = saleAmount - costBasis * quantity - distributorProfit;
-  const totalProfit = adminProfit + distributorProfit;
+  const adminProfit = saleAmount - costBasis * quantity - employeeProfit;
+  const totalProfit = adminProfit + employeeProfit;
   const netProfit =
     adminProfit - totalAdditionalCosts - shippingCost - discount;
 
@@ -156,18 +156,18 @@ const buildSaleUpdates = (sale) => {
     saleAmount > 0 ? (netProfit / saleAmount) * 100 : 0;
   const costPercentage = salePrice > 0 ? (costBasis / salePrice) * 100 : 0;
 
-  const commissionBonus = isDistributorSale
+  const commissionBonus = isEmployeeSale
     ? clamp(toNumber(sale.commissionBonus, 0), 0, cappedPct)
     : 0;
 
-  const commissionBonusAmount = isDistributorSale
+  const commissionBonusAmount = isEmployeeSale
     ? (saleAmount * commissionBonus) / 100
     : 0;
 
   const updates = {
-    distributorProfitPercentage: round2(cappedPct),
-    distributorPrice: round2(distributorPrice),
-    distributorProfit: round2(distributorProfit),
+    employeeProfitPercentage: round2(cappedPct),
+    employeePrice: round2(employeePrice),
+    employeeProfit: round2(employeeProfit),
     adminProfit: round2(adminProfit),
     totalProfit: round2(totalProfit),
     totalGroupProfit: round2(totalProfit),
@@ -181,13 +181,13 @@ const buildSaleUpdates = (sale) => {
 
   const hasSaleChanges =
     isDifferent(
-      toNumber(sale.distributorProfitPercentage, 0),
-      updates.distributorProfitPercentage,
+      toNumber(sale.employeeProfitPercentage, 0),
+      updates.employeeProfitPercentage,
     ) ||
-    isDifferent(toNumber(sale.distributorPrice, 0), updates.distributorPrice) ||
+    isDifferent(toNumber(sale.employeePrice, 0), updates.employeePrice) ||
     isDifferent(
-      toNumber(sale.distributorProfit, 0),
-      updates.distributorProfit,
+      toNumber(sale.employeeProfit, 0),
+      updates.employeeProfit,
     ) ||
     isDifferent(toNumber(sale.adminProfit, 0), updates.adminProfit) ||
     isDifferent(toNumber(sale.totalProfit, 0), updates.totalProfit) ||
@@ -211,11 +211,11 @@ const buildSaleUpdates = (sale) => {
   return {
     hasSaleChanges,
     updates,
-    isDistributorSale,
+    isEmployeeSale,
     cappedPct,
     salePrice,
     quantity,
-    distributorProfit,
+    employeeProfit,
     adminProfit,
   };
 };
@@ -229,11 +229,11 @@ const processBatch = async ({ sales, apply, adminByBusiness, counters }) => {
     const {
       hasSaleChanges,
       updates,
-      isDistributorSale,
+      isEmployeeSale,
       cappedPct,
       salePrice,
       quantity,
-      distributorProfit,
+      employeeProfit,
       adminProfit,
     } = buildSaleUpdates(sale);
 
@@ -250,17 +250,17 @@ const processBatch = async ({ sales, apply, adminByBusiness, counters }) => {
     if (sale.paymentStatus === "confirmado") {
       const adminUserId = adminByBusiness.get(String(sale.business));
 
-      if (isDistributorSale && sale.distributor) {
+      if (isEmployeeSale && sale.employee) {
         profitOps.push({
           updateMany: {
             filter: {
               sale: sale._id,
-              user: sale.distributor,
+              user: sale.employee,
               type: "venta_normal",
             },
             update: {
               $set: {
-                amount: round2(distributorProfit),
+                amount: round2(employeeProfit),
                 "metadata.commission": round2(cappedPct),
                 "metadata.salePrice": round2(salePrice),
                 "metadata.quantity": quantity,

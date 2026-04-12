@@ -1,4 +1,4 @@
-import Redis from "ioredis";
+﻿import Redis from "ioredis";
 
 let redisClient = null;
 
@@ -6,22 +6,22 @@ const initRedis = () => {
   try {
     const redisEnabled = process.env.ENABLE_REDIS_CACHE === "true";
 
-    // Si está deshabilitado explícitamente o no hay URL, no iniciar
+    // Si estÃ¡ deshabilitado explÃ­citamente o no hay URL, no iniciar
     if (!redisEnabled || !process.env.REDIS_URL) {
-      console.log("ℹ️  Redis cache deshabilitado en este entorno");
+      console.warn("[Essence Debug]", "â„¹ï¸  Redis cache deshabilitado en este entorno");
       return null;
     }
 
     const redisUrl = process.env.REDIS_URL;
 
-    // Configuración base de Redis
+    // ConfiguraciÃ³n base de Redis
     const redisOptions = {
       maxRetriesPerRequest: 3,
       enableReadyCheck: true,
       connectTimeout: 10000,
     };
 
-    // Agregar opciones TLS automáticas si es un endpoint seguro (muy común en Railway y Upstash)
+    // Agregar opciones TLS automÃ¡ticas si es un endpoint seguro (muy comÃºn en Railway y Upstash)
     if (redisUrl.startsWith("rediss://")) {
       redisOptions.tls = {
         rejectUnauthorized: false, // Permite certificados auto-firmados comunes en infraestructuras nativas de cloud
@@ -31,16 +31,16 @@ const initRedis = () => {
     redisClient = new Redis(redisUrl, redisOptions);
 
     redisClient.on("connect", () => {
-      console.log("✅ Redis conectado exitosamente");
+      console.warn("[Essence Debug]", "âœ… Redis conectado exitosamente");
     });
 
     redisClient.on("error", (err) => {
-      console.error("❌ Redis error:", err.message);
+      console.error("âŒ Redis error:", err.message);
     });
 
     return redisClient;
   } catch (error) {
-    console.error("❌ Error inicializando Redis:", error.message);
+    console.error("âŒ Error inicializando Redis:", error.message);
     return null;
   }
 };
@@ -53,3 +53,4 @@ const getRedisClient = () => {
 };
 
 export { getRedisClient, initRedis };
+

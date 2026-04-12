@@ -23,12 +23,12 @@ export class FinanceService {
     return fallback;
   }
   /**
-   * Calculates the price meant for the distributor (what they pay to admin).
+   * Calculates the price meant for the employee (what they pay to admin).
    * @param {number} salePrice - The final public price
-   * @param {number} profitPercentage - The distributor's commission % (e.g. 20)
-   * @returns {number} The price the distributor pays
+   * @param {number} profitPercentage - The employee's commission % (e.g. 20)
+   * @returns {number} The price the employee pays
    */
-  static calculateDistributorPrice(salePrice, profitPercentage) {
+  static calculateEmployeePrice(salePrice, profitPercentage) {
     if (salePrice < 0) throw new Error("Sale price cannot be negative");
     const normalizedPercentage =
       typeof profitPercentage === "number" && Number.isFinite(profitPercentage)
@@ -40,39 +40,39 @@ export class FinanceService {
   }
 
   /**
-   * Calculates the distributor's gross profit.
+   * Calculates the employee's gross profit.
    * @param {number} salePrice
-   * @param {number} distributorPrice
+   * @param {number} employeePrice
    * @param {number} quantity
    * @returns {number}
    */
-  static calculateDistributorProfit(salePrice, distributorPrice, quantity) {
-    return (salePrice - distributorPrice) * quantity;
+  static calculateEmployeeProfit(salePrice, employeePrice, quantity) {
+    return (salePrice - employeePrice) * quantity;
   }
 
   /**
    * Calculates the Admin's gross profit.
    * @param {number} salePrice
    * @param {number} costBasis - The average cost or purchase price
-   * @param {number} distributorProfit - The amount given to distributor
+   * @param {number} employeeProfit - The amount given to employee
    * @param {number} quantity
    * @returns {number}
    */
   static calculateAdminProfit(
     salePrice,
     costBasis,
-    distributorProfit,
+    employeeProfit,
     quantity,
   ) {
     const totalRevenue = salePrice * quantity;
     const totalCost = costBasis * quantity;
-    // Revenue - Cost - DistributorShare
-    return totalRevenue - totalCost - distributorProfit;
+    // Revenue - Cost - EmployeeShare
+    return totalRevenue - totalCost - employeeProfit;
   }
 
   /**
    * Calculates Net Profit after all deductions.
-   * @param {number} totalProfit - (AdminProfit + DistributorProfit) or just AdminProfit
+   * @param {number} totalProfit - (AdminProfit + EmployeeProfit) or just AdminProfit
    * @param {number} shippingCost
    * @param {number} additionalCosts
    * @param {number} discount

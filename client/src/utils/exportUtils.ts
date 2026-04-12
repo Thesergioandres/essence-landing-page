@@ -404,7 +404,7 @@ export const exportKPIsToPDF = async (kpis: any) => {
         `$${(kpis.monthNetProfit ?? kpis.monthProfit).toFixed(2)}`,
       ],
       ["Ticket Promedio", `$${kpis.averageTicket.toFixed(2)}`],
-      ["Distribuidores Activos", kpis.totalActiveDistributors.toString()],
+      ["Empleados Activos", kpis.totalActiveEmployees.toString()],
     ],
     theme: "grid",
     headStyles: { fillColor: [139, 92, 246] },
@@ -426,10 +426,10 @@ export const exportRankingsToPDF = async (rankings: any[]) => {
 
   await exportToPDF(
     rankings,
-    "Ranking de Distribuidores",
+    "Ranking de Empleados",
     [
       "Pos",
-      "Distribuidor",
+      "Empleado",
       "Ventas",
       "Ingresos",
       "Ganancia",
@@ -443,7 +443,7 @@ export const exportRankingsToPDF = async (rankings: any[]) => {
 export const exportRankingsToExcel = async (rankings: any[]) => {
   const data = rankings.map(dist => ({
     Posición: dist.rank,
-    Distribuidor: dist.name,
+    Empleado: dist.name,
     Email: dist.email,
     "Total Ventas": dist.totalSales,
     Ingresos: dist.revenue,
@@ -452,5 +452,5 @@ export const exportRankingsToExcel = async (rankings: any[]) => {
     "Ticket Promedio": dist.averageOrderValue,
   }));
 
-  await exportToExcel(data, "Ranking_Distribuidores");
+  await exportToExcel(data, "Ranking_Empleados");
 };

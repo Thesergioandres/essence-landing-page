@@ -449,7 +449,7 @@ export const authService = {
     return Boolean(localStorage.getItem(ADMIN_ORIGINAL_TOKEN_KEY));
   },
 
-  async impersonate(distributorId: string): Promise<void> {
+  async impersonate(employeeId: string): Promise<void> {
     invalidateAuthSessionState();
 
     const currentToken = localStorage.getItem("token");
@@ -466,11 +466,11 @@ export const authService = {
       success: boolean;
       token: string;
       user: User;
-    }>(`/auth/impersonate/${distributorId}`);
+    }>(`/auth/impersonate/${employeeId}`);
 
     const payload = (response.data as any)?.data ?? response.data;
     if (!payload?.token || !payload?.user) {
-      throw new Error("Respuesta inválida al suplantar distribuidor");
+      throw new Error("Respuesta inválida al suplantar empleado");
     }
 
     applySession({ token: payload.token, user: payload.user });

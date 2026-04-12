@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+﻿import { v4 as uuidv4 } from "uuid";
 import { CommissionPolicyService } from "../../../domain/services/CommissionPolicyService.js";
 import { FinanceService } from "../../../domain/services/FinanceService.js";
 import { InventoryService } from "../../../domain/services/InventoryService.js";
@@ -6,14 +6,14 @@ import SaleWriteRepositoryAdapter from "../../../infrastructure/adapters/reposit
 import Branch from "../../../infrastructure/database/models/Branch.js";
 import BranchStock from "../../../infrastructure/database/models/BranchStock.js";
 import DefectiveProduct from "../../../infrastructure/database/models/DefectiveProduct.js";
-import DistributorStock from "../../../infrastructure/database/models/DistributorStock.js";
+import EmployeeStock from "../../../infrastructure/database/models/EmployeeStock.js";
 import GamificationConfig from "../../../infrastructure/database/models/GamificationConfig.js";
 import InventoryMovement from "../../../infrastructure/database/models/InventoryMovement.js";
 import Membership from "../../../infrastructure/database/models/Membership.js";
 import PaymentMethod from "../../../infrastructure/database/models/PaymentMethod.js";
 import Promotion from "../../../infrastructure/database/models/Promotion.js";
 import Sale from "../../../infrastructure/database/models/Sale.js";
-import { getDistributorCommissionInfo } from "../../../infrastructure/services/distributorPricing.service.js";
+import { getEmployeeCommissionInfo } from "../../../infrastructure/services/employeePricing.service.js";
 import { applySaleGamification } from "../../../infrastructure/services/gamification.service.js";
 import {
   buildPromotionSalesSummary,
@@ -33,14 +33,14 @@ export class RegisterPromotionSaleUseCase {
   /**
    * Orchestrates the BULK sale registration process.
    *
-   * ⚠️ INVENTORY SYMMETRY NOTE:
+   * âš ï¸ INVENTORY SYMMETRY NOTE:
    * This V2 implementation deducts stock from Product.totalStock (global warehouse).
-   * If you need to support sales from Branches or Distributor Stock, you must:
+   * If you need to support sales from Branches or Employee Stock, you must:
    * 1. Add branchId parameter to identify source
-   * 2. Call BranchStock.findOneAndUpdate() or DistributorStock.findOneAndUpdate()
+   * 2. Call BranchStock.findOneAndUpdate() or EmployeeStock.findOneAndUpdate()
    * 3. Ensure DeleteSaleController mirrors this logic when restoring stock
    *
-   * Currently, DeleteSaleController checks sale.branch/sale.distributor fields,
+   * Currently, DeleteSaleController checks sale.branch/sale.employee fields,
    * but this UseCase does NOT set those fields from actual stock sources.
    *
    * @param {Object} input - DTO containing sale details
@@ -53,7 +53,7 @@ export class RegisterPromotionSaleUseCase {
       user,
       items, // Expecting Array
       businessId,
-      distributorId,
+      employeeId,
       branchId,
       notes,
       paymentMethodId,
@@ -69,7 +69,7 @@ export class RegisterPromotionSaleUseCase {
       discount = 0,
       additionalCosts = [],
       warranties = [],
-      distributorProfitPercentage = 20,
+      employeeProfitPercentage = 20,
     } = input;
 
     const resolveSaleDate = (rawDate) => {
@@ -172,20 +172,20 @@ export class RegisterPromotionSaleUseCase {
     // 2. PHASE 1: Validate ALL items BEFORE making any changes
     const validatedItems = [];
 
-    let commissionPolicy = CommissionPolicyService.resolveDistributorCommission(
+    let commissionPolicy = CommissionPolicyService.resolveEmployeeCommission(
       {
-        requestedCommissionRate: distributorProfitPercentage,
+        requestedCommissionRate: employeeProfitPercentage,
       },
     );
 
-    if (distributorId) {
-      const commissionInfo = await getDistributorCommissionInfo(
-        distributorId,
+    if (employeeId) {
+      const commissionInfo = await getEmployeeCommissionInfo(
+        employeeId,
         businessId,
       );
 
       if (commissionInfo?.isCommissionFixed) {
-        commissionPolicy = CommissionPolicyService.resolveDistributorCommission(
+        commissionPolicy = CommissionPolicyService.resolveEmployeeCommission(
           {
             isCommissionFixed: true,
             customCommissionRate:
@@ -195,12 +195,12 @@ export class RegisterPromotionSaleUseCase {
         );
       } else {
         const config = await GamificationConfig.findOne().lean();
-        commissionPolicy = CommissionPolicyService.resolveDistributorCommission(
+        commissionPolicy = CommissionPolicyService.resolveEmployeeCommission(
           {
-            requestedCommissionRate: distributorProfitPercentage,
+            requestedCommissionRate: employeeProfitPercentage,
             baseCommissionRate: FinanceService.resolveBaseCommissionPercentage(
               config,
-              distributorProfitPercentage,
+              employeeProfitPercentage,
             ),
             bonusCommission: commissionInfo?.bonusCommission || 0,
           },
@@ -208,7 +208,7 @@ export class RegisterPromotionSaleUseCase {
       }
     }
 
-    const { baseCommissionPercentage, distributorCommissionBonus } =
+    const { baseCommissionPercentage, employeeCommissionBonus } =
       commissionPolicy;
 
     const discountTotal = Math.max(0, Number(discount || 0));
@@ -320,27 +320,27 @@ export class RegisterPromotionSaleUseCase {
 
     const sourceLocation = locationType || input.sourceLocation;
     const resolvedSourceLocation =
-      sourceLocation === "distributor" && distributorId
-        ? "distributor"
+      sourceLocation === "employee" && employeeId
+        ? "employee"
         : sourceLocation === "branch" && branchId
           ? "branch"
           : "warehouse";
 
     const resolveStockAvailability = async (productId) => {
-      const useDistributorStock =
-        Boolean(distributorId) && resolvedSourceLocation === "distributor";
+      const useEmployeeStock =
+        Boolean(employeeId) && resolvedSourceLocation === "employee";
       const useBranchStock =
         resolvedSourceLocation === "branch" && Boolean(branchId);
 
-      if (useDistributorStock) {
-        const distStock = await DistributorStock.findOne({
+      if (useEmployeeStock) {
+        const distStock = await EmployeeStock.findOne({
           business: businessId,
-          distributor: distributorId,
+          employee: employeeId,
           product: productId,
         });
         return {
           availableStock: distStock?.quantity || 0,
-          stockOrigin: "distributor",
+          stockOrigin: "employee",
         };
       }
 
@@ -388,7 +388,7 @@ export class RegisterPromotionSaleUseCase {
         business: businessId,
       })
         .select(
-          "_id distributorPrice status startDate endDate usageLimit usageCount totalStock currentStock comboItems allowAllLocations allowedLocations branches allowAllDistributors allowedDistributors",
+          "_id employeePrice status startDate endDate usageLimit usageCount totalStock currentStock comboItems allowAllLocations allowedLocations branches allowAllEmployees allowedEmployees",
         )
         .lean();
       promotions.forEach((promo) => {
@@ -520,7 +520,7 @@ export class RegisterPromotionSaleUseCase {
       }
 
       const locationRestrictionEnabled =
-        sourceLocation !== "distributor" &&
+        sourceLocation !== "employee" &&
         (promotionData.allowAllLocations === false ||
           (promotionData.allowAllLocations === undefined &&
             ((promotionData.allowedLocations?.length ?? 0) > 0 ||
@@ -554,24 +554,24 @@ export class RegisterPromotionSaleUseCase {
         }
       }
 
-      const distributorRestrictionEnabled =
-        promotionData.allowAllDistributors === false ||
-        (promotionData.allowAllDistributors === undefined &&
-          (promotionData.allowedDistributors?.length ?? 0) > 0);
+      const employeeRestrictionEnabled =
+        promotionData.allowAllEmployees === false ||
+        (promotionData.allowAllEmployees === undefined &&
+          (promotionData.allowedEmployees?.length ?? 0) > 0);
 
-      if (distributorId && distributorRestrictionEnabled) {
-        const allowedDistributors = promotionData.allowedDistributors || [];
-        if (!allowedDistributors.length) {
+      if (employeeId && employeeRestrictionEnabled) {
+        const allowedEmployees = promotionData.allowedEmployees || [];
+        if (!allowedEmployees.length) {
           throw new Error(
-            "Esta promocion no esta disponible para este distribuidor.",
+            "Esta promocion no esta disponible para este empleado.",
           );
         }
-        const allowed = allowedDistributors.some(
-          (dist) => String(dist) === String(distributorId),
+        const allowed = allowedEmployees.some(
+          (dist) => String(dist) === String(employeeId),
         );
         if (!allowed) {
           throw new Error(
-            "Esta promocion no esta disponible para este distribuidor.",
+            "Esta promocion no esta disponible para este empleado.",
           );
         }
       }
@@ -622,15 +622,15 @@ export class RegisterPromotionSaleUseCase {
         requiredByProduct.get(String(productId)) || quantity;
 
       let availableStock = 0;
-      const useDistributorStock =
-        Boolean(distributorId) && resolvedSourceLocation === "distributor";
+      const useEmployeeStock =
+        Boolean(employeeId) && resolvedSourceLocation === "employee";
       const useBranchStock =
         resolvedSourceLocation === "branch" && Boolean(branchId);
 
-      if (useDistributorStock) {
-        const distStock = await DistributorStock.findOne({
+      if (useEmployeeStock) {
+        const distStock = await EmployeeStock.findOne({
           business: businessId,
-          distributor: distributorId,
+          employee: employeeId,
           product: productId,
         });
 
@@ -639,7 +639,7 @@ export class RegisterPromotionSaleUseCase {
           !InventoryService.hasSufficientStock(availableStock, requiredQuantity)
         ) {
           throw new Error(
-            `Stock insuficiente en el distribuidor para ${product.name}. Disponible: ${availableStock}`,
+            `Stock insuficiente en el empleado para ${product.name}. Disponible: ${availableStock}`,
           );
         }
       } else if (useBranchStock) {
@@ -670,16 +670,16 @@ export class RegisterPromotionSaleUseCase {
 
       // Calculate financials
       const costBasis = product.averageCost || product.purchasePrice || 0;
-      const isDistributorSale = Boolean(distributorId);
-      const rawEffectiveDistributorProfitPercentage =
-        baseCommissionPercentage + distributorCommissionBonus;
-      const effectiveDistributorProfitPercentage = isDistributorSale
-        ? Math.max(0, Math.min(95, rawEffectiveDistributorProfitPercentage))
+      const isEmployeeSale = Boolean(employeeId);
+      const rawEffectiveEmployeeProfitPercentage =
+        baseCommissionPercentage + employeeCommissionBonus;
+      const effectiveEmployeeProfitPercentage = isEmployeeSale
+        ? Math.max(0, Math.min(95, rawEffectiveEmployeeProfitPercentage))
         : 0;
-      const appliedCommissionBonus = isDistributorSale
+      const appliedCommissionBonus = isEmployeeSale
         ? Math.max(
             0,
-            effectiveDistributorProfitPercentage - baseCommissionPercentage,
+            effectiveEmployeeProfitPercentage - baseCommissionPercentage,
           )
         : 0;
       const promotionKey = promotionId
@@ -695,14 +695,14 @@ export class RegisterPromotionSaleUseCase {
       const promotionTotal = promotionKey
         ? Number(promotionTotals[promotionKey] || 0)
         : 0;
-      const promotionDistributorTotal = promotionData
-        ? Number(promotionData.distributorPrice || 0)
+      const promotionEmployeeTotal = promotionData
+        ? Number(promotionData.employeePrice || 0)
         : 0;
       const promotionShare =
         promotionTotal > 0 ? itemSubtotal / promotionTotal : 0;
-      const promotionDistributorUnitPrice =
-        promotionDistributorTotal > 0 && promotionShare > 0
-          ? (promotionDistributorTotal * promotionShare) /
+      const promotionEmployeeUnitPrice =
+        promotionEmployeeTotal > 0 && promotionShare > 0
+          ? (promotionEmployeeTotal * promotionShare) /
             Math.max(1, Number(quantity || 0))
           : 0;
       if (promotionKey && !promotionData) {
@@ -713,29 +713,29 @@ export class RegisterPromotionSaleUseCase {
         throw new Error("Promocion requerida para venta promocional.");
       }
 
-      let distributorPrice = salePrice;
-      if (isDistributorSale) {
-        if (promotionDistributorUnitPrice <= 0) {
+      let employeePrice = salePrice;
+      if (isEmployeeSale) {
+        if (promotionEmployeeUnitPrice <= 0) {
           throw new Error(
             "Promocion sin precio B2B valido para calcular la comision.",
           );
         }
-        distributorPrice = promotionDistributorUnitPrice;
+        employeePrice = promotionEmployeeUnitPrice;
       }
-      const distributorProfit = isDistributorSale
-        ? FinanceService.calculateDistributorProfit(
+      const employeeProfit = isEmployeeSale
+        ? FinanceService.calculateEmployeeProfit(
             salePrice,
-            distributorPrice,
+            employeePrice,
             quantity,
           )
         : 0;
       const adminProfit = FinanceService.calculateAdminProfit(
         salePrice,
         costBasis,
-        distributorProfit,
+        employeeProfit,
         quantity,
       );
-      const totalProfit = distributorProfit + adminProfit;
+      const totalProfit = employeeProfit + adminProfit;
       const adminNetProfit = adminProfit - additionalShare - discountShare;
 
       validatedItems.push({
@@ -748,16 +748,16 @@ export class RegisterPromotionSaleUseCase {
         actualPayment,
         additionalShare,
         costBasis,
-        distributorPrice,
-        distributorProfit,
+        employeePrice,
+        employeeProfit,
         adminProfit,
         totalProfit,
         adminNetProfit,
         isPromotion: true,
         promotionId: promotionId || null,
-        distributorProfitPercentage: effectiveDistributorProfitPercentage,
+        employeeProfitPercentage: effectiveEmployeeProfitPercentage,
         commissionBonus: appliedCommissionBonus,
-        commissionBonusAmount: isDistributorSale
+        commissionBonusAmount: isEmployeeSale
           ? (salePrice * quantity * appliedCommissionBonus) / 100
           : 0,
       });
@@ -829,20 +829,20 @@ export class RegisterPromotionSaleUseCase {
         actualPayment,
         additionalShare,
         costBasis,
-        distributorPrice,
-        distributorProfit,
+        employeePrice,
+        employeeProfit,
         adminProfit,
         totalProfit,
         adminNetProfit,
         isPromotion,
         promotionId,
-        distributorProfitPercentage,
+        employeeProfitPercentage,
         commissionBonus,
         commissionBonusAmount,
       } = item;
 
       // E. Create Sale Record FIRST (Infra)
-      const requiresAdminConfirmation = Boolean(distributorId);
+      const requiresAdminConfirmation = Boolean(employeeId);
       const isCreditSale = paymentMethodCode === "credit";
       const shouldConfirmNow = !requiresAdminConfirmation && !isCreditSale;
 
@@ -895,14 +895,14 @@ export class RegisterPromotionSaleUseCase {
         additionalCosts: additionalCostsForSale,
         purchasePrice: product.purchasePrice,
         averageCostAtSale: costBasis,
-        distributorPrice,
-        distributorProfit,
+        employeePrice,
+        employeeProfit,
         adminProfit,
         totalProfit,
         netProfit: adminNetProfit,
         isPromotion,
         promotion: promotionId || undefined,
-        distributorProfitPercentage,
+        employeeProfitPercentage,
         commissionBonus,
         commissionBonusAmount,
         notes,
@@ -916,7 +916,7 @@ export class RegisterPromotionSaleUseCase {
         deliveryMethod: deliveryMethodId,
         shippingCost: shippingCost ?? 0,
         createdBy: user.id, // Track who created the sale
-        // 💰 FINANCIAL LOGIC FIX:
+        // ðŸ’° FINANCIAL LOGIC FIX:
         // Cash sales (non-credit) must be CONFIRMED immediately to count towards profit.
         // Credit sales remain PENDING until fully paid.
         paymentStatus: shouldConfirmNow ? "confirmado" : "pendiente",
@@ -924,9 +924,9 @@ export class RegisterPromotionSaleUseCase {
         promotionMetricsApplied: false,
       };
 
-      // Track distributor and branch attribution independently
-      if (distributorId) {
-        saleData.distributor = distributorId;
+      // Track employee and branch attribution independently
+      if (employeeId) {
+        saleData.employee = employeeId;
       }
       if (branchId) {
         saleData.branch = branchId;
@@ -948,16 +948,16 @@ export class RegisterPromotionSaleUseCase {
         image: product.image?.url || product.image || "",
       });
 
-      const useDistributorStock =
-        Boolean(distributorId) && resolvedSourceLocation === "distributor";
+      const useEmployeeStock =
+        Boolean(employeeId) && resolvedSourceLocation === "employee";
       const useBranchStock =
         resolvedSourceLocation === "branch" && Boolean(branchId);
 
-      const movementFromLocation = useDistributorStock
+      const movementFromLocation = useEmployeeStock
         ? {
-            type: "distributor",
-            id: distributorId,
-            name: "Inventario de distribuidor",
+            type: "employee",
+            id: employeeId,
+            name: "Inventario de empleado",
           }
         : useBranchStock
           ? {
@@ -973,12 +973,12 @@ export class RegisterPromotionSaleUseCase {
 
       // F. Deduct Stock ONLY AFTER sale is confirmed (Infra) - LOCATION-AWARE
       // This ensures stock is only deducted if the sale was successfully created
-      if (useDistributorStock) {
-        // Distributor Sale → Deduct from DistributorStock
-        const distStock = await DistributorStock.findOneAndUpdate(
+      if (useEmployeeStock) {
+        // Employee Sale â†’ Deduct from EmployeeStock
+        const distStock = await EmployeeStock.findOneAndUpdate(
           {
             business: businessId,
-            distributor: distributorId,
+            employee: employeeId,
             product: productId,
           },
           { $inc: { quantity: -quantity } },
@@ -987,15 +987,15 @@ export class RegisterPromotionSaleUseCase {
 
         if (!distStock) {
           throw new Error(
-            `Distributor stock not found for product ${productId}. Ensure stock is assigned first.`,
+            `Employee stock not found for product ${productId}. Ensure stock is assigned first.`,
           );
         }
 
-        console.log(
-          `📦 Deducted ${quantity} from DistributorStock (distributor: ${distributorId})`,
+        console.warn("[Essence Debug]", 
+          `ðŸ“¦ Deducted ${quantity} from EmployeeStock (employee: ${employeeId})`,
         );
       } else if (useBranchStock) {
-        // Admin Sale from Branch → Deduct from BranchStock
+        // Admin Sale from Branch â†’ Deduct from BranchStock
         const updatedBranchStock = await BranchStock.findOneAndUpdate(
           {
             business: businessId,
@@ -1013,9 +1013,9 @@ export class RegisterPromotionSaleUseCase {
           );
         }
 
-        console.log(`📦 Deducted ${quantity} from BranchStock (admin sale)`);
+        console.warn("[Essence Debug]", `ðŸ“¦ Deducted ${quantity} from BranchStock (admin sale)`);
       } else {
-        // Admin Sale → Deduct from Warehouse
+        // Admin Sale â†’ Deduct from Warehouse
         await this.productRepository.updateWarehouseStockForBusiness(
           productId,
           businessId,
@@ -1023,7 +1023,7 @@ export class RegisterPromotionSaleUseCase {
           session,
           { bypassBusinessScope },
         );
-        console.log(`📦 Deducted ${quantity} from Warehouse (admin sale)`);
+        console.warn("[Essence Debug]", `ðŸ“¦ Deducted ${quantity} from Warehouse (admin sale)`);
       }
 
       // Always update global totalStock counter for statistics
@@ -1069,22 +1069,22 @@ export class RegisterPromotionSaleUseCase {
       if (saleData.paymentStatus === "confirmado") {
         const saleDate = resolvedSaleDate;
 
-        // If distributor sale, create entry for distributor's profit
-        if (distributorId && distributorProfit > 0) {
+        // If employee sale, create entry for employee's profit
+        if (employeeId && employeeProfit > 0) {
           await ProfitHistoryRepository.create({
             business: businessId,
-            user: distributorId,
+            user: employeeId,
             type: "venta_normal",
-            amount: distributorProfit,
+            amount: employeeProfit,
             sale: createdSale._id,
             product: productId,
-            description: `Comisión por venta ${createdSale.saleId}`,
+            description: `ComisiÃ³n por venta ${createdSale.saleId}`,
             date: saleDate,
             metadata: {
               quantity,
               salePrice,
               saleId: createdSale.saleId,
-              commission: distributorProfitPercentage,
+              commission: employeeProfitPercentage,
             },
           });
         }
@@ -1102,8 +1102,8 @@ export class RegisterPromotionSaleUseCase {
               amount: adminProfit,
               sale: createdSale._id,
               product: productId,
-              description: distributorId
-                ? `Ganancia de venta ${createdSale.saleId} (distribuidor)`
+              description: employeeId
+                ? `Ganancia de venta ${createdSale.saleId} (empleado)`
                 : `Venta directa ${createdSale.saleId}`,
               date: saleDate,
               metadata: {
@@ -1133,7 +1133,7 @@ export class RegisterPromotionSaleUseCase {
           }
         }
 
-        if (distributorId) {
+        if (employeeId) {
           await applySaleGamification({
             businessId,
             sale: createdSale,
@@ -1166,11 +1166,11 @@ export class RegisterPromotionSaleUseCase {
         const quantity = Number(warranty.quantity || 0);
         if (quantity <= 0) continue;
 
-        if (resolvedSourceLocation === "distributor" && distributorId) {
-          const distStock = await DistributorStock.findOneAndUpdate(
+        if (resolvedSourceLocation === "employee" && employeeId) {
+          const distStock = await EmployeeStock.findOneAndUpdate(
             {
               business: businessId,
-              distributor: distributorId,
+              employee: employeeId,
               product: warranty.productId,
               quantity: { $gte: quantity },
             },
@@ -1180,7 +1180,7 @@ export class RegisterPromotionSaleUseCase {
 
           if (!distStock) {
             throw new Error(
-              `Stock insuficiente en el distribuidor para ${product.name}.`,
+              `Stock insuficiente en el empleado para ${product.name}.`,
             );
           }
         } else if (resolvedSourceLocation === "branch" && branchId) {
@@ -1223,15 +1223,15 @@ export class RegisterPromotionSaleUseCase {
         const lossAmount = hasWarranty ? 0 : unitCost * quantity;
 
         const reportData = {
-          distributor:
-            resolvedSourceLocation === "distributor" ? distributorId : null,
+          employee:
+            resolvedSourceLocation === "employee" ? employeeId : null,
           branch: resolvedSourceLocation === "branch" ? branchId : null,
           product: warranty.productId,
           business: businessId,
           quantity,
           reason:
             warranty.reason ||
-            `${hasWarranty ? "Reemplazo proveedor" : "Pérdida total"} - Orden ${saleGroupId}`,
+            `${hasWarranty ? "Reemplazo proveedor" : "PÃ©rdida total"} - Orden ${saleGroupId}`,
           images: [],
           hasWarranty,
           warrantyStatus: hasWarranty ? "pending" : "not_applicable",
@@ -1259,7 +1259,7 @@ export class RegisterPromotionSaleUseCase {
               type: "ajuste",
               amount: -lossAmount,
               product: warranty.productId,
-              description: `Pérdida por defectuoso (${quantity}): ${product.name}`,
+              description: `PÃ©rdida por defectuoso (${quantity}): ${product.name}`,
               date: resolvedSaleDate,
               metadata: {
                 quantity,
@@ -1276,7 +1276,7 @@ export class RegisterPromotionSaleUseCase {
       }
     }
 
-    const requiresAdminConfirmation = Boolean(distributorId);
+    const requiresAdminConfirmation = Boolean(employeeId);
     const isCreditSale = paymentMethodCode === "credit";
     const shouldConfirmNow = !requiresAdminConfirmation && !isCreditSale;
 
@@ -1324,7 +1324,7 @@ export class RegisterPromotionSaleUseCase {
 
     if (paymentMethodCode === "credit") {
       if (!customerId) {
-        throw new Error("El cliente es obligatorio para ventas a crédito.");
+        throw new Error("El cliente es obligatorio para ventas a crÃ©dito.");
       }
 
       const credit = await CreditRepository.create(
@@ -1366,3 +1366,4 @@ export class RegisterPromotionSaleUseCase {
     };
   }
 }
+

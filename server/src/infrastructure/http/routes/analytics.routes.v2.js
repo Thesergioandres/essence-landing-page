@@ -7,7 +7,7 @@ import {
 } from "../../../../middleware/business.middleware.js";
 import {
   getDashboardStats,
-  getDistributorEstimatedProfit,
+  getEmployeeEstimatedProfit,
   getEstimatedProfit,
 } from "../controllers/AnalyticsController.js";
 
@@ -32,13 +32,13 @@ router.get(
   getEstimatedProfit,
 );
 
-// GET /api/v2/analytics/distributor/estimated-profit
+// GET /api/v2/analytics/employee/estimated-profit
 router.get(
-  "/distributor/estimated-profit",
+  "/employee/estimated-profit",
   protect,
   businessContext,
   requirePermission({ module: "analytics", action: "read" }),
-  getDistributorEstimatedProfit,
+  getEmployeeEstimatedProfit,
 );
 
 export default router;

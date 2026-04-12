@@ -1,4 +1,4 @@
-import { m as motion } from "framer-motion";
+﻿import { m as motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import {
   Cell,
@@ -42,28 +42,28 @@ export const CategoryDistributionChart: React.FC<
           startDate,
           endDate,
         });
-        console.log("Category Distribution Response:", response);
+        console.warn("[Essence Debug]", "Category Distribution Response:", response);
         const categoryData =
           (response as any).categoryDistribution ||
           (response as any).categories ||
           [];
-        console.log("[CategoryDistributionChart] categoryData:", categoryData);
+        console.warn("[Essence Debug]", "[CategoryDistributionChart] categoryData:", categoryData);
         const validatedData = categoryData.map((item: any) => ({
           ...item,
           totalSales: Number(item.totalSales) || 0,
           totalRevenue: Number(item.totalRevenue) || 0,
         }));
-        console.log(
+        console.warn("[Essence Debug]", 
           "[CategoryDistributionChart] validatedData:",
           validatedData
         );
-        console.log(
+        console.warn("[Essence Debug]", 
           "[CategoryDistributionChart] validatedData.length:",
           validatedData.length
         );
         setData(validatedData);
       } catch (error) {
-        console.error("Error al cargar distribución por categoría:", error);
+        console.error("Error al cargar distribuciÃ³n por categorÃ­a:", error);
         setData([]);
       } finally {
         setLoading(false);
@@ -90,7 +90,7 @@ export const CategoryDistributionChart: React.FC<
         className="rounded-lg border border-gray-800 bg-gray-900 p-6"
       >
         <h3 className="mb-4 text-xl font-bold text-white">
-          Distribución por Categoría
+          DistribuciÃ³n por CategorÃ­a
           <InfoTooltip
             text="Ventas y porcentaje de participacion por categoria."
             className="ml-2"
@@ -116,9 +116,9 @@ export const CategoryDistributionChart: React.FC<
               d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
             />
           </svg>
-          <p className="text-lg font-medium">No hay ventas por categoría</p>
+          <p className="text-lg font-medium">No hay ventas por categorÃ­a</p>
           <p className="mt-2 text-sm">
-            Los datos aparecer án cuando haya ventas registradas
+            Los datos aparecer Ã¡n cuando haya ventas registradas
           </p>
         </div>
       </motion.div>
@@ -154,7 +154,7 @@ export const CategoryDistributionChart: React.FC<
     );
   };
 
-  console.log(
+  console.warn("[Essence Debug]", 
     "[CategoryDistributionChart] Rendering chart with data:",
     JSON.stringify(data, null, 2)
   );
@@ -166,7 +166,7 @@ export const CategoryDistributionChart: React.FC<
       className="rounded-lg border border-gray-800 bg-gray-900 p-6"
     >
       <h3 className="mb-4 text-xl font-bold text-white">
-        Distribución de Ventas por Categoría
+        DistribuciÃ³n de Ventas por CategorÃ­a
         <InfoTooltip
           text="Cada porcion representa ventas por categoria."
           className="ml-2"
@@ -198,7 +198,7 @@ export const CategoryDistributionChart: React.FC<
               const revenue = Number(props?.payload?.totalRevenue) || 0;
               return [
                 `${val} ventas ($${revenue.toFixed(2)})`,
-                props?.payload?.name || "Categoría",
+                props?.payload?.name || "CategorÃ­a",
               ];
             }}
             contentStyle={{
@@ -213,7 +213,7 @@ export const CategoryDistributionChart: React.FC<
             height={36}
             wrapperStyle={{ color: "#d1d5db" }}
             formatter={(_value, entry: any) => {
-              const name = entry?.payload?.name || "Categoría";
+              const name = entry?.payload?.name || "CategorÃ­a";
               return `${name}`;
             }}
           />
@@ -222,3 +222,4 @@ export const CategoryDistributionChart: React.FC<
     </motion.div>
   );
 };
+

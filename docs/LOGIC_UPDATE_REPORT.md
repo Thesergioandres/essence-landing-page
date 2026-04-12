@@ -57,14 +57,14 @@ totalSales: { $sum: 1 },
 
 - Already had filter, added explanatory comment
 
-#### ✅ `DistributorRepository.js`
+#### ✅ `EmployeeRepository.js`
 
-**Line 112-126:** `getDistributorsList()`
+**Line 112-126:** `getEmployeesList()`
 
 ```javascript
 $match: {
   business: businessObjectId,
-  distributor: { $in: objectIds },
+  employee: { $in: objectIds },
   // 💰 CASH FLOW: Solo ventas confirmadas para profit
   paymentStatus: "confirmado",
 },
@@ -138,10 +138,10 @@ async function restoreStock(sale, session) {
       { $inc: { quantity: sale.quantity } },
       { session },
     );
-  } else if (sale.distributor) {
-    // Stock was deducted from distributor → Restore to DistributorStock
-    await DistributorStock.findOneAndUpdate(
-      { distributor: sale.distributor, product: productId },
+  } else if (sale.employee) {
+    // Stock was deducted from employee → Restore to EmployeeStock
+    await EmployeeStock.findOneAndUpdate(
+      { employee: sale.employee, product: productId },
       { $inc: { quantity: sale.quantity } },
       { session },
     );
@@ -168,9 +168,9 @@ await this.productRepository.updateStock(productId, -quantity, session);
 **The Problem:**
 
 - `RegisterSaleUseCase` (V2 Hexagonal) **ONLY** deducts from `Product.totalStock` (global warehouse)
-- It does NOT support sales from specific branches or distributor stock
-- However, `DeleteSaleController` assumes sales CAN come from branches/distributors
-- This creates a mismatch if legacy code creates sales with `sale.branch` or `sale.distributor` fields
+- It does NOT support sales from specific branches or employee stock
+- However, `DeleteSaleController` assumes sales CAN come from branches/employees
+- This creates a mismatch if legacy code creates sales with `sale.branch` or `sale.employee` fields
 
 **Impact:**
 
@@ -181,7 +181,7 @@ await this.productRepository.updateStock(productId, -quantity, session);
 Either:
 
 1. Ensure ALL sale creation uses `RegisterSaleUseCase` (V2 only)
-2. OR extend `RegisterSaleUseCase` to support branch/distributor stock sources
+2. OR extend `RegisterSaleUseCase` to support branch/employee stock sources
 
 **Documentation Added:**
 Added warning comment in `RegisterSaleUseCase.execute()` explaining the limitation.
@@ -198,7 +198,7 @@ Added warning comment in `RegisterSaleUseCase.execute()` explaining the limitati
 | AdvancedAnalyticsRepository | getFinancialKPIs()       | ✅ OK      | Already filtered      |
 | AdvancedAnalyticsRepository | getSalesTimeline()       | ✅ OK      | Already filtered      |
 | AdvancedAnalyticsRepository | getComparativeAnalysis() | ✅ OK      | Already filtered      |
-| DistributorRepository       | getDistributorsList()    | ✅ Fixed   | Added status filter   |
+| EmployeeRepository       | getEmployeesList()    | ✅ Fixed   | Added status filter   |
 | GodRepository               | getGlobalMetrics()       | ✅ Fixed   | Added status filter   |
 | GamificationRepository      | getRanking()             | ✅ OK      | Already filtered      |
 | RegisterSaleUseCase         | execute()                | ⚠️ Warning | Added documentation   |
@@ -221,9 +221,9 @@ Added warning comment in `RegisterSaleUseCase.execute()` explaining the limitati
 2. Verify `Product.totalStock` decreased
 3. Delete the sale
 4. Verify `Product.totalStock` increased back to original
-5. Verify `Product.warehouseStock` increased (not distributor/branch)
+5. Verify `Product.warehouseStock` increased (not employee/branch)
 
-### Test Case 3: Branch/Distributor Sales (If Legacy Exists)
+### Test Case 3: Branch/Employee Sales (If Legacy Exists)
 
 1. Identify if legacy endpoints still create sales with `sale.branch` field
 2. Create sale from branch
@@ -263,7 +263,7 @@ CREATE SALE (V2):
 
 DELETE SALE:
 ├─ IF sale.branch exists → Restore to: BranchStock
-├─ ELSE IF sale.distributor exists → Restore to: DistributorStock
+├─ ELSE IF sale.employee exists → Restore to: EmployeeStock
 └─ ELSE → Restore to: Product.warehouseStock
 
 ⚠️ Potential mismatch if legacy creates branch sales!

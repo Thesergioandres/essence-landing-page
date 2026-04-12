@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { analyticsService } from "../../features/analytics/services";
 import type {
-  DistributorProfit,
+  EmployeeProfit,
   TimelineData,
 } from "../../features/analytics/types/analytics.types";
 import type { ProductProfit } from "../../features/inventory/types/product.types";
@@ -37,13 +37,13 @@ export default function AnalyticsCharts({
   const [loading, setLoading] = useState(true);
   const [timeline, setTimeline] = useState<TimelineData[]>([]);
   const [products, setProducts] = useState<ProductProfit[]>([]);
-  const [distributors, setDistributors] = useState<DistributorProfit[]>([]);
+  const [employees, setEmployees] = useState<EmployeeProfit[]>([]);
 
   const [period, setPeriod] = useState<"day" | "week" | "month">("month");
   const [timelineDays, setTimelineDays] = useState(30);
   const [topLimit, setTopLimit] = useState(15);
   const [productSearch, setProductSearch] = useState("");
-  const [distributorSearch, setDistributorSearch] = useState("");
+  const [employeeSearch, setEmployeeSearch] = useState("");
 
   const filters = useMemo(
     () => ({
@@ -59,14 +59,14 @@ export default function AnalyticsCharts({
         setLoading(true);
         const [prodRes, distRes, timeRes] = await Promise.all([
           analyticsService.getProfitByProduct(filters),
-          analyticsService.getProfitByDistributor(filters),
+          analyticsService.getProfitByEmployee(filters),
           analyticsService.getSalesTimeline({
             days: timelineDays,
             ...filters,
           } as any),
         ]);
         setProducts((prodRes as any).products || prodRes);
-        setDistributors((distRes as any).distributors || distRes);
+        setEmployees((distRes as any).employees || distRes);
         setTimeline((timeRes as any).timeline || timeRes);
       } catch (err) {
         console.error(err);
@@ -95,22 +95,22 @@ export default function AnalyticsCharts({
     [products, productSearch, topLimit]
   );
 
-  const visibleDistributors = useMemo(
+  const visibleEmployees = useMemo(
     () =>
-      distributors
+      employees
         .filter(d =>
-          (d.distributorName || "")
+          (d.employeeName || "")
             .toLowerCase()
-            .includes(distributorSearch.toLowerCase())
+            .includes(employeeSearch.toLowerCase())
         )
         .slice(0, topLimit)
         .map(d => ({
-          name: d.distributorName || "Sin nombre",
+          name: d.employeeName || "Sin nombre",
           profit: (d as any).profit ?? d.totalAdminProfit ?? d.totalProfit ?? 0,
           revenue: (d as any).revenue ?? d.totalRevenue ?? 0,
           count: d.totalSales ?? 0,
         })),
-    [distributors, distributorSearch, topLimit]
+    [employees, employeeSearch, topLimit]
   );
 
   // Totales para el Timeline Header
@@ -334,18 +334,18 @@ export default function AnalyticsCharts({
         />
 
         <RankingTable
-          title="Top Distribuidores"
+          title="Top Empleados"
           subtitle={
             hideFinancialData ? "Por volumen de ventas" : "Por ganancia"
           }
-          rows={visibleDistributors.map(d => ({
+          rows={visibleEmployees.map(d => ({
             name: d.name,
             profit: currency(d.profit || 0),
             revenue: currency(d.revenue || 0),
             count: d.count || 0,
           }))}
-          search={distributorSearch}
-          onSearch={setDistributorSearch}
+          search={employeeSearch}
+          onSearch={setEmployeeSearch}
           topLimit={topLimit}
           onTopChange={setTopLimit}
           hideFinancialData={hideFinancialData}

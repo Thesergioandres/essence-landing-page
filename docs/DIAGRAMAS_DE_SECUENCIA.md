@@ -43,21 +43,21 @@ sequenceDiagram
 
 ---
 
-## 2. Herencia de Acceso (Validación Owner para Distributor)
+## 2. Herencia de Acceso (Validación Owner para Employee)
 
 Este diagrama demuestra las reglas de seguridad invisibles operando a nivel de *Middleware*.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Dist as Distribuidor (App)
+    actor Dist as Empleado (App)
     participant Auth as ProtectMiddleware
     participant DBUser as UserRepository
     
     Dist->>Auth: GET /api/products
     Auth->>Auth: Verifica Local JWT
-    Auth->>DBUser: findOne({ id: distribuidor.id })
-    DBUser-->>Auth: user ok -> role='distribuidor'
+    Auth->>DBUser: findOne({ id: empleado.id })
+    DBUser-->>Auth: user ok -> role='empleado'
     
     Note over Auth, DBUser: Regla Inflexible Essence
     Auth->>DBUser: findOwner(businessId)

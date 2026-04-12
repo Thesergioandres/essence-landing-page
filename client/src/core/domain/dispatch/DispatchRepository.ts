@@ -7,7 +7,7 @@ import type {
 
 export interface DispatchRepository {
   createRequest(data: {
-    distributorId: string;
+    employeeId: string;
     items: Array<{ productId: string; quantity: number }>;
     notes?: string;
   }): Promise<DispatchRequest>;
@@ -29,7 +29,7 @@ export interface DispatchRepository {
     limit?: number;
   }): Promise<{
     canViewFinancialMargins: boolean;
-    distributors: DispatchHotSector[];
+    employees: DispatchHotSector[];
     branches: DispatchHotSector[];
   }>;
 }

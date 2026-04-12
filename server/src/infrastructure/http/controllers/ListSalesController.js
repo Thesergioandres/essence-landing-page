@@ -27,28 +27,28 @@ export async function listSales(req, res) {
       startDate,
       endDate,
       statsOnly,
-      distributorId: distributorIdQuery,
+      employeeId: employeeIdQuery,
     } = req.query;
 
     const financialPrivacy = resolveFinancialPrivacyContext(req);
 
-    // Check if this is a distributor-specific query
-    // Route: /api/v2/sales/distributor/:distributorId?
-    let distributorId = financialPrivacy.scopeDistributorId
-      ? financialPrivacy.scopeDistributorId
-      : req.params.distributorId || distributorIdQuery;
+    // Check if this is a employee-specific query
+    // Route: /api/v2/sales/employee/:employeeId?
+    let employeeId = financialPrivacy.scopeEmployeeId
+      ? financialPrivacy.scopeEmployeeId
+      : req.params.employeeId || employeeIdQuery;
 
-    // If no distributorId in params, check effective role (membership first)
-    // so distributor users with admin membership can view team sales.
+    // If no employeeId in params, check effective role (membership first)
+    // so employee users with admin membership can view team sales.
     const effectiveRole = req.membership?.role || req.user?.role;
-    const isDistributorRole = isEmployeeRole(effectiveRole);
+    const isEmployeeRole = isEmployeeRole(effectiveRole);
     const canViewTeamSalesByMembership =
       req.membership?.role === "admin" ||
       req.membership?.permissions?.sales?.update === true ||
       req.membership?.permissions?.sales?.delete === true;
 
-    if (!distributorId && isDistributorRole && !canViewTeamSalesByMembership) {
-      distributorId = req.user.id;
+    if (!employeeId && isEmployeeRole && !canViewTeamSalesByMembership) {
+      employeeId = req.user.id;
     }
 
     const result = await listSalesUseCase.execute({
@@ -57,7 +57,7 @@ export async function listSales(req, res) {
         page: Number(page),
         limit: Number(limit),
         branchId,
-        distributorId,
+        employeeId,
         productId,
         startDate,
         endDate,

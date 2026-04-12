@@ -108,24 +108,24 @@ export function useFinancialPrivacy() {
     ) as (Membership & { [key: string]: unknown }) | null;
 
     const effectiveRole = membership?.role || user?.role || "user";
-    const isDistributorRole = effectiveRole === "employee";
+    const isEmployeeRole = effectiveRole === "employee";
     const currentUserId = String(user?._id || user?.id || "");
 
     const canViewCosts = resolveCanViewCosts(user, membership, effectiveRole);
 
     const hideFinancialData =
       hasFinancialPrivacyFlag(user, membership) ||
-      isDistributorRole ||
+      isEmployeeRole ||
       !canViewCosts;
 
     return {
       user,
       membership,
       currentUserId,
-      scopeDistributorId:
-        isDistributorRole && currentUserId ? currentUserId : "",
+      scopeEmployeeId:
+        isEmployeeRole && currentUserId ? currentUserId : "",
       effectiveRole,
-      isDistributorRole,
+      isEmployeeRole,
       canViewCosts,
       hideFinancialData,
     };

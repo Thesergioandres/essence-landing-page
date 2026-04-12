@@ -15,7 +15,7 @@ import type { User } from "../../auth/types/auth.types";
 import { useFinancialPrivacy } from "../../auth/utils/financialPrivacy";
 import { branchService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
-import { distributorService } from "../../employees/services";
+import { employeeService } from "../../employees/services";
 import { productService } from "../../inventory/services/inventory.service";
 import type { Product } from "../../inventory/types/product.types";
 import { saleService } from "../../sales/services";
@@ -31,11 +31,11 @@ interface SalesPageProps {
 
 export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
   // Hooks para features
-  const distributorsEnabled = useFeature("distributors");
+  const employeesEnabled = useFeature("employees");
   const branchesEnabled = useFeature("branches");
   const gamificationEnabled = useFeature("gamification");
   const creditsEnabled = useFeature("credits");
-  const { hideFinancialData, scopeDistributorId } = useFinancialPrivacy();
+  const { hideFinancialData, scopeEmployeeId } = useFinancialPrivacy();
 
   const [sales, setSales] = useState<Sale[]>([]);
   const [pagination, setPagination] = useState({
@@ -58,7 +58,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchId, setBranchId] = useState<string>("");
   const [productId, setProductId] = useState<string>("");
-  const [distributorId, setDistributorId] = useState<string>("");
+  const [employeeId, setEmployeeId] = useState<string>("");
   const [filter, setFilter] = useState<"all" | "pendiente" | "confirmado">(
     "all"
   );
@@ -66,7 +66,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
     "all" | "normal" | "promotion" | "special"
   >("all");
   const [sortBy, setSortBy] = useState<
-    "date-desc" | "date-asc" | "distributor"
+    "date-desc" | "date-asc" | "employee"
   >("date-desc");
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [confirmingAll, setConfirmingAll] = useState(false);
@@ -77,7 +77,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
     endDate: "",
   });
   const [products, setProducts] = useState<Product[]>([]);
-  const [distributors, setDistributors] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<User[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
   const [showAllSales, setShowAllSales] = useState(false);
@@ -114,9 +114,9 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
         const branchName =
           (typeof sale.branch === "object" ? sale.branch?.name : "") ||
           "General";
-        const distributorName =
-          (typeof sale.distributor === "object"
-            ? sale.distributor?.name
+        const employeeName =
+          (typeof sale.employee === "object"
+            ? sale.employee?.name
             : "") ||
           (typeof sale.createdBy === "object" ? sale.createdBy?.name : "Admin");
         const productName =
@@ -125,13 +125,13 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
             : sale.productName || "Producto Eliminado";
         const customerName = sale.customerName || "-";
         const gainAmount = hideFinancialData
-          ? Number(sale.distributorProfit || 0)
+          ? Number(sale.employeeProfit || 0)
           : getAdminNetProfit(sale);
 
         return {
           Fecha: new Date(sale.saleDate).toLocaleDateString(),
           Sede: branchName,
-          Responsable: distributorName,
+          Responsable: employeeName,
           Cliente: customerName,
           Producto: productName,
           Cantidad: sale.quantity,
@@ -209,7 +209,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
     canDeleteSalesByMembership;
   const showBranchColumn = false;
   const showAdminProfit = !hideAdminProfit && !hideFinancialData;
-  const showAmountToDeliver = distributorsEnabled && !hideFinancialData;
+  const showAmountToDeliver = employeesEnabled && !hideFinancialData;
 
   useEffect(() => {
     if (!showAllSales) {
@@ -222,7 +222,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
     dateFilters,
     branchId,
     productId,
-    distributorId,
+    employeeId,
     showAllSales,
   ]);
 
@@ -253,21 +253,21 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
       }
     };
 
-    const fetchDistributors = async () => {
-      if (!distributorsEnabled) return;
+    const fetchEmployees = async () => {
+      if (!employeesEnabled) return;
       try {
-        const response = await distributorService.getAll();
+        const response = await employeeService.getAll();
         const list = Array.isArray(response) ? response : response.data || [];
-        setDistributors(list.filter((d: User) => d.active));
+        setEmployees(list.filter((d: User) => d.active));
       } catch (error) {
-        console.error("Error cargando distribuidores", error);
-        setDistributors([]);
+        console.error("Error cargando empleados", error);
+        setEmployees([]);
       }
     };
 
     void fetchProducts();
-    void fetchDistributors();
-  }, [distributorsEnabled]);
+    void fetchEmployees();
+  }, [employeesEnabled]);
 
   const buildSalesParams = () => {
     const params: any = {
@@ -277,10 +277,10 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
     };
     if (branchId) params.branchId = branchId;
     if (productId) params.productId = productId;
-    if (scopeDistributorId) {
-      params.distributorId = scopeDistributorId;
-    } else if (distributorId) {
-      params.distributorId = distributorId;
+    if (scopeEmployeeId) {
+      params.employeeId = scopeEmployeeId;
+    } else if (employeeId) {
+      params.employeeId = employeeId;
     }
     if (dateFilters.startDate) params.startDate = dateFilters.startDate;
     if (dateFilters.endDate) params.endDate = dateFilters.endDate;
@@ -336,7 +336,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
       // Limpiar filtros
       setBranchId("");
       setProductId("");
-      setDistributorId("");
+      setEmployeeId("");
       setFilter("all");
       setSaleTypeFilter("all");
       setDateFilters({ startDate: "", endDate: "" });
@@ -580,7 +580,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
 
   const getSaleSourceLabel = (sale: Sale) => {
     const source = sale.sourceLocation;
-    if (source === "distributor") return "Inventario distribuidor";
+    if (source === "employee") return "Inventario empleado";
     if (source === "branch") {
       const branchName =
         sale.branchName ||
@@ -592,7 +592,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
     if (sale.branchName) return `Sede: ${sale.branchName}`;
     if (typeof sale.branch === "object" && sale.branch?.name)
       return `Sede: ${sale.branch.name}`;
-    if (sale.distributor) return "Inventario distribuidor";
+    if (sale.employee) return "Inventario empleado";
     return "Bodega central";
   };
 
@@ -660,10 +660,10 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
     totalQuantity: number;
     totalRevenue: number;
     totalProfit: number;
-    totalDistributorProfit: number;
+    totalEmployeeProfit: number;
     totalAdditionalCosts?: number;
     date: string;
-    distributor: Sale["distributor"];
+    employee: Sale["employee"];
     branch: Sale["branch"];
     customer: Sale["customer"];
     paymentStatus: Sale["paymentStatus"];
@@ -702,13 +702,13 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
         sales: groupSales,
         totalQuantity: groupSales.reduce((sum, s) => sum + s.quantity, 0),
         totalRevenue: groupSales.reduce((sum, s) => sum + getSaleRevenue(s), 0),
-        // Ganancia Admin = solo adminProfit (sin incluir comisión del distribuidor)
+        // Ganancia Admin = solo adminProfit (sin incluir comisión del empleado)
         // Luego restar costos adicionales que asume la empresa
         totalProfit: groupSales.reduce((sum, s) => {
           return sum + getAdminNetProfit(s);
         }, 0),
-        totalDistributorProfit: groupSales.reduce(
-          (sum, s) => sum + (s.distributorProfit || 0),
+        totalEmployeeProfit: groupSales.reduce(
+          (sum, s) => sum + (s.employeeProfit || 0),
           0
         ),
         // Total de costos adicionales del grupo
@@ -717,7 +717,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
           0
         ),
         date: firstSale.saleDate,
-        distributor: firstSale.distributor,
+        employee: firstSale.employee,
         branch: firstSale.branch,
         customer: firstSale.customer,
         paymentStatus: firstSale.paymentStatus,
@@ -734,12 +734,12 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
         sales: [sale],
         totalQuantity: sale.quantity,
         totalRevenue: getSaleRevenue(sale),
-        // Solo ganancia del admin (no incluye comisión distribuidor)
+        // Solo ganancia del admin (no incluye comisión empleado)
         totalProfit: adminNetProfit,
-        totalDistributorProfit: sale.distributorProfit || 0,
+        totalEmployeeProfit: sale.employeeProfit || 0,
         totalAdditionalCosts: sale.totalAdditionalCosts || 0,
         date: sale.saleDate,
-        distributor: sale.distributor,
+        employee: sale.employee,
         branch: sale.branch,
         customer: sale.customer,
         paymentStatus: sale.paymentStatus,
@@ -1095,7 +1095,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
               </div>
             </div>
 
-            {distributorsEnabled && !hideFinancialData && (
+            {employeesEnabled && !hideFinancialData && (
               <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-3">
                 <p className="mb-2 text-sm font-medium text-gray-300">
                   Filtrar por vendedor:
@@ -1103,17 +1103,17 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                 <div className="flex flex-wrap gap-4">
                   <div className="min-w-[220px] flex-1">
                     <select
-                      value={distributorId}
+                      value={employeeId}
                       onChange={e => {
-                        setDistributorId(e.target.value);
+                        setEmployeeId(e.target.value);
                         setPagination(prev => ({ ...prev, page: 1 }));
                       }}
                       className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900/60 px-4 py-2.5 text-sm text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500"
                     >
                       <option value="">Todos los vendedores</option>
-                      {distributors.map(distributor => (
-                        <option key={distributor._id} value={distributor._id}>
-                          {distributor.name}
+                      {employees.map(employee => (
+                        <option key={employee._id} value={employee._id}>
+                          {employee.name}
                         </option>
                       ))}
                     </select>
@@ -1223,8 +1223,8 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
               >
                 <option value="date-desc">Fecha (Más reciente primero)</option>
                 <option value="date-asc">Fecha (Más antigua primero)</option>
-                {distributorsEnabled && (
-                  <option value="distributor">Responsable (A-Z)</option>
+                {employeesEnabled && (
+                  <option value="employee">Responsable (A-Z)</option>
                 )}
               </select>
             </div>
@@ -1250,17 +1250,17 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                       Origen
                     </th>
-                    {distributorsEnabled && (
+                    {employeesEnabled && (
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                         Responsable
                       </th>
                     )}
-                    {distributorsEnabled && gamificationEnabled && (
+                    {employeesEnabled && gamificationEnabled && (
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                         Rango
                       </th>
                     )}
-                    {distributorsEnabled && (
+                    {employeesEnabled && (
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                         {hideFinancialData ? "Mis Ganancias" : "Comisión"}
                       </th>
@@ -1307,9 +1307,9 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                   {saleGroups.map((group, index) => {
                     const isExpanded = expandedGroups.has(group.id);
                     const firstSale = group.sales[0];
-                    const distributor =
-                      typeof group.distributor === "object"
-                        ? group.distributor
+                    const employee =
+                      typeof group.employee === "object"
+                        ? group.employee
                         : null;
                     const createdByUser =
                       typeof firstSale.createdBy === "object"
@@ -1320,12 +1320,12 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                         ? group.branch?.name
                         : undefined;
 
-                    // Obtener el nombre para mostrar: si hay distribuidor mostrar su nombre,
+                    // Obtener el nombre para mostrar: si hay empleado mostrar su nombre,
                     // si no, mostrar el createdBy (quien registró la venta), o "Admin" como fallback
                     const displayName =
-                      distributor?.name || createdByUser?.name || "Admin";
+                      employee?.name || createdByUser?.name || "Admin";
                     const displayEmail =
-                      distributor?.email || createdByUser?.email || "";
+                      employee?.email || createdByUser?.email || "";
                     const warrantyTicketId = group.sales.find(
                       sale => sale.warrantyTicketId
                     )?.warrantyTicketId;
@@ -1341,9 +1341,9 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                       text: "Admin",
                       color: "bg-purple-500/20 text-purple-300",
                     };
-                    if (distributor) {
+                    if (employee) {
                       const percentage =
-                        firstSale.distributorProfitPercentage || 20;
+                        firstSale.employeeProfitPercentage || 20;
                       if (percentage === 25) {
                         rankBadge = {
                           emoji: "🥇",
@@ -1424,7 +1424,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                           <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-300">
                             {getGroupSourceLabel(group.sales)}
                           </td>
-                          {distributorsEnabled && (
+                          {employeesEnabled && (
                             <td className="whitespace-nowrap px-6 py-4">
                               <div className="text-sm font-medium text-gray-200">
                                 {displayName}
@@ -1434,7 +1434,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                               </div>
                             </td>
                           )}
-                          {distributorsEnabled &&
+                          {employeesEnabled &&
                             gamificationEnabled &&
                             !hideFinancialData && (
                               <td className="whitespace-nowrap px-6 py-4">
@@ -1445,18 +1445,18 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                                 </span>
                               </td>
                             )}
-                          {distributorsEnabled && (
+                          {employeesEnabled && (
                             <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-200">
-                              {distributor ? (
+                              {employee ? (
                                 <div>
                                   <span className="text-yellow-400">
                                     $
-                                    {group.totalDistributorProfit.toLocaleString()}
+                                    {group.totalEmployeeProfit.toLocaleString()}
                                   </span>
                                   {!hideFinancialData && (
                                     <span className="ml-1 text-xs text-gray-500">
                                       (
-                                      {firstSale.distributorProfitPercentage ??
+                                      {firstSale.employeeProfitPercentage ??
                                         20}
                                       %)
                                     </span>
@@ -1544,13 +1544,13 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                           )}
                           {showAmountToDeliver && (
                             <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
-                              {distributor &&
-                              group.totalDistributorProfit > 0 ? (
+                              {employee &&
+                              group.totalEmployeeProfit > 0 ? (
                                 <span className="text-yellow-400">
                                   $
                                   {(
                                     group.totalRevenue -
-                                    group.totalDistributorProfit
+                                    group.totalEmployeeProfit
                                   ).toLocaleString()}
                                 </span>
                               ) : (
@@ -1696,19 +1696,19 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                                 <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-400">
                                   {getSaleSourceLabel(sale)}
                                 </td>
-                                {distributorsEnabled && (
+                                {employeesEnabled && (
                                   <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-400">
                                     {/* Vacío */}
                                   </td>
                                 )}
-                                {distributorsEnabled &&
+                                {employeesEnabled &&
                                   gamificationEnabled &&
                                   !hideFinancialData && (
                                     <td className="whitespace-nowrap px-6 py-3">
                                       {/* Vacío */}
                                     </td>
                                   )}
-                                {distributorsEnabled && (
+                                {employeesEnabled && (
                                   <td className="whitespace-nowrap px-6 py-3">
                                     {/* Vacío */}
                                   </td>
@@ -1757,9 +1757,9 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                                 )}
                                 {showAmountToDeliver && (
                                   <td className="whitespace-nowrap px-6 py-3 text-sm text-yellow-400">
-                                    {distributor &&
-                                    (sale.distributorProfit || 0) > 0
-                                      ? `$${(getSaleRevenue(sale) - (sale.distributorProfit || 0)).toLocaleString()}`
+                                    {employee &&
+                                    (sale.employeeProfit || 0) > 0
+                                      ? `$${(getSaleRevenue(sale) - (sale.employeeProfit || 0)).toLocaleString()}`
                                       : "-"}
                                   </td>
                                 )}

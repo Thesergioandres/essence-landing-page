@@ -165,8 +165,8 @@ export const branchService = {
       quantity: number;
       fromBranch?: Branch;
       toBranch?: Branch;
-      fromDistributor?: { _id: string; name: string };
-      toDistributor?: { _id: string; name: string };
+      fromEmployee?: { _id: string; name: string };
+      toEmployee?: { _id: string; name: string };
       reason?: string;
       createdBy: { _id: string; name: string };
       createdAt: Date;
@@ -296,9 +296,9 @@ export const branchTransferService = {
   },
 
   async bulkTransfer(data: {
-    fromType: "warehouse" | "branch" | "distributor";
+    fromType: "warehouse" | "branch" | "employee";
     fromId?: string;
-    toType: "warehouse" | "branch" | "distributor";
+    toType: "warehouse" | "branch" | "employee";
     toId?: string;
     products: Array<{ productId: string; quantity: number }>;
     reason?: string;

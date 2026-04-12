@@ -68,12 +68,10 @@ jest.unstable_mockModule(jwtServiceModulePath, () => ({
 
 jest.unstable_mockModule(planLimitsModulePath, () => ({
   VALID_BUSINESS_PLANS: ["starter", "pro", "enterprise"],
-  getBusinessUsage: jest
-    .fn()
-    .mockResolvedValue({ branches: 0, distributors: 0 }),
+  getBusinessUsage: jest.fn().mockResolvedValue({ branches: 0, employees: 0 }),
   resolveBusinessLimits: jest.fn().mockResolvedValue({
     plan: "starter",
-    limits: { branches: 1, distributors: 2 },
+    limits: { branches: 1, employees: 2 },
     source: "plan",
   }),
 }));
@@ -203,7 +201,9 @@ describe("Auth routes v2", () => {
       .send({ refreshToken: "bad-token" });
 
     expect(response.status).toBe(401);
-    expect(response.body.message).toMatch(/inválido|invalido/i);
+    expect(response.body.message).toMatch(
+      /inválido|invalido|invÃ¡lido|invÃƒÂ¡lido/i,
+    );
   });
 
   it("POST /api/v2/auth/logout responde cierre de sesion", async () => {

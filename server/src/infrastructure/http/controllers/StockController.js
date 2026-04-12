@@ -1,29 +1,29 @@
 import stockPersistenceUseCase from "../../../application/use-cases/repository-gateways/StockPersistenceUseCase.js";
 
 class StockController {
-  async assignToDistributor(req, res) {
+  async assignToEmployee(req, res) {
     try {
       const businessId = req.businessId || req.headers["x-business-id"];
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const { distributorId, productId, quantity } = req.body;
-      const result = await stockPersistenceUseCase.assignToDistributor(
+      const { employeeId, productId, quantity } = req.body;
+      const result = await stockPersistenceUseCase.assignToEmployee(
         businessId,
-        distributorId,
+        employeeId,
         productId,
         quantity,
       );
 
       const populated = await result.distStock.populate([
-        { path: "distributor", select: "name email" },
+        { path: "employee", select: "name email" },
         { path: "product", select: "name" },
       ]);
 
       res.json({
         success: true,
         data: {
-          distributorStock: populated,
+          employeeStock: populated,
           warehouseStock: result.product.warehouseStock,
         },
       });
@@ -32,29 +32,29 @@ class StockController {
     }
   }
 
-  async withdrawFromDistributor(req, res) {
+  async withdrawFromEmployee(req, res) {
     try {
       const businessId = req.businessId || req.headers["x-business-id"];
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const { distributorId, productId, quantity } = req.body;
-      const result = await stockPersistenceUseCase.withdrawFromDistributor(
+      const { employeeId, productId, quantity } = req.body;
+      const result = await stockPersistenceUseCase.withdrawFromEmployee(
         businessId,
-        distributorId,
+        employeeId,
         productId,
         quantity,
       );
 
       const populated = await result.stockUpdate.populate([
-        { path: "distributor", select: "name email" },
+        { path: "employee", select: "name email" },
         { path: "product", select: "name" },
       ]);
 
       res.json({
         success: true,
         data: {
-          distributorStock: populated,
+          employeeStock: populated,
           warehouseStock: result.product.warehouseStock,
         },
       });
@@ -63,24 +63,24 @@ class StockController {
     }
   }
 
-  async transferBetweenDistributors(req, res) {
+  async transferBetweenEmployees(req, res) {
     try {
       const businessId = req.businessId || req.headers["x-business-id"];
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const fromDistributorId =
+      const fromEmployeeId =
         req.user?._id || req.user?.id || req.user?.userId;
-      const { toDistributorId, productId, quantity } = req.body;
+      const { toEmployeeId, productId, quantity } = req.body;
 
-      if (!fromDistributorId || !toDistributorId || !productId || !quantity) {
+      if (!fromEmployeeId || !toEmployeeId || !productId || !quantity) {
         return res.status(400).json({ message: "Datos incompletos" });
       }
 
-      const result = await stockPersistenceUseCase.transferBetweenDistributors(
+      const result = await stockPersistenceUseCase.transferBetweenEmployees(
         businessId,
-        fromDistributorId,
-        toDistributorId,
+        fromEmployeeId,
+        toEmployeeId,
         productId,
         Number(quantity),
       );
@@ -90,11 +90,11 @@ class StockController {
         message: "Transferencia realizada correctamente",
         transfer: {
           from: {
-            distributorId: fromDistributorId,
+            employeeId: fromEmployeeId,
             remainingStock: result.fromStock.quantity,
           },
           to: {
-            distributorId: toDistributorId,
+            employeeId: toEmployeeId,
             newStock: result.toStock.quantity,
           },
           product: { id: productId },
@@ -112,17 +112,17 @@ class StockController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const fromDistributorId =
+      const fromEmployeeId =
         req.user?._id || req.user?.id || req.user?.userId;
       const { toBranchId, productId, quantity } = req.body;
 
-      if (!fromDistributorId || !toBranchId || !productId || !quantity) {
+      if (!fromEmployeeId || !toBranchId || !productId || !quantity) {
         return res.status(400).json({ message: "Datos incompletos" });
       }
 
-      await stockPersistenceUseCase.transferToBranchFromDistributor(
+      await stockPersistenceUseCase.transferToBranchFromEmployee(
         businessId,
-        fromDistributorId,
+        fromEmployeeId,
         toBranchId,
         productId,
         Number(quantity),
@@ -137,15 +137,15 @@ class StockController {
     }
   }
 
-  async getDistributorStock(req, res) {
+  async getEmployeeStock(req, res) {
     try {
       const businessId = req.businessId || req.headers["x-business-id"];
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      let { distributorId } = req.params;
-      if (distributorId === "me")
-        distributorId = req.user.userId || req.user.id;
+      let { employeeId } = req.params;
+      if (employeeId === "me")
+        employeeId = req.user.userId || req.user.id;
 
       const isAdmin = ["admin", "god", "super_admin"].includes(req.user.role);
       const currentUserId = req.user.userId || req.user.id;
@@ -157,19 +157,19 @@ class StockController {
 
       if (
         !isAdmin &&
-        currentUserId !== distributorId &&
+        currentUserId !== employeeId &&
         !canManageInventoryByMembership
       ) {
         return res.status(403).json({ message: "Sin permisos" });
       }
 
-      const stock = await stockPersistenceUseCase.getDistributorStock(
+      const stock = await stockPersistenceUseCase.getEmployeeStock(
         businessId,
-        distributorId,
+        employeeId,
       );
       res.json({ success: true, data: stock });
     } catch (error) {
-      console.error("❌ Error in getDistributorStock:", error);
+      console.error("❌ Error in getEmployeeStock:", error);
       console.error("Stack:", error.stack);
       res.status(500).json({ success: false, message: error.message });
     }
@@ -210,13 +210,13 @@ class StockController {
       if (!businessId)
         return res.status(400).json({ message: "Falta x-business-id" });
 
-      const isDistributor = req.user?.role === "employee";
+      const isEmployee = req.user?.role === "employee";
 
       const allowedBranches = Array.isArray(req.membership?.allowedBranches)
         ? req.membership.allowedBranches
         : [];
 
-      if (isDistributor && allowedBranches.length === 0) {
+      if (isEmployee && allowedBranches.length === 0) {
         return res.json({ success: true, branches: [] });
       }
 

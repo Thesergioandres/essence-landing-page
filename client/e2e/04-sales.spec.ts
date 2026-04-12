@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================
  * TEST SUITE 4: SALES FLOW
  * ============================================
@@ -6,7 +6,7 @@
  * Tests:
  * - View sales list
  * - Register a new sale (admin)
- * - Register sale as distributor
+ * - Register sale as employee
  * - Verify sale appears in history
  * - Check sale detail
  * - Delete sale
@@ -15,7 +15,7 @@
 
 import { expect, generateTestData, test, TEST_USERS } from "./fixtures";
 
-test.describe("💰 Sales Management Tests", () => {
+test.describe("ðŸ’° Sales Management Tests", () => {
   const testData = generateTestData();
 
   test.beforeEach(async ({ page, loginAsAdmin }) => {
@@ -32,7 +32,7 @@ test.describe("💰 Sales Management Tests", () => {
       timeout: 10000,
     });
 
-    console.log("✅ Sales list loaded");
+    console.warn("[Essence Debug]", "âœ… Sales list loaded");
   });
 
   test("should navigate to register sale page", async ({ page }) => {
@@ -45,7 +45,7 @@ test.describe("💰 Sales Management Tests", () => {
       page.getByText(/registrar|nueva venta|venta/i).first()
     ).toBeVisible({ timeout: 10000 });
 
-    console.log("✅ Register sale page loaded");
+    console.warn("[Essence Debug]", "âœ… Register sale page loaded");
   });
 
   test("should show product selector in sale form", async ({ page }) => {
@@ -61,7 +61,7 @@ test.describe("💰 Sales Management Tests", () => {
 
     expect(hasSelector || hasDropdown).toBe(true);
 
-    console.log("✅ Product selector found in sale form");
+    console.warn("[Essence Debug]", "âœ… Product selector found in sale form");
   });
 
   test("should display sale totals", async ({ page }) => {
@@ -72,7 +72,7 @@ test.describe("💰 Sales Management Tests", () => {
     const totalsSection = page.getByText(/total|subtotal|resumen/i);
 
     if (await totalsSection.isVisible()) {
-      console.log("✅ Totals section visible in sale form");
+      console.warn("[Essence Debug]", "âœ… Totals section visible in sale form");
     }
   });
 
@@ -110,7 +110,7 @@ test.describe("💰 Sales Management Tests", () => {
     });
     if ((await submitButton.isVisible()) && (await submitButton.isEnabled())) {
       // Note: Only click if we have products selected
-      console.log("✅ Sale form is fillable");
+      console.warn("[Essence Debug]", "âœ… Sale form is fillable");
     }
   });
 
@@ -128,9 +128,9 @@ test.describe("💰 Sales Management Tests", () => {
     const hasPageNumbers = await pageNumbers.isVisible().catch(() => false);
 
     if (hasPagination || hasPageNumbers) {
-      console.log("✅ Sales pagination available");
+      console.warn("[Essence Debug]", "âœ… Sales pagination available");
     } else {
-      console.log("ℹ️ No pagination (few sales or all displayed)");
+      console.warn("[Essence Debug]", "â„¹ï¸ No pagination (few sales or all displayed)");
     }
   });
 
@@ -148,7 +148,7 @@ test.describe("💰 Sales Management Tests", () => {
       (await dateInputs.count()) > 0;
 
     if (hasDateFilters) {
-      console.log("✅ Date filters available");
+      console.warn("[Essence Debug]", "âœ… Date filters available");
     }
   });
 
@@ -168,9 +168,9 @@ test.describe("💰 Sales Management Tests", () => {
       await page.waitForTimeout(500);
 
       // Check for detail elements
-      const detail = page.getByText(/detalle|información|producto|cantidad/i);
+      const detail = page.getByText(/detalle|informaciÃ³n|producto|cantidad/i);
       if (await detail.isVisible()) {
-        console.log("✅ Sale detail accessible");
+        console.warn("[Essence Debug]", "âœ… Sale detail accessible");
       }
     }
   });
@@ -181,54 +181,54 @@ test.describe("💰 Sales Management Tests", () => {
 
     // Look for status badges
     const confirmedBadge = page.getByText(/confirmado|pagado|confirmed/i);
-    const pendingBadge = page.getByText(/pendiente|pending|fiado|crédito/i);
+    const pendingBadge = page.getByText(/pendiente|pending|fiado|crÃ©dito/i);
 
     const hasConfirmed = await confirmedBadge.isVisible().catch(() => false);
     const hasPending = await pendingBadge.isVisible().catch(() => false);
 
     if (hasConfirmed || hasPending) {
-      console.log("✅ Payment status indicators visible");
+      console.warn("[Essence Debug]", "âœ… Payment status indicators visible");
     }
   });
 });
 
-test.describe("💰 Distributor Sales Flow", () => {
-  test("should login as distributor and access POS", async ({ page }) => {
+test.describe("ðŸ’° Employee Sales Flow", () => {
+  test("should login as employee and access POS", async ({ page }) => {
     await page.goto("/login");
     await page.evaluate(() => localStorage.clear());
 
-    // Login as distributor (assuming one exists)
+    // Login as employee (assuming one exists)
     await page
       .locator('input[name="email"]')
-      .fill(TEST_USERS.distributor.email);
+      .fill(TEST_USERS.employee.email);
     await page
       .locator('input[name="password"]')
-      .fill(TEST_USERS.distributor.password);
+      .fill(TEST_USERS.employee.password);
     await page
-      .getByRole("button", { name: /iniciar sesión|login|entrar/i })
+      .getByRole("button", { name: /iniciar sesiÃ³n|login|entrar/i })
       .click();
 
-    // Wait for redirect - distributor might go to different dashboard
+    // Wait for redirect - employee might go to different dashboard
     try {
-      await expect(page).toHaveURL(/\/(distributor|dashboard|venta|pos)/, {
+      await expect(page).toHaveURL(/\/(employee|dashboard|venta|pos)/, {
         timeout: 10000,
       });
-      console.log("✅ Distributor login successful");
+      console.warn("[Essence Debug]", "âœ… Employee login successful");
     } catch {
-      // If login fails, distributor might not exist
-      console.log("⚠️ Distributor login failed - user may not exist");
+      // If login fails, employee might not exist
+      console.warn("[Essence Debug]", "âš ï¸ Employee login failed - user may not exist");
     }
   });
 
-  test("should show distributor's assigned products only", async ({
+  test("should show employee's assigned products only", async ({
     page,
     loginAsAdmin,
   }) => {
     // First login as admin
     await loginAsAdmin();
 
-    // Navigate to a distributor's detail to see their products
-    await page.goto("/admin/distributors");
+    // Navigate to a employee's detail to see their products
+    await page.goto("/admin/employees");
     await page.waitForLoadState("networkidle");
 
     const detailButton = page
@@ -236,7 +236,7 @@ test.describe("💰 Distributor Sales Flow", () => {
       .first();
     if (await detailButton.isVisible()) {
       await detailButton.click();
-      await expect(page).toHaveURL(/\/admin\/distributors\/[a-f0-9]+/i, {
+      await expect(page).toHaveURL(/\/admin\/employees\/[a-f0-9]+/i, {
         timeout: 10000,
       });
 
@@ -246,8 +246,9 @@ test.describe("💰 Distributor Sales Flow", () => {
       });
       if (await productsTab.isVisible()) {
         await productsTab.click();
-        console.log("✅ Distributor products tab accessible");
+        console.warn("[Essence Debug]", "âœ… Employee products tab accessible");
       }
     }
   });
 });
+

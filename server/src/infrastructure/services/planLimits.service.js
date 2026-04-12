@@ -13,7 +13,7 @@ const defaultPlans = {
     monthlyPrice: 19,
     yearlyPrice: 190,
     currency: "USD",
-    limits: { branches: 1, distributors: 2 },
+    limits: { branches: 1, employees: 2 },
     features: { businessAssistant: false },
   },
   pro: {
@@ -23,7 +23,7 @@ const defaultPlans = {
     monthlyPrice: 49,
     yearlyPrice: 490,
     currency: "USD",
-    limits: { branches: 3, distributors: 10 },
+    limits: { branches: 3, employees: 10 },
     features: { businessAssistant: false },
   },
   enterprise: {
@@ -33,7 +33,7 @@ const defaultPlans = {
     monthlyPrice: 99,
     yearlyPrice: 990,
     currency: "USD",
-    limits: { branches: 10, distributors: 50 },
+    limits: { branches: 10, employees: 50 },
     features: { businessAssistant: true },
   },
 };
@@ -110,20 +110,20 @@ export const resolveBusinessLimits = async (businessDocOrId) => {
   const customBranches = normalizePositiveInteger(
     business.customLimits?.branches,
   );
-  const customDistributors = normalizePositiveInteger(
-    business.customLimits?.distributors,
+  const customEmployees = normalizePositiveInteger(
+    business.customLimits?.employees,
   );
 
   const limits = {
     branches: customBranches ?? planLimits.branches,
-    distributors: customDistributors ?? planLimits.distributors,
+    employees: customEmployees ?? planLimits.employees,
   };
 
   return {
     plan: selectedPlan,
     limits,
     source:
-      customBranches !== undefined || customDistributors !== undefined
+      customBranches !== undefined || customEmployees !== undefined
         ? "custom"
         : "plan",
     planConfig,
@@ -132,7 +132,7 @@ export const resolveBusinessLimits = async (businessDocOrId) => {
 };
 
 export const getBusinessUsage = async (businessId) => {
-  const [branches, distributors] = await Promise.all([
+  const [branches, employees] = await Promise.all([
     Branch.countDocuments({ business: businessId, isWarehouse: { $ne: true } }),
     Membership.countDocuments({
       business: businessId,
@@ -141,7 +141,7 @@ export const getBusinessUsage = async (businessId) => {
     }),
   ]);
 
-  return { branches, distributors };
+  return { branches, employees };
 };
 
 export const buildBusinessLimitPayload = async (businessDocOrId) => {
@@ -166,9 +166,9 @@ export const buildBusinessLimitPayload = async (businessDocOrId) => {
     usage,
     remaining: {
       branches: Math.max(0, (limits.branches || 0) - usage.branches),
-      distributors: Math.max(
+      employees: Math.max(
         0,
-        (limits.distributors || 0) - usage.distributors,
+        (limits.employees || 0) - usage.employees,
       ),
     },
     planConfig,

@@ -2,15 +2,15 @@ import {
   computePointsForSale,
   resolveLevelForPoints,
 } from "../../domain/services/GamificationRulesService.js";
-import DistributorStats from "../database/models/DistributorStats.js";
+import EmployeeStats from "../database/models/EmployeeStats.js";
 import GamificationConfig from "../database/models/GamificationConfig.js";
 import Sale from "../database/models/Sale.js";
 
 export { computePointsForSale, resolveLevelForPoints };
 
-export const getCommissionBonusForDistributor = async (distributorId) => {
+export const getCommissionBonusForEmployee = async (employeeId) => {
   const config = await GamificationConfig.findOne().lean();
-  const stats = await DistributorStats.findOne({ distributor: distributorId });
+  const stats = await EmployeeStats.findOne({ employee: employeeId });
   const points = stats?.totalPoints || 0;
   const level = resolveLevelForPoints(config?.levels, points);
 
@@ -21,7 +21,7 @@ export const getCommissionBonusForDistributor = async (distributorId) => {
 };
 
 export const applySaleGamification = async ({ businessId, sale, product }) => {
-  if (!sale?.distributor) return null;
+  if (!sale?.employee) return null;
 
   const config = await GamificationConfig.findOne().lean();
   if (!config) return null;
@@ -31,8 +31,8 @@ export const applySaleGamification = async ({ businessId, sale, product }) => {
   const points = computePointsForSale(config, sale, product);
 
   const stats =
-    (await DistributorStats.findOne({ distributor: sale.distributor })) ||
-    (await DistributorStats.create({ distributor: sale.distributor }));
+    (await EmployeeStats.findOne({ employee: sale.employee })) ||
+    (await EmployeeStats.create({ employee: sale.employee }));
 
   stats.totalPoints = (stats.totalPoints || 0) + points;
   stats.currentMonthPoints = (stats.currentMonthPoints || 0) + points;
@@ -57,15 +57,15 @@ export const applySaleGamification = async ({ businessId, sale, product }) => {
 };
 
 export const rollbackSaleGamification = async ({ sale }) => {
-  if (!sale?.distributor) return null;
+  if (!sale?.employee) return null;
   if (!sale.gamificationPointsApplied) return null;
 
   const points = Math.max(0, Number(sale.gamificationPoints || 0));
   if (!points) return null;
 
   const config = await GamificationConfig.findOne().lean();
-  const stats = await DistributorStats.findOne({
-    distributor: sale.distributor,
+  const stats = await EmployeeStats.findOne({
+    employee: sale.employee,
   });
   if (!stats) return null;
 

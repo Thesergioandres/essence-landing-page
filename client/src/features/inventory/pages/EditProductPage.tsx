@@ -13,7 +13,7 @@ interface FormState {
   description: string;
   purchasePrice: string;
   suggestedPrice: string;
-  distributorPrice: string;
+  employeePrice: string;
   clientPrice: string;
   totalStock: string;
   warehouseStock: string;
@@ -40,7 +40,7 @@ export default function EditProduct() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [distributorManual, setDistributorManual] = useState(false);
+  const [employeeManual, setEmployeeManual] = useState(false);
   const [baseCommissionPercentage, setBaseCommissionPercentage] =
     useState<number>(20);
 
@@ -88,35 +88,35 @@ export default function EditProduct() {
   }, [id]);
 
   useEffect(() => {
-    if (!formData || distributorManual) return;
+    if (!formData || employeeManual) return;
     const client = Number(formData.clientPrice);
     if (Number.isNaN(client)) return;
     const autoPrice = Math.round(
       client * (1 - (baseCommissionPercentage || 0) / 100)
     );
-    if (autoPrice.toString() === formData.distributorPrice) return;
+    if (autoPrice.toString() === formData.employeePrice) return;
     setFormData(current =>
       current
         ? {
             ...current,
-            distributorPrice: autoPrice.toString(),
+            employeePrice: autoPrice.toString(),
           }
         : current
     );
-  }, [baseCommissionPercentage, distributorManual, formData]);
+  }, [baseCommissionPercentage, employeeManual, formData]);
 
   const loadProduct = async (productId: string) => {
     try {
       setLoading(true);
       const response = await productService.getById(productId);
       setProduct(response);
-      setDistributorManual(Boolean(response.distributorPriceManual));
+      setEmployeeManual(Boolean(response.employeePriceManual));
       setFormData({
         name: response.name,
         description: response.description,
         purchasePrice: response.purchasePrice?.toString() ?? "0",
         suggestedPrice: response.suggestedPrice?.toString() ?? "0",
-        distributorPrice: response.distributorPrice?.toString() ?? "0",
+        employeePrice: response.employeePrice?.toString() ?? "0",
         clientPrice: response.clientPrice?.toString() ?? "0",
         totalStock: response.totalStock?.toString() ?? "0",
         warehouseStock: response.warehouseStock?.toString() ?? "0",
@@ -176,23 +176,23 @@ export default function EditProduct() {
       return;
     }
 
-    if (name === "distributorPrice") {
-      setDistributorManual(true);
+    if (name === "employeePrice") {
+      setEmployeeManual(true);
       setFormData(current =>
         current
           ? {
               ...current,
-              distributorPrice: value,
+              employeePrice: value,
             }
           : current
       );
       return;
     }
 
-    // Auto-calcular distributorPrice cuando cambia clientPrice segun comision base
-    if (name === "clientPrice" && !distributorManual) {
+    // Auto-calcular employeePrice cuando cambia clientPrice segun comision base
+    if (name === "clientPrice" && !employeeManual) {
       const clientPrice = Number(value) || 0;
-      const distributorPrice = Math.round(
+      const employeePrice = Math.round(
         clientPrice * (1 - (baseCommissionPercentage || 0) / 100)
       );
       setFormData(current =>
@@ -200,7 +200,7 @@ export default function EditProduct() {
           ? {
               ...current,
               clientPrice: value,
-              distributorPrice: distributorPrice.toString(),
+              employeePrice: employeePrice.toString(),
             }
           : current
       );
@@ -244,7 +244,7 @@ export default function EditProduct() {
     try {
       const purchasePrice = Number(formData.purchasePrice);
       const suggestedPrice = Number(formData.suggestedPrice);
-      const distributorPrice = Number(formData.distributorPrice);
+      const employeePrice = Number(formData.employeePrice);
       const clientPrice = Number(formData.clientPrice);
       const totalStock = Number(formData.totalStock || 0);
       const warehouseStock = Number(formData.warehouseStock || 0);
@@ -273,8 +273,8 @@ export default function EditProduct() {
         description: formData.description.trim(),
         purchasePrice,
         suggestedPrice,
-        distributorPrice,
-        distributorPriceManual: distributorManual,
+        employeePrice,
+        employeePriceManual: employeeManual,
         clientPrice,
         totalStock,
         warehouseStock,
@@ -420,19 +420,19 @@ export default function EditProduct() {
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-blue-400">
-                    Precio para Distribuidor
+                    Precio para Empleado
                   </label>
                   <input
                     type="number"
-                    name="distributorPrice"
-                    value={formData.distributorPrice}
+                    name="employeePrice"
+                    value={formData.employeePrice}
                     onChange={handleChange}
                     min="0"
                     step="1"
                     className="w-full rounded-lg border border-blue-500 bg-blue-900/20 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <p className="mt-1 text-xs text-blue-600">
-                    Precio que paga el distribuidor
+                    Precio que paga el empleado
                   </p>
                 </div>
 
@@ -462,17 +462,17 @@ export default function EditProduct() {
                     )}
                   </p>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {/* B2B: Selling to Distributor */}
+                    {/* B2B: Selling to Employee */}
                     <div>
                       <p className="text-[10px] uppercase text-gray-500">
-                        Venta a Distribuidor (B2B)
+                        Venta a Empleado (B2B)
                       </p>
                       {(() => {
                         const cost =
                           (product?.averageCost && product.averageCost > 0
                             ? product.averageCost
                             : Number(formData.purchasePrice)) || 0;
-                        const price = Number(formData.distributorPrice) || 0;
+                        const price = Number(formData.employeePrice) || 0;
                         const profit = price - cost;
                         const roi =
                           cost > 0 ? Math.round((profit / cost) * 100) : 0;

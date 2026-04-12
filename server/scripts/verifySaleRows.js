@@ -29,7 +29,7 @@ const run = async () => {
   try {
     const sales = await Sale.find({ saleId: { $in: saleIds } })
       .select(
-        "saleId saleDate paymentStatus adminProfit distributorProfit totalProfit netProfit totalAdditionalCosts discount shippingCost distributor productName business",
+        "saleId saleDate paymentStatus adminProfit employeeProfit totalProfit netProfit totalAdditionalCosts discount shippingCost employee productName business",
       )
       .lean();
 
@@ -79,13 +79,13 @@ const run = async () => {
                   paymentStatus: sale.paymentStatus,
                   productName: sale.productName,
                   adminProfit: sale.adminProfit,
-                  distributorProfit: sale.distributorProfit,
+                  employeeProfit: sale.employeeProfit,
                   totalProfit: sale.totalProfit,
                   netProfit: sale.netProfit,
                   totalAdditionalCosts: sale.totalAdditionalCosts,
                   discount: sale.discount,
                   shippingCost: sale.shippingCost,
-                  hasDistributor: Boolean(sale.distributor),
+                  hasEmployee: Boolean(sale.employee),
                 }
               : null,
             profitHistoryBySaleRef: historyBySaleRef,

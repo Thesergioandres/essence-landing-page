@@ -28,7 +28,7 @@ async function run() {
       console.log(`\n📌 Nombre: ${p.name}`);
       console.log(`   ID: ${p._id}`);
       console.log(`   Type: ${p.type}`);
-      console.log(`   DistPrice: ${p.distributorPrice}`);
+      console.log(`   DistPrice: ${p.employeePrice}`);
       console.log(`   Items:`);
       p.comboItems.forEach((i) => {
         console.log(

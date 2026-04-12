@@ -2,21 +2,21 @@ import { useCallback, useEffect, useState } from "react";
 import { LoadingSpinner } from "../../../shared/components/ui";
 import type { User } from "../../auth/types/auth.types";
 import type { Branch } from "../../business/types/business.types";
-import { distributorService } from "../../employees/services";
+import { employeeService } from "../../employees/services";
 import { stockService } from "../../inventory/services/inventory.service";
-import type { DistributorStock } from "../../inventory/types/product.types";
+import type { EmployeeStock } from "../../inventory/types/product.types";
 
 export default function TransferStock() {
-  const [distributors, setDistributors] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [myStock, setMyStock] = useState<DistributorStock[]>([]);
+  const [myStock, setMyStock] = useState<EmployeeStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const [transferType, setTransferType] = useState<"distributor" | "branch">(
-    "distributor"
+  const [transferType, setTransferType] = useState<"employee" | "branch">(
+    "employee"
   );
-  const [selectedDistributor, setSelectedDistributor] = useState("");
+  const [selectedEmployee, setSelectedEmployee] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -41,23 +41,23 @@ export default function TransferStock() {
         return;
       }
 
-      const [distributorsData, stockData, allowedBranchesData] =
+      const [employeesData, stockData, allowedBranchesData] =
         await Promise.all([
-          distributorService.getAll({ active: true }).catch(() => []),
-          stockService.getDistributorStock(user._id).catch(() => []),
+          employeeService.getAll({ active: true }).catch(() => []),
+          stockService.getEmployeeStock(user._id).catch(() => []),
           stockService.getMyAllowedBranches().catch(() => ({ branches: [] })),
         ]);
 
-      // Filtrar el distribuidor actual de la lista
-      const allDistributors = Array.isArray(distributorsData)
-        ? distributorsData
-        : distributorsData?.data || [];
+      // Filtrar el empleado actual de la lista
+      const allEmployees = Array.isArray(employeesData)
+        ? employeesData
+        : employeesData?.data || [];
 
-      const filteredDistributors = allDistributors.filter(
+      const filteredEmployees = allEmployees.filter(
         (d: User) => d._id !== user._id && d.active
       );
 
-      setDistributors(filteredDistributors);
+      setEmployees(filteredEmployees);
       // Solo mostrar las sedes a las que tiene acceso
       setBranches(allowedBranchesData?.branches || []);
       setMyStock(stockData || []);
@@ -90,10 +90,10 @@ export default function TransferStock() {
 
       let result;
 
-      if (transferType === "distributor") {
-        // Transferir a otro distribuidor
+      if (transferType === "employee") {
+        // Transferir a otro empleado
         result = await stockService.transferStock({
-          toDistributorId: selectedDistributor,
+          toEmployeeId: selectedEmployee,
           productId: selectedProduct,
           quantity,
         });
@@ -112,8 +112,8 @@ export default function TransferStock() {
       });
 
       // Limpiar formulario
-      setTransferType("distributor");
-      setSelectedDistributor("");
+      setTransferType("employee");
+      setSelectedEmployee("");
       setSelectedBranch("");
       setSelectedProduct("");
       setQuantity(1);
@@ -136,11 +136,11 @@ export default function TransferStock() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (transferType === "distributor") {
-      if (!selectedDistributor) {
+    if (transferType === "employee") {
+      if (!selectedEmployee) {
         setMessage({
           type: "error",
-          text: "Selecciona un distribuidor",
+          text: "Selecciona un empleado",
         });
         return;
       }
@@ -175,8 +175,8 @@ export default function TransferStock() {
   };
 
   const getDestinationName = () => {
-    if (transferType === "distributor") {
-      return distributors.find(d => d._id === selectedDistributor)?.name || "";
+    if (transferType === "employee") {
+      return employees.find(d => d._id === selectedEmployee)?.name || "";
     } else {
       return branches.find(b => b._id === selectedBranch)?.name || "";
     }
@@ -208,7 +208,7 @@ export default function TransferStock() {
       <div>
         <h1 className="text-3xl font-bold text-white">Transferir Inventario</h1>
         <p className="mt-2 text-gray-300">
-          Transfiere productos de tu inventario a otro distribuidor o a una sede
+          Transfiere productos de tu inventario a otro empleado o a una sede
         </p>
       </div>
 
@@ -237,23 +237,23 @@ export default function TransferStock() {
               <button
                 type="button"
                 onClick={() => {
-                  setTransferType("distributor");
+                  setTransferType("employee");
                   setSelectedBranch("");
                 }}
                 className={`rounded-lg border px-4 py-3 text-center transition ${
-                  transferType === "distributor"
+                  transferType === "employee"
                     ? "border-purple-500 bg-purple-500/20 text-purple-300"
                     : "border-gray-700 bg-gray-900/40 text-gray-400 hover:border-gray-600"
                 }`}
               >
                 <div className="mb-1 text-2xl">👥</div>
-                <div className="font-medium">A Distribuidor</div>
+                <div className="font-medium">A Empleado</div>
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setTransferType("branch");
-                  setSelectedDistributor("");
+                  setSelectedEmployee("");
                 }}
                 className={`rounded-lg border px-4 py-3 text-center transition ${
                   transferType === "branch"
@@ -267,20 +267,20 @@ export default function TransferStock() {
             </div>
           </div>
 
-          {/* Seleccionar distribuidor o sede según el tipo */}
-          {transferType === "distributor" ? (
+          {/* Seleccionar empleado o sede según el tipo */}
+          {transferType === "employee" ? (
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-300">
-                Distribuidor Destino *
+                Empleado Destino *
               </label>
               <select
-                value={selectedDistributor}
-                onChange={e => setSelectedDistributor(e.target.value)}
+                value={selectedEmployee}
+                onChange={e => setSelectedEmployee(e.target.value)}
                 className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2.5 text-gray-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                 required
               >
-                <option value="">Selecciona un distribuidor</option>
-                {distributors.map(dist => (
+                <option value="">Selecciona un empleado</option>
+                {employees.map(dist => (
                   <option key={dist._id} value={dist._id}>
                     {dist.name} - {dist.email}
                   </option>
@@ -396,13 +396,13 @@ export default function TransferStock() {
               </p>
               <p>
                 <strong>Tipo:</strong>{" "}
-                {transferType === "distributor" ? "Distribuidor" : "Sede"}
+                {transferType === "employee" ? "Empleado" : "Sede"}
               </p>
               <p className="mt-4 text-sm text-amber-300">
                 ⚠️ Esta acción no se puede deshacer. El stock se restará de tu
                 inventario y se agregará al inventario del{" "}
-                {transferType === "distributor" ? "employee" : "sede"}{" "}
-                seleccionado{transferType === "distributor" ? "" : "."}.
+                {transferType === "employee" ? "employee" : "sede"}{" "}
+                seleccionado{transferType === "employee" ? "" : "."}.
               </p>
             </div>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">

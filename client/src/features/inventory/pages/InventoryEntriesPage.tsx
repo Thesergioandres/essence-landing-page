@@ -121,7 +121,7 @@ export default function InventoryEntries() {
     description: "",
     purchasePrice: "",
     suggestedPrice: "",
-    distributorPrice: "",
+    employeePrice: "",
     clientPrice: "",
     category: "",
     totalStock: "",
@@ -130,7 +130,7 @@ export default function InventoryEntries() {
     ingredients: "",
     benefits: "",
   });
-  const [distributorManual, setDistributorManual] = useState(false);
+  const [employeeManual, setEmployeeManual] = useState(false);
   const [baseCommissionPercentage, setBaseCommissionPercentage] =
     useState<number>(20);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -235,7 +235,7 @@ export default function InventoryEntries() {
   }, []);
 
   useEffect(() => {
-    if (distributorManual || !newProductData.clientPrice) return;
+    if (employeeManual || !newProductData.clientPrice) return;
     const client = Number(newProductData.clientPrice);
     if (Number.isNaN(client)) return;
     const autoPrice = Math.round(
@@ -243,9 +243,9 @@ export default function InventoryEntries() {
     );
     setNewProductData(current => ({
       ...current,
-      distributorPrice: autoPrice.toString(),
+      employeePrice: autoPrice.toString(),
     }));
-  }, [baseCommissionPercentage, distributorManual, newProductData.clientPrice]);
+  }, [baseCommissionPercentage, employeeManual, newProductData.clientPrice]);
 
   const handleAddToCart = () => {
     if (!formData.product || !formData.quantity) {
@@ -349,7 +349,7 @@ export default function InventoryEntries() {
 
     try {
       const purchasePrice = Number(newProductData.purchasePrice);
-      const distributorPrice = Number(newProductData.distributorPrice);
+      const employeePrice = Number(newProductData.employeePrice);
       const totalStock = Number(newProductData.totalStock || 0);
       const clientPrice = newProductData.clientPrice
         ? Number(newProductData.clientPrice)
@@ -359,8 +359,8 @@ export default function InventoryEntries() {
         throw new Error("El precio de compra debe ser un número válido");
       }
 
-      if (Number.isNaN(distributorPrice) || distributorPrice < 0) {
-        throw new Error("El precio de distribuidor debe ser un número válido");
+      if (Number.isNaN(employeePrice) || employeePrice < 0) {
+        throw new Error("El precio de empleado debe ser un número válido");
       }
 
       if (Number.isNaN(totalStock) || totalStock < 0) {
@@ -383,8 +383,8 @@ export default function InventoryEntries() {
         purchasePrice,
         suggestedPrice:
           Number(newProductData.suggestedPrice) || purchasePrice * 1.3,
-        distributorPrice,
-        distributorPriceManual: distributorManual,
+        employeePrice,
+        employeePriceManual: employeeManual,
         clientPrice,
         category: newProductData.category,
         totalStock,
@@ -409,7 +409,7 @@ export default function InventoryEntries() {
         description: "",
         purchasePrice: "",
         suggestedPrice: "",
-        distributorPrice: "",
+        employeePrice: "",
         clientPrice: "",
         category: "",
         totalStock: "",
@@ -420,7 +420,7 @@ export default function InventoryEntries() {
       });
       setImageFile(null);
       setImagePreview(null);
-      setDistributorManual(false);
+      setEmployeeManual(false);
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data
@@ -1357,17 +1357,17 @@ export default function InventoryEntries() {
 
                             <div>
                               <label className="mb-2 block text-xs font-medium text-blue-300">
-                                Precio Distribuidor *
+                                Precio Empleado *
                               </label>
                               <input
                                 type="number"
-                                value={newProductData.distributorPrice}
+                                value={newProductData.employeePrice}
                                 onChange={e => {
                                   setNewProductData({
                                     ...newProductData,
-                                    distributorPrice: e.target.value,
+                                    employeePrice: e.target.value,
                                   });
-                                  setDistributorManual(e.target.value !== "");
+                                  setEmployeeManual(e.target.value !== "");
                                 }}
                                 required
                                 min="0"
@@ -1395,8 +1395,8 @@ export default function InventoryEntries() {
                                   > = {
                                     clientPrice: e.target.value,
                                   };
-                                  if (!distributorManual && !isNaN(client)) {
-                                    updates.distributorPrice = Math.round(
+                                  if (!employeeManual && !isNaN(client)) {
+                                    updates.employeePrice = Math.round(
                                       client *
                                         (1 -
                                           (baseCommissionPercentage || 0) / 100)
@@ -1609,7 +1609,7 @@ export default function InventoryEntries() {
                         description: "",
                         purchasePrice: "",
                         suggestedPrice: "",
-                        distributorPrice: "",
+                        employeePrice: "",
                         clientPrice: "",
                         category: "",
                         totalStock: "",
@@ -1620,7 +1620,7 @@ export default function InventoryEntries() {
                       });
                       setImageFile(null);
                       setImagePreview(null);
-                      setDistributorManual(false);
+                      setEmployeeManual(false);
                       setError("");
                     }}
                     className="rounded-lg border border-gray-700 px-6 py-3 font-semibold text-gray-300 transition hover:border-purple-500 hover:text-white"
