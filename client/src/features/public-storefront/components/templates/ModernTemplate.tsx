@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import type { StorefrontTemplateProps } from "../../types/publicStorefront.types";
 
 const formatCurrency = (amount: number) =>
@@ -15,13 +15,13 @@ export default function ModernTemplate({
   const socialEntries = Object.entries(business.socialNetworks || {});
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 text-slate-100">
+    <div className="bg-linear-to-br min-h-screen from-slate-950 via-slate-900 to-cyan-950 text-slate-100">
       <div className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-6 lg:px-8">
-        <motion.section
+        <m.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-slate-900/80 via-slate-800/70 to-cyan-700/40 p-8 shadow-2xl shadow-cyan-900/30 backdrop-blur-xl"
+          className="bg-linear-to-r relative overflow-hidden rounded-3xl border border-white/10 from-slate-900/80 via-slate-800/70 to-cyan-700/40 p-8 shadow-2xl shadow-cyan-900/30 backdrop-blur-xl"
         >
           <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-cyan-400/20 blur-3xl" />
           <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" />
@@ -88,7 +88,7 @@ export default function ModernTemplate({
               )}
             </div>
           </div>
-        </motion.section>
+        </m.section>
 
         <section className="mt-10">
           <div className="mb-5 flex items-center justify-between">
@@ -102,14 +102,14 @@ export default function ModernTemplate({
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {products.map((product, index) => (
-              <motion.article
+              <m.article
                 key={product.id}
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: index * 0.04 }}
                 className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-xl backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/60 hover:bg-white/10"
               >
-                <div className="aspect-[4/3] overflow-hidden bg-slate-900/80">
+                <div className="aspect-4/3 overflow-hidden bg-slate-900/80">
                   {product.imageUrl ? (
                     <img
                       src={product.imageUrl}
@@ -135,7 +135,7 @@ export default function ModernTemplate({
                     {formatCurrency(product.price)}
                   </p>
                 </div>
-              </motion.article>
+              </m.article>
             ))}
           </div>
         </section>

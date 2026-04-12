@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import type { StorefrontTemplateProps } from "../../types/publicStorefront.types";
 
 const formatCurrency = (amount: number) =>
@@ -16,7 +16,7 @@ export default function MinimalTemplate({
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
       <div className="mx-auto max-w-6xl px-4 pb-24 pt-14 sm:px-6 lg:px-8">
-        <motion.header
+        <m.header
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
@@ -44,11 +44,11 @@ export default function MinimalTemplate({
               <span>Ubicacion: {business.contact.location}</span>
             )}
           </div>
-        </motion.header>
+        </m.header>
 
         <section className="mt-12 space-y-6">
           {products.map((product, index) => (
-            <motion.article
+            <m.article
               key={product.id}
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
@@ -87,7 +87,7 @@ export default function MinimalTemplate({
                   {formatCurrency(product.price)}
                 </p>
               </div>
-            </motion.article>
+            </m.article>
           ))}
         </section>
       </div>
