@@ -27,7 +27,7 @@ router.get("/", protect, businessContext, getAllProducts);
 // Public catalog (no auth)
 router.get("/public", getPublicCatalog);
 
-// Get distributor catalog (products with stock > 0)
+// Get employee catalog (products with stock > 0)
 router.get("/my-catalog", protect, getMyCatalog);
 
 // Get product inventory history

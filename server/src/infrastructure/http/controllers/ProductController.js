@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { isCloudinaryConfigured } from "../../../../config/cloudinary.js";
 import Business from "../../database/models/Business.js";
-import DistributorStock from "../../database/models/DistributorStock.js";
+import EmployeeStock from "../../database/models/EmployeeStock.js";
 import InventoryEntry from "../../database/models/InventoryEntry.js";
 import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
 import { CreateProductUseCase } from "../../../application/use-cases/CreateProductUseCase.js";
@@ -58,7 +58,7 @@ export const getAllProducts = async (req, res, next) => {
       products = products.map((product) =>
         sanitizeProductForFinancialPrivacy(product),
       );
-      console.log("🛡️ Sensitive cost fields excluded for distributor");
+      console.log("🛡️ Sensitive cost fields excluded for employee");
     }
 
     const total = products.length;
@@ -115,8 +115,8 @@ export const getPublicCatalog = async (req, res) => {
         supplierPrice,
         totalInventoryValue,
         profit,
-        distributorPrice,
-        distributorCommission,
+        employeePrice,
+        employeeCommission,
         ...safeProduct
       } = product;
       return safeProduct;
@@ -143,13 +143,13 @@ export const getPublicCatalog = async (req, res) => {
 };
 
 /**
- * Get Distributor Catalog (only products with stock > 0)
+ * Get Employee Catalog (only products with stock > 0)
  */
 export const getMyCatalog = async (req, res) => {
   try {
     if (req.user?.role !== "employee") {
       return res.status(403).json({
-        message: "Solo los distribuidores pueden acceder a su catálogo",
+        message: "Solo los employees pueden acceder a su catálogo",
       });
     }
 
@@ -158,7 +158,7 @@ export const getMyCatalog = async (req, res) => {
       : req.headers["x-business-id"];
 
     const filter = {
-      distributor: req.user.id,
+      employee: req.user.id,
       quantity: { $gt: 0 },
     };
 
@@ -166,10 +166,10 @@ export const getMyCatalog = async (req, res) => {
       filter.business = req.businessId || businessHeader;
     }
 
-    const stockEntries = await DistributorStock.find(filter)
+    const stockEntries = await EmployeeStock.find(filter)
       .populate({
         path: "product",
-        select: "name description distributorPrice clientPrice image category",
+        select: "name description employeePrice clientPrice image category",
         populate: { path: "category", select: "name slug" },
       })
       .lean();
@@ -178,7 +178,7 @@ export const getMyCatalog = async (req, res) => {
       .filter((entry) => entry.product)
       .map((entry) => ({
         ...sanitizeProductForFinancialPrivacy(entry.product || {}),
-        distributorStock: entry.quantity,
+        employeeStock: entry.quantity,
       }));
 
     res.json(products);
@@ -275,8 +275,8 @@ export const createProduct = async (req, res, next) => {
       productData.purchasePrice = Number(productData.purchasePrice);
     if (productData.suggestedPrice)
       productData.suggestedPrice = Number(productData.suggestedPrice);
-    if (productData.distributorPrice)
-      productData.distributorPrice = Number(productData.distributorPrice);
+    if (productData.employeePrice)
+      productData.employeePrice = Number(productData.employeePrice);
     if (productData.clientPrice)
       productData.clientPrice = Number(productData.clientPrice);
     if (productData.totalStock)
@@ -295,10 +295,10 @@ export const createProduct = async (req, res, next) => {
     // Parse booleans
     if (productData.featured === "true") productData.featured = true;
     if (productData.featured === "false") productData.featured = false;
-    if (productData.distributorPriceManual === "true")
-      productData.distributorPriceManual = true;
-    if (productData.distributorPriceManual === "false")
-      productData.distributorPriceManual = false;
+    if (productData.employeePriceManual === "true")
+      productData.employeePriceManual = true;
+    if (productData.employeePriceManual === "false")
+      productData.employeePriceManual = false;
 
     // Parse arrays
     if (typeof productData.ingredients === "string") {
@@ -386,8 +386,8 @@ export const updateProduct = async (req, res, next) => {
       updateData.purchasePrice = Number(updateData.purchasePrice);
     if (updateData.suggestedPrice !== undefined)
       updateData.suggestedPrice = Number(updateData.suggestedPrice);
-    if (updateData.distributorPrice !== undefined)
-      updateData.distributorPrice = Number(updateData.distributorPrice);
+    if (updateData.employeePrice !== undefined)
+      updateData.employeePrice = Number(updateData.employeePrice);
     if (updateData.clientPrice !== undefined)
       updateData.clientPrice = Number(updateData.clientPrice);
     if (updateData.totalStock !== undefined)
@@ -400,10 +400,10 @@ export const updateProduct = async (req, res, next) => {
     // Parse booleans
     if (updateData.featured === "true") updateData.featured = true;
     if (updateData.featured === "false") updateData.featured = false;
-    if (updateData.distributorPriceManual === "true")
-      updateData.distributorPriceManual = true;
-    if (updateData.distributorPriceManual === "false")
-      updateData.distributorPriceManual = false;
+    if (updateData.employeePriceManual === "true")
+      updateData.employeePriceManual = true;
+    if (updateData.employeePriceManual === "false")
+      updateData.employeePriceManual = false;
 
     // Parse arrays
     if (typeof updateData.ingredients === "string") {
@@ -568,7 +568,7 @@ export const updateProductPrices = async (req, res) => {
       businessId,
       {
         clientPrice: parsedPrice,
-        distributorPrice: parsedWholesale,
+        employeePrice: parsedWholesale,
       },
     );
 

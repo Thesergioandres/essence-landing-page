@@ -134,7 +134,7 @@ const gamificationConfigSchema = new mongoose.Schema(
       min: 0,
     },
 
-    // Comision base global para distribuidores
+    // Comision base global para employees
     baseCommissionPercentage: {
       type: Number,
       default: 20,

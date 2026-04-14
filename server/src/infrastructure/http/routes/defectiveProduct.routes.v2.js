@@ -25,22 +25,22 @@ router.post(
 router.post(
   "/",
   requirePermission({ module: "defectiveProducts", action: "create" }),
-  (req, res) => controller.reportDistributor(req, res),
+  (req, res) => controller.reportEmployee(req, res),
 );
 router.post(
-  "/distributor",
+  "/employee",
   requirePermission({ module: "defectiveProducts", action: "create" }),
-  (req, res) => controller.reportDistributor(req, res),
+  (req, res) => controller.reportEmployee(req, res),
 );
 router.get(
-  "/distributor/me",
+  "/employee/me",
   requirePermission({ module: "defectiveProducts", action: "read" }),
-  (req, res) => controller.getDistributorReports(req, res),
+  (req, res) => controller.getEmployeeReports(req, res),
 );
 router.get(
-  "/distributor/:distributorId",
+  "/employee/:employeeId",
   requirePermission({ module: "defectiveProducts", action: "read" }),
-  (req, res) => controller.getDistributorReports(req, res),
+  (req, res) => controller.getEmployeeReports(req, res),
 );
 router.get(
   "/",

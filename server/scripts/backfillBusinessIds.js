@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Business from "../src/infrastructure/database/models/Business.js";
 import Category from "../src/infrastructure/database/models/Category.js";
-import DistributorStock from "../src/infrastructure/database/models/DistributorStock.js";
+import EmployeeStock from "../src/infrastructure/database/models/EmployeeStock.js";
 import Expense from "../src/infrastructure/database/models/Expense.js";
 import Membership from "../src/infrastructure/database/models/Membership.js";
 import Product from "../src/infrastructure/database/models/Product.js";
@@ -82,7 +82,7 @@ async function run() {
     [Sale, "Sales"],
     [ProfitHistory, "ProfitHistory"],
     [Expense, "Expenses"],
-    [DistributorStock, "DistributorStock"],
+    [EmployeeStock, "EmployeeStock"],
     [Stock, "Stock"],
     [StockTransfer, "StockTransfer"],
     [SpecialSale, "SpecialSale"],

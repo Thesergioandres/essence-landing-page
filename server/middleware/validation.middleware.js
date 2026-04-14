@@ -103,9 +103,9 @@ export const productValidation = {
     body("purchasePrice")
       .isFloat({ min: 0 })
       .withMessage("Precio de compra inválido"),
-    body("distributorPrice")
+    body("employeePrice")
       .isFloat({ min: 0 })
-      .withMessage("Precio de distribuidor inválido"),
+      .withMessage("Precio de employee inválido"),
     body("category").optional().isMongoId().withMessage("Categoría inválida"),
     body("totalStock")
       .optional()
@@ -118,7 +118,7 @@ export const productValidation = {
     param("id").isMongoId().withMessage("ID de producto inválido"),
     body("name").optional().trim().isLength({ min: 1, max: 200 }),
     body("purchasePrice").optional().isFloat({ min: 0 }),
-    body("distributorPrice").optional().isFloat({ min: 0 }),
+    body("employeePrice").optional().isFloat({ min: 0 }),
     handleValidationErrors,
   ],
   getById: [

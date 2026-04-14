@@ -122,7 +122,7 @@ const MODULES = [
   {
     key: "transfers",
     label: "Transferencias",
-    description: "Movimientos entre sedes y distribuidores",
+    description: "Movimientos entre sedes y employees",
     actions: ["read", "create", "update", "delete"],
   },
   {
@@ -270,7 +270,7 @@ export default function TeamManagement() {
       ) {
         setFoundUser(null);
         setError(
-          "Solo se permiten administradores o distribuidores de esta empresa"
+          "Solo se permiten administradores o employees de esta empresa"
         );
         return;
       }
@@ -479,7 +479,7 @@ export default function TeamManagement() {
     [members]
   );
 
-  const distributorCount = useMemo(
+  const employeeCount = useMemo(
     () => members.filter(member => member.role === "employee").length,
     [members]
   );
@@ -515,7 +515,7 @@ export default function TeamManagement() {
       case "admin":
         return "Administrador";
       case "employee":
-        return "Distribuidor";
+        return "Employee";
       case "viewer":
         return "Observador";
       default:
@@ -564,10 +564,10 @@ export default function TeamManagement() {
         </div>
         <div className="bg-white/4 rounded-2xl border border-white/10 p-4 backdrop-blur-[10px]">
           <p className="text-xs uppercase tracking-wide text-gray-400">
-            Admins / Distribuidores
+            Admins / Employees
           </p>
           <p className="mt-2 text-2xl font-bold text-blue-300">
-            {adminCount} / {distributorCount}
+            {adminCount} / {employeeCount}
           </p>
         </div>
       </div>
@@ -588,7 +588,7 @@ export default function TeamManagement() {
         >
           <option value="all">Todos los roles</option>
           <option value="admin">Administradores</option>
-          <option value="employee">Distribuidores</option>
+          <option value="employee">Employees</option>
           <option value="viewer">Observadores</option>
         </select>
         <select
@@ -814,7 +814,7 @@ export default function TeamManagement() {
                       className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
                     >
                       <option value="admin">Administrador</option>
-                      <option value="employee">Distribuidor</option>
+                      <option value="employee">Employee</option>
                     </select>
                   </div>
                 )}

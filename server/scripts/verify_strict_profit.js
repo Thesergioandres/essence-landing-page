@@ -11,7 +11,7 @@ const calculate = async () => {
 
     const sales = await Sale.find({
       business: new mongoose.Types.ObjectId("697963c5af6ac901be43bf57"), // Assuming this is the business
-      distributor: new mongoose.Types.ObjectId("697965a5af6ac901be43c23e"),
+      employee: new mongoose.Types.ObjectId("697965a5af6ac901be43c23e"),
     }).lean();
 
     console.log(`Found ${sales.length} confirmed sales`);
@@ -22,14 +22,14 @@ const calculate = async () => {
     sales.forEach((s) => {
       const price = (s.salePrice || 0) * s.quantity;
       const cost = (s.averageCostAtSale || s.purchasePrice || 0) * s.quantity;
-      const comm = s.distributorProfit || 0;
+      const comm = s.employeeProfit || 0;
       const shipping = s.shippingCost || 0;
 
       const pRanking = price - cost - comm;
       const pKpi = price - cost - comm - shipping;
 
-      if (s.distributor) {
-        // Assuming we filter for specific distributor in ranking, but let's sum global to compare
+      if (s.employee) {
+        // Assuming we filter for specific employee in ranking, but let's sum global to compare
       }
 
       // console.log(`Sale ${s._id}: Price=${price}, Cost=${cost}, Comm=${comm}, Ship=${shipping} -> Rank=${pRanking}, KPI=${pKpi}`);

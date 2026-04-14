@@ -22,7 +22,7 @@ import type { User } from "../../auth/types/auth.types";
 import { dispatchService } from "../../branches/services";
 import DemoModeTour from "../../demo/DemoModeTour";
 import DemoSandboxBanner from "../../demo/DemoSandboxBanner";
-import { distributorService } from "../../employees/services";
+import { employeeService } from "../../employees/services";
 
 const navLinkClasses = (isActive: boolean): string =>
   [
@@ -53,7 +53,7 @@ export default function DashboardLayout() {
   const brandName = business?.name || "Selecciona un negocio";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
-  const [distributors, setDistributors] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<User[]>([]);
   const [loadingImpersonation, setLoadingImpersonation] = useState(false);
   const [pendingDispatchCount, setPendingDispatchCount] = useState(0);
   const isImpersonating = authService.isImpersonating();
@@ -83,32 +83,32 @@ export default function DashboardLayout() {
 
   useEffect(() => {
     if (!userRole || !businessId) {
-      setDistributors([]);
+      setEmployees([]);
       return;
     }
 
-    const loadDistributors = async () => {
+    const loadEmployees = async () => {
       try {
-        const response = await distributorService.getAll({ active: true });
+        const response = await employeeService.getAll({ active: true });
         const items = response?.data || [];
-        setDistributors(
+        setEmployees(
           items.filter(
             item => item.role === "employee" && item.active !== false
           )
         );
       } catch (error) {
         console.error(
-          "Error cargando distribuidores para suplantación:",
+          "Error cargando employees para suplantación:",
           error
         );
-        setDistributors([]);
+        setEmployees([]);
       }
     };
 
     if (["admin", "super_admin", "god"].includes(userRole)) {
-      loadDistributors();
+      loadEmployees();
     } else {
-      setDistributors([]);
+      setEmployees([]);
     }
   }, [userRole, businessId]);
 
@@ -201,17 +201,17 @@ export default function DashboardLayout() {
     navigate("/login", { replace: true });
   };
 
-  const handleImpersonateDistributor = async (
+  const handleImpersonateEmployee = async (
     event: ChangeEvent<HTMLSelectElement>
   ) => {
-    const distributorId = event.target.value;
-    if (!distributorId || loadingImpersonation) return;
+    const employeeId = event.target.value;
+    if (!employeeId || loadingImpersonation) return;
 
     setLoadingImpersonation(true);
     try {
-      await authService.impersonate(distributorId);
+      await authService.impersonate(employeeId);
     } catch (error: any) {
-      console.error("Error al suplantar distribuidor:", error);
+      console.error("Error al suplantar employee:", error);
       alert(
         error?.response?.data?.message ||
           "No se pudo iniciar modo de suplantación"
@@ -1067,22 +1067,22 @@ export default function DashboardLayout() {
           <div className="flex items-center gap-3">
             <select
               defaultValue=""
-              onChange={handleImpersonateDistributor}
-              disabled={loadingImpersonation || distributors.length === 0}
+              onChange={handleImpersonateEmployee}
+              disabled={loadingImpersonation || employees.length === 0}
               className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-gray-200 transition hover:border-purple-400/60 hover:text-white lg:block"
             >
               <option value="" className="bg-gray-900 text-gray-200">
                 {loadingImpersonation
                   ? "Iniciando soporte..."
-                  : "Entrar como distribuidor"}
+                  : "Entrar como employee"}
               </option>
-              {distributors.map(distributor => (
+              {employees.map(employee => (
                 <option
-                  key={distributor._id}
-                  value={distributor._id}
+                  key={employee._id}
+                  value={employee._id}
                   className="bg-gray-900 text-gray-200"
                 >
-                  {distributor.name}
+                  {employee.name}
                 </option>
               ))}
             </select>

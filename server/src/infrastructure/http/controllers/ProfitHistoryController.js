@@ -115,9 +115,9 @@ class ProfitHistoryController {
   async getAdminOverview(req, res) {
     try {
       const businessId = req.businessId;
-      const { startDate, endDate, limit, distributorId } = req.query;
+      const { startDate, endDate, limit, employeeId } = req.query;
       const privacy = resolveFinancialPrivacyContext(req);
-      const scopedDistributorId = privacy.scopeDistributorId || distributorId;
+      const scopedEmployeeId = privacy.scopeEmployeeId || employeeId;
 
       const overview = await profitHistoryPersistenceUseCase.getAdminOverview(
         businessId,
@@ -125,7 +125,7 @@ class ProfitHistoryController {
           startDate,
           endDate,
           limit: parseInt(limit) || 150,
-          distributorId: scopedDistributorId,
+          employeeId: scopedEmployeeId,
           hideFinancialData: privacy.hideFinancialData,
         },
       );

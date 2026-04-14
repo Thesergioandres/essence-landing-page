@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import Branch from "../models/Branch.js";
 import BranchStock from "../models/BranchStock.js";
-import DistributorStock from "../models/DistributorStock.js";
+import EmployeeStock from "../models/EmployeeStock.js";
 import Product from "../models/Product.js";
 import StockTransfer from "../models/StockTransfer.js";
 import User from "../models/User.js";
@@ -25,7 +25,7 @@ const getBodegaBranchIds = async (businessId) => {
 };
 
 class StockRepository {
-  async assignToDistributor(businessId, distributorId, productId, quantity) {
+  async assignToEmployee(businessId, employeeId, productId, quantity) {
     const product = await Product.findOne({
       _id: productId,
       business: businessId,
@@ -36,16 +36,16 @@ class StockRepository {
 
     let distStock;
     try {
-      distStock = await DistributorStock.findOneAndUpdate(
+      distStock = await EmployeeStock.findOneAndUpdate(
         {
-          distributor: distributorId,
+          employee: employeeId,
           product: productId,
           business: businessId,
         },
         {
           $inc: { quantity },
           $setOnInsert: {
-            distributor: distributorId,
+            employee: employeeId,
             product: productId,
             business: businessId,
           },
@@ -54,8 +54,8 @@ class StockRepository {
       );
     } catch (error) {
       if (error?.code === 11000) {
-        distStock = await DistributorStock.findOneAndUpdate(
-          { distributor: distributorId, product: productId },
+        distStock = await EmployeeStock.findOneAndUpdate(
+          { employee: employeeId, product: productId },
           { $inc: { quantity } },
           { new: true },
         );
@@ -80,7 +80,7 @@ class StockRepository {
       throw new Error("Fallo en actualización concurrente");
     }
 
-    const user = await User.findById(distributorId);
+    const user = await User.findById(employeeId);
     if (user && !user.assignedProducts.includes(productId)) {
       user.assignedProducts.push(productId);
       await user.save();
@@ -89,9 +89,9 @@ class StockRepository {
     return { distStock, product: updated };
   }
 
-  async withdrawFromDistributor(
+  async withdrawFromEmployee(
     businessId,
-    distributorId,
+    employeeId,
     productId,
     quantity,
   ) {
@@ -100,10 +100,10 @@ class StockRepository {
       throw new Error("Cantidad inválida");
     }
 
-    const stockUpdate = await DistributorStock.findOneAndUpdate(
+    const stockUpdate = await EmployeeStock.findOneAndUpdate(
       {
         business: businessId,
-        distributor: distributorId,
+        employee: employeeId,
         product: productId,
         quantity: { $gte: normalizedQty },
       },
@@ -122,19 +122,19 @@ class StockRepository {
     return { stockUpdate, product };
   }
 
-  async transferBetweenDistributors(
+  async transferBetweenEmployees(
     businessId,
-    fromDistributorId,
-    toDistributorId,
+    fromEmployeeId,
+    toEmployeeId,
     productId,
     quantity,
   ) {
-    if (fromDistributorId === toDistributorId) {
-      throw new Error("No puedes transferir al mismo distribuidor");
+    if (fromEmployeeId === toEmployeeId) {
+      throw new Error("No puedes transferir al mismo employee");
     }
-    const fromStock = await DistributorStock.findOne({
+    const fromStock = await EmployeeStock.findOne({
       business: businessId,
-      distributor: fromDistributorId,
+      employee: fromEmployeeId,
       product: productId,
     });
 
@@ -142,9 +142,9 @@ class StockRepository {
       throw new Error("Stock insuficiente");
     }
 
-    let toStock = await DistributorStock.findOne({
+    let toStock = await EmployeeStock.findOne({
       business: businessId,
-      distributor: toDistributorId,
+      employee: toEmployeeId,
       product: productId,
     });
 
@@ -155,9 +155,9 @@ class StockRepository {
     await fromStock.save();
 
     if (!toStock) {
-      toStock = await DistributorStock.create({
+      toStock = await EmployeeStock.create({
         business: businessId,
-        distributor: toDistributorId,
+        employee: toEmployeeId,
         product: productId,
         quantity,
       });
@@ -168,8 +168,8 @@ class StockRepository {
 
     const transfer = await StockTransfer.create({
       business: businessId,
-      fromDistributor: fromDistributorId,
-      toDistributor: toDistributorId,
+      fromEmployee: fromEmployeeId,
+      toEmployee: toEmployeeId,
       product: productId,
       quantity,
       fromStockBefore: fromBefore,
@@ -179,7 +179,7 @@ class StockRepository {
       status: "completed",
     });
 
-    const toUser = await User.findById(toDistributorId);
+    const toUser = await User.findById(toEmployeeId);
     if (toUser && !toUser.assignedProducts.includes(productId)) {
       toUser.assignedProducts.push(productId);
       await toUser.save();
@@ -188,9 +188,9 @@ class StockRepository {
     return { fromStock, toStock, transfer };
   }
 
-  async transferToBranchFromDistributor(
+  async transferToBranchFromEmployee(
     businessId,
-    fromDistributorId,
+    fromEmployeeId,
     toBranchId,
     productId,
     quantity,
@@ -206,9 +206,9 @@ class StockRepository {
 
     const redirectToWarehouse = isBodegaBranch(branch);
 
-    const fromStock = await DistributorStock.findOne({
+    const fromStock = await EmployeeStock.findOne({
       business: businessId,
-      distributor: fromDistributorId,
+      employee: fromEmployeeId,
       product: productId,
     });
 
@@ -241,7 +241,7 @@ class StockRepository {
 
       await StockTransfer.create({
         business: businessId,
-        fromDistributor: fromDistributorId,
+        fromEmployee: fromEmployeeId,
         toBranch: toBranchId,
         product: productId,
         quantity,
@@ -279,7 +279,7 @@ class StockRepository {
 
     await StockTransfer.create({
       business: businessId,
-      fromDistributor: fromDistributorId,
+      fromEmployee: fromEmployeeId,
       toBranch: toBranchId,
       product: productId,
       quantity,
@@ -293,25 +293,25 @@ class StockRepository {
     return { fromStock, branchStock };
   }
 
-  async getDistributorStock(businessId, distributorId) {
-    const stock = await DistributorStock.find({
-      distributor: distributorId,
+  async getEmployeeStock(businessId, employeeId) {
+    const stock = await EmployeeStock.find({
+      employee: employeeId,
       business: businessId,
     })
       .populate(
         "product",
-        "name image purchasePrice distributorPrice clientPrice",
+        "name image purchasePrice employeePrice clientPrice",
       )
-      .populate("distributor", "name email")
+      .populate("employee", "name email")
       .lean();
 
     // Log entries where product is null (potential data integrity issues)
     const nullProductEntries = stock.filter((item) => item.product == null);
     if (nullProductEntries.length > 0) {
-      console.warn("DistributorStock entries with null product encountered", {
+      console.warn("EmployeeStock entries with null product encountered", {
         businessId,
-        distributorId,
-        distributorStockIds: nullProductEntries
+        employeeId,
+        employeeStockIds: nullProductEntries
           .map((item) => item._id)
           .filter((id) => id != null),
       });
@@ -319,7 +319,7 @@ class StockRepository {
     // Filter out entries where product is null (deleted products)
     const validStock = stock.filter((item) => item.product != null);
 
-    const user = await User.findById(distributorId).select("assignedProducts");
+    const user = await User.findById(employeeId).select("assignedProducts");
     const assignedIds = (user?.assignedProducts || []).map((id) =>
       id.toString(),
     );
@@ -332,12 +332,12 @@ class StockRepository {
         business: businessId,
         isDeleted: { $ne: true },
       })
-        .select("name image purchasePrice distributorPrice clientPrice")
+        .select("name image purchasePrice employeePrice clientPrice")
         .lean();
       missing.forEach((p) =>
         validStock.push({
           _id: `synthetic-${p._id}`,
-          distributor: { _id: distributorId },
+          employee: { _id: employeeId },
           product: p,
           quantity: 0,
           lowStockAlert: 5,
@@ -366,7 +366,7 @@ class StockRepository {
         isDeleted: { $ne: true },
       })
         .select(
-          "name image purchasePrice distributorPrice clientPrice lowStockAlert warehouseStock",
+          "name image purchasePrice employeePrice clientPrice lowStockAlert warehouseStock",
         )
         .lean();
 
@@ -391,7 +391,7 @@ class StockRepository {
       .populate("branch", "name")
       .populate(
         "product",
-        "name image purchasePrice distributorPrice clientPrice",
+        "name image purchasePrice employeePrice clientPrice",
       )
       .lean();
   }
@@ -414,11 +414,11 @@ class StockRepository {
       .populate("branch", "name")
       .lean();
 
-    // 3. Fetch all distributor stocks
-    const distributorStocks = await DistributorStock.find({
+    // 3. Fetch all employee stocks
+    const employeeStocks = await EmployeeStock.find({
       business: businessId,
     })
-      .populate("distributor", "name")
+      .populate("employee", "name")
       .lean();
 
     // 4. Map and Aggregate
@@ -431,8 +431,8 @@ class StockRepository {
         warehouse: p.warehouseStock || 0,
         branches: 0,
         branchDetails: [],
-        distributors: 0,
-        distributorDetails: [],
+        employees: 0,
+        employeeDetails: [],
         systemTotal: p.totalStock || 0,
       });
     });
@@ -452,16 +452,16 @@ class StockRepository {
       });
     });
 
-    // Add Distributor Stock
-    distributorStocks.forEach((item) => {
+    // Add Employee Stock
+    employeeStocks.forEach((item) => {
       if (!item.product) return;
       const productId = item.product.toString();
       if (!inventoryMap.has(productId)) return;
 
       const entry = inventoryMap.get(productId);
-      entry.distributors += item.quantity || 0;
-      entry.distributorDetails.push({
-        name: item.distributor?.name || "Distribuidor desconocido",
+      entry.employees += item.quantity || 0;
+      entry.employeeDetails.push({
+        name: item.employee?.name || "Employee desconocido",
         quantity: item.quantity,
       });
     });
@@ -476,14 +476,14 @@ class StockRepository {
       $expr: { $lte: ["$warehouseStock", "$lowStockAlert"] },
     }).lean();
 
-    const lowDist = await DistributorStock.find({ business: businessId })
+    const lowDist = await EmployeeStock.find({ business: businessId })
       .populate("product", "name")
-      .populate("distributor", "name email")
+      .populate("employee", "name email")
       .lean();
 
     return {
       warehouseAlerts: lowWarehouse,
-      distributorAlerts: lowDist.filter((i) => i.quantity <= i.lowStockAlert),
+      employeeAlerts: lowDist.filter((i) => i.quantity <= i.lowStockAlert),
     };
   }
 
@@ -507,7 +507,7 @@ class StockRepository {
       business: businessId,
       branch: { $in: branchIds },
     })
-      .populate("product", "name image clientPrice distributorPrice")
+      .populate("product", "name image clientPrice employeePrice")
       .lean();
 
     const stockByBranch = new Map();
@@ -549,9 +549,9 @@ class StockRepository {
     return StockTransfer.create({
       business: businessId,
       product: productId,
-      fromDistributor: fromDistId || null,
+      fromEmployee: fromDistId || null,
       fromBranch: fromBranchId || null,
-      toDistributor: toDistId || null,
+      toEmployee: toDistId || null,
       toBranch: toBranchId || null,
       quantity,
       createdBy: userId,
@@ -570,12 +570,12 @@ class StockRepository {
       throw new Error("Producto no encontrado");
     }
 
-    // Calcular stock asignado en distribuidores
-    const distStocks = await DistributorStock.find({
+    // Calcular stock asignado en employees
+    const distStocks = await EmployeeStock.find({
       product: productId,
       business: businessId,
     });
-    const totalDistributor = distStocks.reduce(
+    const totalEmployee = distStocks.reduce(
       (sum, item) => sum + (item.quantity || 0),
       0,
     );
@@ -596,7 +596,7 @@ class StockRepository {
     const unassigned =
       (product.totalStock || 0) -
       (product.warehouseStock || 0) -
-      totalDistributor -
+      totalEmployee -
       totalBranch;
 
     if (unassigned <= 0) {
@@ -624,11 +624,11 @@ class StockRepository {
       throw new Error("Producto no encontrado");
     }
 
-    const distStocks = await DistributorStock.find({
+    const distStocks = await EmployeeStock.find({
       product: productId,
       business: businessId,
     });
-    const totalDistributor = distStocks.reduce(
+    const totalEmployee = distStocks.reduce(
       (sum, item) => sum + (item.quantity || 0),
       0,
     );
@@ -645,7 +645,7 @@ class StockRepository {
     );
 
     const warehouseStock = product.warehouseStock || 0;
-    const syncedTotal = warehouseStock + totalDistributor + totalBranch;
+    const syncedTotal = warehouseStock + totalEmployee + totalBranch;
 
     product.totalStock = syncedTotal;
     await product.save();
@@ -653,7 +653,7 @@ class StockRepository {
     return {
       totalStock: product.totalStock,
       warehouseStock,
-      totalDistributor,
+      totalEmployee,
       totalBranch,
     };
   }
@@ -661,12 +661,12 @@ class StockRepository {
   async getTransferHistory(businessId, filters = {}) {
     const query = { business: businessId };
 
-    if (filters.fromDistributor) {
-      query.fromDistributor = filters.fromDistributor;
+    if (filters.fromEmployee) {
+      query.fromEmployee = filters.fromEmployee;
     }
 
-    if (filters.toDistributor) {
-      query.toDistributor = filters.toDistributor;
+    if (filters.toEmployee) {
+      query.toEmployee = filters.toEmployee;
     }
 
     if (filters.product) {
@@ -695,15 +695,15 @@ class StockRepository {
       business: new mongoose.Types.ObjectId(businessId),
     };
 
-    if (query.fromDistributor) {
-      aggregateMatch.fromDistributor = new mongoose.Types.ObjectId(
-        query.fromDistributor,
+    if (query.fromEmployee) {
+      aggregateMatch.fromEmployee = new mongoose.Types.ObjectId(
+        query.fromEmployee,
       );
     }
 
-    if (query.toDistributor) {
-      aggregateMatch.toDistributor = new mongoose.Types.ObjectId(
-        query.toDistributor,
+    if (query.toEmployee) {
+      aggregateMatch.toEmployee = new mongoose.Types.ObjectId(
+        query.toEmployee,
       );
     }
 
@@ -721,8 +721,8 @@ class StockRepository {
 
     const [transfers, total, statsAgg] = await Promise.all([
       StockTransfer.find(query)
-        .populate("fromDistributor", "name email")
-        .populate("toDistributor", "name email")
+        .populate("fromEmployee", "name email")
+        .populate("toEmployee", "name email")
         .populate("toBranch", "name")
         .populate("product", "name image")
         .sort({ createdAt: -1 })
@@ -750,16 +750,16 @@ class StockRepository {
         (transfer.product === null
           ? { _id: null, name: "Producto Eliminado" }
           : transfer.product),
-      fromDistributor:
-        transfer.fromDistributor ||
-        (transfer.fromDistributor === null
-          ? { _id: null, name: "Distribuidor" }
-          : transfer.fromDistributor),
-      toDistributor:
-        transfer.toDistributor ||
-        (transfer.toDistributor === null
-          ? { _id: null, name: "Distribuidor" }
-          : transfer.toDistributor),
+      fromEmployee:
+        transfer.fromEmployee ||
+        (transfer.fromEmployee === null
+          ? { _id: null, name: "Employee" }
+          : transfer.fromEmployee),
+      toEmployee:
+        transfer.toEmployee ||
+        (transfer.toEmployee === null
+          ? { _id: null, name: "Employee" }
+          : transfer.toEmployee),
     }));
 
     return {

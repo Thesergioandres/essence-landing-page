@@ -11,7 +11,7 @@ import { branchService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
 import { expenseService } from "../../common/services";
 import type { Expense } from "../../common/types/common.types";
-import { distributorService } from "../../employees/services/distributor.service";
+import { employeeService } from "../../employees/services/employee.service";
 import { productService } from "../../inventory/services/inventory.service";
 import type { Product } from "../../inventory/types/product.types";
 
@@ -113,7 +113,7 @@ export default function Expenses() {
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
   const [withdrawalProducts, setWithdrawalProducts] = useState<Product[]>([]);
   const [withdrawalBranches, setWithdrawalBranches] = useState<Branch[]>([]);
-  const [withdrawalDistributors, setWithdrawalDistributors] = useState<
+  const [withdrawalEmployees, setWithdrawalEmployees] = useState<
     Array<{ _id: string; name: string }>
   >([]);
 
@@ -238,18 +238,18 @@ export default function Expenses() {
     const loadWithdrawalContext = async () => {
       try {
         setWithdrawalLoading(true);
-        const [productsRes, branchesRes, distributorsRes] = await Promise.all([
+        const [productsRes, branchesRes, employeesRes] = await Promise.all([
           productService.getAll({ limit: 1000 }),
           branchService.getAll(),
-          distributorService.getAll({ active: true }),
+          employeeService.getAll({ active: true }),
         ]);
         if (!isActive) return;
         setWithdrawalProducts(productsRes.data || []);
         setWithdrawalBranches(
           (branchesRes || []).filter(branch => !branch?.isWarehouse)
         );
-        setWithdrawalDistributors(
-          (distributorsRes.data || []).map((dist: any) => ({
+        setWithdrawalEmployees(
+          (employeesRes.data || []).map((dist: any) => ({
             _id: dist._id,
             name: dist.name,
           }))
@@ -298,9 +298,9 @@ export default function Expenses() {
           return;
         }
 
-        if (withdrawalForm.originType === "distributor") {
+        if (withdrawalForm.originType === "employee") {
           if (!withdrawalForm.originId) return;
-          const distRes = await distributorService.getProducts(
+          const distRes = await employeeService.getProducts(
             withdrawalForm.originId
           );
           if (!isActive) return;
@@ -313,7 +313,7 @@ export default function Expenses() {
               0,
             warehouseStock: item.quantity,
             totalStock: item.quantity,
-            distributorStock: item.quantity,
+            employeeStock: item.quantity,
           }));
           setWithdrawalProducts(mapped);
         }
@@ -456,9 +456,9 @@ export default function Expenses() {
     }
 
     const { originType, originId } = withdrawalForm;
-    const locationType = originType as "warehouse" | "branch" | "distributor";
+    const locationType = originType as "warehouse" | "branch" | "employee";
     const branchId = locationType === "branch" ? originId : undefined;
-    const distributorId = locationType === "distributor" ? originId : undefined;
+    const employeeId = locationType === "employee" ? originId : undefined;
 
     if (locationType !== "warehouse" && !originId) {
       alert("Selecciona el inventario de origen");
@@ -475,7 +475,7 @@ export default function Expenses() {
       const created = await expenseService.createInventoryWithdrawal({
         productId: withdrawalForm.productId,
         branchId,
-        distributorId,
+        employeeId,
         locationType,
         quantity: qty,
         reason: withdrawalForm.reason,
@@ -805,12 +805,12 @@ export default function Expenses() {
                         ))}
                       </optgroup>
                     )}
-                    {withdrawalDistributors.length > 0 && (
-                      <optgroup label="Distribuidores">
-                        {withdrawalDistributors.map(dist => (
+                    {withdrawalEmployees.length > 0 && (
+                      <optgroup label="Employees">
+                        {withdrawalEmployees.map(dist => (
                           <option
                             key={dist._id}
-                            value={`distributor:${dist._id}`}
+                            value={`employee:${dist._id}`}
                           >
                             {dist.name}
                           </option>

@@ -5,7 +5,7 @@ import Business from "../../infrastructure/database/models/Business.js";
 import Category from "../../infrastructure/database/models/Category.js";
 import Customer from "../../infrastructure/database/models/Customer.js";
 import DeliveryMethod from "../../infrastructure/database/models/DeliveryMethod.js";
-import DistributorStock from "../../infrastructure/database/models/DistributorStock.js";
+import EmployeeStock from "../../infrastructure/database/models/EmployeeStock.js";
 import Expense from "../../infrastructure/database/models/Expense.js";
 import InventoryEntry from "../../infrastructure/database/models/InventoryEntry.js";
 import Membership from "../../infrastructure/database/models/Membership.js";
@@ -20,7 +20,7 @@ import { TeardownDemoTenantUseCase } from "./TeardownDemoTenantUseCase.js";
 
 const DEFAULT_DEMO_TTL_HOURS = 2;
 const DEMO_ADMIN_PASSWORD = "DemoAdmin123!";
-const DEMO_DISTRIBUTOR_PASSWORD = "DemoDist123!";
+const DEMO_EMPLOYEE_PASSWORD = "DemoDist123!";
 
 const demoCatalog = [
   {
@@ -154,11 +154,11 @@ export class SetupDemoTenantUseCase {
     const demoCode = randomInt(1000, 9999);
 
     const adminEmail = `demo.admin.${nonce}@essence.local`;
-    const distributorEmail = `demo.distribuidor.${nonce}@essence.local`;
+    const employeeEmail = `demo.employee.${nonce}@essence.local`;
 
     const setupState = {
       adminUser: null,
-      distributorUser: null,
+      employeeUser: null,
       business: null,
     };
 
@@ -195,13 +195,13 @@ export class SetupDemoTenantUseCase {
         },
       });
 
-      const distributorPasswordHash = await AuthService.hashPassword(
-        DEMO_DISTRIBUTOR_PASSWORD,
+      const employeePasswordHash = await AuthService.hashPassword(
+        DEMO_EMPLOYEE_PASSWORD,
       );
-      setupState.distributorUser = await User.create({
-        name: `Demo Distribuidor ${demoCode}`,
-        email: distributorEmail,
-        password: distributorPasswordHash,
+      setupState.employeeUser = await User.create({
+        name: `Demo Employee ${demoCode}`,
+        email: employeeEmail,
+        password: employeePasswordHash,
         role: "employee",
         status: "active",
         active: true,
@@ -217,7 +217,7 @@ export class SetupDemoTenantUseCase {
           status: "active",
         },
         {
-          user: setupState.distributorUser._id,
+          user: setupState.employeeUser._id,
           business: setupState.business._id,
           role: "employee",
           status: "active",
@@ -238,7 +238,7 @@ export class SetupDemoTenantUseCase {
         {
           business: setupState.business._id,
           name: "Mayorista",
-          description: "SKU para volumen y distribuidores.",
+          description: "SKU para volumen y employees.",
         },
       ]);
 
@@ -268,12 +268,12 @@ export class SetupDemoTenantUseCase {
           const averageCost = roundMoney(
             purchasePrice * (1 + randomInt(-3, 5) / 100),
           );
-          const distributorPrice = roundMoney(averageCost * 1.35);
+          const employeePrice = roundMoney(averageCost * 1.35);
           const clientPrice = roundMoney(averageCost * 1.7);
           const warehouseStock = randomInt(60, 180);
           const branchStock = randomInt(18, 54);
-          const distributorStock = randomInt(8, 30);
-          const totalStock = warehouseStock + branchStock + distributorStock;
+          const employeeStock = randomInt(8, 30);
+          const totalStock = warehouseStock + branchStock + employeeStock;
 
           return {
             business: setupState.business._id,
@@ -282,10 +282,10 @@ export class SetupDemoTenantUseCase {
             description: item.description,
             purchasePrice,
             averageCost,
-            distributorPrice,
+            employeePrice,
             clientPrice,
             suggestedPrice: roundMoney(clientPrice * 1.05),
-            distributorCommission: 30,
+            employeeCommission: 30,
             category: categories[index % categories.length]._id,
             image: {
               url: item.image,
@@ -333,13 +333,13 @@ export class SetupDemoTenantUseCase {
         deliveryPersonal;
 
       const branchStockDocs = [];
-      const distributorStockDocs = [];
+      const employeeStockDocs = [];
       const inventoryEntries = [];
 
       products.forEach((product) => {
         const warehouseQty = Number(product.warehouseStock || 0);
         const branchQty = randomInt(18, 54);
-        const distributorQty = randomInt(8, 30);
+        const employeeQty = randomInt(8, 30);
 
         branchStockDocs.push({
           business: setupState.business._id,
@@ -357,11 +357,11 @@ export class SetupDemoTenantUseCase {
           lowStockAlert: product.lowStockAlert || 12,
         });
 
-        distributorStockDocs.push({
+        employeeStockDocs.push({
           business: setupState.business._id,
-          distributor: setupState.distributorUser._id,
+          employee: setupState.employeeUser._id,
           product: product._id,
-          quantity: distributorQty,
+          quantity: employeeQty,
           inTransitQuantity: 0,
           lowStockAlert: 6,
         });
@@ -371,10 +371,10 @@ export class SetupDemoTenantUseCase {
           product: product._id,
           user: setupState.adminUser._id,
           type: "entry",
-          quantity: warehouseQty + branchQty + distributorQty,
+          quantity: warehouseQty + branchQty + employeeQty,
           unitCost: product.averageCost || product.purchasePrice || 0,
           totalCost:
-            (warehouseQty + branchQty + distributorQty) *
+            (warehouseQty + branchQty + employeeQty) *
             (product.averageCost || product.purchasePrice || 0),
           averageCostAfter: product.averageCost || product.purchasePrice || 0,
           notes: "Seed inicial sandbox demo",
@@ -383,7 +383,7 @@ export class SetupDemoTenantUseCase {
       });
 
       await BranchStock.insertMany(branchStockDocs);
-      await DistributorStock.insertMany(distributorStockDocs);
+      await EmployeeStock.insertMany(employeeStockDocs);
       await InventoryEntry.insertMany(inventoryEntries);
 
       const customers = await Customer.insertMany(
@@ -406,7 +406,7 @@ export class SetupDemoTenantUseCase {
         const product = pickOne(products);
         const quantity = randomInt(1, 4);
         const saleDate = randomDateInLastDays(85);
-        const withDistributor = Math.random() > 0.28;
+        const withEmployee = Math.random() > 0.28;
         const salePrice = roundMoney(
           (product.clientPrice || 0) * (1 + randomInt(-4, 6) / 100),
         );
@@ -417,14 +417,14 @@ export class SetupDemoTenantUseCase {
           product.averageCost || product.purchasePrice || 0,
         );
         const totalCost = roundMoney(averageCostAtSale * quantity);
-        const distributorProfit = withDistributor
+        const employeeProfit = withEmployee
           ? roundMoney(actualPayment * commissionRate)
           : 0;
         const adminProfit = Math.max(
           0,
-          roundMoney(actualPayment - totalCost - distributorProfit),
+          roundMoney(actualPayment - totalCost - employeeProfit),
         );
-        const totalProfit = roundMoney(adminProfit + distributorProfit);
+        const totalProfit = roundMoney(adminProfit + employeeProfit);
         const shippingCost = roundMoney(randomInt(0, 12000));
 
         const selectedPayment =
@@ -448,20 +448,20 @@ export class SetupDemoTenantUseCase {
           customerPhone: customer?.phone || null,
           saleId: buildSaleId(index + 1),
           saleGroupId: `DEMO-GROUP-${index + 1}`,
-          distributor: withDistributor ? setupState.distributorUser._id : null,
+          employee: withEmployee ? setupState.employeeUser._id : null,
           product: product._id,
           productName: product.name,
           quantity,
           purchasePrice: product.purchasePrice || averageCostAtSale,
           averageCostAtSale,
-          distributorPrice: product.distributorPrice || averageCostAtSale,
+          employeePrice: product.employeePrice || averageCostAtSale,
           salePrice,
           isPromotion: false,
-          distributorProfit,
+          employeeProfit,
           adminProfit,
           totalProfit,
           totalGroupProfit: totalProfit,
-          distributorProfitPercentage: withDistributor ? 30 : 0,
+          employeeProfitPercentage: withEmployee ? 30 : 0,
           commissionBonus: 0,
           commissionBonusAmount: 0,
           saleDate,
@@ -506,24 +506,24 @@ export class SetupDemoTenantUseCase {
           balanceAfter: adminNext,
         });
 
-        if (sale.distributor) {
-          const distributorKey = String(sale.distributor);
-          const distributorPrevious = balanceByUser.get(distributorKey) || 0;
-          const distributorNext = roundMoney(
-            distributorPrevious + Number(sale.distributorProfit || 0),
+        if (sale.employee) {
+          const employeeKey = String(sale.employee);
+          const employeePrevious = balanceByUser.get(employeeKey) || 0;
+          const employeeNext = roundMoney(
+            employeePrevious + Number(sale.employeeProfit || 0),
           );
-          balanceByUser.set(distributorKey, distributorNext);
+          balanceByUser.set(employeeKey, employeeNext);
 
           profitHistoryDocs.push({
             business: setupState.business._id,
-            user: sale.distributor,
+            user: sale.employee,
             type: "venta_normal",
-            amount: roundMoney(sale.distributorProfit || 0),
+            amount: roundMoney(sale.employeeProfit || 0),
             sale: sale._id,
             product: sale.product,
             description: `Comision fija 30% en ${sale.saleId}`,
             date: sale.saleDate,
-            balanceAfter: distributorNext,
+            balanceAfter: employeeNext,
           });
         }
       }
@@ -546,7 +546,7 @@ export class SetupDemoTenantUseCase {
 
       const seedSummary = {
         adminUsers: 1,
-        distributorUsers: 1,
+        employeeUsers: 1,
         categories: categories.length,
         products: products.length,
         customers: customers.length,
@@ -565,9 +565,9 @@ export class SetupDemoTenantUseCase {
             expiresAt,
             source: "sandbox_engine",
             nonce,
-            userIds: [setupState.adminUser._id, setupState.distributorUser._id],
+            userIds: [setupState.adminUser._id, setupState.employeeUser._id],
             adminUserId: setupState.adminUser._id,
-            distributorUserId: setupState.distributorUser._id,
+            employeeUserId: setupState.employeeUser._id,
             seedSummary,
             requestIp: context.ip || null,
             userAgent: context.userAgent || null,
@@ -595,7 +595,7 @@ export class SetupDemoTenantUseCase {
     } catch (error) {
       const fallbackUserIds = [
         setupState.adminUser?._id,
-        setupState.distributorUser?._id,
+        setupState.employeeUser?._id,
       ].filter(Boolean);
 
       if (setupState.business?._id) {

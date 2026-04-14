@@ -10,7 +10,7 @@ const options = {
 ## API Backend para Essence
 
 Sistema de gestión de negocios con soporte para:
-- **Autenticación**: JWT con roles (user, admin, distribuidor, super_admin, god)
+- **Autenticación**: JWT con roles (user, admin, employee, super_admin, god)
 - **Negocios**: Gestión multi-tenant con memberships
 - **Productos**: Catálogo con precios diferenciados
 - **Ventas**: Registro de transacciones con comisiones
@@ -57,7 +57,7 @@ Para rutas de negocio, incluir también \`x-business-id\`.
             },
             role: {
               type: "string",
-              enum: ["user", "admin", "distribuidor", "super_admin", "god"],
+              enum: ["user", "admin", "employee", "super_admin", "god"],
               example: "admin",
             },
             status: {
@@ -112,7 +112,7 @@ Para rutas de negocio, incluir también \`x-business-id\`.
             name: { type: "string", example: "Producto A" },
             description: { type: "string" },
             purchasePrice: { type: "number", example: 100 },
-            distributorPrice: { type: "number", example: 150 },
+            employeePrice: { type: "number", example: 150 },
             clientPrice: { type: "number", example: 200 },
             suggestedPrice: { type: "number", example: 200 },
             category: { type: "string" },
@@ -134,7 +134,7 @@ Para rutas de negocio, incluir también \`x-business-id\`.
           type: "object",
           properties: {
             _id: { type: "string" },
-            distributor: { type: "string", description: "ID del distribuidor" },
+            employee: { type: "string", description: "ID del employee" },
             customer: { type: "string", description: "ID del cliente" },
             items: {
               type: "array",

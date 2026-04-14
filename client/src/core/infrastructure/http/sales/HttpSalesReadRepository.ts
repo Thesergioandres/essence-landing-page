@@ -3,21 +3,21 @@ import type { SalesReadRepository } from "../../../domain/sales/SalesReadReposit
 import type {
   AllSalesFilters,
   AllSalesResponse,
-  DistributorSalesFilters,
-  DistributorSalesResponse,
+  EmployeeSalesFilters,
+  EmployeeSalesResponse,
 } from "../../../domain/sales/sales.types";
 
 export class HttpSalesReadRepository implements SalesReadRepository {
-  async getDistributorSales<TSale = unknown, TStats = unknown>({
-    distributorId,
+  async getEmployeeSales<TSale = unknown, TStats = unknown>({
+    employeeId,
     filters,
   }: {
-    distributorId?: string;
-    filters?: DistributorSalesFilters;
-  }): Promise<DistributorSalesResponse<TSale, TStats>> {
-    const url = distributorId
-      ? `/sales/staff/${distributorId}`
-      : "/sales/distributor";
+    employeeId?: string;
+    filters?: EmployeeSalesFilters;
+  }): Promise<EmployeeSalesResponse<TSale, TStats>> {
+    const url = employeeId
+      ? `/sales/staff/${employeeId}`
+      : "/sales/employee";
     const response = await api.get(url, { params: filters });
     return response.data;
   }

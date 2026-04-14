@@ -45,7 +45,7 @@ const defaultFeatures: BusinessFeatures = {
   assistant: false,
   reports: true,
   transfers: true,
-  distributors: true,
+  employees: true,
   rankings: true,
   branches: true,
   credits: true,
@@ -90,7 +90,7 @@ const hasSameMembershipSnapshot = (
  * Read memberships from localStorage user object (set by login)
  * This prevents the "amnesia" bug where memberships are empty until API responds
  */
-function getInitialMemberships(): Membership[] {
+function hydrateFromStoredSession(): Membership[] {
   try {
     const userStr = localStorage.getItem("user");
     if (userStr) {
@@ -109,7 +109,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   );
   // 🔑 FIX: Initialize memberships from localStorage to prevent redirect flash
   const [memberships, setMemberships] = useState<Membership[]>(
-    getInitialMemberships
+    hydrateFromStoredSession
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

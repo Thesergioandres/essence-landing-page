@@ -24,7 +24,7 @@ export const ProductForm = ({
       description: "",
       purchasePrice: 0,
       clientPrice: 0,
-      distributorPrice: 0,
+      employeePrice: 0,
       suggestedPrice: 0,
       categoryId: categories[0]?._id || "",
       image: null,
@@ -171,10 +171,10 @@ export const ProductForm = ({
             required
           />
           <Input
-            label="Precio Distribuidor"
-            name="distributorPrice"
+            label="Precio Employee"
+            name="employeePrice"
             type="number"
-            value={formData.distributorPrice}
+            value={formData.employeePrice}
             onChange={handleChange}
             required
           />

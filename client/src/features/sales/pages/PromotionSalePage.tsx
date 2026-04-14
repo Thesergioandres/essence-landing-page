@@ -21,14 +21,14 @@ import { useSession } from "../../../hooks/useSession";
 import { Button, Card } from "../../../shared/components/ui";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import type {
-  DistributorStats,
+  EmployeeStats,
   GamificationConfig,
   LevelConfig,
 } from "../../analytics/types/gamification.types";
 import { branchService } from "../../branches/services/branch.service";
 import type { Branch } from "../../business/types/business.types";
 import { gamificationService } from "../../common/services";
-import { distributorService } from "../../employees/services/distributor.service";
+import { employeeService } from "../../employees/services/employee.service";
 import { productsService } from "../../inventory/api/products.service";
 import { stockService } from "../../inventory/services/inventory.service";
 import type { Product } from "../../inventory/types/product.types";
@@ -51,16 +51,16 @@ import type {
 
 export default function PromotionSalePage() {
   const { user, loading: userLoading } = useSession(); // Get user from session
-  const isDistributor = user?.role === "employee";
+  const isEmployee = user?.role === "employee";
 
   // State: Order managed by reducer
   const [order, dispatch] = useReducer(orderReducer, {
     ...initialOrderState,
-    locationType: isDistributor ? "distributor" : "warehouse", // Default start
-    locationName: isDistributor ? "Mi Inventario" : "Bodega Principal",
-    paymentMethod: isDistributor ? "transfer" : "cash",
-    isDistributorSale: isDistributor,
-    distributorProfitPercentage: 20,
+    locationType: isEmployee ? "employee" : "warehouse", // Default start
+    locationName: isEmployee ? "Mi Inventario" : "Bodega Principal",
+    paymentMethod: isEmployee ? "transfer" : "cash",
+    isEmployeeSale: isEmployee,
+    employeeProfitPercentage: 20,
   });
 
   // State: Data sources
@@ -81,11 +81,11 @@ export default function PromotionSalePage() {
   const [gamificationLoading, setGamificationLoading] = useState(false);
   const [gamificationConfig, setGamificationConfig] =
     useState<GamificationConfig | null>(null);
-  const [distributorStats, setDistributorStats] =
-    useState<DistributorStats | null>(null);
+  const [employeeStats, setEmployeeStats] =
+    useState<EmployeeStats | null>(null);
   const [rankingInfo, setRankingInfo] = useState<{
     position: number | null;
-    totalDistributors: number;
+    totalEmployees: number;
     bonusCommission: number;
   } | null>(null);
   const [saleResult, setSaleResult] = useState<{
@@ -100,16 +100,16 @@ export default function PromotionSalePage() {
 
   // Update location when user loads (fix timing issue)
   useEffect(() => {
-    if (user && isDistributor) {
+    if (user && isEmployee) {
       dispatch({
         type: "SET_LOCATION",
-        locationType: "distributor",
-        locationId: user?._id || "distributor",
+        locationType: "employee",
+        locationId: user?._id || "employee",
         locationName: "Mi Inventario",
       });
       dispatch({ type: "SET_PAYMENT_METHOD", method: "transfer" });
     }
-  }, [user, isDistributor]);
+  }, [user, isEmployee]);
 
   // ==================== DATA FETCHING ====================
   useEffect(() => {
@@ -119,18 +119,18 @@ export default function PromotionSalePage() {
     const fetchData = async () => {
       setDataLoading(true);
       try {
-        if (isDistributor) {
-          // 1. Fetch Distributor Inventory (Personal Stock)
+        if (isEmployee) {
+          // 1. Fetch Employee Inventory (Personal Stock)
           // 2. Fetch Allowed Branches (Company Stock)
           const [distProductsRes, allowedBranchesRes] = await Promise.all([
-            distributorService.getProducts(),
+            employeeService.getProducts(),
             stockService
               .getMyAllowedBranches()
               .catch(() => ({ branches: [] as Branch[] })),
           ]);
 
-          const distributorBranches = allowedBranchesRes.branches || [];
-          setBranches(distributorBranches);
+          const employeeBranches = allowedBranchesRes.branches || [];
+          setBranches(employeeBranches);
 
           const allProducts = await productsService.getProducts();
           const distStockMap = new Map<string, number>();
@@ -140,7 +140,7 @@ export default function PromotionSalePage() {
             }
           });
 
-          const preferredBranch = distributorBranches.find(
+          const preferredBranch = employeeBranches.find(
             branch => !branch.isWarehouse
           );
 
@@ -154,8 +154,8 @@ export default function PromotionSalePage() {
           } else {
             dispatch({
               type: "SET_LOCATION",
-              locationType: "distributor",
-              locationId: user?._id || "distributor",
+              locationType: "employee",
+              locationId: user?._id || "employee",
               locationName: "Mi Inventario",
             });
           }
@@ -166,13 +166,13 @@ export default function PromotionSalePage() {
             _id: p._id,
             name: p.name,
             purchasePrice:
-              p.averageCost ?? p.purchasePrice ?? p.distributorPrice ?? 0,
+              p.averageCost ?? p.purchasePrice ?? p.employeePrice ?? 0,
             averageCost: p.averageCost ?? undefined,
             clientPrice: p.clientPrice ?? p.suggestedPrice ?? 0,
-            distributorPrice: p.distributorPrice ?? 0,
-            warehouseStock: p.warehouseStock ?? 0, // HYBRID MODEL: Distributors CAN see warehouse stock for dropshipping
+            employeePrice: p.employeePrice ?? 0,
+            warehouseStock: p.warehouseStock ?? 0, // HYBRID MODEL: Employees CAN see warehouse stock for dropshipping
             totalStock: p.totalStock ?? 0,
-            distributorStock: distStockMap.get(p._id) || 0,
+            employeeStock: distStockMap.get(p._id) || 0,
             category: p.category,
             image: p.image ?? undefined,
           }));
@@ -194,7 +194,7 @@ export default function PromotionSalePage() {
             purchasePrice: p.averageCost ?? p.purchasePrice ?? 0,
             averageCost: p.averageCost ?? undefined,
             clientPrice: p.clientPrice ?? p.suggestedPrice ?? 0,
-            distributorPrice: p.distributorPrice,
+            employeePrice: p.employeePrice,
             warehouseStock: p.warehouseStock ?? 0,
             totalStock: p.totalStock ?? 0,
             category: p.category,
@@ -210,7 +210,7 @@ export default function PromotionSalePage() {
     };
 
     fetchData();
-  }, [userLoading, isDistributor, user?._id]);
+  }, [userLoading, isEmployee, user?._id]);
 
   useEffect(() => {
     if (userLoading) return;
@@ -233,7 +233,7 @@ export default function PromotionSalePage() {
   }, [userLoading]);
 
   useEffect(() => {
-    if (!isDistributor || !user?._id) return;
+    if (!isEmployee || !user?._id) return;
 
     let isActive = true;
     const loadGamification = async () => {
@@ -241,16 +241,16 @@ export default function PromotionSalePage() {
         setGamificationLoading(true);
         const [configRes, statsRes, rankingRes] = await Promise.all([
           gamificationService.getConfig(),
-          gamificationService.getDistributorStats(user._id),
+          gamificationService.getEmployeeStats(user._id),
           gamificationService.getAdjustedCommission(user._id),
         ]);
 
         if (!isActive) return;
         setGamificationConfig(configRes as GamificationConfig);
-        setDistributorStats(statsRes?.stats ?? null);
+        setEmployeeStats(statsRes?.stats ?? null);
         setRankingInfo({
           position: rankingRes?.position ?? null,
-          totalDistributors: rankingRes?.totalDistributors ?? 0,
+          totalEmployees: rankingRes?.totalEmployees ?? 0,
           bonusCommission: rankingRes?.bonusCommission ?? 0,
         });
       } catch (error) {
@@ -264,17 +264,17 @@ export default function PromotionSalePage() {
     return () => {
       isActive = false;
     };
-  }, [isDistributor, user?._id]);
+  }, [isEmployee, user?._id]);
 
   useEffect(() => {
     const bonus = rankingInfo?.bonusCommission || 0;
     const profitPercentage = 20 + bonus;
     dispatch({
-      type: "SET_DISTRIBUTOR_PROFIT",
-      isDistributorSale: isDistributor,
+      type: "SET_EMPLOYEE_PROFIT",
+      isEmployeeSale: isEmployee,
       profitPercentage,
     });
-  }, [isDistributor, rankingInfo?.bonusCommission]);
+  }, [isEmployee, rankingInfo?.bonusCommission]);
 
   // Fetch branch stock when branch location is selected
   useEffect(() => {
@@ -305,21 +305,21 @@ export default function PromotionSalePage() {
   const productsWithLocationStock = useMemo(() => {
     return products.map(p => {
       let stock = 0;
-      // Warehouse stock (Admin OR Distributor in dropshipping mode)
+      // Warehouse stock (Admin OR Employee in dropshipping mode)
       if (order.locationType === "warehouse") stock = p.warehouseStock ?? 0;
       // Branch stock (specific branch selected)
       else if (order.locationType === "branch")
         stock = branchStock.get(p._id) ?? 0;
-      // Distributor's personal inventory
-      else if (order.locationType === "distributor")
-        stock = p.distributorStock ?? 0;
+      // Employee's personal inventory
+      else if (order.locationType === "employee")
+        stock = p.employeeStock ?? 0;
 
       return {
         ...p,
         branchStock: order.locationType === "branch" ? stock : undefined,
-        distributorStock:
-          order.locationType === "distributor" ? stock : undefined,
-        // HYBRID MODEL: Distributors CAN see warehouse stock for dropshipping
+        employeeStock:
+          order.locationType === "employee" ? stock : undefined,
+        // HYBRID MODEL: Employees CAN see warehouse stock for dropshipping
         warehouseStock:
           order.locationType === "warehouse" ? stock : p.warehouseStock,
       };
@@ -341,7 +341,7 @@ export default function PromotionSalePage() {
     const sorted = [...levels].sort(
       (a, b) => (a.minPoints || 0) - (b.minPoints || 0)
     );
-    const points = distributorStats?.totalPoints || 0;
+    const points = employeeStats?.totalPoints || 0;
     let current = sorted[0] || null;
     for (const level of sorted) {
       if (points >= (level.minPoints || 0)) {
@@ -383,19 +383,19 @@ export default function PromotionSalePage() {
       estimatedRevenueToNext,
       estimatedSalesToNext,
     };
-  }, [gamificationConfig, distributorStats]);
+  }, [gamificationConfig, employeeStats]);
 
   // ==================== HANDLERS ====================
   const handleLocationChange = useCallback(
     (
-      type: "warehouse" | "branch" | "distributor",
+      type: "warehouse" | "branch" | "employee",
       id: string,
       name: string
     ) => {
-      // Allow Distributors to switch between "distributor" (My Inventory) and "branch" (Allowed Warehouse)
+      // Allow Employees to switch between "employee" (My Inventory) and "branch" (Allowed Warehouse)
       // They cannot select "warehouse" (Main Warehouse) usually, unless its a branch?
       // LocationSelector sends "warehouse" type for the main button.
-      // If distributor tries to click "Bodega" button -> blocked?
+      // If employee tries to click "Bodega" button -> blocked?
       // We will handle this in UI, but here we allow the change.
 
       dispatch({
@@ -436,13 +436,13 @@ export default function PromotionSalePage() {
         return sum + unitPrice * (item.quantity || 1);
       }, 0);
 
-      const baseDistributorTotal = items.reduce((sum, item) => {
+      const baseEmployeeTotal = items.reduce((sum, item) => {
         const product =
           typeof item.product === "object" && item.product !== null
             ? item.product
             : null;
         const unitPrice =
-          resolvePositive(product?.distributorPrice) ??
+          resolvePositive(product?.employeePrice) ??
           item.unitPrice ??
           product?.clientPrice ??
           product?.suggestedPrice ??
@@ -455,18 +455,18 @@ export default function PromotionSalePage() {
           ? promotion.promotionPrice
           : baseTotal;
       const ratio = baseTotal > 0 ? promotionTotal / baseTotal : 1;
-      const distributorTotal =
-        promotion.distributorPrice && promotion.distributorPrice > 0
-          ? promotion.distributorPrice
-          : baseDistributorTotal;
-      const distributorRatio =
-        baseDistributorTotal > 0 ? distributorTotal / baseDistributorTotal : 1;
+      const employeeTotal =
+        promotion.employeePrice && promotion.employeePrice > 0
+          ? promotion.employeePrice
+          : baseEmployeeTotal;
+      const employeeRatio =
+        baseEmployeeTotal > 0 ? employeeTotal / baseEmployeeTotal : 1;
 
       const additions: Array<{
         product: ProductWithStock;
         quantity: number;
         unitPrice: number;
-        distributorPrice: number;
+        employeePrice: number;
       }> = [];
       const missingProducts: string[] = [];
       const insufficientStock: string[] = [];
@@ -493,7 +493,7 @@ export default function PromotionSalePage() {
             ? (product.warehouseStock ?? 0)
             : order.locationType === "branch"
               ? (product.branchStock ?? 0)
-              : (product.distributorStock ?? 0);
+              : (product.employeeStock ?? 0);
 
         const quantity = item.quantity || 1;
         if (stock < quantity) {
@@ -504,21 +504,21 @@ export default function PromotionSalePage() {
         const baseUnitPrice =
           item.unitPrice ??
           product.clientPrice ??
-          product.distributorPrice ??
+          product.employeePrice ??
           0;
         const promoUnitPrice = Math.max(0, Math.round(baseUnitPrice * ratio));
-        const baseDistributorUnitPrice =
-          resolvePositive(product.distributorPrice) ?? baseUnitPrice;
-        const promoDistributorUnitPrice = Math.max(
+        const baseEmployeeUnitPrice =
+          resolvePositive(product.employeePrice) ?? baseUnitPrice;
+        const promoEmployeeUnitPrice = Math.max(
           0,
-          Math.round(baseDistributorUnitPrice * distributorRatio)
+          Math.round(baseEmployeeUnitPrice * employeeRatio)
         );
 
         additions.push({
           product,
           quantity,
           unitPrice: promoUnitPrice,
-          distributorPrice: promoDistributorUnitPrice,
+          employeePrice: promoEmployeeUnitPrice,
         });
       });
 
@@ -539,7 +539,7 @@ export default function PromotionSalePage() {
       }
 
       additions.forEach(
-        ({ product, quantity, unitPrice, distributorPrice }) => {
+        ({ product, quantity, unitPrice, employeePrice }) => {
           const existing = order.items.find(i => i.productId === product._id);
           if (existing) {
             dispatch({
@@ -548,7 +548,7 @@ export default function PromotionSalePage() {
               updates: {
                 quantity: existing.quantity + quantity,
                 unitPrice,
-                distributorPrice,
+                employeePrice,
                 isPromotion: true,
                 promotionId: promotion._id,
               },
@@ -562,7 +562,7 @@ export default function PromotionSalePage() {
                 promotionId: promotion._id,
                 quantity,
                 unitPrice,
-                distributorPrice,
+                employeePrice,
                 isPromotion: true,
                 purchasePrice:
                   product.averageCost ?? product.purchasePrice ?? 0,
@@ -571,7 +571,7 @@ export default function PromotionSalePage() {
                     ? (product.warehouseStock ?? 0)
                     : order.locationType === "branch"
                       ? (product.branchStock ?? 0)
-                      : (product.distributorStock ?? 0),
+                      : (product.employeeStock ?? 0),
                 category:
                   typeof product.category === "object"
                     ? product.category?.name
@@ -592,7 +592,7 @@ export default function PromotionSalePage() {
       updates: {
         quantity?: number;
         unitPrice?: number;
-        distributorPrice?: number;
+        employeePrice?: number;
       }
     ) => {
       dispatch({ type: "UPDATE_ITEM", itemId, updates });
@@ -680,8 +680,8 @@ export default function PromotionSalePage() {
         payload.branchId = order.locationId;
       }
 
-      if (order.locationType === "distributor" && order.locationId) {
-        payload.distributorId = order.locationId;
+      if (order.locationType === "employee" && order.locationId) {
+        payload.employeeId = order.locationId;
       }
 
       // Add customer if selected
@@ -732,7 +732,7 @@ export default function PromotionSalePage() {
             salePrice: item.salePrice,
             isPromotion: true,
           })),
-          distributorId: payload.distributorId,
+          employeeId: payload.employeeId,
           locationType: payload.locationType,
           branchId: payload.branchId,
           paymentMethodId: payload.paymentMethodId,
@@ -847,7 +847,7 @@ export default function PromotionSalePage() {
   };
 
   const projectedPoints = useMemo(() => {
-    if (!isDistributor) return 0;
+    if (!isEmployee) return 0;
     const rules = gamificationConfig?.generalRules;
     const pointsPerCurrencyUnit = Number(rules?.pointsPerCurrencyUnit || 0);
     const pointsPerSaleConfirmed = Number(rules?.pointsPerSaleConfirmed || 0);
@@ -906,7 +906,7 @@ export default function PromotionSalePage() {
     }, 0);
   }, [
     gamificationConfig,
-    isDistributor,
+    isEmployee,
     order.items,
     order.discount,
     order.discountPercent,
@@ -915,7 +915,7 @@ export default function PromotionSalePage() {
   ]);
 
   const projectedTotalPoints =
-    (distributorStats?.totalPoints || 0) + projectedPoints;
+    (employeeStats?.totalPoints || 0) + projectedPoints;
   const projectedPointsToNext = gamificationSummary.next
     ? Math.max(0, gamificationSummary.nextMin - projectedTotalPoints)
     : 0;
@@ -1012,14 +1012,14 @@ export default function PromotionSalePage() {
                   Registrar Promocion
                 </h1>
                 <p className="mt-1 text-sm text-slate-300">
-                  {isDistributor
-                    ? "Panel de Distribuidor"
+                  {isEmployee
+                    ? "Panel de Employee"
                     : "Panel de Administrador"}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-200">
-                  {isDistributor ? "Distribuidor" : "Administrador"}
+                  {isEmployee ? "Employee" : "Administrador"}
                 </span>
                 <span className="rounded-full border border-slate-600/60 bg-slate-900/60 px-3 py-1 text-slate-200">
                   Items: {order.items.length}
@@ -1070,7 +1070,7 @@ export default function PromotionSalePage() {
               locationType={order.locationType}
               locationId={order.locationId}
               branches={branches}
-              isDistributor={isDistributor}
+              isEmployee={isEmployee}
               onLocationChange={handleLocationChange}
             />
 
@@ -1215,7 +1215,7 @@ export default function PromotionSalePage() {
 
           {/* ============ RIGHT COLUMN: Options & Summary ============ */}
           <div className="space-y-5">
-            {isDistributor && (
+            {isEmployee && (
               <div className="rounded-xl border border-gray-700/50 bg-gray-800/30 p-4">
                 <h3 className="mb-3 text-lg font-semibold text-white">
                   🏅 Mi progreso
@@ -1243,7 +1243,7 @@ export default function PromotionSalePage() {
                         <p className="text-xs text-gray-400">Ranking</p>
                         <p className="text-base font-semibold text-white">
                           {rankingInfo?.position
-                            ? `#${rankingInfo.position} / ${rankingInfo.totalDistributors}`
+                            ? `#${rankingInfo.position} / ${rankingInfo.totalEmployees}`
                             : "Sin ranking"}
                         </p>
                       </div>
@@ -1414,7 +1414,7 @@ export default function PromotionSalePage() {
               }
             />
 
-            {isDistributor && order.paymentMethod === "transfer" && (
+            {isEmployee && order.paymentMethod === "transfer" && (
               <div className="rounded-xl border border-gray-700/50 bg-gray-800/30 p-4">
                 <h4 className="mb-2 text-sm font-medium text-gray-400">
                   🧾 Comprobante de pago

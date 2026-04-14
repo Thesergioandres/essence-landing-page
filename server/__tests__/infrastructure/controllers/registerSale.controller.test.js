@@ -76,7 +76,7 @@ describe("RegisterSaleController", () => {
     executeStandardMock.mockResolvedValue({ saleId: "sale-1" });
 
     const req = {
-      user: { _id: "distributor-1", role: "distribuidor" },
+      user: { _id: "employee-1", role: "employee" },
       businessId: "business-1",
       body: {
         items: [{ productId: "product-1", quantity: 1, salePrice: 100 }],
@@ -95,7 +95,7 @@ describe("RegisterSaleController", () => {
     expect(executeStandardMock).toHaveBeenCalledWith(
       expect.objectContaining({
         businessId: "business-1",
-        distributorId: "distributor-1",
+        employeeId: "employee-1",
       }),
       null,
     );
@@ -108,7 +108,7 @@ describe("RegisterSaleController", () => {
       user: { id: "admin-1", role: "admin" },
       businessId: "business-1",
       body: {
-        distributorId: "distributor-2",
+        employeeId: "employee-2",
         items: [{ productId: "product-2", quantity: 2, salePrice: 50 }],
       },
       headers: { "x-business-id": "business-1" },
@@ -123,7 +123,7 @@ describe("RegisterSaleController", () => {
     expect(res.payload?.data).toEqual({ saleGroupId: "group-1" });
     expect(executePromotionMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        distributorId: "distributor-2",
+        employeeId: "employee-2",
       }),
       null,
     );

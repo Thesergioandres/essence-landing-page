@@ -59,28 +59,28 @@ async function runTests() {
     const sales = await Sale.find({ paymentStatus: 'confirmado' }).limit(5);
     
     sales.forEach((sale, index) => {
-      const expectedTotal = sale.adminProfit + sale.distributorProfit;
+      const expectedTotal = sale.adminProfit + sale.employeeProfit;
       const tolerance = 0.01; // Tolerancia de 1 centavo por redondeos
       
       assertAlmostEqual(
         sale.totalProfit,
         expectedTotal,
         tolerance,
-        `Venta ${index + 1}: totalProfit = adminProfit + distributorProfit`
+        `Venta ${index + 1}: totalProfit = adminProfit + employeeProfit`
       );
       
-      // Verificar que la ganancia del distribuidor sea correcta según el porcentaje
-      if (sale.distributor) {
-        const expectedDistProfit = (sale.salePrice * sale.distributorProfitPercentage / 100) * sale.quantity;
+      // Verificar que la ganancia del employee sea correcta según el porcentaje
+      if (sale.employee) {
+        const expectedDistProfit = (sale.salePrice * sale.employeeProfitPercentage / 100) * sale.quantity;
         assertAlmostEqual(
-          sale.distributorProfit,
+          sale.employeeProfit,
           expectedDistProfit,
           tolerance,
-          `Venta ${index + 1}: distributorProfit = salePrice * ${sale.distributorProfitPercentage}% * quantity`
+          `Venta ${index + 1}: employeeProfit = salePrice * ${sale.employeeProfitPercentage}% * quantity`
         );
         
         // Verificar ganancia admin
-        const expectedAdminProfit = ((sale.salePrice - (sale.salePrice * sale.distributorProfitPercentage / 100) - sale.purchasePrice) * sale.quantity);
+        const expectedAdminProfit = ((sale.salePrice - (sale.salePrice * sale.employeeProfitPercentage / 100) - sale.purchasePrice) * sale.quantity);
         assertAlmostEqual(
           sale.adminProfit,
           expectedAdminProfit,
@@ -88,7 +88,7 @@ async function runTests() {
           `Venta ${index + 1}: adminProfit = (salePrice - distPortion - cost) * quantity`
         );
       } else {
-        // Venta admin sin distribuidor
+        // Venta admin sin employee
         const expectedAdminProfit = (sale.salePrice - sale.purchasePrice) * sale.quantity;
         assertAlmostEqual(
           sale.adminProfit,
@@ -98,10 +98,10 @@ async function runTests() {
         );
         
         assert(
-          sale.distributorProfit === 0,
-          `Venta admin ${index + 1}: distributorProfit debe ser 0`,
+          sale.employeeProfit === 0,
+          `Venta admin ${index + 1}: employeeProfit debe ser 0`,
           0,
-          sale.distributorProfit
+          sale.employeeProfit
         );
       }
     });

@@ -15,7 +15,7 @@ interface OrderCartProps {
   ) => void;
   onRemoveItem: (itemId: string) => void;
   multiplierBadges?: Record<string, string[]>;
-  isDistributorSale?: boolean;
+  isEmployeeSale?: boolean;
 }
 
 export function OrderCart({
@@ -23,7 +23,7 @@ export function OrderCart({
   onUpdateItem,
   onRemoveItem,
   multiplierBadges,
-  isDistributorSale,
+  isEmployeeSale,
 }: OrderCartProps) {
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const [tempPrice, setTempPrice] = useState("");
@@ -241,7 +241,7 @@ export function OrderCart({
             </div>
             <div className="text-sm">
               <span className="text-gray-400">
-                {isDistributorSale ? "Comision: " : "Ganancia: "}
+                {isEmployeeSale ? "Comision: " : "Ganancia: "}
               </span>
               <span
                 className={`font-bold ${

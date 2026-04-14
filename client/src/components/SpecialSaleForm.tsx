@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "../features/auth/types/auth.types";
-import { distributorService } from "../features/employees/services";
+import { employeeService } from "../features/employees/services";
 import { productService } from "../features/inventory/services/inventory.service";
 import type { Product } from "../features/inventory/types/product.types";
 import { specialSaleService } from "../features/sales/services";
@@ -11,7 +11,7 @@ interface Distribution {
   percentage: string;
   notes?: string;
   useExisting?: boolean; // true = selector, false = input manual
-  distributorId?: string; // ID del distribuidor seleccionado
+  employeeId?: string; // ID del employee seleccionado
 }
 
 interface ProductItem {
@@ -35,9 +35,9 @@ export default function SpecialSaleForm({
 }: SpecialSaleFormProps) {
   const [loading, setLoading] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [loadingDistributors, setLoadingDistributors] = useState(true);
+  const [loadingEmployees, setLoadingEmployees] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
-  const [distributors, setDistributors] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<User[]>([]);
   const [productItems, setProductItems] = useState<ProductItem[]>([
     { productName: "", quantity: 1, specialPrice: 0, cost: 0 },
   ]);
@@ -69,8 +69,8 @@ export default function SpecialSaleForm({
   const isOverAllocated = remainingProfit < -tolerance;
   const isBalanced = Math.abs(remainingProfit) <= tolerance;
   const isValid = !isOverAllocated;
-  const selectedDistributorIds = distribution
-    .map(dist => dist.distributorId)
+  const selectedEmployeeIds = distribution
+    .map(dist => dist.employeeId)
     .filter((id): id is string => Boolean(id));
 
   const toPercentageNumber = (value: string) => {
@@ -90,26 +90,26 @@ export default function SpecialSaleForm({
     }
   }, []);
 
-  const loadDistributors = useCallback(async () => {
+  const loadEmployees = useCallback(async () => {
     try {
-      const response = await distributorService.getAll({ active: true } as any); // Solo activos
-      // Extraer solo distribuidores (role: 'employee')
+      const response = await employeeService.getAll({ active: true } as any); // Solo activos
+      // Extraer solo employees (role: 'employee')
       const distData = Array.isArray(response) ? response : response.data;
-      const distributorUsers = distData.filter(
+      const employeeUsers = distData.filter(
         (user: User) => user.role === "employee"
       );
-      setDistributors(distributorUsers);
+      setEmployees(employeeUsers);
     } catch (error) {
-      console.error("Error al cargar distribuidores:", error);
+      console.error("Error al cargar employees:", error);
     } finally {
-      setLoadingDistributors(false);
+      setLoadingEmployees(false);
     }
   }, []);
 
   useEffect(() => {
     loadProducts();
-    loadDistributors();
-  }, [loadProducts, loadDistributors]);
+    loadEmployees();
+  }, [loadProducts, loadEmployees]);
 
   useEffect(() => {
     if (editData) {
@@ -180,20 +180,20 @@ export default function SpecialSaleForm({
     setProductItems(newItems);
   };
 
-  const addDistributor = () => {
+  const addEmployee = () => {
     setDistribution([
       ...distribution,
       { name: "", amount: 0, percentage: "", useExisting: true },
     ]);
   };
 
-  const removeDistributor = (index: number) => {
+  const removeEmployee = (index: number) => {
     if (distribution.length > 1) {
       setDistribution(distribution.filter((_, i) => i !== index));
     }
   };
 
-  const updateDistributor = (
+  const updateEmployee = (
     index: number,
     field: keyof Distribution,
     value: string | number | boolean
@@ -222,22 +222,22 @@ export default function SpecialSaleForm({
         amount: amountValue,
         percentage: pct ? pct.toFixed(2) : "",
       };
-    } else if (field === "distributorId") {
-      // Cuando se selecciona un distribuidor existente
-      const distributorId = value as string;
-      if (distributorId === "custom") {
+    } else if (field === "employeeId") {
+      // Cuando se selecciona un employee existente
+      const employeeId = value as string;
+      if (employeeId === "custom") {
         newDistribution[index] = {
           ...newDistribution[index],
-          distributorId: undefined,
+          employeeId: undefined,
           name: "",
           useExisting: false,
         };
       } else {
-        const selectedDist = distributors.find(d => d._id === distributorId);
+        const selectedDist = employees.find(d => d._id === employeeId);
         if (selectedDist) {
           newDistribution[index] = {
             ...newDistribution[index],
-            distributorId: distributorId,
+            employeeId: employeeId,
             name: selectedDist.name,
             useExisting: true,
           };
@@ -256,12 +256,12 @@ export default function SpecialSaleForm({
   const autoDistribute = () => {
     if (distribution.length === 0) return;
 
-    const validDistributors = distribution.filter(
+    const validEmployees = distribution.filter(
       d => d.name && d.name.trim() !== ""
     );
-    if (validDistributors.length === 0) return;
+    if (validEmployees.length === 0) return;
 
-    const amountPerPerson = totalProfit / validDistributors.length;
+    const amountPerPerson = totalProfit / validEmployees.length;
 
     const newDistribution = distribution.map(dist => {
       if (dist.name && dist.name.trim() !== "") {
@@ -288,7 +288,7 @@ export default function SpecialSaleForm({
     }
 
     if (distribution.some(d => !d.name || d.name.trim() === "")) {
-      alert("Todos los distribuidores deben tener un nombre");
+      alert("Todos los employees deben tener un nombre");
       return;
     }
 
@@ -694,7 +694,7 @@ export default function SpecialSaleForm({
                 </button>
                 <button
                   type="button"
-                  onClick={addDistributor}
+                  onClick={addEmployee}
                   className="min-h-10 rounded-lg bg-cyan-500 px-3 py-1 text-xs font-semibold text-slate-950 transition hover:bg-cyan-400"
                 >
                   + Agregar
@@ -735,42 +735,42 @@ export default function SpecialSaleForm({
                     <label className="mb-1 block text-xs text-gray-400">
                       Nombre *
                     </label>
-                    {loadingDistributors ? (
+                    {loadingEmployees ? (
                       <p className="py-2 text-xs text-gray-400">Cargando...</p>
                     ) : (
                       <div className="space-y-2">
                         <select
                           value={
-                            dist.distributorId ||
+                            dist.employeeId ||
                             (dist.useExisting ? "" : "custom")
                           }
                           onChange={e => {
-                            updateDistributor(
+                            updateEmployee(
                               index,
-                              "distributorId",
+                              "employeeId",
                               e.target.value
                             );
                           }}
                           className="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-white focus:border-cyan-400 focus:outline-none"
                         >
-                          <option value="">Seleccionar distribuidor...</option>
+                          <option value="">Seleccionar employee...</option>
                           <option value="custom">
                             -- Persona personalizada --
                           </option>
-                          {distributors
+                          {employees
                             .filter(
-                              distributor =>
-                                distributor._id === dist.distributorId ||
-                                !selectedDistributorIds.includes(
-                                  distributor._id
+                              employee =>
+                                employee._id === dist.employeeId ||
+                                !selectedEmployeeIds.includes(
+                                  employee._id
                                 )
                             )
-                            .map(distributor => (
+                            .map(employee => (
                               <option
-                                key={distributor._id}
-                                value={distributor._id}
+                                key={employee._id}
+                                value={employee._id}
                               >
-                                {distributor.name}
+                                {employee.name}
                               </option>
                             ))}
                         </select>
@@ -780,7 +780,7 @@ export default function SpecialSaleForm({
                             type="text"
                             value={dist.name}
                             onChange={e =>
-                              updateDistributor(index, "name", e.target.value)
+                              updateEmployee(index, "name", e.target.value)
                             }
                             placeholder="Nombre de la persona *"
                             required
@@ -798,7 +798,7 @@ export default function SpecialSaleForm({
                       type="number"
                       value={dist.percentage || ""}
                       onChange={e =>
-                        updateDistributor(index, "percentage", e.target.value)
+                        updateEmployee(index, "percentage", e.target.value)
                       }
                       placeholder="0"
                       min="0"
@@ -816,7 +816,7 @@ export default function SpecialSaleForm({
                         type="number"
                         value={dist.amount || ""}
                         onChange={e =>
-                          updateDistributor(
+                          updateEmployee(
                             index,
                             "amount",
                             parseFloat(e.target.value) || 0
@@ -836,7 +836,7 @@ export default function SpecialSaleForm({
                   <div className="mt-3 text-right">
                     <button
                       type="button"
-                      onClick={() => removeDistributor(index)}
+                      onClick={() => removeEmployee(index)}
                       className="inline-flex min-h-10 items-center gap-1 rounded-lg bg-red-600/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-500"
                     >
                       <svg

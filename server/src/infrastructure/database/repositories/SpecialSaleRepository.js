@@ -46,7 +46,7 @@ export class SpecialSaleRepository {
 
     if (totalProfit > 0 && distribution.length > 0) {
       for (const dist of distribution) {
-        const distUserId = dist.distributorId || dist.user || dist.userId;
+        const distUserId = dist.employeeId || dist.user || dist.userId;
         const distAmount = Number(dist.amount) || 0;
         if (distUserId && distAmount > 0) {
           await ProfitHistory.create({

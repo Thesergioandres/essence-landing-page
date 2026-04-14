@@ -1,8 +1,8 @@
 export const EMPLOYEE_ROLE = "employee";
 
 export const LEGACY_EMPLOYEE_ROLES = Object.freeze([
-  "distribuidor",
-  "distributor",
+  "employee",
+  "employee",
 ]);
 
 export const EMPLOYEE_ROLE_ALIASES = Object.freeze([

@@ -23,7 +23,7 @@ const seedProducts = async () => {
       await import("../src/infrastructure/database/models/Product.js")
     ).default;
     const Business = (await import("../src/infrastructure/database/models/Business.js")).default;
-    const DistributorStock = (await import("../src/infrastructure/database/models/DistributorStock.js"))
+    const EmployeeStock = (await import("../src/infrastructure/database/models/EmployeeStock.js"))
       .default;
     const Category = (await import("../src/infrastructure/database/models/Category.js")).default; // Need category for product
 
@@ -39,19 +39,19 @@ const seedProducts = async () => {
 
     let admin = await User.findOne({ business: business._id, role: "admin" });
 
-    // 2. Create Distributor
-    let distributor = await User.findOne({
+    // 2. Create Employee
+    let employee = await User.findOne({
       business: business._id,
-      role: "distribuidor",
+      role: "employee",
     });
-    if (!distributor) {
-      console.log("Creating dummy distributor...");
-      distributor = await User.create({
-        name: "Test Distributor",
-        email: `distributor_${Date.now()}@test.com`,
+    if (!employee) {
+      console.log("Creating dummy employee...");
+      employee = await User.create({
+        name: "Test Employee",
+        email: `employee_${Date.now()}@test.com`,
         password: "password123",
         business: business._id,
-        role: "distribuidor",
+        role: "employee",
       });
     }
 
@@ -81,7 +81,7 @@ const seedProducts = async () => {
         description: "Test description",
         purchasePrice: 10 + i,
         clientPrice: 20 + i,
-        distributorPrice: 15 + i,
+        employeePrice: 15 + i,
         suggestedPrice: 25 + i,
         totalStock: 100,
         warehouseStock: 100,
@@ -94,19 +94,19 @@ const seedProducts = async () => {
     const createdProducts = await Product.insertMany(products);
     console.log(`✅ Seeded ${createdProducts.length} products.`);
 
-    // 5. Seed Distributor Stock (Target: 500 stocks to test catalog)
-    console.log("🌱 Seeding distributor stock...");
-    await DistributorStock.deleteMany({ distributor: distributor._id });
+    // 5. Seed Employee Stock (Target: 500 stocks to test catalog)
+    console.log("🌱 Seeding employee stock...");
+    await EmployeeStock.deleteMany({ employee: employee._id });
 
     const stocks = createdProducts.map((p) => ({
-      distributor: distributor._id,
+      employee: employee._id,
       business: business._id,
       product: p._id,
       quantity: 10, // Positive quantity
     }));
 
-    await DistributorStock.insertMany(stocks);
-    console.log(`✅ Seeded ${stocks.length} distributor stock entries.`);
+    await EmployeeStock.insertMany(stocks);
+    console.log(`✅ Seeded ${stocks.length} employee stock entries.`);
 
     console.log("Done.");
     process.exit(0);

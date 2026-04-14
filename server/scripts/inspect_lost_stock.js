@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 
 // Models
 import "../src/infrastructure/database/models/Business.js";
-import DistributorStock from "../src/infrastructure/database/models/DistributorStock.js";
+import EmployeeStock from "../src/infrastructure/database/models/EmployeeStock.js";
 import "../src/infrastructure/database/models/Product.js";
 import Sale from "../src/infrastructure/database/models/Sale.js";
 import User from "../src/infrastructure/database/models/User.js";
@@ -20,17 +20,17 @@ async function run() {
     console.log("🔌 Conectando a MongoDB...");
     await mongoose.connect(process.env.MONGODB_URI);
 
-    const distributorId = "6976ea761b2368c4bc66ff0f"; // ID from previous logs
+    const employeeId = "6976ea761b2368c4bc66ff0f"; // ID from previous logs
 
-    console.log(`🔎 Inspeccionando Distribuidor: ${distributorId}`);
+    console.log(`🔎 Inspeccionando Employee: ${employeeId}`);
 
-    const user = await User.findById(distributorId);
+    const user = await User.findById(employeeId);
     console.log(`👤 Usuario: ${user ? user.name : "No encontrado"}`);
 
     // 1. Check Stock
     console.log("\n📦 STOCK ACTUAL:");
-    const stocks = await DistributorStock.find({
-      distributor: distributorId,
+    const stocks = await EmployeeStock.find({
+      employee: employeeId,
     }).populate("product", "name");
     if (stocks.length === 0) console.log("   (Vacío)");
     stocks.forEach((s) => {
@@ -45,7 +45,7 @@ async function run() {
     since.setHours(since.getHours() - 24);
 
     const sales = await Sale.find({
-      distributor: distributorId,
+      employee: employeeId,
       createdAt: { $gte: since },
     }).sort({ createdAt: -1 });
 

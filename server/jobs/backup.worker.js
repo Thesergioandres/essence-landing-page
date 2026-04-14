@@ -21,8 +21,8 @@ import CreditPayment from "../src/infrastructure/database/models/CreditPayment.j
 import Customer from "../src/infrastructure/database/models/Customer.js";
 import DefectiveProduct from "../src/infrastructure/database/models/DefectiveProduct.js";
 import DeliveryMethod from "../src/infrastructure/database/models/DeliveryMethod.js";
-import DistributorStats from "../src/infrastructure/database/models/DistributorStats.js";
-import DistributorStock from "../src/infrastructure/database/models/DistributorStock.js";
+import EmployeeStats from "../src/infrastructure/database/models/EmployeeStats.js";
+import EmployeeStock from "../src/infrastructure/database/models/EmployeeStock.js";
 import Expense from "../src/infrastructure/database/models/Expense.js";
 import GamificationConfig from "../src/infrastructure/database/models/GamificationConfig.js";
 import InventoryEntry from "../src/infrastructure/database/models/InventoryEntry.js";
@@ -72,8 +72,8 @@ const getCollections = () => [
   { model: CreditPayment, name: "creditpayments" },
   { model: Stock, name: "stock" },
   { model: StockTransfer, name: "stocktransfers" },
-  { model: DistributorStock, name: "distributorstock" },
-  { model: DistributorStats, name: "distributorstats" },
+  { model: EmployeeStock, name: "employeestock" },
+  { model: EmployeeStats, name: "employeestats" },
   { model: Provider, name: "providers" },
   { model: Promotion, name: "promotions" },
   { model: Branch, name: "branches" },

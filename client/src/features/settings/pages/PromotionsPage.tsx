@@ -24,7 +24,7 @@ import { invalidateProductCache } from "../../../hooks/useProductCache";
 import type { User } from "../../auth/types/auth.types";
 import { branchService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
-import { distributorService } from "../../employees/services/distributor.service";
+import { employeeService } from "../../employees/services/employee.service";
 import { productsService } from "../../inventory/api/products.service";
 import type { Product } from "../../inventory/types/product.types";
 import { promotionService } from "../../settings/services";
@@ -136,7 +136,7 @@ interface ProductSelectorProduct {
   averageCost?: number;
   suggestedPrice?: number;
   clientPrice?: number;
-  distributorPrice?: number;
+  employeePrice?: number;
   image?: { url: string };
 }
 
@@ -146,7 +146,7 @@ interface ComboItemForm {
   productImage?: string;
   productPrice: number;
   purchasePrice: number;
-  distributorPrice: number;
+  employeePrice: number;
   quantity: number;
   unitPrice: number;
 }
@@ -161,7 +161,7 @@ export default function Promotions() {
   const [stats, setStats] = useState<PromotionStats | null>(null);
   const [metrics, setMetrics] = useState<PromotionMetrics | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [distributors, setDistributors] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -174,8 +174,8 @@ export default function Promotions() {
   const [success, setSuccess] = useState<string | null>(null);
   const [allLocations, setAllLocations] = useState(true);
   const lastAllowedLocationsRef = useRef<string[]>([]);
-  const [allDistributors, setAllDistributors] = useState(true);
-  const lastAllowedDistributorsRef = useRef<string[]>([]);
+  const [allEmployees, setAllEmployees] = useState(true);
+  const lastAllowedEmployeesRef = useRef<string[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
   const prefillHandledRef = useRef<string | null>(null);
@@ -187,11 +187,11 @@ export default function Promotions() {
     type: "bundle" as PromotionType,
     status: "active" as PromotionStatus,
     promotionPrice: 0,
-    distributorPrice: 0,
+    employeePrice: 0,
     startDate: "",
     endDate: "",
     allowedLocations: [] as string[],
-    allowedDistributors: [] as string[],
+    allowedEmployees: [] as string[],
     showInCatalog: true,
     displayOrder: 0,
     usageLimit: "",
@@ -213,12 +213,12 @@ export default function Promotions() {
         filterStatus !== "all"
           ? (filterStatus as "active" | "expired" | "disabled" | "scheduled")
           : undefined;
-      const [promoRes, branchList, distributorRes] = await Promise.all([
+      const [promoRes, branchList, employeeRes] = await Promise.all([
         promotionService.getAll({
           status: statusParam,
         }),
         branchService.list(),
-        distributorService.getAll(),
+        employeeService.getAll(),
       ]);
       setPromotions(promoRes.promotions || []);
       // Handle stats with fallback for missing properties
@@ -238,7 +238,7 @@ export default function Promotions() {
         setStats(null);
       }
       setBranches(branchList || []);
-      setDistributors(distributorRes?.data || []);
+      setEmployees(employeeRes?.data || []);
     } catch (err) {
       console.error("Error loading promotions:", err);
       setError("Error al cargar promociones");
@@ -304,7 +304,7 @@ export default function Promotions() {
           .map(item => {
             const price = item.clientPrice ?? item.suggestedPrice ?? 0;
             const cost = item.averageCost ?? item.purchasePrice ?? 0;
-            const distPrice = item.distributorPrice ?? price;
+            const distPrice = item.employeePrice ?? price;
 
             return {
               product: item._id,
@@ -312,7 +312,7 @@ export default function Promotions() {
               productImage: item.image?.url,
               productPrice: price,
               purchasePrice: cost,
-              distributorPrice: distPrice,
+              employeePrice: distPrice,
               quantity: 1,
               unitPrice: price,
             };
@@ -325,28 +325,28 @@ export default function Promotions() {
   }, [location.pathname, location.state, navigate]);
 
   useEffect(() => {
-    if (distributors.length === 0) return;
-    if (formData.allowedDistributors.length === 0) return;
+    if (employees.length === 0) return;
+    if (formData.allowedEmployees.length === 0) return;
 
     const allSelected =
-      formData.allowedDistributors.length === distributors.length;
+      formData.allowedEmployees.length === employees.length;
 
     if (allSelected) {
-      lastAllowedDistributorsRef.current = formData.allowedDistributors;
-      if (!allDistributors) {
-        setAllDistributors(true);
+      lastAllowedEmployeesRef.current = formData.allowedEmployees;
+      if (!allEmployees) {
+        setAllEmployees(true);
       }
       setFormData(prev => ({
         ...prev,
-        allowedDistributors: [],
+        allowedEmployees: [],
       }));
       return;
     }
 
-    if (allDistributors) {
-      setAllDistributors(false);
+    if (allEmployees) {
+      setAllEmployees(false);
     }
-  }, [allDistributors, distributors.length, formData.allowedDistributors]);
+  }, [allEmployees, employees.length, formData.allowedEmployees]);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("es-CO", {
@@ -365,9 +365,9 @@ export default function Promotions() {
   };
 
   const isPromotionPriceBelowB2B =
-    formData.distributorPrice > 0 &&
+    formData.employeePrice > 0 &&
     formData.promotionPrice > 0 &&
-    formData.promotionPrice < formData.distributorPrice;
+    formData.promotionPrice < formData.employeePrice;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -527,7 +527,7 @@ export default function Promotions() {
       }
       const price = product.clientPrice ?? product.suggestedPrice ?? 0;
       const cost = product.averageCost ?? product.purchasePrice ?? 0;
-      const distPrice = product.distributorPrice ?? price;
+      const distPrice = product.employeePrice ?? price;
 
       setComboItems(prev => [
         ...prev,
@@ -537,7 +537,7 @@ export default function Promotions() {
           productImage: product.image?.url,
           productPrice: price,
           purchasePrice: cost,
-          distributorPrice: distPrice,
+          employeePrice: distPrice,
           quantity: 1,
           unitPrice: price,
         },
@@ -587,11 +587,11 @@ export default function Promotions() {
       type: "bundle",
       status: "active",
       promotionPrice: 0,
-      distributorPrice: 0,
+      employeePrice: 0,
       startDate: "",
       endDate: "",
       allowedLocations: [],
-      allowedDistributors: [],
+      allowedEmployees: [],
       showInCatalog: true,
       displayOrder: 0,
       usageLimit: "",
@@ -600,8 +600,8 @@ export default function Promotions() {
     });
     setAllLocations(true);
     lastAllowedLocationsRef.current = [];
-    setAllDistributors(true);
-    lastAllowedDistributorsRef.current = [];
+    setAllEmployees(true);
+    lastAllowedEmployeesRef.current = [];
     setComboItems([]);
     setImagePreview(null);
     setImageBase64(null);
@@ -619,7 +619,7 @@ export default function Promotions() {
       "Opening edit modal for:",
       promo.name,
       "DistPrice:",
-      promo.distributorPrice
+      promo.employeePrice
     );
     setEditingPromo(promo);
     const existingAllowedLocations =
@@ -631,8 +631,8 @@ export default function Promotions() {
       typeof b === "string" ? b : b._id
     );
 
-    const existingAllowedDistributors = promo.allowedDistributors || [];
-    const normalizedAllowedDistributors = existingAllowedDistributors.map(d =>
+    const existingAllowedEmployees = promo.allowedEmployees || [];
+    const normalizedAllowedEmployees = existingAllowedEmployees.map(d =>
       typeof d === "string" ? d : d._id
     );
 
@@ -642,11 +642,11 @@ export default function Promotions() {
       type: promo.type,
       status: promo.status,
       promotionPrice: promo.promotionPrice || 0,
-      distributorPrice: promo.distributorPrice || 0,
+      employeePrice: promo.employeePrice || 0,
       startDate: promo.startDate ? promo.startDate.split("T")[0] : "",
       endDate: promo.endDate ? promo.endDate.split("T")[0] : "",
       allowedLocations: normalizedAllowedLocations,
-      allowedDistributors: normalizedAllowedDistributors,
+      allowedEmployees: normalizedAllowedEmployees,
       showInCatalog: promo.showInCatalog !== false,
       displayOrder: promo.displayOrder || 0,
       usageLimit: promo.usageLimit?.toString() || "",
@@ -657,10 +657,10 @@ export default function Promotions() {
       promo.allowAllLocations ?? normalizedAllowedLocations.length === 0;
     setAllLocations(isGlobal);
     lastAllowedLocationsRef.current = normalizedAllowedLocations;
-    const isGlobalDistributors =
-      promo.allowAllDistributors ?? normalizedAllowedDistributors.length === 0;
-    setAllDistributors(isGlobalDistributors);
-    lastAllowedDistributorsRef.current = normalizedAllowedDistributors;
+    const isGlobalEmployees =
+      promo.allowAllEmployees ?? normalizedAllowedEmployees.length === 0;
+    setAllEmployees(isGlobalEmployees);
+    lastAllowedEmployeesRef.current = normalizedAllowedEmployees;
     setComboItems(
       (promo.comboItems || []).map((item: PromotionComboItem) => {
         const product =
@@ -673,7 +673,7 @@ export default function Promotions() {
                 suggestedPrice?: number;
                 purchasePrice?: number;
                 averageCost?: number;
-                distributorPrice?: number;
+                employeePrice?: number;
               })
             : null;
         return {
@@ -682,8 +682,8 @@ export default function Promotions() {
           productImage: product?.image?.url,
           productPrice: product?.clientPrice || product?.suggestedPrice || 0,
           purchasePrice: product?.averageCost ?? product?.purchasePrice ?? 0,
-          distributorPrice:
-            product?.distributorPrice || product?.clientPrice || 0,
+          employeePrice:
+            product?.employeePrice || product?.clientPrice || 0,
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice || 0,
         };
@@ -720,10 +720,10 @@ export default function Promotions() {
 
       const hasNoLocations =
         !allLocations && formData.allowedLocations.length === 0;
-      const hasNoDistributors =
-        !allDistributors && formData.allowedDistributors.length === 0;
+      const hasNoEmployees =
+        !allEmployees && formData.allowedEmployees.length === 0;
       const computedStatus =
-        hasNoLocations && hasNoDistributors ? "paused" : formData.status;
+        hasNoLocations && hasNoEmployees ? "paused" : formData.status;
 
       const payload: Partial<Promotion> = {
         name: formData.name,
@@ -731,13 +731,13 @@ export default function Promotions() {
         type: formData.type,
         status: computedStatus,
         promotionPrice: formData.promotionPrice,
-        distributorPrice: formData.distributorPrice,
+        employeePrice: formData.employeePrice,
         startDate: formData.startDate || undefined,
         endDate: formData.endDate || undefined,
         allowAllLocations: allLocations,
         allowedLocations: formData.allowedLocations as unknown as Branch[],
-        allowAllDistributors: allDistributors,
-        allowedDistributors: formData.allowedDistributors as unknown as User[],
+        allowAllEmployees: allEmployees,
+        allowedEmployees: formData.allowedEmployees as unknown as User[],
         showInCatalog: formData.showInCatalog,
         displayOrder: formData.displayOrder,
         usageLimit: formData.usageLimit
@@ -1404,31 +1404,31 @@ export default function Promotions() {
                     </p>
                   </div>
 
-                  {/* Distributors */}
+                  {/* Employees */}
                   <div>
                     <label className="mb-1 block text-sm font-medium text-gray-300">
-                      Distribuidores (opcional)
+                      Employees (opcional)
                     </label>
                     <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/60 p-3">
                       <label className="flex items-center justify-between gap-3 text-sm text-gray-200">
-                        <span>Todos los distribuidores</span>
+                        <span>Todos los employees</span>
                         <input
                           type="checkbox"
-                          checked={allDistributors}
+                          checked={allEmployees}
                           onChange={e => {
                             const enabled = e.target.checked;
-                            setAllDistributors(enabled);
+                            setAllEmployees(enabled);
                             if (enabled) {
-                              lastAllowedDistributorsRef.current =
-                                formData.allowedDistributors;
+                              lastAllowedEmployeesRef.current =
+                                formData.allowedEmployees;
                               setFormData({
                                 ...formData,
-                                allowedDistributors: [],
+                                allowedEmployees: [],
                               });
                             } else {
                               setFormData({
                                 ...formData,
-                                allowedDistributors: [],
+                                allowedEmployees: [],
                               });
                             }
                           }}
@@ -1436,44 +1436,44 @@ export default function Promotions() {
                         />
                       </label>
 
-                      {distributors.length === 0 ? (
+                      {employees.length === 0 ? (
                         <p className="text-xs text-gray-500">
-                          No hay distribuidores registrados.
+                          No hay employees registrados.
                         </p>
                       ) : (
                         <div className="grid gap-2 sm:grid-cols-2">
-                          {distributors.map(distributor => {
+                          {employees.map(employee => {
                             const checked =
-                              formData.allowedDistributors.includes(
-                                distributor._id
+                              formData.allowedEmployees.includes(
+                                employee._id
                               );
                             return (
                               <label
-                                key={distributor._id}
+                                key={employee._id}
                                 className={`flex items-center justify-between rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-200 transition ${
-                                  allDistributors
+                                  allEmployees
                                     ? "opacity-50"
                                     : "hover:border-purple-500/60"
                                 }`}
                               >
                                 <span className="truncate">
-                                  {distributor.name}
+                                  {employee.name}
                                 </span>
                                 <input
                                   type="checkbox"
-                                  disabled={allDistributors}
+                                  disabled={allEmployees}
                                   checked={checked}
                                   onChange={() => {
-                                    if (allDistributors) return;
+                                    if (allEmployees) return;
                                     setFormData(prev => ({
                                       ...prev,
-                                      allowedDistributors: checked
-                                        ? prev.allowedDistributors.filter(
-                                            id => id !== distributor._id
+                                      allowedEmployees: checked
+                                        ? prev.allowedEmployees.filter(
+                                            id => id !== employee._id
                                           )
                                         : [
-                                            ...prev.allowedDistributors,
-                                            distributor._id,
+                                            ...prev.allowedEmployees,
+                                            employee._id,
                                           ],
                                     }));
                                   }}
@@ -1486,7 +1486,7 @@ export default function Promotions() {
                       )}
                     </div>
                     <p className="mt-1 text-xs text-gray-500">
-                      Si no seleccionas distribuidores, la promocion aplica en
+                      Si no seleccionas employees, la promocion aplica en
                       todos.
                     </p>
                   </div>
@@ -1683,10 +1683,10 @@ export default function Promotions() {
                               sum + (item.purchasePrice || 0) * item.quantity,
                             0
                           );
-                          const distributorCostTotal = comboItems.reduce(
+                          const employeeCostTotal = comboItems.reduce(
                             (sum, item) =>
                               sum +
-                              (item.distributorPrice || 0) * item.quantity,
+                              (item.employeePrice || 0) * item.quantity,
                             0
                           );
                           const totalPublicNormal = calculateOriginalPrice();
@@ -1697,13 +1697,13 @@ export default function Promotions() {
                             totalCost > 0
                               ? Math.round((adminProfit / totalCost) * 100)
                               : 0;
-                          const distributorProfit =
+                          const employeeProfit =
                             formData.promotionPrice -
-                            (formData.distributorPrice || 0);
+                            (formData.employeePrice || 0);
                           const customerSavings =
                             totalPublicNormal - formData.promotionPrice;
                           const adminProfitB2B =
-                            formData.distributorPrice - totalCost;
+                            formData.employeePrice - totalCost;
                           // CHANGE: Markup (ROI) = (Profit / Cost) * 100
                           const adminMarginB2B =
                             totalCost > 0
@@ -1711,8 +1711,8 @@ export default function Promotions() {
                               : 0;
 
                           const belowCostAlert =
-                            formData.distributorPrice > 0 &&
-                            formData.distributorPrice < totalCost;
+                            formData.employeePrice > 0 &&
+                            formData.employeePrice < totalCost;
 
                           return (
                             <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-3 sm:p-4">
@@ -1720,10 +1720,10 @@ export default function Promotions() {
                                 📊 Ingeniería de Precios
                               </h4>
 
-                              {/* Alert if distributor price below cost */}
+                              {/* Alert if employee price below cost */}
                               {belowCostAlert && (
                                 <div className="mb-3 rounded-lg border border-red-500/50 bg-red-900/30 p-2 text-xs text-red-400 sm:text-sm">
-                                  ⚠️ Precio distribuidor por debajo del margen
+                                  ⚠️ Precio employee por debajo del margen
                                   establecido
                                 </div>
                               )}
@@ -1760,10 +1760,10 @@ export default function Promotions() {
                                   </div>
                                 </div>
 
-                                {/* Column 2: Distributor (B2B) */}
+                                {/* Column 2: Employee (B2B) */}
                                 <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 p-3">
                                   <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-blue-400 sm:text-xs">
-                                    🏷️ Distribuidor
+                                    🏷️ Employee
                                   </p>
                                   <div className="space-y-3">
                                     <div>
@@ -1774,11 +1774,11 @@ export default function Promotions() {
                                         type="number"
                                         min="0"
                                         step="100"
-                                        value={formData.distributorPrice || ""}
+                                        value={formData.employeePrice || ""}
                                         onChange={e =>
                                           setFormData({
                                             ...formData,
-                                            distributorPrice:
+                                            employeePrice:
                                               parseFloat(e.target.value) || 0,
                                           })
                                         }
@@ -1788,15 +1788,15 @@ export default function Promotions() {
                                       <div className="mt-1 flex items-center justify-between">
                                         <span className="text-[10px] text-gray-400">
                                           Precio base sin promo:{" "}
-                                          {formatCurrency(distributorCostTotal)}
+                                          {formatCurrency(employeeCostTotal)}
                                         </span>
                                         <button
                                           type="button"
                                           onClick={() => {
                                             setFormData({
                                               ...formData,
-                                              distributorPrice:
-                                                distributorCostTotal,
+                                              employeePrice:
+                                                employeeCostTotal,
                                             });
                                           }}
                                           className="rounded border border-gray-600 px-2 py-0.5 text-[10px] text-gray-300 transition hover:border-purple-500"
@@ -1811,21 +1811,21 @@ export default function Promotions() {
                                         </div>
                                       )}
                                     </div>
-                                    {formData.distributorPrice > 0 && (
+                                    {formData.employeePrice > 0 && (
                                       <div>
                                         <span className="block text-[10px] uppercase text-gray-500">
                                           Ganancia Dist.
                                         </span>
                                         <span
-                                          className={`block truncate text-lg font-semibold ${distributorProfit >= 0 ? "text-blue-400" : "text-red-400"}`}
+                                          className={`block truncate text-lg font-semibold ${employeeProfit >= 0 ? "text-blue-400" : "text-red-400"}`}
                                         >
-                                          {formatCurrency(distributorProfit)}
-                                          {formData.distributorPrice > 0 && (
+                                          {formatCurrency(employeeProfit)}
+                                          {formData.employeePrice > 0 && (
                                             <span className="ml-1 text-xs font-normal opacity-75">
                                               (
                                               {Math.round(
-                                                (distributorProfit /
-                                                  formData.distributorPrice) *
+                                                (employeeProfit /
+                                                  formData.employeePrice) *
                                                   100
                                               )}
                                               % ROI)
@@ -1834,7 +1834,7 @@ export default function Promotions() {
                                         </span>
                                       </div>
                                     )}
-                                    {formData.distributorPrice > 0 && (
+                                    {formData.employeePrice > 0 && (
                                       <>
                                         <div className="my-1 border-t border-gray-700"></div>
                                         <div>

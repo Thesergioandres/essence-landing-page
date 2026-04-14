@@ -4,7 +4,7 @@
  */
 
 // ==================== LOCATION TYPES ====================
-export type LocationType = "warehouse" | "branch" | "distributor";
+export type LocationType = "warehouse" | "branch" | "employee";
 
 export interface Location {
   id: string;
@@ -21,7 +21,7 @@ export interface OrderItem {
   promotionId?: string;
   quantity: number;
   unitPrice: number; // Editable by admin
-  distributorPrice?: number; // Unit price paid to admin (promo override)
+  employeePrice?: number; // Unit price paid to admin (promo override)
   isPromotion?: boolean;
   purchasePrice: number; // Cost for profit calculation
   subtotal: number;
@@ -60,8 +60,8 @@ export interface OrderState {
   locationType: LocationType;
   locationId: string | null;
   locationName: string;
-  isDistributorSale: boolean;
-  distributorProfitPercentage: number;
+  isEmployeeSale: boolean;
+  employeeProfitPercentage: number;
 
   // Order Items
   items: OrderItem[];
@@ -118,7 +118,7 @@ export type OrderAction =
           OrderItem,
           | "quantity"
           | "unitPrice"
-          | "distributorPrice"
+          | "employeePrice"
           | "isPromotion"
           | "promotionId"
         >
@@ -148,8 +148,8 @@ export type OrderAction =
   | { type: "SET_INITIAL_PAYMENT"; amount: number }
   | { type: "SET_NOTES"; notes: string }
   | {
-      type: "SET_DISTRIBUTOR_PROFIT";
-      isDistributorSale: boolean;
+      type: "SET_EMPLOYEE_PROFIT";
+      isEmployeeSale: boolean;
       profitPercentage: number;
     }
   | { type: "CLEAR_ORDER" }
@@ -162,13 +162,13 @@ export interface ProductWithStock {
   purchasePrice: number;
   averageCost?: number;
   clientPrice: number;
-  distributorPrice: number;
+  employeePrice: number;
   warehouseStock: number;
   totalStock: number;
   category?: { _id: string; name: string } | string;
   image?: { url: string; publicId?: string };
   branchStock?: number; // Filled when branch is selected
-  distributorStock?: number; // Filled when selling as distributor
+  employeeStock?: number; // Filled when selling as employee
 }
 
 // ==================== PAYLOAD FOR BACKEND ====================
@@ -179,13 +179,13 @@ export interface AdminOrderPayload {
     promotionId?: string;
     quantity: number;
     salePrice: number;
-    distributorPrice?: number;
+    employeePrice?: number;
     isPromotion?: boolean;
   }>;
 
   // Location
   locationType?: LocationType;
-  distributorId?: string;
+  employeeId?: string;
   branchId?: string; // If selling from branch
 
   // Customer & Payment

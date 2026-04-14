@@ -102,7 +102,7 @@ class CreditRepository {
       .populate({
         path: "sale",
         populate: [
-          { path: "distributor", select: "name email phone" },
+          { path: "employee", select: "name email phone" },
           {
             path: "product",
             select: "name image purchasePrice suggestedPrice",
@@ -170,7 +170,7 @@ class CreditRepository {
         paymentConfirmedBy: userId,
       });
       const sale = await Sale.findById(credit.sale).lean();
-      if (sale?.distributor) {
+      if (sale?.employee) {
         const product = sale.product
           ? await Product.findById(sale.product).lean()
           : null;

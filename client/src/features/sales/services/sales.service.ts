@@ -93,7 +93,7 @@ export const saleService = {
       promotionId?: string;
       quantity: number;
       salePrice: number;
-      distributorPrice?: number;
+      employeePrice?: number;
       isPromotion?: boolean;
     }>;
     branchId?: string;
@@ -161,7 +161,7 @@ export const saleService = {
     }>;
     discount?: number;
     saleGroupId?: string;
-    locationType?: "warehouse" | "branch" | "distributor";
+    locationType?: "warehouse" | "branch" | "employee";
     warranties?: Array<{
       productId: string;
       quantity: number;
@@ -211,7 +211,7 @@ export const saleService = {
     }>;
     discount?: number;
     saleGroupId?: string;
-    locationType?: "warehouse" | "branch" | "distributor";
+    locationType?: "warehouse" | "branch" | "employee";
     warranties?: Array<{
       productId: string;
       quantity: number;
@@ -233,8 +233,8 @@ export const saleService = {
     return response.data;
   },
 
-  async getDistributorSales(
-    distributorId?: string,
+  async getEmployeeSales(
+    employeeId?: string,
     filters?: {
       startDate?: string;
       endDate?: string;
@@ -243,8 +243,8 @@ export const saleService = {
       statsOnly?: boolean;
     }
   ): Promise<{ sales: Sale[]; stats: SaleStats }> {
-    return salesReadUseCases.getDistributorSales<Sale, SaleStats>({
-      distributorId,
+    return salesReadUseCases.getEmployeeSales<Sale, SaleStats>({
+      employeeId,
       filters,
     });
   },
@@ -257,7 +257,7 @@ export const saleService = {
   async getAllSales(filters?: {
     startDate?: string;
     endDate?: string;
-    distributorId?: string;
+    employeeId?: string;
     productId?: string;
     paymentStatus?: string;
     sortBy?: string;
@@ -289,26 +289,26 @@ export const saleService = {
       totalSales: number;
       totalRevenue: number;
       totalAdminProfit: number;
-      totalDistributorProfit: number;
+      totalEmployeeProfit: number;
     }>
   > {
     const response = await api.get("/sales/report/by-product");
     return response.data;
   },
 
-  async getSalesByDistributor(): Promise<
+  async getSalesByEmployee(): Promise<
     Array<{
       _id: string;
-      distributorName: string;
-      distributorEmail: string;
+      employeeName: string;
+      employeeEmail: string;
       totalQuantity: number;
       totalSales: number;
       totalRevenue: number;
       totalAdminProfit: number;
-      totalDistributorProfit: number;
+      totalEmployeeProfit: number;
     }>
   > {
-    const response = await api.get("/sales/report/by-distributor");
+    const response = await api.get("/sales/report/by-employee");
     return response.data;
   },
 
@@ -505,7 +505,7 @@ export const defectiveProductService = {
       product: Product;
       warehouse: number;
       branches: number;
-      distributors: number;
+      employees: number;
       total: number;
     }>;
   }> {
@@ -560,12 +560,12 @@ export const defectiveProductService = {
     return response.data;
   },
 
-  async getDistributorReports(
-    distributorId?: string,
+  async getEmployeeReports(
+    employeeId?: string,
     status?: "pendiente" | "confirmado" | "rechazado"
   ): Promise<DefectiveProduct[]> {
-    const url = distributorId
-      ? `/defective-products/staff/${distributorId}`
+    const url = employeeId
+      ? `/defective-products/staff/${employeeId}`
       : "/defective-products/staff/me";
     const response = await api.get(url, { params: { status } });
     const rawData = response.data;
@@ -574,7 +574,7 @@ export const defectiveProductService = {
 
   async getAllReports(filters?: {
     status?: "pendiente" | "confirmado" | "rechazado";
-    distributorId?: string;
+    employeeId?: string;
     productId?: string;
   }): Promise<{
     reports: DefectiveProduct[];
@@ -737,9 +737,9 @@ export const warrantyService = {
         product: Product | string;
         quantity: number;
         salePrice: number;
-        distributor?: { _id: string; name: string } | string | null;
+        employee?: { _id: string; name: string } | string | null;
         branch?: { _id: string; name: string } | string | null;
-        sourceLocation?: "warehouse" | "branch" | "distributor" | null;
+        sourceLocation?: "warehouse" | "branch" | "employee" | null;
         createdBy?: { _id: string; name: string } | string | null;
       }>;
     };
@@ -757,7 +757,7 @@ export const warrantyService = {
     replacementProductId: string;
     replacementPrice?: number;
     cashRefund?: number;
-    replacementSource: "warehouse" | "branch" | "distributor";
+    replacementSource: "warehouse" | "branch" | "employee";
     replacementBranchId?: string;
     adminNotes?: string;
   }): Promise<{

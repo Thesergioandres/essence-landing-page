@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import { employeeRoleQuery } from "../../../utils/roleAliases.js";
 import Business from "../models/Business.js";
-import DistributorStock from "../models/DistributorStock.js";
+import EmployeeStock from "../models/EmployeeStock.js";
 import InventoryMovement from "../models/InventoryMovement.js";
 import Membership from "../models/Membership.js";
 import Product from "../models/Product.js";
@@ -22,7 +22,7 @@ export class EmployeeRepository {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(data.password, salt);
 
-    const distributor = await User.create({
+    const employee = await User.create({
       name: data.name,
       email: data.email,
       password: hashedPassword,
@@ -34,19 +34,19 @@ export class EmployeeRepository {
     });
 
     await Membership.findOneAndUpdate(
-      { user: distributor._id, business: businessId },
+      { user: employee._id, business: businessId },
       { role: "employee", status: "active" },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );
 
     return {
-      _id: distributor._id,
-      name: distributor.name,
-      email: distributor.email,
-      phone: distributor.phone,
-      address: distributor.address,
-      role: distributor.role,
-      active: distributor.active,
+      _id: employee._id,
+      name: employee.name,
+      email: employee.email,
+      phone: employee.phone,
+      address: employee.address,
+      role: employee.role,
+      active: employee.active,
     };
   }
 
@@ -60,13 +60,13 @@ export class EmployeeRepository {
       status: "active",
     }).select("user");
 
-    const membershipDistributorIds = memberships
+    const membershipEmployeeIds = memberships
       .map((m) => m.user)
       .filter((id) => id && mongoose.isValidObjectId(id));
 
-    if (membershipDistributorIds.length === 0) {
+    if (membershipEmployeeIds.length === 0) {
       return {
-        distributors: [],
+        employees: [],
         pagination: {
           page,
           limit,
@@ -79,7 +79,7 @@ export class EmployeeRepository {
 
     const filter = {
       role: employeeRoleQuery,
-      _id: { $in: membershipDistributorIds },
+      _id: { $in: membershipEmployeeIds },
     };
 
     if (filters.active !== undefined) {
@@ -88,7 +88,7 @@ export class EmployeeRepository {
 
     const skip = (page - 1) * limit;
 
-    const [distributors, total] = await Promise.all([
+    const [employees, total] = await Promise.all([
       User.find(filter)
         .select("name email phone address role active assignedProducts")
         .skip(skip)
@@ -97,13 +97,13 @@ export class EmployeeRepository {
       User.countDocuments(filter),
     ]);
 
-    const distributorIds = distributors
+    const employeeIds = employees
       .map((d) => d._id)
       .filter((id) => id && mongoose.isValidObjectId(id));
 
-    if (distributorIds.length === 0) {
+    if (employeeIds.length === 0) {
       return {
-        distributors: [],
+        employees: [],
         pagination: {
           page,
           limit,
@@ -115,43 +115,43 @@ export class EmployeeRepository {
     }
 
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
-    const objectIds = distributorIds.map(
+    const objectIds = employeeIds.map(
       (id) => new mongoose.Types.ObjectId(id),
     );
 
     const [stockAgg, salesAgg] = await Promise.all([
-      DistributorStock.aggregate([
+      EmployeeStock.aggregate([
         {
           $match: {
             business: businessObjectId,
-            distributor: { $in: objectIds },
+            employee: { $in: objectIds },
           },
         },
-        { $group: { _id: "$distributor", totalStock: { $sum: "$quantity" } } },
+        { $group: { _id: "$employee", totalStock: { $sum: "$quantity" } } },
       ]),
       Sale.aggregate([
         {
           $match: {
             business: businessObjectId,
-            distributor: { $in: objectIds },
+            employee: { $in: objectIds },
             // 💰 CASH FLOW: Solo ventas confirmadas para profit
             paymentStatus: "confirmado",
           },
         },
         {
           $group: {
-            _id: "$distributor",
+            _id: "$employee",
             totalSales: { $sum: 1 },
-            totalProfit: { $sum: "$distributorProfit" },
+            totalProfit: { $sum: "$employeeProfit" },
           },
         },
       ]),
     ]);
 
-    const stockByDistributor = new Map(
+    const stockByEmployee = new Map(
       stockAgg.map((s) => [String(s._id), Number(s.totalStock) || 0]),
     );
-    const salesByDistributor = new Map(
+    const salesByEmployee = new Map(
       salesAgg.map((s) => [
         String(s._id),
         {
@@ -161,25 +161,25 @@ export class EmployeeRepository {
       ]),
     );
 
-    const distributorsWithStats = distributors.map((distributor) => {
-      const salesStats = salesByDistributor.get(String(distributor._id)) || {
+    const employeesWithStats = employees.map((employee) => {
+      const salesStats = salesByEmployee.get(String(employee._id)) || {
         totalSales: 0,
         totalProfit: 0,
       };
 
       return {
-        ...distributor,
+        ...employee,
         stats: {
-          totalStock: stockByDistributor.get(String(distributor._id)) || 0,
+          totalStock: stockByEmployee.get(String(employee._id)) || 0,
           totalSales: salesStats.totalSales,
           totalProfit: salesStats.totalProfit,
-          assignedProductsCount: distributor.assignedProducts?.length || 0,
+          assignedProductsCount: employee.assignedProducts?.length || 0,
         },
       };
     });
 
     return {
-      distributors: distributorsWithStats,
+      employees: employeesWithStats,
       pagination: {
         page,
         limit,
@@ -199,20 +199,20 @@ export class EmployeeRepository {
     });
 
     if (!membership) {
-      const err = new Error("Distribuidor no encontrado en este negocio");
+      const err = new Error("Employee no encontrado en este negocio");
       err.statusCode = 404;
       throw err;
     }
 
-    const distributor = await User.findOne({ _id: id, role: employeeRoleQuery })
+    const employee = await User.findOne({ _id: id, role: employeeRoleQuery })
       .select("-password")
       .populate(
         "assignedProducts",
-        "name image purchasePrice distributorPrice",
+        "name image purchasePrice employeePrice",
       );
 
-    if (!distributor) {
-      const err = new Error("Distribuidor no encontrado");
+    if (!employee) {
+      const err = new Error("Employee no encontrado");
       err.statusCode = 404;
       throw err;
     }
@@ -223,8 +223,8 @@ export class EmployeeRepository {
       `[EmployeeRepository] findById called for id: ${id}, business: ${businessObjectId}`,
     );
 
-    const stock = await DistributorStock.find({
-      distributor: distributor._id,
+    const stock = await EmployeeStock.find({
+      employee: employee._id,
       business: businessObjectId,
     }).populate("product", "name image");
 
@@ -242,7 +242,7 @@ export class EmployeeRepository {
     );
 
     return {
-      ...distributor.toObject(),
+      ...employee.toObject(),
       stock,
       activePromotions,
     };
@@ -257,7 +257,7 @@ export class EmployeeRepository {
     });
 
     if (!membership) {
-      const err = new Error("Distribuidor no encontrado en este negocio");
+      const err = new Error("Employee no encontrado en este negocio");
       err.statusCode = 404;
       throw err;
     }
@@ -269,17 +269,17 @@ export class EmployeeRepository {
     if (data.active !== undefined) updates.active = data.active;
     if (data.assignedProducts) updates.assignedProducts = data.assignedProducts;
 
-    const distributor = await User.findByIdAndUpdate(id, updates, {
+    const employee = await User.findByIdAndUpdate(id, updates, {
       new: true,
     }).select("-password");
 
-    if (!distributor) {
-      const err = new Error("Distribuidor no encontrado");
+    if (!employee) {
+      const err = new Error("Employee no encontrado");
       err.statusCode = 404;
       throw err;
     }
 
-    return distributor;
+    return employee;
   }
 
   async toggleActive(id, businessId) {
@@ -290,43 +290,43 @@ export class EmployeeRepository {
     });
 
     if (!membership) {
-      const err = new Error("Distribuidor no encontrado en este negocio");
+      const err = new Error("Employee no encontrado en este negocio");
       err.statusCode = 404;
       throw err;
     }
 
-    const distributor = await User.findOne({
+    const employee = await User.findOne({
       _id: id,
       role: employeeRoleQuery,
     });
-    if (!distributor) {
-      const err = new Error("Distribuidor no encontrado");
+    if (!employee) {
+      const err = new Error("Employee no encontrado");
       err.statusCode = 404;
       throw err;
     }
 
-    const nextActive = distributor.active !== false ? false : true;
-    distributor.active = nextActive;
+    const nextActive = employee.active !== false ? false : true;
+    employee.active = nextActive;
     if (nextActive) {
-      distributor.status = "active";
-    } else if (distributor.status === "active") {
-      distributor.status = "suspended";
+      employee.status = "active";
+    } else if (employee.status === "active") {
+      employee.status = "suspended";
     }
-    await distributor.save();
+    await employee.save();
 
     return {
       message: nextActive
-        ? "Distribuidor activado correctamente"
-        : "Distribuidor pausado correctamente",
-      distributor: {
-        _id: distributor._id,
-        name: distributor.name,
-        email: distributor.email,
-        phone: distributor.phone,
-        address: distributor.address,
-        role: distributor.role,
-        active: distributor.active,
-        status: distributor.status,
+        ? "Employee activado correctamente"
+        : "Employee pausado correctamente",
+      employee: {
+        _id: employee._id,
+        name: employee.name,
+        email: employee.email,
+        phone: employee.phone,
+        address: employee.address,
+        role: employee.role,
+        active: employee.active,
+        status: employee.status,
       },
     };
   }
@@ -343,30 +343,30 @@ export class EmployeeRepository {
         }).session(session);
 
         if (!membership) {
-          const err = new Error("Distribuidor no encontrado en este negocio");
+          const err = new Error("Employee no encontrado en este negocio");
           err.statusCode = 404;
           throw err;
         }
 
-        const distributor = await User.findOne({
+        const employee = await User.findOne({
           _id: id,
           role: employeeRoleQuery,
         }).session(session);
 
-        if (!distributor) {
-          const err = new Error("Distribuidor no encontrado");
+        if (!employee) {
+          const err = new Error("Employee no encontrado");
           err.statusCode = 404;
           throw err;
         }
 
-        const distributorNameSnapshot =
-          String(distributor.name || "").trim() ||
-          String(distributor.email || "").trim() ||
-          "Distribuidor eliminado";
+        const employeeNameSnapshot =
+          String(employee.name || "").trim() ||
+          String(employee.email || "").trim() ||
+          "Employee eliminado";
 
-        const stockRows = await DistributorStock.find({
+        const stockRows = await EmployeeStock.find({
           business: businessId,
-          distributor: id,
+          employee: id,
           $or: [{ quantity: { $gt: 0 } }, { inTransitQuantity: { $gt: 0 } }],
         }).session(session);
 
@@ -402,9 +402,9 @@ export class EmployeeRepository {
                 quantity: totalToReturn,
                 movementType: "INBOUND_RETURN",
                 fromLocation: {
-                  type: "distributor",
+                  type: "employee",
                   id: id,
-                  name: distributorNameSnapshot,
+                  name: employeeNameSnapshot,
                 },
                 toLocation: {
                   type: "warehouse",
@@ -414,10 +414,10 @@ export class EmployeeRepository {
                 referenceModel: "User",
                 referenceId: id,
                 performedBy: performedBy || id,
-                notes: "Retorno por eliminación de distribuidor",
+                notes: "Retorno por eliminación de employee",
                 metadata: {
-                  reason: "distributor_removal",
-                  distributorId: String(id),
+                  reason: "employee_removal",
+                  employeeId: String(id),
                   quantity,
                   inTransitQuantity,
                 },
@@ -431,19 +431,19 @@ export class EmployeeRepository {
         }
 
         const salesUpdateResult = await Sale.updateMany(
-          { business: businessId, distributor: id },
+          { business: businessId, employee: id },
           {
             $set: {
-              distributorNameSnapshot,
-              distributor: null,
+              employeeNameSnapshot,
+              employee: null,
             },
           },
           { session },
         );
 
-        await DistributorStock.deleteMany({
+        await EmployeeStock.deleteMany({
           business: businessId,
-          distributor: id,
+          employee: id,
         }).session(session);
 
         await Membership.deleteMany({ user: id }).session(session);
@@ -454,15 +454,15 @@ export class EmployeeRepository {
         }).session(session);
 
         if (!deleteUserResult.deletedCount) {
-          const err = new Error("No se pudo eliminar el distribuidor");
+          const err = new Error("No se pudo eliminar el employee");
           err.statusCode = 500;
           throw err;
         }
 
         return {
           message:
-            "Distribuidor eliminado correctamente. El inventario fue retornado a bodega.",
-          distributorNameSnapshot,
+            "Employee eliminado correctamente. El inventario fue retornado a bodega.",
+          employeeNameSnapshot,
           returnedUnits,
           returnedProducts,
           affectedSales:
@@ -483,16 +483,16 @@ export class EmployeeRepository {
     }
   }
 
-  async assignProducts(distributorId, businessId, productIds) {
+  async assignProducts(employeeId, businessId, productIds) {
     const membership = await Membership.findOne({
       business: businessId,
-      user: distributorId,
+      user: employeeId,
       role: employeeRoleQuery,
       status: "active",
     });
 
     if (!membership) {
-      const err = new Error("Distribuidor no encontrado");
+      const err = new Error("Employee no encontrado");
       err.statusCode = 404;
       throw err;
     }
@@ -504,28 +504,28 @@ export class EmployeeRepository {
 
     const validIds = validProducts.map((p) => p._id);
 
-    const distributor = await User.findByIdAndUpdate(
-      distributorId,
+    const employee = await User.findByIdAndUpdate(
+      employeeId,
       { assignedProducts: validIds },
       { new: true },
     ).select("name email assignedProducts");
 
-    return distributor;
+    return employee;
   }
 
-  async getProducts(distributorId, businessId, filters = {}) {
+  async getProducts(employeeId, businessId, filters = {}) {
     const page = parseInt(filters.page) || 1;
     const limit = parseInt(filters.limit) || 50;
     const skip = (page - 1) * limit;
 
     const query = {
-      distributor: distributorId,
+      employee: employeeId,
       business: businessId,
       quantity: { $gt: 0 },
     };
 
     console.log(
-      `[EmployeeRepository] getProducts. DistId: ${distributorId}, BusId: ${businessId}`,
+      `[EmployeeRepository] getProducts. DistId: ${employeeId}, BusId: ${businessId}`,
     );
     console.log(`[EmployeeRepository] Query:`, JSON.stringify(query));
 
@@ -536,16 +536,16 @@ export class EmployeeRepository {
     // Use aggregate to filter by product name if needed in future
     // For now simple find
     const [stocks, total] = await Promise.all([
-      DistributorStock.find(query)
+      EmployeeStock.find(query)
         .populate("product") // Populate full product to return same shape as expected
         .skip(skip)
         .limit(limit)
         .lean(),
-      DistributorStock.countDocuments(query),
+      EmployeeStock.countDocuments(query),
     ]);
 
     console.log(
-      `[EmployeeRepository] Found ${stocks.length} items for distributor.`,
+      `[EmployeeRepository] Found ${stocks.length} items for employee.`,
     );
     if (stocks.length > 0) {
       console.log(
@@ -556,8 +556,8 @@ export class EmployeeRepository {
       console.log(
         `[EmployeeRepository] NO STOCK FOUND. Checking without quantity filter...`,
       );
-      const allStock = await DistributorStock.find({
-        distributor: distributorId,
+      const allStock = await EmployeeStock.find({
+        employee: employeeId,
         business: businessId,
       })
         .limit(1)
@@ -584,9 +584,9 @@ export class EmployeeRepository {
     };
   }
 
-  async getPublicCatalog(distributorId) {
+  async getPublicCatalog(employeeId) {
     const membership = await Membership.findOne({
-      user: distributorId,
+      user: employeeId,
       role: employeeRoleQuery,
       status: "active",
     })
@@ -594,14 +594,14 @@ export class EmployeeRepository {
       .lean();
 
     if (!membership?.business) {
-      const err = new Error("Distribuidor no encontrado en este negocio");
+      const err = new Error("Employee no encontrado en este negocio");
       err.statusCode = 404;
       throw err;
     }
 
-    const [distributor, business] = await Promise.all([
+    const [employee, business] = await Promise.all([
       User.findOne({
-        _id: distributorId,
+        _id: employeeId,
         role: employeeRoleQuery,
       })
         .select("name email phone")
@@ -609,20 +609,20 @@ export class EmployeeRepository {
       Business.findById(membership.business).select("name logoUrl").lean(),
     ]);
 
-    if (!distributor) {
-      const err = new Error("Distribuidor no encontrado");
+    if (!employee) {
+      const err = new Error("Employee no encontrado");
       err.statusCode = 404;
       throw err;
     }
 
-    const stockEntries = await DistributorStock.find({
+    const stockEntries = await EmployeeStock.find({
       business: membership.business,
-      distributor: distributorId,
+      employee: employeeId,
       quantity: { $gt: 0 },
     })
       .populate({
         path: "product",
-        select: "name description clientPrice distributorPrice image category",
+        select: "name description clientPrice employeePrice image category",
         populate: { path: "category", select: "name slug" },
       })
       .lean();
@@ -631,12 +631,12 @@ export class EmployeeRepository {
       .filter((entry) => entry.product)
       .map((entry) => ({
         ...entry.product,
-        distributorStock: entry.quantity,
+        employeeStock: entry.quantity,
         totalStock: entry.quantity,
       }));
 
     return {
-      distributor,
+      employee,
       products,
       business: business
         ? {

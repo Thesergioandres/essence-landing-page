@@ -128,7 +128,7 @@ async function main() {
               actualPayment: 0,
               discount: 0,
               adminProfit: 0,
-              distributorProfit: 0,
+              employeeProfit: 0,
               totalProfit: 0,
               totalGroupProfit: 0,
               netProfit: 0,

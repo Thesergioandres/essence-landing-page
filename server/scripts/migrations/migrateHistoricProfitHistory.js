@@ -90,7 +90,7 @@ async function migrateHistoricProfitHistory() {
 
   const stats = {
     salesProcessed: 0,
-    distributorEntriesCreated: 0,
+    employeeEntriesCreated: 0,
     adminEntriesCreated: 0,
     errors: [],
     skippedNoProfit: 0,
@@ -116,19 +116,19 @@ async function migrateHistoricProfitHistory() {
       const productId = sale.product;
       const quantity = sale.quantity || 1;
       const salePrice = sale.salePrice || 0;
-      const distributorId = sale.distributor;
-      const distributorProfit = sale.distributorProfit || 0;
+      const employeeId = sale.employee;
+      const employeeProfit = sale.employeeProfit || 0;
       const adminProfit = sale.adminProfit || 0;
       const totalProfit = sale.totalProfit || 0;
 
-      // Create entry for distributor's profit
-      if (distributorId && distributorProfit > 0) {
+      // Create entry for employee's profit
+      if (employeeId && employeeProfit > 0) {
         if (!DRY_RUN) {
           await ProfitHistory.create({
             business: businessId,
-            user: distributorId,
+            user: employeeId,
             type: "venta_normal",
-            amount: distributorProfit,
+            amount: employeeProfit,
             sale: sale._id,
             product: productId,
             description: `Comisión por venta ${sale.saleId} (migración)`,
@@ -141,11 +141,11 @@ async function migrateHistoricProfitHistory() {
             },
           });
         }
-        stats.distributorEntriesCreated++;
+        stats.employeeEntriesCreated++;
       }
 
       // Create entry for admin's profit
-      if (adminProfit > 0 || (totalProfit > 0 && !distributorId)) {
+      if (adminProfit > 0 || (totalProfit > 0 && !employeeId)) {
         const profitAmount = adminProfit > 0 ? adminProfit : totalProfit;
 
         if (adminUserId) {
@@ -157,8 +157,8 @@ async function migrateHistoricProfitHistory() {
               amount: profitAmount,
               sale: sale._id,
               product: productId,
-              description: distributorId
-                ? `Ganancia de venta ${sale.saleId} (distribuidor - migración)`
+              description: employeeId
+                ? `Ganancia de venta ${sale.saleId} (employee - migración)`
                 : `Venta directa ${sale.saleId} (migración)`,
               date: saleDate,
               metadata: {
@@ -176,7 +176,7 @@ async function migrateHistoricProfitHistory() {
       } else if (
         totalProfit === 0 &&
         adminProfit === 0 &&
-        distributorProfit === 0
+        employeeProfit === 0
       ) {
         stats.skippedNoProfit++;
       }
@@ -203,7 +203,7 @@ async function migrateHistoricProfitHistory() {
   console.log("========================================");
   console.log(`Sales processed: ${stats.salesProcessed}`);
   console.log(
-    `Distributor entries ${DRY_RUN ? "to create" : "created"}: ${stats.distributorEntriesCreated}`,
+    `Employee entries ${DRY_RUN ? "to create" : "created"}: ${stats.employeeEntriesCreated}`,
   );
   console.log(
     `Admin entries ${DRY_RUN ? "to create" : "created"}: ${stats.adminEntriesCreated}`,

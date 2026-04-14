@@ -79,13 +79,13 @@ class CreditController {
         const unitCost = sale.averageCostAtSale || sale.purchasePrice || 0;
         const totalCost = unitCost * quantity;
         const adminProfit = sale.adminProfit || 0;
-        const distributorProfit = sale.distributorProfit || 0;
-        const totalProfit = sale.totalProfit || adminProfit + distributorProfit;
-        const isDistributorSale = !!sale.distributor;
+        const employeeProfit = sale.employeeProfit || 0;
+        const totalProfit = sale.totalProfit || adminProfit + employeeProfit;
+        const isEmployeeSale = !!sale.employee;
         const profitMarginPercentage =
           totalSaleAmount > 0 ? (totalProfit / totalSaleAmount) * 100 : 0;
-        const distributorProfitPercentage =
-          totalProfit > 0 ? (distributorProfit / totalProfit) * 100 : 0;
+        const employeeProfitPercentage =
+          totalProfit > 0 ? (employeeProfit / totalProfit) * 100 : 0;
 
         profitInfo = {
           // Información básica del crédito
@@ -104,14 +104,14 @@ class CreditController {
           totalCost,
           // Ganancias
           adminProfit,
-          distributorProfit,
+          employeeProfit,
           totalProfit,
-          distributorProfitPercentage,
+          employeeProfitPercentage,
           profitMarginPercentage,
-          // Información del distribuidor
-          isDistributorSale,
-          distributorName: sale.distributor?.name || null,
-          distributorEmail: sale.distributor?.email || null,
+          // Información del employee
+          isEmployeeSale,
+          employeeName: sale.employee?.name || null,
+          employeeEmail: sale.employee?.email || null,
           // Estado de realización de la ganancia
           profitRealized: credit.status === "paid",
           realizedProfit: credit.status === "paid" ? totalProfit : 0,

@@ -49,7 +49,7 @@ interface SalesTimelineChartProps {
   reloadKey?: number;
   hideFinancialData?: boolean;
   data?: TimelineDatum[];
-  showOwnDistributorEarnings?: boolean;
+  showOwnEmployeeEarnings?: boolean;
   showAdminFinancials?: boolean;
   title?: string;
 }
@@ -84,7 +84,7 @@ export const SalesTimelineChart: React.FC<SalesTimelineChartProps> = ({
   reloadKey = 0,
   hideFinancialData = false,
   data,
-  showOwnDistributorEarnings,
+  showOwnEmployeeEarnings,
   showAdminFinancials,
   title,
 }) => {
@@ -165,7 +165,7 @@ export const SalesTimelineChart: React.FC<SalesTimelineChartProps> = ({
   }, [endDate, period, reloadKey, shouldFetch, startDate]);
 
   const sourceData = data ?? fetchedData;
-  const canShowOwnEarnings = showOwnDistributorEarnings ?? !hideFinancialData;
+  const canShowOwnEarnings = showOwnEmployeeEarnings ?? !hideFinancialData;
   const canShowAdminFinancials =
     (showAdminFinancials ?? !hideFinancialData) && !hideFinancialData;
 

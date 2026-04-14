@@ -23,10 +23,10 @@ export interface Product {
   description: string;
   purchasePrice: number;
   suggestedPrice: number;
-  distributorPrice: number;
+  employeePrice: number;
   salePrice?: number;
   clientPrice?: number;
-  distributorCommission?: number;
+  employeeCommission?: number;
   cost?: number;
   averageCost?: number;
   totalInventoryValue?: number;
@@ -47,9 +47,9 @@ export interface Product {
   }>;
 }
 
-export interface DistributorStock {
+export interface EmployeeStock {
   _id: string;
-  distributor: unknown | string;
+  employee: unknown | string;
   product: Product | string;
   quantity: number;
   lowStockAlert: number;
@@ -71,7 +71,7 @@ export interface BranchStock {
 
 export interface StockAlert {
   warehouseAlerts: Product[];
-  distributorAlerts: DistributorStock[];
+  employeeAlerts: EmployeeStock[];
 }
 
 export interface InventoryEntry {

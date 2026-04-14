@@ -20,7 +20,7 @@
 
 import mongoose from "mongoose";
 import BranchStock from "../models/BranchStock.js";
-import DistributorStock from "../models/DistributorStock.js";
+import EmployeeStock from "../models/EmployeeStock.js";
 import Membership from "../models/Membership.js";
 import Product from "../models/Product.js";
 import SaleModel from "../models/Sale.js";
@@ -68,7 +68,7 @@ export class AnalyticsRepository {
                     {
                       $ifNull: [
                         "$netProfit",
-                        { $add: ["$adminProfit", "$distributorProfit"] },
+                        { $add: ["$adminProfit", "$employeeProfit"] },
                       ],
                     },
                   ],
@@ -134,7 +134,7 @@ export class AnalyticsRepository {
                     {
                       $ifNull: [
                         "$netProfit",
-                        { $add: ["$adminProfit", "$distributorProfit"] },
+                        { $add: ["$adminProfit", "$employeeProfit"] },
                       ],
                     },
                   ],
@@ -207,7 +207,7 @@ export class AnalyticsRepository {
 
   /**
    * Get Estimated Profit (Admin Dashboard)
-   * Calculates estimated profit based on INVENTORY (warehouse + distributors)
+   * Calculates estimated profit based on INVENTORY (warehouse + employees)
    * Returns the profit that would be made if all inventory was sold at clientPrice
    */
   async getEstimatedProfit(businessId) {
@@ -220,20 +220,20 @@ export class AnalyticsRepository {
       isDeleted: { $ne: true },
     })
       .select(
-        "name warehouseStock purchasePrice averageCost distributorPrice clientPrice",
+        "name warehouseStock purchasePrice averageCost employeePrice clientPrice",
       )
       .lean();
 
-    // Get distributor stocks with user info
-    const distributorStocks = await DistributorStock.find({
+    // Get employee stocks with user info
+    const employeeStocks = await EmployeeStock.find({
       business: businessObjectId,
       quantity: { $gt: 0 },
     })
       .populate(
         "product",
-        "name purchasePrice averageCost clientPrice distributorPrice",
+        "name purchasePrice averageCost clientPrice employeePrice",
       )
-      .populate("distributor", "name email")
+      .populate("employee", "name email")
       .lean();
 
     const branchStocks = await BranchStock.find({
@@ -242,20 +242,20 @@ export class AnalyticsRepository {
     })
       .populate(
         "product",
-        "name purchasePrice averageCost clientPrice distributorPrice",
+        "name purchasePrice averageCost clientPrice employeePrice",
       )
       .populate("branch", "name")
       .lean();
 
-    // Check if business has distributors
-    const distributorMemberships = await Membership.find({
+    // Check if business has employees
+    const employeeMemberships = await Membership.find({
       business: businessObjectId,
       role: "employee",
       status: "active",
     })
       .select("user")
       .lean();
-    const hasDistributors = distributorMemberships.length > 0;
+    const hasEmployees = employeeMemberships.length > 0;
 
     const hasBranches = branchStocks.length > 0;
 
@@ -268,7 +268,7 @@ export class AnalyticsRepository {
     for (const product of warehouseProducts) {
       const qty = product.warehouseStock || 0;
       const costPrice = product.averageCost || product.purchasePrice || 0;
-      const sellPrice = product.clientPrice || product.distributorPrice || 0;
+      const sellPrice = product.clientPrice || product.employeePrice || 0;
 
       warehouseInvestment += costPrice * qty;
       warehouseSalesValue += sellPrice * qty;
@@ -276,33 +276,33 @@ export class AnalyticsRepository {
     }
     warehouseGrossProfit = warehouseSalesValue - warehouseInvestment;
 
-    // Calculate distributor metrics (aggregated and per-distributor)
-    let distributorsGrossProfit = 0;
-    let distributorsInvestment = 0;
-    let distributorsSalesValue = 0;
-    let distributorsTotalUnits = 0;
-    const distributorMap = new Map();
+    // Calculate employee metrics (aggregated and per-employee)
+    let employeesGrossProfit = 0;
+    let employeesInvestment = 0;
+    let employeesSalesValue = 0;
+    let employeesTotalUnits = 0;
+    const employeeMap = new Map();
 
-    for (const stock of distributorStocks) {
-      if (!stock.product || !stock.distributor) continue;
+    for (const stock of employeeStocks) {
+      if (!stock.product || !stock.employee) continue;
 
       const qty = stock.quantity || 0;
       const product = stock.product;
-      const distributor = stock.distributor;
+      const employee = stock.employee;
 
-      // Admin's perspective for distributor inventory: profit is B2B margin
-      // Sales value is at distributorPrice (already excludes distributor commission)
+      // Admin's perspective for employee inventory: profit is B2B margin
+      // Sales value is at employeePrice (already excludes employee commission)
       const costPrice = product.averageCost || product.purchasePrice || 0;
-      let sellPrice = product.distributorPrice || 0;
+      let sellPrice = product.employeePrice || 0;
       if (sellPrice <= 0) {
         // Fallback to avoid zero B2B price when stock exists
         sellPrice = product.clientPrice || 0;
         if (sellPrice <= 0) {
           console.warn(
-            "[EstimatedProfit] Missing B2B price for distributor stock",
+            "[EstimatedProfit] Missing B2B price for employee stock",
             {
               productId: product._id,
-              distributorId: distributor._id,
+              employeeId: employee._id,
             },
           );
         }
@@ -312,17 +312,17 @@ export class AnalyticsRepository {
       const salesValue = sellPrice * qty;
       const profit = salesValue - investment;
 
-      distributorsInvestment += investment;
-      distributorsSalesValue += salesValue;
-      distributorsTotalUnits += qty;
+      employeesInvestment += investment;
+      employeesSalesValue += salesValue;
+      employeesTotalUnits += qty;
 
-      // Per-distributor breakdown
-      const distId = distributor._id.toString();
-      if (!distributorMap.has(distId)) {
-        distributorMap.set(distId, {
+      // Per-employee breakdown
+      const distId = employee._id.toString();
+      if (!employeeMap.has(distId)) {
+        employeeMap.set(distId, {
           id: distId,
-          name: distributor.name || "Distribuidor",
-          email: distributor.email || "",
+          name: employee.name || "Employee",
+          email: employee.email || "",
           grossProfit: 0,
           adminProfit: 0,
           investment: 0,
@@ -331,7 +331,7 @@ export class AnalyticsRepository {
           totalUnits: 0,
         });
       }
-      const d = distributorMap.get(distId);
+      const d = employeeMap.get(distId);
       d.grossProfit += profit;
       d.adminProfit += profit; // For admin, the profit is the margin
       d.investment += investment;
@@ -339,7 +339,7 @@ export class AnalyticsRepository {
       d.totalUnits += qty;
       d.totalProducts += 1;
     }
-    distributorsGrossProfit = distributorsSalesValue - distributorsInvestment;
+    employeesGrossProfit = employeesSalesValue - employeesInvestment;
 
     // Calculate branches metrics (aggregated and per-branch)
     let branchesGrossProfit = 0;
@@ -356,7 +356,7 @@ export class AnalyticsRepository {
       const branch = stock.branch;
 
       const costPrice = product.averageCost || product.purchasePrice || 0;
-      const sellPrice = product.clientPrice || product.distributorPrice || 0;
+      const sellPrice = product.clientPrice || product.employeePrice || 0;
 
       const investment = costPrice * qty;
       const salesValue = sellPrice * qty;
@@ -392,29 +392,29 @@ export class AnalyticsRepository {
 
     // Consolidated totals
     const totalGrossProfit =
-      warehouseGrossProfit + branchesGrossProfit + distributorsGrossProfit;
+      warehouseGrossProfit + branchesGrossProfit + employeesGrossProfit;
     const totalInvestment =
-      warehouseInvestment + branchesInvestment + distributorsInvestment;
+      warehouseInvestment + branchesInvestment + employeesInvestment;
     const totalSalesValue =
-      warehouseSalesValue + branchesSalesValue + distributorsSalesValue;
+      warehouseSalesValue + branchesSalesValue + employeesSalesValue;
     const totalUnits =
-      warehouseTotalUnits + branchesTotalUnits + distributorsTotalUnits;
+      warehouseTotalUnits + branchesTotalUnits + employeesTotalUnits;
     const totalProducts =
       warehouseProducts.length +
       new Set(branchStocks.map((s) => s.product?._id?.toString())).size +
-      new Set(distributorStocks.map((s) => s.product?._id?.toString())).size;
+      new Set(employeeStocks.map((s) => s.product?._id?.toString())).size;
 
     // Determine scenario
     let scenario = "A"; // Default: only warehouse
-    if (hasDistributors && !hasBranches) scenario = "B";
-    else if (!hasDistributors && hasBranches) scenario = "C";
-    else if (hasDistributors && hasBranches) scenario = "D";
+    if (hasEmployees && !hasBranches) scenario = "B";
+    else if (!hasEmployees && hasBranches) scenario = "C";
+    else if (hasEmployees && hasBranches) scenario = "D";
 
     const scenarioMessages = {
       A: "Ganancia estimada basada en inventario de almacén",
-      B: "Ganancia estimada: almacén + inventario de distribuidores",
+      B: "Ganancia estimada: almacén + inventario de employees",
       C: "Ganancia estimada: almacén + sucursales",
-      D: "Ganancia estimada: almacén + sucursales + distribuidores",
+      D: "Ganancia estimada: almacén + sucursales + employees",
     };
 
     return {
@@ -422,7 +422,7 @@ export class AnalyticsRepository {
       scenario,
       message: scenarioMessages[scenario],
       hasBranches,
-      hasDistributors,
+      hasEmployees,
       warehouse: {
         grossProfit: warehouseGrossProfit,
         adminProfit: warehouseGrossProfit, // Admin keeps full margin
@@ -442,15 +442,15 @@ export class AnalyticsRepository {
         salesValue: branchesSalesValue,
         branches: Array.from(branchMap.values()),
       },
-      distributors: {
-        grossProfit: distributorsGrossProfit,
-        adminProfit: distributorsGrossProfit,
-        netProfit: distributorsGrossProfit,
-        totalProducts: distributorMap.size,
-        totalUnits: distributorsTotalUnits,
-        investment: distributorsInvestment,
-        salesValue: distributorsSalesValue,
-        distributors: Array.from(distributorMap.values()),
+      employees: {
+        grossProfit: employeesGrossProfit,
+        adminProfit: employeesGrossProfit,
+        netProfit: employeesGrossProfit,
+        totalProducts: employeeMap.size,
+        totalUnits: employeesTotalUnits,
+        investment: employeesInvestment,
+        salesValue: employeesSalesValue,
+        employees: Array.from(employeeMap.values()),
       },
       consolidated: {
         grossProfit: totalGrossProfit,
@@ -473,23 +473,23 @@ export class AnalyticsRepository {
   }
 
   /**
-   * Get Distributor Estimated Profit
-   * Calcula la ganancia estimada del distribuidor basándose en su INVENTARIO ACTUAL
+   * Get Employee Estimated Profit
+   * Calcula la ganancia estimada del employee basándose en su INVENTARIO ACTUAL
    * (cuánto ganaría si vendiera todo su stock disponible)
    */
-  async getDistributorEstimatedProfit(businessId, distributorId) {
-    // Get distributor's current stock with product details
-    const stock = await DistributorStock.find({
+  async getEmployeeEstimatedProfit(businessId, employeeId) {
+    // Get employee's current stock with product details
+    const stock = await EmployeeStock.find({
       business: new mongoose.Types.ObjectId(businessId),
-      distributor: new mongoose.Types.ObjectId(distributorId),
+      employee: new mongoose.Types.ObjectId(employeeId),
       quantity: { $gt: 0 }, // Only products with stock > 0
     })
-      .populate("product", "name image distributorPrice clientPrice")
+      .populate("product", "name image employeePrice clientPrice")
       .lean();
 
     if (!stock || stock.length === 0) {
       return {
-        // Format expected by frontend (DistributorEstimate interface)
+        // Format expected by frontend (EmployeeEstimate interface)
         grossProfit: 0,
         netProfit: 0,
         totalProducts: 0,
@@ -512,10 +512,10 @@ export class AnalyticsRepository {
 
       const product = item.product;
       const quantity = item.quantity;
-      const distributorPrice = product.distributorPrice || 0;
+      const employeePrice = product.employeePrice || 0;
       const clientPrice = product.clientPrice || 0;
 
-      const investment = distributorPrice * quantity;
+      const investment = employeePrice * quantity;
       const salesValue = clientPrice * quantity;
       const estimatedProfit = salesValue - investment;
       const profitPercentage =
@@ -532,7 +532,7 @@ export class AnalyticsRepository {
         name: product.name,
         image: product.image,
         quantity,
-        distributorPrice,
+        employeePrice,
         clientPrice,
         investment,
         salesValue,

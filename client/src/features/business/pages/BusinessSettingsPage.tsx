@@ -6,7 +6,7 @@ import {
   RankingsPage as Rankings,
 } from "../../analytics/pages";
 import { gamificationService, uploadService } from "../../common/services";
-import { DistributorsPage as Distributors } from "../../employees/pages";
+import { EmployeesPage as Employees } from "../../employees/pages";
 import PublicPageSettingsPanel from "../components/PublicPageSettingsPanel";
 import { businessService } from "../services";
 import type { BusinessFeatures } from "../types/business.types";
@@ -36,7 +36,7 @@ const defaultFeatures: BusinessFeatures = {
   transfers: true,
   promotions: true,
   branches: true,
-  distributors: true,
+  employees: true,
   rankings: true,
   credits: true,
   customers: true,
@@ -64,7 +64,7 @@ export default function BusinessSettings() {
   const [selectedView, setSelectedView] = useState<
     | "business"
     | "publicPage"
-    | "distributors"
+    | "employees"
     | "gamification"
     | "rankings"
     | "audit"
@@ -84,9 +84,9 @@ export default function BusinessSettings() {
         desc: "Slug, plantilla y storefront publico",
       },
       {
-        key: "distributors" as const,
-        title: "Distribuidores",
-        desc: "Gestiona tu red de distribuidores",
+        key: "employees" as const,
+        title: "Employees",
+        desc: "Gestiona tu red de employees",
       },
       {
         key: "gamification" as const,
@@ -183,11 +183,11 @@ export default function BusinessSettings() {
       },
       {
         title: "Equipo comercial",
-        desc: "Motiva y gestiona el canal de distribuidores.",
+        desc: "Motiva y gestiona el canal de employees.",
         items: [
           {
-            key: "distributors" as const,
-            label: "Distribuidores",
+            key: "employees" as const,
+            label: "Employees",
             helper: "Usuarios externos con ventas propias.",
           },
           {
@@ -249,7 +249,7 @@ export default function BusinessSettings() {
           transfers: false,
           expenses: false,
           incidents: false,
-          distributors: false,
+          employees: false,
           gamification: false,
           rankings: false,
           promotions: false,
@@ -257,8 +257,8 @@ export default function BusinessSettings() {
         } as BusinessFeatures,
       },
       {
-        key: "distributors",
-        title: "Canal de distribuidores",
+        key: "employees",
+        title: "Canal de employees",
         desc: "Habilita gamificacion, rankings y red comercial.",
         features: {
           products: true,
@@ -272,7 +272,7 @@ export default function BusinessSettings() {
           transfers: true,
           expenses: true,
           incidents: false,
-          distributors: true,
+          employees: true,
           gamification: true,
           rankings: true,
           promotions: true,
@@ -510,7 +510,7 @@ export default function BusinessSettings() {
                           placeholder="Ej: Essence"
                         />
                         <p className="mt-1 text-xs text-gray-400">
-                          Nombre visible para clientes y distribuidores.
+                          Nombre visible para clientes y employees.
                         </p>
                       </div>
 
@@ -809,7 +809,7 @@ export default function BusinessSettings() {
               />
             )}
 
-            {selectedView === "distributors" && <Distributors />}
+            {selectedView === "employees" && <Employees />}
             {selectedView === "gamification" && <GamificationConfig />}
             {selectedView === "rankings" && <Rankings />}
             {selectedView === "audit" && <AuditLogs />}

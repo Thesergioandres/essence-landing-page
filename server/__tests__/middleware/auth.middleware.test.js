@@ -7,7 +7,7 @@ describe('Auth Middleware - Token Validation', () => {
     const payload = {
       id: '12345',
       email: 'test@example.com',
-      role: 'distribuidor',
+      role: 'employee',
     };
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
@@ -20,7 +20,7 @@ describe('Auth Middleware - Token Validation', () => {
     const payload = {
       id: '12345',
       email: 'test@example.com',
-      role: 'distribuidor',
+      role: 'employee',
     };
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
@@ -43,7 +43,7 @@ describe('Auth Middleware - Token Validation', () => {
     const payload = {
       id: '12345',
       email: 'test@example.com',
-      role: 'distribuidor',
+      role: 'employee',
     };
 
     // Token que expira en 1 milisegundo
@@ -86,9 +86,9 @@ describe('Auth Middleware - Role Validation', () => {
     expect(userRole).toBe(requiredRole);
   });
 
-  test('Debe validar role de distribuidor', () => {
-    const userRole = 'distribuidor';
-    const requiredRole = 'distribuidor';
+  test('Debe validar role de employee', () => {
+    const userRole = 'employee';
+    const requiredRole = 'employee';
 
     expect(userRole).toBe(requiredRole);
   });
@@ -100,8 +100,8 @@ describe('Auth Middleware - Role Validation', () => {
     expect(allowedRoles.includes(userRole)).toBe(true);
   });
 
-  test('Distribuidor no debe tener acceso a rutas de admin', () => {
-    const userRole = 'distribuidor';
+  test('Employee no debe tener acceso a rutas de admin', () => {
+    const userRole = 'employee';
     const allowedRoles = ['admin'];
 
     expect(allowedRoles.includes(userRole)).toBe(false);
@@ -109,11 +109,11 @@ describe('Auth Middleware - Role Validation', () => {
 
   test('Ambos roles deben tener acceso a rutas compartidas', () => {
     const adminRole = 'admin';
-    const distributorRole = 'distribuidor';
-    const allowedRoles = ['admin', 'distribuidor'];
+    const employeeRole = 'employee';
+    const allowedRoles = ['admin', 'employee'];
 
     expect(allowedRoles.includes(adminRole)).toBe(true);
-    expect(allowedRoles.includes(distributorRole)).toBe(true);
+    expect(allowedRoles.includes(employeeRole)).toBe(true);
   });
 });
 

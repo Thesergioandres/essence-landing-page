@@ -13,7 +13,7 @@ export const creditService = {
     limit?: number;
     status?: "pending" | "partial" | "paid" | "overdue" | "cancelled";
     customerId?: string;
-    distributorId?: string;
+    employeeId?: string;
     startDate?: string;
     endDate?: string;
     sortBy?: string;
@@ -63,14 +63,14 @@ export const creditService = {
       totalCost: number;
       // Ganancias
       adminProfit: number;
-      distributorProfit: number;
+      employeeProfit: number;
       totalProfit: number;
-      distributorProfitPercentage: number;
+      employeeProfitPercentage: number;
       profitMarginPercentage: number;
-      // Información del distribuidor
-      isDistributorSale: boolean;
-      distributorName?: string | null;
-      distributorEmail?: string | null;
+      // Información del employee
+      isEmployeeSale: boolean;
+      employeeName?: string | null;
+      employeeEmail?: string | null;
       // Estado de realización de la ganancia
       profitRealized: boolean;
       realizedProfit: number;
@@ -120,7 +120,7 @@ export const creditService = {
     return response.data?.data || response.data;
   },
 
-  async registerDistributorPayment(
+  async registerEmployeePayment(
     creditId: string,
     data: {
       amount: number;
@@ -133,14 +133,14 @@ export const creditService = {
     remainingBalance: number;
   }> {
     const response = await api.post(
-      `/credits/${creditId}/distributor-payments`,
+      `/credits/${creditId}/employee-payments`,
       data
     );
     // Handle V2 response format: { success, data: { credit, payment, remainingBalance } }
     return response.data?.data || response.data;
   },
 
-  async getDistributorCredits(params?: {
+  async getEmployeeCredits(params?: {
     status?: "pending" | "partial" | "paid" | "overdue" | "cancelled";
     customerId?: string;
     page?: number;
@@ -159,7 +159,7 @@ export const creditService = {
       overdue: number;
     };
   }> {
-    const response = await api.get("/credits/distributor", { params });
+    const response = await api.get("/credits/employee", { params });
     // Handle V2 response format: { success, data: credits[], pagination, stats }
     const rawData = response.data;
     return {

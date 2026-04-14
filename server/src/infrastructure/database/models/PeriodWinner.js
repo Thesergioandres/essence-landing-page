@@ -63,7 +63,7 @@ const periodWinnerSchema = new mongoose.Schema(
     // Top 3
     topPerformers: [
       {
-        distributor: {
+        employee: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "User",
         },

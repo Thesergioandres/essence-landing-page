@@ -15,7 +15,7 @@ const currency = (n: number | undefined) =>
   }).format(n || 0);
 
 export default function Analytics() {
-  const { hideFinancialData, scopeDistributorId } = useFinancialPrivacy();
+  const { hideFinancialData, scopeEmployeeId } = useFinancialPrivacy();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"charts" | "history">("charts");
@@ -252,7 +252,7 @@ export default function Analytics() {
           <ProfitHistoryTable
             dateRange={dateRange}
             hideFinancialData={hideFinancialData}
-            scopeDistributorId={scopeDistributorId}
+            scopeEmployeeId={scopeEmployeeId}
           />
         )}
       </div>

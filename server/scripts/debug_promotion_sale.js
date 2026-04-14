@@ -15,7 +15,7 @@ async function registerModels() {
   await import("../src/infrastructure/database/models/Customer.js");
   await import("../src/infrastructure/database/models/PaymentMethod.js");
   await import("../src/infrastructure/database/models/Sale.js");
-  await import("../src/infrastructure/database/models/DistributorStock.js");
+  await import("../src/infrastructure/database/models/EmployeeStock.js");
   await import("../src/infrastructure/database/models/User.js");
   await import("../src/infrastructure/database/models/Promotion.js");
 }
@@ -34,13 +34,13 @@ async function run() {
       throw new Error("❌ CATASTROPHIC FAILURE: Product model not registered");
     }
 
-    const { getDistributorCommissionInfo } =
-      await import("../src/infrastructure/services/distributorPricing.service.js");
+    const { getEmployeeCommissionInfo } =
+      await import("../src/infrastructure/services/employeePricing.service.js");
     const Sale = mongoose.model("Sale");
     const Promotion = mongoose.model("Promotion");
-    const DistributorStockModel = mongoose.model("DistributorStock");
+    const EmployeeStockModel = mongoose.model("EmployeeStock");
 
-    const distributorId = "6976ea761b2368c4bc66ff0f";
+    const employeeId = "6976ea761b2368c4bc66ff0f";
 
     console.log("🎁 Buscando una Promoción tipo Combo...");
     const promotion = await Promotion.findOne({ type: "combo" }).populate(
@@ -67,8 +67,8 @@ async function run() {
         );
         continue;
       }
-      const ds = await DistributorStockModel.findOne({
-        distributor: distributorId,
+      const ds = await EmployeeStockModel.findOne({
+        employee: employeeId,
         product: item.product._id,
       });
       console.log(
@@ -78,9 +78,9 @@ async function run() {
       // Ensure enough stock for test
       if (!ds || ds.quantity < item.quantity) {
         console.log("   🔧 Inyectando stock temporal para la prueba...");
-        await DistributorStockModel.findOneAndUpdate(
+        await EmployeeStockModel.findOneAndUpdate(
           {
-            distributor: distributorId,
+            employee: employeeId,
             product: item.product._id,
             business: promotion.business,
           },
@@ -98,7 +98,7 @@ async function run() {
       _id: promotion._id,
       name: `📦 ${promotion.name}`,
       purchasePrice: promotion.originalPrice || 0,
-      distributorPrice: promotion.distributorPrice || 0, // Fallback logic
+      employeePrice: promotion.employeePrice || 0, // Fallback logic
       business: promotion.business,
     };
 
@@ -111,13 +111,13 @@ async function run() {
     const saleData = {
       business: businessId,
       saleId: `DEBUG-PROMO-${Date.now()}`,
-      distributor: distributorId,
+      employee: employeeId,
       product: product._id,
       productName: product.name,
       quantity,
       purchasePrice: product.purchasePrice || 0,
       salePrice,
-      distributorPrice: product.distributorPrice || 0, // CRITICAL FIX
+      employeePrice: product.employeePrice || 0, // CRITICAL FIX
       paymentMethodCode: "cash",
       isCredit: false,
       saleDate: new Date(),
@@ -128,7 +128,7 @@ async function run() {
     console.log(`   ✅ Venta creada: ${sale._id}`);
 
     // Deduct Stock Logic (The Fix)
-    console.log("5. Ejecutando deductDistributorPromotionStock (SIMULADO)...");
+    console.log("5. Ejecutando deductEmployeePromotionStock (SIMULADO)...");
 
     // Simulate deduct function
     const deductedItems = [];
@@ -138,9 +138,9 @@ async function run() {
         continue;
       }
       const deductQty = (item.quantity || 1) * quantity;
-      await DistributorStockModel.findOneAndUpdate(
+      await EmployeeStockModel.findOneAndUpdate(
         {
-          distributor: distributorId,
+          employee: employeeId,
           product: item.product._id,
           business: businessId,
         },
@@ -158,9 +158,9 @@ async function run() {
 
     // Restore stock
     for (const item of deductedItems) {
-      await DistributorStockModel.findOneAndUpdate(
+      await EmployeeStockModel.findOneAndUpdate(
         {
-          distributor: distributorId,
+          employee: employeeId,
           product: item.product,
           business: businessId,
         },

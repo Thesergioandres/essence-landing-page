@@ -1,7 +1,7 @@
 import Branch from "../models/Branch.js";
 import BranchStock from "../models/BranchStock.js";
 import DefectiveProduct from "../models/DefectiveProduct.js";
-import DistributorStock from "../models/DistributorStock.js";
+import EmployeeStock from "../models/EmployeeStock.js";
 import Expense from "../models/Expense.js";
 import Product from "../models/Product.js";
 import ProfitHistory from "../models/ProfitHistory.js";
@@ -129,7 +129,7 @@ class ExpenseRepository {
     const {
       productId,
       branchId,
-      distributorId,
+      employeeId,
       quantity,
       reason,
       expenseDate,
@@ -146,12 +146,12 @@ class ExpenseRepository {
     let resolvedLocationType =
       locationType === "branch"
         ? "branch"
-        : locationType === "distributor"
-          ? "distributor"
+        : locationType === "employee"
+          ? "employee"
           : locationType === "warehouse"
             ? "warehouse"
-            : distributorId
-              ? "distributor"
+            : employeeId
+              ? "employee"
               : branchId
                 ? "branch"
                 : "warehouse";
@@ -163,7 +163,7 @@ class ExpenseRepository {
     if (!product) throw this.buildError("Producto no encontrado", 404);
 
     let branch = null;
-    let distributor = null;
+    let employee = null;
 
     if (resolvedLocationType === "branch") {
       if (!branchId) throw this.buildError("Sede requerida");
@@ -191,12 +191,12 @@ class ExpenseRepository {
       if (!branchStock) {
         throw this.buildError("Stock insuficiente en la sede seleccionada");
       }
-    } else if (resolvedLocationType === "distributor") {
-      if (!distributorId) throw this.buildError("Distribuidor requerido");
-      const distStock = await DistributorStock.findOneAndUpdate(
+    } else if (resolvedLocationType === "employee") {
+      if (!employeeId) throw this.buildError("Employee requerido");
+      const distStock = await EmployeeStock.findOneAndUpdate(
         {
           business: businessId,
-          distributor: distributorId,
+          employee: employeeId,
           product: productId,
           quantity: { $gte: qty },
         },
@@ -206,10 +206,10 @@ class ExpenseRepository {
 
       if (!distStock) {
         throw this.buildError(
-          "Stock insuficiente en el distribuidor seleccionado",
+          "Stock insuficiente en el employee seleccionado",
         );
       }
-      distributor = distStock.distributor;
+      employee = distStock.employee;
     } else {
       const available = product.warehouseStock || 0;
       if (available < qty) {
@@ -226,8 +226,8 @@ class ExpenseRepository {
       typeof reason === "string" && reason.trim() ? reason.trim() : "Retiro";
     const locationLabel = branch
       ? branch.name
-      : resolvedLocationType === "distributor"
-        ? "Distribuidor"
+      : resolvedLocationType === "employee"
+        ? "Employee"
         : "Bodega";
 
     const expense = await Expense.create({
@@ -242,7 +242,7 @@ class ExpenseRepository {
       quantity: qty,
       sourceType: resolvedLocationType,
       sourceBranch: branch ? branch._id : null,
-      sourceDistributor: distributor || null,
+      sourceEmployee: employee || null,
     });
 
     await ProfitHistory.create({
@@ -258,7 +258,7 @@ class ExpenseRepository {
         eventName: "inventory_withdrawal",
         productId,
         branchId: branch ? branch._id : null,
-        distributorId: distributor || null,
+        employeeId: employee || null,
         quantity: qty,
         unitCost,
       },
@@ -328,7 +328,7 @@ class ExpenseRepository {
           ...saleFilter,
           $or: [{ additionalCost: { $gt: 0 } }, { discount: { $gt: 0 } }],
         })
-          .populate("distributor", "name")
+          .populate("employee", "name")
           .populate("product", "name")
           .lean()
       : Promise.resolve([]);
@@ -353,7 +353,7 @@ class ExpenseRepository {
           amount: sale.additionalCost,
           description: `Costo adicional - ${sale.product?.name || "Producto"} (Venta #${sale._id})`,
           expenseDate: sale.saleDate,
-          createdBy: sale.distributor || null,
+          createdBy: sale.employee || null,
           business: sale.business,
           synthetic: true,
         });
@@ -365,7 +365,7 @@ class ExpenseRepository {
           amount: sale.discount,
           description: `Descuento aplicado - ${sale.product?.name || "Producto"} (Venta #${sale._id})`,
           expenseDate: sale.saleDate,
-          createdBy: sale.distributor || null,
+          createdBy: sale.employee || null,
           business: sale.business,
           synthetic: true,
         });
@@ -504,13 +504,13 @@ class ExpenseRepository {
             { upsert: true, new: true, setDefaultsOnInsert: true },
           );
         } else if (
-          deleted.sourceType === "distributor" &&
-          deleted.sourceDistributor
+          deleted.sourceType === "employee" &&
+          deleted.sourceEmployee
         ) {
-          await DistributorStock.findOneAndUpdate(
+          await EmployeeStock.findOneAndUpdate(
             {
               business: businessId,
-              distributor: deleted.sourceDistributor,
+              employee: deleted.sourceEmployee,
               product: deleted.product,
             },
             { $inc: { quantity: restoreQty } },

@@ -3,14 +3,14 @@ import ProductSelector from "../../../components/ProductSelector";
 import { stockService } from "../../inventory/services/inventory.service";
 import type {
   DefectiveProduct,
-  DistributorStock,
+  EmployeeStock,
   Product,
 } from "../../inventory/types/product.types";
 import { defectiveProductService } from "../../sales/services";
 
 export default function DefectiveReports() {
   const [reports, setReports] = useState<DefectiveProduct[]>([]);
-  const [stock, setStock] = useState<DistributorStock[]>([]);
+  const [stock, setStock] = useState<EmployeeStock[]>([]);
   const [allowedBranches, setAllowedBranches] = useState<
     Array<{
       _id: string;
@@ -21,7 +21,7 @@ export default function DefectiveReports() {
       }>;
     }>
   >([]);
-  const [origin, setOrigin] = useState<"distributor" | "branch">("distributor");
+  const [origin, setOrigin] = useState<"employee" | "branch">("employee");
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -45,8 +45,8 @@ export default function DefectiveReports() {
     try {
       setLoading(true);
       const [reportsData, stockData] = await Promise.all([
-        defectiveProductService.getDistributorReports().catch(() => []),
-        stockService.getDistributorStock("me").catch(() => []),
+        defectiveProductService.getEmployeeReports().catch(() => []),
+        stockService.getEmployeeStock("me").catch(() => []),
       ]);
       setReports(reportsData || []);
       setStock(stockData || []);
@@ -127,7 +127,7 @@ export default function DefectiveReports() {
       ? selectedBranchStock?.quantity || 0
       : selectedStock?.quantity || 0;
 
-  const distributorProducts = stock
+  const employeeProducts = stock
     .map(item => {
       const product = typeof item.product === "object" ? item.product : null;
       if (!product) return null;
@@ -165,7 +165,7 @@ export default function DefectiveReports() {
     .filter(item => item && (item.totalStock || 0) > 0);
 
   const availableProducts =
-    origin === "branch" ? branchProducts : distributorProducts;
+    origin === "branch" ? branchProducts : employeeProducts;
   const selectorDisabled = origin === "branch" ? !selectedBranchId : false;
 
   if (loading) {
@@ -368,9 +368,9 @@ export default function DefectiveReports() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => setOrigin("distributor")}
+                    onClick={() => setOrigin("employee")}
                     className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                      origin === "distributor"
+                      origin === "employee"
                         ? "bg-blue-600 text-white"
                         : "bg-gray-800 text-gray-200 hover:bg-white/5"
                     }`}
@@ -488,7 +488,7 @@ export default function DefectiveReports() {
                   onClick={() => {
                     setShowModal(false);
                     setFormData({ productId: "", quantity: 1, reason: "" });
-                    setOrigin("distributor");
+                    setOrigin("employee");
                     setSelectedBranchId("");
                   }}
                   className="flex-1 rounded-lg border border-gray-700 px-4 py-2 text-gray-200 transition hover:bg-white/5"

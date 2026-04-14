@@ -85,9 +85,18 @@ export const protect = async (req, res, next) => {
 
         // Permitir usuarios pending solo para rutas públicas y account-hold
         if (user.status === "pending") {
-          // Usuarios pending solo tienen acceso limitado - deben ir a account-hold
+          const isProfileRoute = req.originalUrl.includes(
+            "/api/v2/auth/profile",
+          );
+          const isLogoutRoute = req.originalUrl.includes("logout");
+
+          if (!isProfileRoute && !isLogoutRoute) {
+            return res.status(403).json({
+              message: "Cuenta pendiente de activaciÃ³n",
+              status: "pending",
+            });
+          }
           req.user.status = "pending";
-          // Continuar con la autenticación - el ProtectedRoute manejará el redirect
         } else if (user.status !== "active") {
           logAuthError({
             message: "Acceso restringido por estado de cuenta",
@@ -103,7 +112,7 @@ export const protect = async (req, res, next) => {
           });
         }
 
-        // Para distribuidores, verificar también el estado del owner del negocio
+        // Para employees, verificar también el estado del owner del negocio
         if (isEmployeeRole(user.role)) {
           const ownerCheck = await checkBusinessOwnerAccess(user._id);
           if (!ownerCheck.hasAccess) {
@@ -254,8 +263,8 @@ export const god = (req, res, next) => {
   }
 };
 
-// Verificar si es distribuidor
-export const distributor = (req, res, next) => {
+// Verificar si es employee
+export const employee = (req, res, next) => {
   if (
     req.user &&
     (isEmployeeRole(req.user.role) ||
@@ -266,17 +275,17 @@ export const distributor = (req, res, next) => {
     next();
   } else {
     logAuthError({
-      message: "Acceso denegado. Solo distribuidores",
+      message: "Acceso denegado. Solo employees",
       module: "auth",
       requestId: req.reqId,
       userId: req.user?.id,
     });
-    res.status(403).json({ message: "Acceso denegado. Solo distribuidores" });
+    res.status(403).json({ message: "Acceso denegado. Solo employees" });
   }
 };
 
-// Verificar si es admin o distribuidor
-export const adminOrDistributor = (req, res, next) => {
+// Verificar si es admin o employee
+export const adminOrEmployee = (req, res, next) => {
   if (
     req.user &&
     (req.user.role === "admin" ||

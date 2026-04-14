@@ -28,12 +28,12 @@ export default function UserSettings() {
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Link
-              to="/admin/distributors"
+              to="/admin/employees"
               className="rounded-lg border border-blue-500/40 bg-blue-500/10 px-4 py-4 text-left text-white transition hover:border-blue-500 hover:bg-blue-500/20"
             >
-              <h3 className="text-lg font-semibold">Distribuidores</h3>
+              <h3 className="text-lg font-semibold">Employees</h3>
               <p className="mt-1 text-sm text-gray-200">
-                Crea, edita y gestiona distribuidores.
+                Crea, edita y gestiona employees.
               </p>
             </Link>
             <Link

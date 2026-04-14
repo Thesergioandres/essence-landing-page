@@ -68,8 +68,8 @@ const promotionSchema = new mongoose.Schema(
     branches: [{ type: mongoose.Schema.Types.ObjectId, ref: "Branch" }],
     allowAllLocations: { type: Boolean, default: true },
     allowedLocations: [{ type: mongoose.Schema.Types.ObjectId, ref: "Branch" }],
-    allowAllDistributors: { type: Boolean, default: true },
-    allowedDistributors: [
+    allowAllEmployees: { type: Boolean, default: true },
+    allowedEmployees: [
       { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     ],
     segments: [{ type: String, trim: true }],
@@ -95,8 +95,8 @@ const promotionSchema = new mongoose.Schema(
 
     // Precio total de la promoción/bundle
     promotionPrice: { type: Number, default: 0 },
-    // Precio para distribuidores (B2B)
-    distributorPrice: { type: Number, default: 0 },
+    // Precio para employees (B2B)
+    employeePrice: { type: Number, default: 0 },
     // Precio original (suma de precios individuales) para mostrar ahorro
     originalPrice: { type: Number, default: 0 },
 
@@ -124,7 +124,7 @@ const promotionSchema = new mongoose.Schema(
 
     financialImpact: {
       expectedMargin: { type: Number },
-      distributorCommission: { type: Number },
+      employeeCommission: { type: Number },
       notes: { type: String },
     },
 

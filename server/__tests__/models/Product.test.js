@@ -38,7 +38,7 @@ describe("Product Model - Validaciones", () => {
       name: "Producto Test",
       description: "Descripción del producto",
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       clientPrice: 200,
       totalStock: 1000,
       category: category._id,
@@ -46,7 +46,7 @@ describe("Product Model - Validaciones", () => {
 
     expect(product.name).toBe("Producto Test");
     expect(product.purchasePrice).toBe(100);
-    expect(product.distributorPrice).toBe(150);
+    expect(product.employeePrice).toBe(150);
     expect(product.clientPrice).toBe(200);
     expect(product.totalStock).toBe(1000);
   });
@@ -62,7 +62,7 @@ describe("Product Model - Validaciones", () => {
       name: "Producto Test",
       description: "Test",
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       category: category._id,
     });
 
@@ -74,7 +74,7 @@ describe("Product Model - Validaciones", () => {
       name: "Producto Test",
       description: "Test",
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       totalStock: -10,
       category: category._id,
     });
@@ -98,7 +98,7 @@ describe("Product Model - Defaults", () => {
       name: "Producto Test",
       description: "Test",
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       category: category._id,
     });
 
@@ -113,7 +113,7 @@ describe("Product Model - Defaults", () => {
       name: "Producto Test",
       description: "Test",
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       totalStock: 100,
       category: category._id,
     });
@@ -141,17 +141,17 @@ describe("Product Model - Precios", () => {
       name: "Producto Test",
       description: "Test",
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       clientPrice: 200,
       totalStock: 100,
       category: category._id,
     });
 
-    // Margen distribuidor = (salePrice - distributorPrice) / salePrice * 100
-    const distributorMargin = ((200 - 150) / 200) * 100;
-    expect(distributorMargin).toBe(25);
+    // Margen employee = (salePrice - employeePrice) / salePrice * 100
+    const employeeMargin = ((200 - 150) / 200) * 100;
+    expect(employeeMargin).toBe(25);
 
-    // Margen admin = (distributorPrice - purchasePrice) / distributorPrice * 100
+    // Margen admin = (employeePrice - purchasePrice) / employeePrice * 100
     const adminMargin = ((150 - 100) / 150) * 100;
     expect(adminMargin).toBeCloseTo(33.33, 2);
   });
@@ -161,19 +161,19 @@ describe("Product Model - Precios", () => {
       name: "Producto Test",
       description: "Test",
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       clientPrice: 200,
       totalStock: 100,
       category: category._id,
     });
 
     product.purchasePrice = 120;
-    product.distributorPrice = 180;
+    product.employeePrice = 180;
     product.clientPrice = 240;
     await product.save();
 
     expect(product.purchasePrice).toBe(120);
-    expect(product.distributorPrice).toBe(180);
+    expect(product.employeePrice).toBe(180);
     expect(product.clientPrice).toBe(240);
   });
 });

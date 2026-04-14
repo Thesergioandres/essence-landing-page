@@ -5,18 +5,18 @@ import { Button, LoadingSpinner } from "../../../shared/components/ui";
 import type { User } from "../../auth/types/auth.types";
 import { branchService, branchTransferService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
-import { distributorService } from "../../employees/services";
+import { employeeService } from "../../employees/services";
 import {
   productService,
   stockService,
 } from "../../inventory/services/inventory.service";
 import type {
-  DistributorStock,
+  EmployeeStock,
   Product,
 } from "../../inventory/types/product.types";
 
 type OperationType = "assign" | "withdraw";
-type Mode = "distributor" | "branch";
+type Mode = "employee" | "branch";
 
 interface BranchItem {
   productId: string;
@@ -36,28 +36,28 @@ const StockManagement = () => {
   const location = useLocation();
   const firstSegment = location.pathname.split("/").filter(Boolean)[0] || "";
   const areaBase = firstSegment ? `/${firstSegment}` : "";
-  const isDistributorView = areaBase === "/staff";
-  const isOperativoDistributorView = location.pathname.startsWith(
+  const isEmployeeView = areaBase === "/staff";
+  const isOperativoEmployeeView = location.pathname.startsWith(
     "/staff/operativo/"
   );
-  const addDistributorRoute = isOperativoDistributorView
+  const addEmployeeRoute = isOperativoEmployeeView
     ? `${areaBase}/operativo/team`
-    : `${areaBase}/distributors/add`;
-  const addProductRoute = isDistributorView
+    : `${areaBase}/employees/add`;
+  const addProductRoute = isEmployeeView
     ? `${areaBase}/products`
     : `${areaBase}/add-product`;
-  const [mode, setMode] = useState<Mode>("distributor");
+  const [mode, setMode] = useState<Mode>("employee");
   const [products, setProducts] = useState<Product[]>([]);
-  const [distributors, setDistributors] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [alerts, setAlerts] = useState<Array<Product | DistributorStock>>([]);
+  const [alerts, setAlerts] = useState<Array<Product | EmployeeStock>>([]);
   const [items, setItems] = useState<StockItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
-  const [selectedDistributor, setSelectedDistributor] = useState<string>("");
-  const [distributorStock, setDistributorStock] = useState<DistributorStock[]>(
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [employeeStock, setEmployeeStock] = useState<EmployeeStock[]>(
     []
   );
-  const [loadingDistributorStock, setLoadingDistributorStock] = useState(false);
+  const [loadingEmployeeStock, setLoadingEmployeeStock] = useState(false);
   const [originBranchId, setOriginBranchId] = useState<string>("");
   const [targetBranchId, setTargetBranchId] = useState<string>("");
   const [branchItems, setBranchItems] = useState<BranchItem[]>([]);
@@ -108,12 +108,12 @@ const StockManagement = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedDistributor) {
-      loadDistributorStock(selectedDistributor);
+    if (selectedEmployee) {
+      loadEmployeeStock(selectedEmployee);
     } else {
-      setDistributorStock([]);
+      setEmployeeStock([]);
     }
-  }, [selectedDistributor]);
+  }, [selectedEmployee]);
 
   useEffect(() => {
     setError("");
@@ -124,12 +124,12 @@ const StockManagement = () => {
     try {
       const [
         productsDataResult,
-        distributorsResult,
+        employeesResult,
         alertsResult,
         branchesResult,
       ] = await Promise.allSettled([
         productService.getAll({ limit: 1000, excludePromotions: true }),
-        distributorService.getAll(),
+        employeeService.getAll(),
         stockService.getAlerts(),
         branchService.list(),
       ]);
@@ -145,25 +145,25 @@ const StockManagement = () => {
         setProducts([]);
       }
 
-      if (distributorsResult.status === "fulfilled") {
-        const distributorsRes = distributorsResult.value;
-        const distList = Array.isArray(distributorsRes)
-          ? distributorsRes
-          : distributorsRes.data;
-        setDistributors((distList || []).filter((d: User) => d.active));
+      if (employeesResult.status === "fulfilled") {
+        const employeesRes = employeesResult.value;
+        const distList = Array.isArray(employeesRes)
+          ? employeesRes
+          : employeesRes.data;
+        setEmployees((distList || []).filter((d: User) => d.active));
       } else {
         console.error(
-          "Error al cargar distribuidores:",
-          distributorsResult.reason
+          "Error al cargar employees:",
+          employeesResult.reason
         );
-        setDistributors([]);
+        setEmployees([]);
       }
 
       if (alertsResult.status === "fulfilled") {
         const alertsRes = alertsResult.value;
         setAlerts([
           ...(alertsRes?.warehouseAlerts || []),
-          ...(alertsRes?.distributorAlerts || []),
+          ...(alertsRes?.employeeAlerts || []),
         ]);
       } else {
         console.error("Error al cargar alertas:", alertsResult.reason);
@@ -182,23 +182,23 @@ const StockManagement = () => {
     }
   };
 
-  const loadDistributorStock = async (distributorId: string) => {
+  const loadEmployeeStock = async (employeeId: string) => {
     try {
-      setLoadingDistributorStock(true);
-      const stock = await stockService.getDistributorStock(distributorId);
-      setDistributorStock(stock);
+      setLoadingEmployeeStock(true);
+      const stock = await stockService.getEmployeeStock(employeeId);
+      setEmployeeStock(stock);
     } catch (err) {
-      console.error("Error al cargar inventario del distribuidor:", err);
+      console.error("Error al cargar inventario del employee:", err);
       setError(
         getPermissionAwareMessage(
           err,
-          "No se pudo cargar el inventario del distribuidor",
-          "No tienes permisos para consultar inventario de distribuidores"
+          "No se pudo cargar el inventario del employee",
+          "No tienes permisos para consultar inventario de employees"
         )
       );
-      setDistributorStock([]);
+      setEmployeeStock([]);
     } finally {
-      setLoadingDistributorStock(false);
+      setLoadingEmployeeStock(false);
     }
   };
 
@@ -365,8 +365,8 @@ const StockManagement = () => {
       return;
     }
 
-    if (!selectedDistributor) {
-      setError("Selecciona un distribuidor");
+    if (!selectedEmployee) {
+      setError("Selecciona un employee");
       return;
     }
 
@@ -388,33 +388,33 @@ const StockManagement = () => {
       // Procesar cada item
       for (const item of items) {
         if (operation === "assign") {
-          await stockService.assignToDistributor({
-            distributorId: selectedDistributor,
+          await stockService.assignToEmployee({
+            employeeId: selectedEmployee,
             productId: item.productId,
             quantity: item.quantity,
           });
         } else {
-          await stockService.withdrawFromDistributor({
-            distributorId: selectedDistributor,
+          await stockService.withdrawFromEmployee({
+            employeeId: selectedEmployee,
             productId: item.productId,
             quantity: item.quantity,
           });
         }
       }
 
-      const distributorName = distributors.find(
-        d => d._id === selectedDistributor
+      const employeeName = employees.find(
+        d => d._id === selectedEmployee
       )?.name;
       setSuccess(
-        `¡${items.length} producto(s) ${operation === "assign" ? "asignado(s)" : "retirado(s)"} exitosamente ${operation === "assign" ? "a" : "de"} ${distributorName}!`
+        `¡${items.length} producto(s) ${operation === "assign" ? "asignado(s)" : "retirado(s)"} exitosamente ${operation === "assign" ? "a" : "de"} ${employeeName}!`
       );
 
       // Recargar datos
       await loadData();
 
-      // Recargar inventario del distribuidor
-      if (selectedDistributor) {
-        await loadDistributorStock(selectedDistributor);
+      // Recargar inventario del employee
+      if (selectedEmployee) {
+        await loadEmployeeStock(selectedEmployee);
       }
 
       // Resetear formulario de items
@@ -500,8 +500,8 @@ const StockManagement = () => {
   };
 
   // Filtrar productos disponibles (no agregados aún)
-  const distributorStockByProduct = new Map(
-    distributorStock
+  const employeeStockByProduct = new Map(
+    employeeStock
       .map(stock => {
         const product =
           typeof stock.product === "object" ? stock.product : null;
@@ -515,7 +515,7 @@ const StockManagement = () => {
   );
 
   const withdrawSelectableProducts = Array.from(
-    distributorStockByProduct.values()
+    employeeStockByProduct.values()
   )
     .filter(entry => entry.quantity > 0)
     .map(entry => ({
@@ -598,20 +598,20 @@ const StockManagement = () => {
       <div>
         <h1 className="text-4xl font-bold text-white">Gestión de Stock</h1>
         <p className="mt-2 text-gray-400">
-          Asigna o retira múltiples productos de distribuidores o transfiere
+          Asigna o retira múltiples productos de employees o transfiere
           entre sedes
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={() => setMode("distributor")}
+            onClick={() => setMode("employee")}
             className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              mode === "distributor"
+              mode === "employee"
                 ? "bg-blue-600 text-white"
                 : "border border-gray-700 bg-gray-800/60 text-gray-200 hover:border-blue-500"
             }`}
           >
-            Distribuidores
+            Employees
           </button>
           <button
             type="button"
@@ -639,7 +639,7 @@ const StockManagement = () => {
         </div>
       )}
 
-      {mode === "distributor" && (
+      {mode === "employee" && (
         <>
           {alerts.length > 0 && (
             <div className="rounded-xl border border-yellow-500/30 bg-yellow-900/20 p-6">
@@ -656,19 +656,19 @@ const StockManagement = () => {
                       </div>
                     );
                   } else {
-                    const distributorStock = alert as DistributorStock;
+                    const employeeStock = alert as EmployeeStock;
                     const product =
-                      typeof distributorStock.product === "object"
-                        ? (distributorStock.product as { name?: string })
+                      typeof employeeStock.product === "object"
+                        ? (employeeStock.product as { name?: string })
                         : null;
-                    const distributor =
-                      typeof distributorStock.distributor === "object"
-                        ? (distributorStock.distributor as { name?: string })
+                    const employee =
+                      typeof employeeStock.employee === "object"
+                        ? (employeeStock.employee as { name?: string })
                         : null;
                     return (
                       <div key={index} className="text-sm text-yellow-300">
-                        <strong>{product?.name}</strong> - Distribuidor:{" "}
-                        {distributor?.name} - Stock: {distributorStock.quantity}
+                        <strong>{product?.name}</strong> - Employee:{" "}
+                        {employee?.name} - Stock: {employeeStock.quantity}
                       </div>
                     );
                   }
@@ -723,28 +723,28 @@ const StockManagement = () => {
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-300">
-                    Distribuidor *
+                    Employee *
                   </label>
-                  {distributors.length === 0 ? (
+                  {employees.length === 0 ? (
                     <div className="rounded-lg border border-gray-700 bg-gray-900/50 px-4 py-4 text-sm text-gray-300">
-                      <p>No tienes distribuidores.</p>
+                      <p>No tienes employees.</p>
                       <Button
                         type="button"
                         className="mt-3"
-                        onClick={() => navigate(addDistributorRoute)}
+                        onClick={() => navigate(addEmployeeRoute)}
                       >
-                        Añadir distribuidor
+                        Añadir employee
                       </Button>
                     </div>
                   ) : (
                     <select
-                      value={selectedDistributor}
-                      onChange={e => setSelectedDistributor(e.target.value)}
+                      value={selectedEmployee}
+                      onChange={e => setSelectedEmployee(e.target.value)}
                       className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >
-                      <option value="">Selecciona un distribuidor</option>
-                      {distributors.map(dist => (
+                      <option value="">Selecciona un employee</option>
+                      {employees.map(dist => (
                         <option key={dist._id} value={dist._id}>
                           {dist.name} - {dist.email}
                         </option>
@@ -755,28 +755,28 @@ const StockManagement = () => {
               </div>
             </div>
 
-            {selectedDistributor && (
+            {selectedEmployee && (
               <div className="rounded-xl border border-blue-500/30 bg-blue-900/20 p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-white">
                     Inventario de{" "}
                     {
-                      distributors.find(d => d._id === selectedDistributor)
+                      employees.find(d => d._id === selectedEmployee)
                         ?.name
                     }
                   </h2>
-                  {loadingDistributorStock && <LoadingSpinner size="sm" />}
+                  {loadingEmployeeStock && <LoadingSpinner size="sm" />}
                 </div>
 
-                {!loadingDistributorStock && distributorStock.length === 0 ? (
+                {!loadingEmployeeStock && employeeStock.length === 0 ? (
                   <div className="py-8 text-center">
                     <p className="text-gray-400">
-                      Este distribuidor no tiene productos asignados
+                      Este employee no tiene productos asignados
                     </p>
                   </div>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {distributorStock
+                    {employeeStock
                       .filter(stock => {
                         const product =
                           typeof stock.product === "object"
@@ -807,7 +807,7 @@ const StockManagement = () => {
                                 </h3>
                                 <p className="mt-1 text-xs text-gray-400">
                                   {formatCurrency(
-                                    product?.distributorPrice || 0
+                                    product?.employeePrice || 0
                                   )}
                                 </p>
                               </div>
@@ -876,7 +876,7 @@ const StockManagement = () => {
                 <div className="grid max-h-[420px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredInventoryProducts.map(product => {
                     const distQty =
-                      distributorStockByProduct.get(product._id)?.quantity || 0;
+                      employeeStockByProduct.get(product._id)?.quantity || 0;
                     const stock =
                       operation === "withdraw"
                         ? distQty
@@ -931,7 +931,7 @@ const StockManagement = () => {
                         </div>
 
                         <div className="mb-3 text-sm font-semibold text-blue-300">
-                          {formatCurrency(product.distributorPrice || 0)}
+                          {formatCurrency(product.employeePrice || 0)}
                         </div>
 
                         <Button
@@ -966,7 +966,7 @@ const StockManagement = () => {
                     onChange={id => setSelectedProductId(id)}
                     placeholder={
                       operation === "withdraw"
-                        ? "Selecciona un producto del distribuidor"
+                        ? "Selecciona un producto del employee"
                         : "Buscar y seleccionar producto..."
                     }
                     showStock={true}
@@ -1006,7 +1006,7 @@ const StockManagement = () => {
                             <span className="rounded-full bg-green-500/20 px-3 py-1 text-xs font-bold text-green-400">
                               {operation === "assign"
                                 ? `Bodega: ${item.warehouseStock}`
-                                : `Distribuidor: ${distributorStockByProduct.get(item.productId)?.quantity || 0}`}
+                                : `Employee: ${employeeStockByProduct.get(item.productId)?.quantity || 0}`}
                             </span>
                           </div>
 
@@ -1023,7 +1023,7 @@ const StockManagement = () => {
                                 max={
                                   operation === "assign"
                                     ? item.warehouseStock
-                                    : distributorStockByProduct.get(
+                                    : employeeStockByProduct.get(
                                         item.productId
                                       )?.quantity
                                 }
@@ -1049,7 +1049,7 @@ const StockManagement = () => {
                                     );
                                   } else if (operation === "withdraw") {
                                     const maxQty =
-                                      distributorStockByProduct.get(
+                                      employeeStockByProduct.get(
                                         item.productId
                                       )?.quantity ?? 0;
                                     if (val > maxQty && maxQty > 0) {
@@ -1067,12 +1067,12 @@ const StockManagement = () => {
 
                             <div>
                               <label className="mb-1 block text-xs text-gray-400">
-                                Precio Distribuidor
+                                Precio Employee
                               </label>
                               <div className="flex items-center justify-between rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2">
                                 <span className="font-bold text-blue-400">
                                   {formatCurrency(
-                                    item.product.distributorPrice || 0
+                                    item.product.employeePrice || 0
                                   )}
                                 </span>
                               </div>
@@ -1087,8 +1087,8 @@ const StockManagement = () => {
                           )}
                           {operation === "withdraw" && (
                             <div className="mt-2 text-xs text-gray-400">
-                              Quedará en distribuidor:{" "}
-                              {(distributorStockByProduct.get(item.productId)
+                              Quedará en employee:{" "}
+                              {(employeeStockByProduct.get(item.productId)
                                 ?.quantity || 0) - item.quantity}{" "}
                               unidades
                             </div>
@@ -1157,12 +1157,12 @@ const StockManagement = () => {
                       {operation === "assign" ? "Asignar" : "Retirar"}
                     </span>
                   </div>
-                  {selectedDistributor && (
+                  {selectedEmployee && (
                     <div className="flex justify-between text-lg">
-                      <span className="text-gray-300">Distribuidor:</span>
+                      <span className="text-gray-300">Employee:</span>
                       <span className="font-bold text-blue-400">
                         {
-                          distributors.find(d => d._id === selectedDistributor)
+                          employees.find(d => d._id === selectedEmployee)
                             ?.name
                         }
                       </span>
@@ -1175,7 +1175,7 @@ const StockManagement = () => {
             <div className="flex gap-4">
               <Button
                 type="submit"
-                disabled={loading || items.length === 0 || !selectedDistributor}
+                disabled={loading || items.length === 0 || !selectedEmployee}
                 className={`flex-1 ${
                   operation === "assign"
                     ? "bg-green-500 hover:bg-green-600"
@@ -1423,7 +1423,7 @@ const StockManagement = () => {
                 <div className="flex-1">
                   <h3 className="font-semibold text-white">{product.name}</h3>
                   <p className="mt-1 text-xs text-gray-400">
-                    {formatCurrency(product.distributorPrice || 0)}
+                    {formatCurrency(product.employeePrice || 0)}
                   </p>
                 </div>
                 <div className="text-right">

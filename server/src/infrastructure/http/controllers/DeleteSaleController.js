@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 import BranchStock from "../../database/models/BranchStock.js";
 import Credit from "../../database/models/Credit.js";
 import DefectiveProduct from "../../database/models/DefectiveProduct.js";
-import DistributorStock from "../../database/models/DistributorStock.js";
+import EmployeeStock from "../../database/models/EmployeeStock.js";
 import Product from "../../database/models/Product.js";
 import ProfitHistory from "../../database/models/ProfitHistory.js";
 import Promotion from "../../database/models/Promotion.js";
@@ -65,12 +65,12 @@ async function restoreStock(sale, session) {
 
   // Determine where stock came from and restore it
   if (
-    sourceLocation === "distributor" ||
-    (!sourceLocation && sale.distributor)
+    sourceLocation === "employee" ||
+    (!sourceLocation && sale.employee)
   ) {
-    await DistributorStock.findOneAndUpdate(
+    await EmployeeStock.findOneAndUpdate(
       {
-        distributor: sale.distributor,
+        employee: sale.employee,
         product: productId,
         ...(businessId ? { business: businessId } : {}),
       },
@@ -78,7 +78,7 @@ async function restoreStock(sale, session) {
       { session, upsert: true },
     );
     console.log(
-      `📦 Restored ${quantity} to DistributorStock for distributor ${sale.distributor}`,
+      `📦 Restored ${quantity} to EmployeeStock for employee ${sale.employee}`,
     );
   } else if (sourceLocation === "branch" || (!sourceLocation && sale.branch)) {
     await BranchStock.findOneAndUpdate(
@@ -169,18 +169,18 @@ async function restoreDefectiveStock(reports, session) {
     const branchId = isCustomerWarranty
       ? report.replacementBranch
       : report.branch;
-    const distributorId = isCustomerWarranty
-      ? report.replacementDistributor
-      : report.distributor;
+    const employeeId = isCustomerWarranty
+      ? report.replacementEmployee
+      : report.employee;
 
     if (!productId || !mongoose.isValidObjectId(productId) || quantity <= 0) {
       continue;
     }
 
-    if (stockOrigin === "distributor" && distributorId) {
-      await DistributorStock.findOneAndUpdate(
+    if (stockOrigin === "employee" && employeeId) {
+      await EmployeeStock.findOneAndUpdate(
         {
-          distributor: distributorId,
+          employee: employeeId,
           product: productId,
           ...(report.business ? { business: report.business } : {}),
         },

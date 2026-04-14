@@ -4,6 +4,14 @@ import User from "../models/User.js";
 
 export class UserRepository {
   /**
+   * Count total users
+   * @returns {Promise<Number>}
+   */
+  async count() {
+    return User.countDocuments({});
+  }
+
+  /**
    * Find all users (for God Panel)
    * @returns {Promise<Array>}
    */

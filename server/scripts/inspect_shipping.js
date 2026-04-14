@@ -19,7 +19,7 @@ const checkShipping = async () => {
     const sales = await Sale.find({
       paymentStatus: "confirmado",
     }).select(
-      "code saleDate shippingCost totalAdditionalCosts distributorProfit averageCostAtSale purchasePrice quantity salePrice",
+      "code saleDate shippingCost totalAdditionalCosts employeeProfit averageCostAtSale purchasePrice quantity salePrice",
     );
 
     console.log(`Found ${sales.length} confirmed sales.`);
@@ -31,7 +31,7 @@ const checkShipping = async () => {
             Qty: ${s.quantity}
             Cost (Avg): ${s.averageCostAtSale}
             Cost (Purch): ${s.purchasePrice}
-            Comm: ${s.distributorProfit}
+            Comm: ${s.employeeProfit}
             Shipping: ${s.shippingCost}
             Additional: ${s.totalAdditionalCosts}
             -------------------`,

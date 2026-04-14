@@ -11,7 +11,7 @@ interface LocationSelectorProps {
   locationType: LocationType;
   locationId: string | null;
   branches: Branch[];
-  isDistributor?: boolean;
+  isEmployee?: boolean;
   loading?: boolean;
   onLocationChange: (type: LocationType, id: string, name: string) => void;
 }
@@ -20,7 +20,7 @@ export function LocationSelector({
   locationType,
   locationId,
   branches,
-  isDistributor = false,
+  isEmployee = false,
   loading,
   onLocationChange,
 }: LocationSelectorProps) {
@@ -32,8 +32,8 @@ export function LocationSelector({
     b => b.isWarehouse === true
   );
   const hasBranchAccess = activeBranches.length > 0;
-  const showWarehouseButton = !isDistributor || hasWarehouseAccess;
-  const showBranchSelector = !isDistributor || hasBranchAccess;
+  const showWarehouseButton = !isEmployee || hasWarehouseAccess;
+  const showBranchSelector = !isEmployee || hasBranchAccess;
   const getBranchLabel = (branch: Branch) => `Sede: ${branch.name}`;
   const selectedBranch = branches.find(b => b._id === locationId) || null;
   const selectedLabel =
@@ -48,14 +48,14 @@ export function LocationSelector({
       </h3>
 
       <div className="flex gap-2">
-        {/* DISTRIBUTOR: My Inventory Button */}
+        {/* EMPLOYEE: My Inventory Button */}
         <button
           type="button"
           onClick={() =>
-            onLocationChange("distributor", "distributor", "Mi Inventario")
+            onLocationChange("employee", "employee", "Mi Inventario")
           }
           className={`flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-3 font-medium transition ${
-            locationType === "distributor"
+            locationType === "employee"
               ? "border-blue-500 bg-blue-500/20 text-blue-300"
               : "border-gray-600 bg-gray-800/50 text-gray-400 hover:border-gray-500 hover:text-gray-300"
           }`}
@@ -111,7 +111,7 @@ export function LocationSelector({
         )}
       </div>
 
-      {isDistributor && !hasBranchAccess && !hasWarehouseAccess && (
+      {isEmployee && !hasBranchAccess && !hasWarehouseAccess && (
         <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
           No tienes sedes autorizadas. Solo puedes vender desde Mi Inventario.
         </div>
@@ -121,7 +121,7 @@ export function LocationSelector({
       <div className="mt-3 flex items-center gap-2 text-sm">
         <div
           className={`h-2 w-2 rounded-full ${
-            locationType === "distributor"
+            locationType === "employee"
               ? "bg-blue-500"
               : locationType === "warehouse"
                 ? "bg-purple-500"
@@ -133,7 +133,7 @@ export function LocationSelector({
           <span className="font-medium text-white">
             {locationType === "warehouse"
               ? "Bodega Central"
-              : locationType === "distributor"
+              : locationType === "employee"
                 ? "Mi Inventario Personal"
                 : selectedLabel}
           </span>

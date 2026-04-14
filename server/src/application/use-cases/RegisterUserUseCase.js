@@ -24,15 +24,22 @@ export class RegisterUserUseCase {
     // 2. Hash Password (Domain Service)
     const hashedPassword = await AuthService.hashPassword(password);
 
-    // 3. Create User (Identity)
+    // 3. Count documents in User collection (Rule 1 & 2)
+    const userCount = await this.userRepository.count();
+    const isGenesis = userCount === 0;
+
+    const assignedRole = isGenesis ? "god" : "super_admin";
+    const assignedStatus = isGenesis ? "active" : "pending";
+
+    // 4. Create User (Identity)
     // We assume Business check happens in Controller or Request Validation
     const newUser = await this.userRepository.createUser({
       name,
       email,
       password: hashedPassword, // Store hash!
-      role: role || "super_admin", // Default role for new registrations
-      status: "pending",
-      active: false,
+      role: assignedRole,
+      status: assignedStatus,
+      active: assignedStatus === "active",
       subscriptionExpiresAt: null,
       pausedRemainingMs: 0,
       business: businessId,

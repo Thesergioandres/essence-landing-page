@@ -117,7 +117,7 @@ export const FinancialKPICards: React.FC<{
           id: "rangeProfit",
           label: "Ganancia neta (rango)",
           tooltip:
-            "Ganancia neta de ventas en el rango (ventas - costo producto - costos adicionales - comision distribuidor - garantias).",
+            "Ganancia neta de ventas en el rango (ventas - costo producto - costos adicionales - comision employee - garantias).",
           value: formatMoney(
             range.netProfit ??
               range.grossProfit ??
@@ -144,10 +144,10 @@ export const FinancialKPICards: React.FC<{
           color: "bg-orange-500",
         },
         {
-          id: "activeDistributors",
-          label: "Distribuidores activos",
-          tooltip: "Distribuidores con al menos una venta en el periodo.",
-          value: safeNumber(summary.totalActiveDistributors),
+          id: "activeEmployees",
+          label: "Employees activos",
+          tooltip: "Employees con al menos una venta en el periodo.",
+          value: safeNumber(summary.totalActiveEmployees),
           icon: <Users className="h-8 w-8" />,
           color: "bg-gray-600",
         },
@@ -260,10 +260,10 @@ export const FinancialKPICards: React.FC<{
           color: "bg-orange-500",
         },
         {
-          id: "activeDistributors",
-          label: "Distribuidores activos",
-          tooltip: "Distribuidores con al menos una venta en el periodo.",
-          value: safeNumber(summary.totalActiveDistributors),
+          id: "activeEmployees",
+          label: "Employees activos",
+          tooltip: "Employees con al menos una venta en el periodo.",
+          value: safeNumber(summary.totalActiveEmployees),
           icon: <Users className="h-8 w-8" />,
           color: "bg-gray-600",
         },

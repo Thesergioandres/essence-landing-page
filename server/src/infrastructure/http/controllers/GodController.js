@@ -196,7 +196,7 @@ class GodController {
         extra: {
           deletedUserId: id,
           deletedBusinesses: result.deletedBusinesses,
-          deletedDistributorUsers: result.deletedDistributorUsers,
+          deletedEmployeeUsers: result.deletedEmployeeUsers,
           deletedProducts: result.deletedProducts,
           deletedSales: result.deletedSales,
           deletedCustomers: result.deletedCustomers,
@@ -208,7 +208,7 @@ class GodController {
         success: true,
         data: {
           deletedBusinesses: result.deletedBusinesses,
-          deletedDistributorUsers: result.deletedDistributorUsers,
+          deletedEmployeeUsers: result.deletedEmployeeUsers,
           deletedProducts: result.deletedProducts,
           deletedSales: result.deletedSales,
           deletedCustomers: result.deletedCustomers,

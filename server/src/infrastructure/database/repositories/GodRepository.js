@@ -16,8 +16,8 @@ import CreditPayment from "../models/CreditPayment.js";
 import Customer from "../models/Customer.js";
 import DefectiveProduct from "../models/DefectiveProduct.js";
 import DeliveryMethod from "../models/DeliveryMethod.js";
-import DistributorStats from "../models/DistributorStats.js";
-import DistributorStock from "../models/DistributorStock.js";
+import EmployeeStats from "../models/EmployeeStats.js";
+import EmployeeStock from "../models/EmployeeStock.js";
 import Expense from "../models/Expense.js";
 import GamificationConfig from "../models/GamificationConfig.js";
 import InventoryEntry from "../models/InventoryEntry.js";
@@ -310,7 +310,7 @@ class GodRepository {
    * Eliminates:
    * - The User document
    * - All Business where user is owner (admin)
-   * - All Distributors linked to those businesses and their user accounts
+   * - All Employees linked to those businesses and their user accounts
    * - All operational data: Products, Categories, Sales, Customers, Credits, Inventories, etc.
    */
   async deleteUser(userId, godUserId) {
@@ -334,13 +334,13 @@ class GodRepository {
     }).select("business");
     const ownedBusinessIds = ownerMemberships.map((m) => m.business);
 
-    // 2. Find ALL memberships in those businesses (includes distributors)
+    // 2. Find ALL memberships in those businesses (includes employees)
     const allMembershipsInBusiness = await Membership.find({
       business: { $in: ownedBusinessIds },
     }).select("user");
 
-    // Get unique distributor user IDs (excluding the main user being deleted)
-    const distributorUserIds = [
+    // Get unique employee user IDs (excluding the main user being deleted)
+    const employeeUserIds = [
       ...new Set(
         allMembershipsInBusiness
           .map((m) => m.user.toString())
@@ -351,7 +351,7 @@ class GodRepository {
     // 3. Delete all business-related operational data
     const deletionStats = {
       businesses: 0,
-      distributorUsers: 0,
+      employeeUsers: 0,
       products: 0,
       sales: 0,
       customers: 0,
@@ -396,9 +396,9 @@ class GodRepository {
         BranchStock.deleteMany({ business: { $in: ownedBusinessIds } }),
         BranchTransfer.deleteMany({ business: { $in: ownedBusinessIds } }),
 
-        // Distributors
-        DistributorStock.deleteMany({ business: { $in: ownedBusinessIds } }),
-        DistributorStats.deleteMany({ business: { $in: ownedBusinessIds } }),
+        // Employees
+        EmployeeStock.deleteMany({ business: { $in: ownedBusinessIds } }),
+        EmployeeStats.deleteMany({ business: { $in: ownedBusinessIds } }),
 
         // Promotions & Gamification
         Promotion.deleteMany({ business: { $in: ownedBusinessIds } }),
@@ -430,11 +430,11 @@ class GodRepository {
       deletionStats.inventoryEntries = results[15].deletedCount;
     }
 
-    // 4. Delete distributor user accounts (only those who don't own other businesses)
-    for (const distributorUserId of distributorUserIds) {
-      // Check if this distributor owns any OTHER business
+    // 4. Delete employee user accounts (only those who don't own other businesses)
+    for (const employeeUserId of employeeUserIds) {
+      // Check if this employee owns any OTHER business
       const otherOwnedBusinesses = await Membership.countDocuments({
-        user: distributorUserId,
+        user: employeeUserId,
         role: "admin",
         business: { $nin: ownedBusinessIds },
       });
@@ -442,18 +442,18 @@ class GodRepository {
       if (otherOwnedBusinesses === 0) {
         // Safe to delete - they don't own other businesses
         // Delete their memberships in other businesses first
-        await Membership.deleteMany({ user: distributorUserId });
+        await Membership.deleteMany({ user: employeeUserId });
 
         // Delete user-specific data
         await Promise.all([
-          RefreshToken.deleteMany({ user: distributorUserId }),
-          PushSubscription.deleteMany({ user: distributorUserId }),
-          Notification.deleteMany({ user: distributorUserId }),
+          RefreshToken.deleteMany({ user: employeeUserId }),
+          PushSubscription.deleteMany({ user: employeeUserId }),
+          Notification.deleteMany({ user: employeeUserId }),
         ]);
 
         // Delete the user account
-        await User.findByIdAndDelete(distributorUserId);
-        deletionStats.distributorUsers++;
+        await User.findByIdAndDelete(employeeUserId);
+        deletionStats.employeeUsers++;
       }
     }
 
@@ -471,7 +471,7 @@ class GodRepository {
 
     return {
       deletedBusinesses: ownedBusinessIds.length,
-      deletedDistributorUsers: deletionStats.distributorUsers,
+      deletedEmployeeUsers: deletionStats.employeeUsers,
       deletedProducts: deletionStats.products,
       deletedSales: deletionStats.sales,
       deletedCustomers: deletionStats.customers,

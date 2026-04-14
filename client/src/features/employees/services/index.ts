@@ -1,4 +1,4 @@
 /**
- * Distributor Services Barrel Export
+ * Employee Services Barrel Export
  */
-export { distributorService } from "./distributor.service";
+export { employeeService } from "./employee.service";

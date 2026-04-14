@@ -83,7 +83,7 @@ export interface GamificationConfig {
 }
 
 export interface TopPerformer {
-  distributor: string;
+  employee: string;
   position: number;
   totalRevenue: number;
   salesCount: number;
@@ -120,9 +120,9 @@ export interface Achievement {
   value?: number;
 }
 
-export interface DistributorStats {
+export interface EmployeeStats {
   _id: string;
-  distributor: unknown | string;
+  employee: unknown | string;
   totalPoints: number;
   currentMonthPoints: number;
   totalSales: number;
@@ -143,9 +143,9 @@ export interface DistributorStats {
 }
 
 export interface RankingEntry {
-  distributorId: string;
-  distributorName: string;
-  distributorEmail: string;
+  employeeId: string;
+  employeeName: string;
+  employeeEmail: string;
   totalSales: number;
   totalRevenue: number;
   totalProfit: number;
@@ -184,8 +184,8 @@ export interface WinnersResponse {
   total: number;
 }
 
-export interface DistributorStatsResponse {
-  stats: DistributorStats;
+export interface EmployeeStatsResponse {
+  stats: EmployeeStats;
   currentRankingPosition: number;
-  totalDistributors: number;
+  totalEmployees: number;
 }

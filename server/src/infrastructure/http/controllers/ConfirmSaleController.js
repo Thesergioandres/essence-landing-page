@@ -66,12 +66,12 @@ export async function confirmSalePayment(req, res) {
     if (!existingProfit) {
       const saleDate = sale.saleDate || confirmedAt;
 
-      if (sale.distributor && sale.distributorProfit > 0) {
+      if (sale.employee && sale.employeeProfit > 0) {
         await ProfitHistory.create({
           business: businessId,
-          user: sale.distributor,
+          user: sale.employee,
           type: "venta_normal",
-          amount: sale.distributorProfit,
+          amount: sale.employeeProfit,
           sale: sale._id,
           product: sale.product,
           description: `Comisión por venta ${sale.saleId}`,
@@ -80,7 +80,7 @@ export async function confirmSalePayment(req, res) {
             quantity: sale.quantity,
             salePrice: sale.salePrice,
             saleId: sale.saleId,
-            commission: sale.distributorProfitPercentage,
+            commission: sale.employeeProfitPercentage,
           },
         });
       }
@@ -102,8 +102,8 @@ export async function confirmSalePayment(req, res) {
             amount: sale.adminProfit,
             sale: sale._id,
             product: sale.product,
-            description: sale.distributor
-              ? `Ganancia de venta ${sale.saleId} (distribuidor)`
+            description: sale.employee
+              ? `Ganancia de venta ${sale.saleId} (employee)`
               : `Venta directa ${sale.saleId}`,
             date: saleDate,
             metadata: {
@@ -117,7 +117,7 @@ export async function confirmSalePayment(req, res) {
     }
 
     const updatedSale = await Sale.findById(sale._id).lean();
-    if (updatedSale?.distributor) {
+    if (updatedSale?.employee) {
       const product = updatedSale.product
         ? await Product.findById(updatedSale.product).lean()
         : null;

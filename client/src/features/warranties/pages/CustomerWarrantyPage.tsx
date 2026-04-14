@@ -10,13 +10,13 @@ import {
 import type {
   Branch,
   BranchStock,
-  DistributorStock,
+  EmployeeStock,
   Product,
 } from "../../inventory/types/product.types";
 import { saleService, warrantyService } from "../../sales/services";
 import type { Sale } from "../../sales/types/sales.types";
 
-type ReplacementSource = "warehouse" | "branch" | "distributor";
+type ReplacementSource = "warehouse" | "branch" | "employee";
 
 type SaleLookupItem = {
   saleItemId: string;
@@ -26,9 +26,9 @@ type SaleLookupItem = {
   product: Product | string;
   quantity: number;
   salePrice: number;
-  distributor?: { _id: string; name: string } | string | null;
+  employee?: { _id: string; name: string } | string | null;
   branch?: { _id: string; name: string } | string | null;
-  sourceLocation?: "warehouse" | "branch" | "distributor" | null;
+  sourceLocation?: "warehouse" | "branch" | "employee" | null;
   createdBy?: { _id: string; name: string } | string | null;
 };
 
@@ -45,7 +45,7 @@ type SaleLookupResponse = {
 
 export default function CustomerWarrantyPage() {
   const { user } = useSession();
-  const isDistributor = user?.role === "employee";
+  const isEmployee = user?.role === "employee";
 
   const [lookupId, setLookupId] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -71,7 +71,7 @@ export default function CustomerWarrantyPage() {
   const [reason, setReason] = useState("");
 
   const [replacementSource, setReplacementSource] = useState<ReplacementSource>(
-    isDistributor ? "distributor" : "warehouse"
+    isEmployee ? "employee" : "warehouse"
   );
   const [replacementBranchId, setReplacementBranchId] = useState("");
   const [replacementProductId, setReplacementProductId] = useState("");
@@ -81,7 +81,7 @@ export default function CustomerWarrantyPage() {
   const [warehouseProducts, setWarehouseProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchStock, setBranchStock] = useState<BranchStock[]>([]);
-  const [distributorStock, setDistributorStock] = useState<DistributorStock[]>(
+  const [employeeStock, setEmployeeStock] = useState<EmployeeStock[]>(
     []
   );
   const [allowedBranches, setAllowedBranches] = useState<
@@ -97,23 +97,23 @@ export default function CustomerWarrantyPage() {
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    if (isDistributor && replacementSource === "warehouse") {
-      setReplacementSource("distributor");
+    if (isEmployee && replacementSource === "warehouse") {
+      setReplacementSource("employee");
     }
-    if (!isDistributor && replacementSource === "distributor") {
+    if (!isEmployee && replacementSource === "employee") {
       setReplacementSource("warehouse");
     }
-  }, [isDistributor, replacementSource]);
+  }, [isEmployee, replacementSource]);
 
   useEffect(() => {
     const loadSources = async () => {
       try {
-        if (isDistributor) {
+        if (isEmployee) {
           const [distStock, branchesResponse] = await Promise.all([
-            stockService.getDistributorStock("me").catch(() => []),
+            stockService.getEmployeeStock("me").catch(() => []),
             stockService.getMyAllowedBranches().catch(() => ({ branches: [] })),
           ]);
-          setDistributorStock(distStock || []);
+          setEmployeeStock(distStock || []);
           setAllowedBranches(branchesResponse.branches || []);
         } else {
           const [productsResponse, branchesResponse] = await Promise.all([
@@ -132,15 +132,15 @@ export default function CustomerWarrantyPage() {
     };
 
     loadSources();
-  }, [isDistributor]);
+  }, [isEmployee]);
 
   useEffect(() => {
     const loadSales = async () => {
       try {
         setSalesLoading(true);
         setSalesError("");
-        if (isDistributor) {
-          const response = await saleService.getDistributorSales();
+        if (isEmployee) {
+          const response = await saleService.getEmployeeSales();
           setSales(response.sales || []);
         } else {
           const response = await saleService.getAllSales({ limit: 50 });
@@ -157,7 +157,7 @@ export default function CustomerWarrantyPage() {
     };
 
     loadSales();
-  }, [isDistributor]);
+  }, [isEmployee]);
 
   useEffect(() => {
     if (!replacementBranchId) {
@@ -175,10 +175,10 @@ export default function CustomerWarrantyPage() {
       }
     };
 
-    if (replacementSource === "branch" && !isDistributor) {
+    if (replacementSource === "branch" && !isEmployee) {
       loadBranchStock();
     }
-  }, [replacementBranchId, replacementSource, isDistributor]);
+  }, [replacementBranchId, replacementSource, isEmployee]);
 
   const selectedSaleItem = saleData?.items.find(
     item => item.saleItemId === selectedSaleItemId
@@ -190,8 +190,8 @@ export default function CustomerWarrantyPage() {
 
   const maxDefectiveQuantity = selectedSaleItem?.quantity || 0;
 
-  const distributorProducts = useMemo(() => {
-    return distributorStock
+  const employeeProducts = useMemo(() => {
+    return employeeStock
       .map(item => {
         const product =
           typeof item.product === "object" ? (item.product as Product) : null;
@@ -202,7 +202,7 @@ export default function CustomerWarrantyPage() {
         };
       })
       .filter(item => item && (item.totalStock || 0) > 0) as Product[];
-  }, [distributorStock]);
+  }, [employeeStock]);
 
   const allowedBranch = allowedBranches.find(
     branch => branch._id === replacementBranchId
@@ -241,18 +241,18 @@ export default function CustomerWarrantyPage() {
   }, [warehouseProducts]);
 
   const replacementProducts = useMemo(() => {
-    if (replacementSource === "distributor") return distributorProducts;
+    if (replacementSource === "employee") return employeeProducts;
     if (replacementSource === "branch") {
-      return isDistributor ? allowedBranchProducts : adminBranchProducts;
+      return isEmployee ? allowedBranchProducts : adminBranchProducts;
     }
     return warehouseSelectableProducts;
   }, [
     replacementSource,
-    distributorProducts,
+    employeeProducts,
     allowedBranchProducts,
     adminBranchProducts,
     warehouseSelectableProducts,
-    isDistributor,
+    isEmployee,
   ]);
 
   useEffect(() => {
@@ -264,7 +264,7 @@ export default function CustomerWarrantyPage() {
     const defaultPrice =
       product.clientPrice ||
       product.suggestedPrice ||
-      product.distributorPrice ||
+      product.employeePrice ||
       0;
     setReplacementPrice(defaultPrice ? String(defaultPrice) : "");
   }, [replacementProductId, replacementProducts]);
@@ -291,18 +291,18 @@ export default function CustomerWarrantyPage() {
   };
 
   const replacementBranchOptions = useMemo(() => {
-    if (isDistributor) return allowedBranches;
+    if (isEmployee) return allowedBranches;
     return branches.filter(branch => !isWarehouseBranch(branch));
-  }, [allowedBranches, branches, isDistributor]);
+  }, [allowedBranches, branches, isEmployee]);
 
   const sellerOptions = useMemo(() => {
     const map = new Map<string, string>();
     sales.forEach(sale => {
-      if (sale.distributor) {
-        if (typeof sale.distributor === "object") {
-          map.set(sale.distributor._id, sale.distributor.name || "Empleado");
+      if (sale.employee) {
+        if (typeof sale.employee === "object") {
+          map.set(sale.employee._id, sale.employee.name || "Empleado");
         } else {
-          map.set(sale.distributor, "Distribuidor");
+          map.set(sale.employee, "Employee");
         }
         return;
       }
@@ -337,10 +337,10 @@ export default function CustomerWarrantyPage() {
     };
 
     const getSellerId = (sale: Sale) => {
-      if (sale.distributor) {
-        return typeof sale.distributor === "object"
-          ? sale.distributor._id
-          : sale.distributor;
+      if (sale.employee) {
+        return typeof sale.employee === "object"
+          ? sale.employee._id
+          : sale.employee;
       }
       if (sale.createdBy) {
         return typeof sale.createdBy === "object"
@@ -361,9 +361,9 @@ export default function CustomerWarrantyPage() {
       const customerName = sale.customerName || "";
       const branchName =
         typeof sale.branch === "object" ? sale.branch?.name : "";
-      const sellerName = sale.distributor
-        ? typeof sale.distributor === "object"
-          ? sale.distributor?.name
+      const sellerName = sale.employee
+        ? typeof sale.employee === "object"
+          ? sale.employee?.name
           : ""
         : typeof sale.createdBy === "object"
           ? sale.createdBy?.name
@@ -374,12 +374,12 @@ export default function CustomerWarrantyPage() {
     };
 
     const result = sales.filter(sale => {
-      if (isDistributor) {
-        const distributorId =
-          typeof sale.distributor === "object"
-            ? sale.distributor?._id
-            : sale.distributor;
-        if (!distributorId || distributorId !== user?._id) return false;
+      if (isEmployee) {
+        const employeeId =
+          typeof sale.employee === "object"
+            ? sale.employee?._id
+            : sale.employee;
+        if (!employeeId || employeeId !== user?._id) return false;
       }
       const total = (sale.salePrice || 0) * (sale.quantity || 0);
       if (text && !getSearchText(sale).includes(text)) return false;
@@ -421,7 +421,7 @@ export default function CustomerWarrantyPage() {
     filterMinTotal,
     filterMaxTotal,
     sortBy,
-    isDistributor,
+    isEmployee,
     user?._id,
   ]);
 
@@ -592,7 +592,7 @@ export default function CustomerWarrantyPage() {
               onChange={event => setFilterText(event.target.value)}
               className="mt-2 w-full rounded-lg border border-gray-700 bg-gray-950/70 px-3 py-2 text-sm text-white"
               placeholder={
-                isDistributor
+                isEmployee
                   ? "ID, producto, cliente"
                   : "ID, producto, cliente, vendedor"
               }
@@ -631,7 +631,7 @@ export default function CustomerWarrantyPage() {
               ))}
             </select>
           </div>
-          {!isDistributor && (
+          {!isEmployee && (
             <div>
               <label className="text-xs text-gray-400">Vendedor</label>
               <select
@@ -739,10 +739,10 @@ export default function CustomerWarrantyPage() {
                     typeof sale.product === "object" ? sale.product : null;
                   const total = (sale.salePrice || 0) * (sale.quantity || 0);
                   const resolvedSaleId = sale.saleId || sale._id;
-                  const responsibleName = sale.distributor
-                    ? typeof sale.distributor === "object"
-                      ? sale.distributor.name || "Empleado"
-                      : "Distribuidor"
+                  const responsibleName = sale.employee
+                    ? typeof sale.employee === "object"
+                      ? sale.employee.name || "Empleado"
+                      : "Employee"
                     : typeof sale.createdBy === "object"
                       ? sale.createdBy.name || "Admin"
                       : "Admin";
@@ -794,7 +794,7 @@ export default function CustomerWarrantyPage() {
               </p>
             </div>
             <div className="text-sm text-gray-300">
-              {saleData.seller?.role === "employee" ? "Distribuidor" : "Admin"}:{" "}
+              {saleData.seller?.role === "employee" ? "Employee" : "Admin"}:{" "}
               {typeof saleData.seller?.user === "object"
                 ? saleData.seller.user?.name
                 : "-"}
@@ -899,11 +899,11 @@ export default function CustomerWarrantyPage() {
                 }}
                 className="mt-2 w-full rounded-lg border border-gray-700 bg-gray-950/70 px-3 py-2 text-sm text-white"
               >
-                {isDistributor && (
-                  <option value="distributor">Mi inventario</option>
+                {isEmployee && (
+                  <option value="employee">Mi inventario</option>
                 )}
                 <option value="branch">Sede</option>
-                {!isDistributor && <option value="warehouse">Bodega</option>}
+                {!isEmployee && <option value="warehouse">Bodega</option>}
               </select>
             </div>
 

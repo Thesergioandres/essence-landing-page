@@ -13,7 +13,7 @@ interface FormState {
   description: string;
   purchasePrice: string;
   suggestedPrice: string;
-  distributorPrice: string;
+  employeePrice: string;
   clientPrice: string;
   category: string;
   totalStock: string;
@@ -36,7 +36,7 @@ export default function AddProduct() {
     description: "",
     purchasePrice: "",
     suggestedPrice: "",
-    distributorPrice: "",
+    employeePrice: "",
     clientPrice: "",
     category: "",
     totalStock: "",
@@ -45,7 +45,7 @@ export default function AddProduct() {
     ingredients: "",
     benefits: "",
   });
-  const [distributorManual, setDistributorManual] = useState(false);
+  const [employeeManual, setEmployeeManual] = useState(false);
   const [baseCommissionPercentage, setBaseCommissionPercentage] =
     useState<number>(20);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -99,7 +99,7 @@ export default function AddProduct() {
   }, [imagePreview]);
 
   useEffect(() => {
-    if (distributorManual || !formData.clientPrice) return;
+    if (employeeManual || !formData.clientPrice) return;
     const client = Number(formData.clientPrice);
     if (Number.isNaN(client)) return;
     const autoPrice = Math.round(
@@ -107,9 +107,9 @@ export default function AddProduct() {
     );
     setFormData(current => ({
       ...current,
-      distributorPrice: autoPrice.toString(),
+      employeePrice: autoPrice.toString(),
     }));
-  }, [baseCommissionPercentage, distributorManual, formData.clientPrice]);
+  }, [baseCommissionPercentage, employeeManual, formData.clientPrice]);
 
   const handleChange = (
     event: ChangeEvent<
@@ -129,8 +129,8 @@ export default function AddProduct() {
         ? target.checked
         : value;
 
-    if (name === "distributorPrice") {
-      setDistributorManual(value !== "");
+    if (name === "employeePrice") {
+      setEmployeeManual(value !== "");
     }
 
     setFormData(current => {
@@ -147,11 +147,11 @@ export default function AddProduct() {
         }
       }
 
-      // Calcular precio distribuidor automáticamente segun comision base
-      if (name === "clientPrice" && value && !distributorManual) {
+      // Calcular precio employee automáticamente segun comision base
+      if (name === "clientPrice" && value && !employeeManual) {
         const client = Number(value);
         if (!isNaN(client)) {
-          updated.distributorPrice = Math.round(
+          updated.employeePrice = Math.round(
             client * (1 - (baseCommissionPercentage || 0) / 100)
           ).toString();
         }
@@ -204,7 +204,7 @@ export default function AddProduct() {
 
     try {
       const purchasePrice = Number(formData.purchasePrice);
-      const distributorPrice = Number(formData.distributorPrice);
+      const employeePrice = Number(formData.employeePrice);
       const totalStock = Number(formData.totalStock || 0);
       const clientPrice = formData.clientPrice
         ? Number(formData.clientPrice)
@@ -214,8 +214,8 @@ export default function AddProduct() {
         throw new Error("El precio de compra debe ser un número válido");
       }
 
-      if (Number.isNaN(distributorPrice) || distributorPrice < 0) {
-        throw new Error("El precio de distribuidor debe ser un número válido");
+      if (Number.isNaN(employeePrice) || employeePrice < 0) {
+        throw new Error("El precio de employee debe ser un número válido");
       }
 
       if (Number.isNaN(totalStock) || totalStock < 0) {
@@ -237,8 +237,8 @@ export default function AddProduct() {
         description: formData.description.trim(),
         purchasePrice,
         suggestedPrice: Number(formData.suggestedPrice) || purchasePrice * 1.3,
-        distributorPrice,
-        distributorPriceManual: distributorManual,
+        employeePrice,
+        employeePriceManual: employeeManual,
         clientPrice,
         category: formData.category,
         totalStock,
@@ -379,12 +379,12 @@ export default function AddProduct() {
 
                   <div>
                     <label className="mb-2 block text-xs font-medium text-blue-300">
-                      Precio Distribuidor *
+                      Precio Employee *
                     </label>
                     <input
                       type="number"
-                      name="distributorPrice"
-                      value={formData.distributorPrice}
+                      name="employeePrice"
+                      value={formData.employeePrice}
                       onChange={handleChange}
                       required
                       min="0"
@@ -420,14 +420,14 @@ export default function AddProduct() {
                     📊 Mi Rentabilidad (ROI)
                   </p>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {/* B2B: Selling to Distributor */}
+                    {/* B2B: Selling to Employee */}
                     <div>
                       <p className="text-[10px] uppercase text-gray-500">
-                        Venta a Distribuidor (B2B)
+                        Venta a Employee (B2B)
                       </p>
                       {(() => {
                         const cost = Number(formData.purchasePrice) || 0;
-                        const price = Number(formData.distributorPrice) || 0;
+                        const price = Number(formData.employeePrice) || 0;
                         const profit = price - cost;
                         const roi =
                           cost > 0 ? Math.round((profit / cost) * 100) : 0;

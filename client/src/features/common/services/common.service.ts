@@ -8,8 +8,8 @@ import api from "../../../api/axios";
 import type { ProfitHistoryAdminOverview } from "../../analytics/types/analytics.types";
 import type {
   Achievement,
-  DistributorStats,
-  DistributorStatsResponse,
+  EmployeeStats,
+  EmployeeStatsResponse,
   GamificationConfig,
   PeriodWinner,
   RankingResponse,
@@ -228,7 +228,7 @@ export const userAccessService = {
 
   async remove(id: string): Promise<{
     deletedBusinesses: number;
-    deletedDistributorUsers: number;
+    deletedEmployeeUsers: number;
     deletedProducts: number;
     deletedSales: number;
     deletedCustomers: number;
@@ -240,7 +240,7 @@ export const userAccessService = {
       success: boolean;
       data: {
         deletedBusinesses: number;
-        deletedDistributorUsers: number;
+        deletedEmployeeUsers: number;
         deletedProducts: number;
         deletedSales: number;
         deletedCustomers: number;
@@ -408,17 +408,17 @@ export const gamificationService = {
     };
   },
 
-  async getDistributorStats(
-    distributorId: string,
+  async getEmployeeStats(
+    employeeId: string,
     params?: { recalculate?: boolean }
-  ): Promise<DistributorStatsResponse> {
-    const resolvedDistributorId = resolveEntityId(distributorId);
-    if (!resolvedDistributorId) {
-      throw new Error("Identificador de distribuidor inválido");
+  ): Promise<EmployeeStatsResponse> {
+    const resolvedEmployeeId = resolveEntityId(employeeId);
+    if (!resolvedEmployeeId) {
+      throw new Error("Identificador de employee inválido");
     }
 
-    const response = await api.get<DistributorStatsResponse>(
-      `/gamification/stats/${resolvedDistributorId}`,
+    const response = await api.get<EmployeeStatsResponse>(
+      `/gamification/stats/${resolvedEmployeeId}`,
       {
         params: params?.recalculate ? { recalculate: "true" } : undefined,
       }
@@ -438,25 +438,25 @@ export const gamificationService = {
 
     if (looksLikeStats) {
       return {
-        stats: payload as DistributorStats,
+        stats: payload as EmployeeStats,
         currentRankingPosition: 0,
-        totalDistributors: 0,
+        totalEmployees: 0,
       };
     }
 
     return {
-      stats: {} as DistributorStats,
+      stats: {} as EmployeeStats,
       currentRankingPosition: 0,
-      totalDistributors: 0,
+      totalEmployees: 0,
     };
   },
 
-  async recalculatePoints(distributorId?: string): Promise<{
-    updatedDistributors: number;
+  async recalculatePoints(employeeId?: string): Promise<{
+    updatedEmployees: number;
     updatedSales: number;
   }> {
     const response = await api.post("/gamification/recalculate-points", {
-      distributorId: distributorId || null,
+      employeeId: employeeId || null,
     });
     return (response.data as any)?.data ?? response.data;
   },
@@ -475,20 +475,20 @@ export const gamificationService = {
     return (response.data as any)?.data ?? response.data;
   },
 
-  async getAdjustedCommission(distributorId: string): Promise<{
+  async getAdjustedCommission(employeeId: string): Promise<{
     position: number | null;
     bonusCommission: number;
     periodStart: string;
     periodEnd: string;
-    totalDistributors: number;
+    totalEmployees: number;
   }> {
-    const resolvedDistributorId = resolveEntityId(distributorId);
-    if (!resolvedDistributorId) {
-      throw new Error("Identificador de distribuidor inválido");
+    const resolvedEmployeeId = resolveEntityId(employeeId);
+    if (!resolvedEmployeeId) {
+      throw new Error("Identificador de employee inválido");
     }
 
     const response = await api.get(
-      `/gamification/commission/${resolvedDistributorId}`
+      `/gamification/commission/${resolvedEmployeeId}`
     );
     return (response.data as any)?.data ?? response.data;
   },
@@ -562,10 +562,10 @@ export const expenseService = {
   async createInventoryWithdrawal(payload: {
     productId: string;
     branchId?: string;
-    distributorId?: string;
+    employeeId?: string;
     quantity: number;
     reason: string;
-    locationType?: "branch" | "warehouse" | "distributor";
+    locationType?: "branch" | "warehouse" | "employee";
     expenseDate?: string;
   }): Promise<{ expense: Expense }> {
     const response = await api.post("/expenses/inventory-withdrawal", payload);
@@ -678,7 +678,7 @@ export const profitHistoryService = {
   async getAdminOverview(params?: {
     startDate?: string;
     endDate?: string;
-    distributorId?: string;
+    employeeId?: string;
     limit?: number;
   }): Promise<ProfitHistoryAdminOverview> {
     const response = await api.get("/profit-history/admin/overview", {

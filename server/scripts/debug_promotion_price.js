@@ -39,7 +39,7 @@ async function main() {
         _id: promo._id,
         name: promo.name,
         promotionPrice: promo.promotionPrice,
-        distributorPrice: promo.distributorPrice,
+        employeePrice: promo.employeePrice,
         comboItems,
       },
       null,

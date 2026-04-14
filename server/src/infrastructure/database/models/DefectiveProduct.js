@@ -7,7 +7,7 @@ const defectiveProductSchema = new mongoose.Schema(
       ref: "Business",
       index: true,
     },
-    distributor: {
+    employee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: false, // Opcional: puede ser null si el admin reporta desde bodega
@@ -84,7 +84,7 @@ const defectiveProductSchema = new mongoose.Schema(
     // Origen del stock para restauración en caso de borrado
     stockOrigin: {
       type: String,
-      enum: ["warehouse", "branch", "distributor"],
+      enum: ["warehouse", "branch", "employee"],
       default: "warehouse",
     },
     // ⭐ Asociación con pedido de venta (para garantías agregadas desde registro de pedido)
@@ -150,13 +150,13 @@ const defectiveProductSchema = new mongoose.Schema(
     },
     replacementStockOrigin: {
       type: String,
-      enum: ["warehouse", "branch", "distributor"],
+      enum: ["warehouse", "branch", "employee"],
     },
     replacementBranch: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Branch",
     },
-    replacementDistributor: {
+    replacementEmployee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
@@ -200,7 +200,7 @@ const defectiveProductSchema = new mongoose.Schema(
 
 // Índices para búsquedas frecuentes
 defectiveProductSchema.index({ business: 1, status: 1 });
-defectiveProductSchema.index({ distributor: 1, status: 1 });
+defectiveProductSchema.index({ employee: 1, status: 1 });
 defectiveProductSchema.index({ product: 1, reportDate: -1 });
 defectiveProductSchema.index({ business: 1, ticketId: 1 });
 defectiveProductSchema.index({ business: 1, originalSaleGroupId: 1 });

@@ -17,8 +17,8 @@ import CreditPayment from "../../database/models/CreditPayment.js";
 import Customer from "../../database/models/Customer.js";
 import DefectiveProduct from "../../database/models/DefectiveProduct.js";
 import DeliveryMethod from "../../database/models/DeliveryMethod.js";
-import DistributorStats from "../../database/models/DistributorStats.js";
-import DistributorStock from "../../database/models/DistributorStock.js";
+import EmployeeStats from "../../database/models/EmployeeStats.js";
+import EmployeeStock from "../../database/models/EmployeeStock.js";
 import Expense from "../../database/models/Expense.js";
 import GamificationConfig from "../../database/models/GamificationConfig.js";
 import InventoryEntry from "../../database/models/InventoryEntry.js";
@@ -87,7 +87,7 @@ export class DataExportController {
 
         // Inventory
         branchStocks,
-        distributorStocks,
+        employeeStocks,
         inventoryEntries,
         stockTransfers,
         branchTransfers,
@@ -102,7 +102,7 @@ export class DataExportController {
 
         // Analytics
         profitHistory,
-        distributorStats,
+        employeeStats,
         pointsHistory,
       ] = await Promise.all([
         // Organization
@@ -130,7 +130,7 @@ export class DataExportController {
 
         // Inventory
         BranchStock.find({ business: businessId }).lean(),
-        DistributorStock.find({ business: businessId }).lean(),
+        EmployeeStock.find({ business: businessId }).lean(),
         InventoryEntry.find({ business: businessId }).lean(),
         StockTransfer.find({ business: businessId }).lean(),
         BranchTransfer.find({ business: businessId }).lean(),
@@ -145,7 +145,7 @@ export class DataExportController {
 
         // Analytics
         ProfitHistory.find({ business: businessId }).lean(),
-        DistributorStats.find({ business: businessId }).lean(),
+        EmployeeStats.find({ business: businessId }).lean(),
         PointsHistory.find({ business: businessId }).lean(),
       ]);
 
@@ -189,7 +189,7 @@ export class DataExportController {
 
         inventory: {
           branchStocks,
-          distributorStocks,
+          employeeStocks,
           inventoryEntries,
           stockTransfers,
           branchTransfers,
@@ -206,7 +206,7 @@ export class DataExportController {
 
         analytics: {
           profitHistory,
-          distributorStats,
+          employeeStats,
           pointsHistory,
         },
 

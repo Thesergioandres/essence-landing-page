@@ -43,19 +43,19 @@ export class PromotionRepository {
       Promotion.find(query)
         .populate(
           "buyItems.product",
-          "name image clientPrice distributorPrice purchasePrice averageCost",
+          "name image clientPrice employeePrice purchasePrice averageCost",
         )
         .populate(
           "rewardItems.product",
-          "name image clientPrice distributorPrice purchasePrice averageCost",
+          "name image clientPrice employeePrice purchasePrice averageCost",
         )
         .populate(
           "comboItems.product",
-          "name image clientPrice distributorPrice purchasePrice averageCost",
+          "name image clientPrice employeePrice purchasePrice averageCost",
         )
         .populate("branches", "name")
         .populate("allowedLocations", "name")
-        .populate("allowedDistributors", "name email")
+        .populate("allowedEmployees", "name email")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -78,19 +78,19 @@ export class PromotionRepository {
     const promotion = await Promotion.findOne({ _id: id, business: businessId })
       .populate(
         "buyItems.product",
-        "name image clientPrice distributorPrice purchasePrice averageCost",
+        "name image clientPrice employeePrice purchasePrice averageCost",
       )
       .populate(
         "rewardItems.product",
-        "name image clientPrice distributorPrice purchasePrice averageCost",
+        "name image clientPrice employeePrice purchasePrice averageCost",
       )
       .populate(
         "comboItems.product",
-        "name image clientPrice distributorPrice purchasePrice averageCost",
+        "name image clientPrice employeePrice purchasePrice averageCost",
       )
       .populate("branches", "name")
       .populate("allowedLocations", "name")
-      .populate("allowedDistributors", "name email")
+      .populate("allowedEmployees", "name email")
       .lean();
 
     return promotion;
@@ -147,19 +147,19 @@ export class PromotionRepository {
     })
       .populate(
         "buyItems.product",
-        "name image clientPrice distributorPrice purchasePrice averageCost",
+        "name image clientPrice employeePrice purchasePrice averageCost",
       )
       .populate(
         "rewardItems.product",
-        "name image clientPrice distributorPrice purchasePrice averageCost",
+        "name image clientPrice employeePrice purchasePrice averageCost",
       )
       .populate(
         "comboItems.product",
-        "name image clientPrice distributorPrice purchasePrice averageCost",
+        "name image clientPrice employeePrice purchasePrice averageCost",
       )
       .populate("branches", "name")
       .populate("allowedLocations", "name")
-      .populate("allowedDistributors", "name email")
+      .populate("allowedEmployees", "name email")
       .lean();
 
     return promotions;

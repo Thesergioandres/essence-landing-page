@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import BranchStock from "../models/BranchStock.js";
 import DefectiveProduct from "../models/DefectiveProduct.js";
-import DistributorStock from "../models/DistributorStock.js";
+import EmployeeStock from "../models/EmployeeStock.js";
 import Membership from "../models/Membership.js";
 import Product from "../models/Product.js";
 import ProfitHistory from "../models/ProfitHistory.js";
@@ -167,7 +167,7 @@ export class DefectiveProductRepository {
       : (product.purchasePrice || 0) * data.quantity;
 
     const defectiveReport = await DefectiveProduct.create({
-      distributor: null,
+      employee: null,
       product: data.productId,
       business: businessId,
       quantity: data.quantity,
@@ -194,7 +194,7 @@ export class DefectiveProductRepository {
     return defectiveReport;
   }
 
-  async reportFromDistributor(data, businessId, distributorId) {
+  async reportFromEmployee(data, businessId, employeeId) {
     const product = await Product.findOne({
       _id: data.productId,
       business: businessId,
@@ -206,20 +206,20 @@ export class DefectiveProductRepository {
       throw err;
     }
 
-    const distributorStock = await DistributorStock.findOne({
-      distributor: distributorId,
+    const employeeStock = await EmployeeStock.findOne({
+      employee: employeeId,
       product: data.productId,
       business: businessId,
     });
 
-    if (!distributorStock || distributorStock.quantity < data.quantity) {
-      const err = new Error("Stock insuficiente del distribuidor");
+    if (!employeeStock || employeeStock.quantity < data.quantity) {
+      const err = new Error("Stock insuficiente del employee");
       err.statusCode = 400;
       throw err;
     }
 
     const defectiveReport = await DefectiveProduct.create({
-      distributor: distributorId,
+      employee: employeeId,
       product: data.productId,
       business: businessId,
       quantity: data.quantity,
@@ -228,7 +228,7 @@ export class DefectiveProductRepository {
       hasWarranty: data.hasWarranty,
       warrantyStatus: data.hasWarranty ? "pending" : "not_applicable",
       lossAmount: 0,
-      stockOrigin: "distributor",
+      stockOrigin: "employee",
       status: "pendiente",
     });
 
@@ -268,13 +268,13 @@ export class DefectiveProductRepository {
       throw err;
     }
 
-    const isDistributor = Boolean(options?.isDistributor);
+    const isEmployee = Boolean(options?.isEmployee);
     const hasWarranty = Boolean(data.hasWarranty);
     const unitCost = product.averageCost || product.purchasePrice || 0;
     const lossAmount = hasWarranty ? 0 : unitCost * data.quantity;
 
     const defectiveReport = await DefectiveProduct.create({
-      distributor: isDistributor ? userId : data.distributorId || null,
+      employee: isEmployee ? userId : data.employeeId || null,
       product: data.productId,
       business: businessId,
       branch: branchId,
@@ -283,19 +283,19 @@ export class DefectiveProductRepository {
       images: data.images || [],
       hasWarranty,
       warrantyStatus: hasWarranty ? "pending" : "not_applicable",
-      lossAmount: isDistributor ? 0 : lossAmount,
+      lossAmount: isEmployee ? 0 : lossAmount,
       stockOrigin: "branch",
-      status: isDistributor ? "pendiente" : "confirmado",
-      confirmedAt: isDistributor ? null : Date.now(),
-      confirmedBy: isDistributor ? null : userId,
-      adminNotes: isDistributor
+      status: isEmployee ? "pendiente" : "confirmado",
+      confirmedAt: isEmployee ? null : Date.now(),
+      confirmedBy: isEmployee ? null : userId,
+      adminNotes: isEmployee
         ? undefined
         : hasWarranty
           ? "Reporte con garantía - pendiente reposición de stock"
           : "Reporte sin garantía - pérdida registrada",
     });
 
-    if (!isDistributor) {
+    if (!isEmployee) {
       branchStock.quantity -= data.quantity;
       await branchStock.save();
 
@@ -350,9 +350,9 @@ export class DefectiveProductRepository {
       business: businessId,
       $or: orFilters,
     })
-      .populate("product", "name image clientPrice distributorPrice")
+      .populate("product", "name image clientPrice employeePrice")
       .populate("branch", "name")
-      .populate("distributor", "name email")
+      .populate("employee", "name email")
       .populate("createdBy", "name email")
       .lean();
 
@@ -365,20 +365,20 @@ export class DefectiveProductRepository {
     const contextRole = this.getContextRole(user);
 
     if (contextRole === "employee") {
-      const distributorId = user._id?.toString?.() || user.id?.toString?.();
-      const saleDistributorId =
-        sale?.distributor && typeof sale.distributor === "object"
-          ? sale.distributor?._id?.toString?.() || null
-          : sale?.distributor?.toString?.() || null;
+      const employeeId = user._id?.toString?.() || user.id?.toString?.();
+      const saleEmployeeId =
+        sale?.employee && typeof sale.employee === "object"
+          ? sale.employee?._id?.toString?.() || null
+          : sale?.employee?.toString?.() || null;
       const saleCreatorId =
         sale?.createdBy && typeof sale.createdBy === "object"
           ? sale.createdBy?._id?.toString?.() || null
           : sale?.createdBy?.toString?.() || null;
 
       const hasAccess =
-        Boolean(distributorId) &&
-        (saleDistributorId === distributorId ||
-          (!saleDistributorId && saleCreatorId === distributorId));
+        Boolean(employeeId) &&
+        (saleEmployeeId === employeeId ||
+          (!saleEmployeeId && saleCreatorId === employeeId));
 
       if (!hasAccess) {
         const err = new Error("No tienes acceso a esta venta");
@@ -390,15 +390,15 @@ export class DefectiveProductRepository {
     const saleGroupId = sale.saleGroupId || sale._id.toString();
     const sales = sale.saleGroupId
       ? await Sale.find({ business: businessId, saleGroupId })
-          .populate("product", "name image clientPrice distributorPrice")
+          .populate("product", "name image clientPrice employeePrice")
           .populate("branch", "name")
-          .populate("distributor", "name email")
+          .populate("employee", "name email")
           .populate("createdBy", "name email")
           .lean()
       : [sale];
 
-    const seller = sale.distributor
-      ? { role: "employee", user: sale.distributor }
+    const seller = sale.employee
+      ? { role: "employee", user: sale.employee }
       : { role: "admin", user: sale.createdBy };
 
     const items = sales.map((item) => ({
@@ -409,7 +409,7 @@ export class DefectiveProductRepository {
       product: item.product,
       quantity: item.quantity,
       salePrice: item.salePrice,
-      distributor: item.distributor,
+      employee: item.employee,
       branch: item.branch,
       sourceLocation: item.sourceLocation,
       createdBy: item.createdBy,
@@ -500,8 +500,8 @@ export class DefectiveProductRepository {
 
       if (
         contextRole === "employee" &&
-        saleItem.distributor &&
-        saleItem.distributor.toString() !== userId.toString()
+        saleItem.employee &&
+        saleItem.employee.toString() !== userId.toString()
       ) {
         const err = new Error("No tienes acceso a esta venta");
         err.statusCode = 403;
@@ -567,7 +567,7 @@ export class DefectiveProductRepository {
         Number(data.replacementPrice) ||
         replacementProduct.clientPrice ||
         replacementProduct.suggestedPrice ||
-        replacementProduct.distributorPrice ||
+        replacementProduct.employeePrice ||
         saleItem.salePrice ||
         0;
 
@@ -594,7 +594,7 @@ export class DefectiveProductRepository {
         throw err;
       }
 
-      if (!["warehouse", "branch", "distributor"].includes(replacementSource)) {
+      if (!["warehouse", "branch", "employee"].includes(replacementSource)) {
         const err = new Error("Origen de reemplazo inválido");
         err.statusCode = 400;
         throw err;
@@ -602,19 +602,19 @@ export class DefectiveProductRepository {
 
       const resolvedReplacementSource = replacementSource;
 
-      if (resolvedReplacementSource === "distributor") {
+      if (resolvedReplacementSource === "employee") {
         if (contextRole !== "employee") {
           const err = new Error(
-            "Solo distribuidores pueden usar su inventario",
+            "Solo employees pueden usar su inventario",
           );
           err.statusCode = 403;
           throw err;
         }
 
-        const distStock = await DistributorStock.findOneAndUpdate(
+        const distStock = await EmployeeStock.findOneAndUpdate(
           {
             business: businessId,
-            distributor: userId,
+            employee: userId,
             product: replacementProduct._id,
             quantity: { $gte: quantity },
           },
@@ -623,7 +623,7 @@ export class DefectiveProductRepository {
         );
 
         if (!distStock) {
-          const err = new Error("Stock insuficiente del distribuidor");
+          const err = new Error("Stock insuficiente del employee");
           err.statusCode = 400;
           throw err;
         }
@@ -688,14 +688,14 @@ export class DefectiveProductRepository {
       const ticketId = await this.generateWarrantyTicket(businessId, {
         session,
       });
-      const isDistributor = contextRole === "employee";
+      const isEmployee = contextRole === "employee";
       const resolvedSaleGroupId =
         saleItem.saleGroupId || saleItem._id?.toString();
 
       const [report] = await DefectiveProduct.create(
         [
           {
-            distributor: isDistributor ? userId : saleItem.distributor || null,
+            employee: isEmployee ? userId : saleItem.employee || null,
             product: defectiveProductId,
             business: businessId,
             branch: saleItem.branch || null,
@@ -723,12 +723,12 @@ export class DefectiveProductRepository {
               resolvedReplacementSource === "branch"
                 ? data.replacementBranchId
                 : null,
-            replacementDistributor:
-              resolvedReplacementSource === "distributor" ? userId : null,
+            replacementEmployee:
+              resolvedReplacementSource === "employee" ? userId : null,
             stockOrigin: resolvedReplacementSource,
-            status: isDistributor ? "pendiente" : "confirmado",
-            confirmedAt: isDistributor ? null : Date.now(),
-            confirmedBy: isDistributor ? null : userId,
+            status: isEmployee ? "pendiente" : "confirmado",
+            confirmedAt: isEmployee ? null : Date.now(),
+            confirmedBy: isEmployee ? null : userId,
             adminNotes: data.adminNotes,
             origin: "customer_warranty",
             warrantyResolution: "pending",
@@ -755,22 +755,22 @@ export class DefectiveProductRepository {
           parentSaleId: saleItem._id,
           parentSaleGroupId: resolvedSaleGroupId,
           warrantyTicketId: ticketId,
-          distributor: saleItem.distributor || null,
+          employee: saleItem.employee || null,
           product: replacementProduct._id,
           quantity: 1,
           purchasePrice: 0,
-          distributorPrice: Number(saleItem.distributorPrice || 0),
+          employeePrice: Number(saleItem.employeePrice || 0),
           salePrice: priceDifference,
           sourceLocation: resolvedReplacementSource,
           createdBy: userId,
-          paymentStatus: isDistributor ? "pendiente" : "confirmado",
-          paymentConfirmedAt: isDistributor ? null : new Date(),
-          paymentConfirmedBy: isDistributor ? null : userId,
+          paymentStatus: isEmployee ? "pendiente" : "confirmado",
+          paymentConfirmedAt: isEmployee ? null : new Date(),
+          paymentConfirmedBy: isEmployee ? null : userId,
           actualPayment: priceDifference,
           discount: 0,
           shippingCost: 0,
           totalAdditionalCosts: 0,
-          distributorProfit: 0,
+          employeeProfit: 0,
           adminProfit: priceDifference,
           totalProfit: priceDifference,
           totalGroupProfit: priceDifference,
@@ -1026,8 +1026,8 @@ export class DefectiveProductRepository {
       query.status = filters.status;
     }
 
-    if (filters.distributor) {
-      query.distributor = filters.distributor;
+    if (filters.employee) {
+      query.employee = filters.employee;
     }
 
     if (filters.stockOrigin) {
@@ -1043,9 +1043,9 @@ export class DefectiveProductRepository {
         .populate("product", "name image purchasePrice averageCost")
         .populate("replacementProduct", "name image clientPrice")
         .populate("replacementBranch", "name")
-        .populate("replacementDistributor", "name email")
+        .populate("replacementEmployee", "name email")
         .populate("upsellSale", "saleId salePrice quantity")
-        .populate("distributor", "name email")
+        .populate("employee", "name email")
         .populate("confirmedBy", "name email")
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -1113,7 +1113,7 @@ export class DefectiveProductRepository {
     if (!correctLoss || !Number.isFinite(correctLoss)) return;
 
     const originLabel =
-      report.stockOrigin === "distributor" ? " (Distribuidor)" : "";
+      report.stockOrigin === "employee" ? " (Employee)" : "";
     const dateBase = report.confirmedAt || report.updatedAt || report.createdAt;
 
     const baseFilter = {
@@ -1205,12 +1205,12 @@ export class DefectiveProductRepository {
       _id: id,
       business: businessId,
     })
-      .populate("product", "name image purchasePrice distributorPrice")
+      .populate("product", "name image purchasePrice employeePrice")
       .populate("replacementProduct", "name image clientPrice")
       .populate("replacementBranch", "name")
-      .populate("replacementDistributor", "name email")
+      .populate("replacementEmployee", "name email")
       .populate("upsellSale", "saleId salePrice quantity")
-      .populate("distributor", "name email")
+      .populate("employee", "name email")
       .populate("confirmedBy", "name email")
       .lean();
 
@@ -1258,16 +1258,16 @@ export class DefectiveProductRepository {
     report.warrantyStatus = hasWarranty ? "approved" : "not_applicable";
     report.lossAmount = lossAmount;
 
-    if (report.stockOrigin === "distributor") {
-      const distributorStock = await DistributorStock.findOne({
-        distributor: report.distributor,
+    if (report.stockOrigin === "employee") {
+      const employeeStock = await EmployeeStock.findOne({
+        employee: report.employee,
         product: report.product,
         business: businessId,
       });
 
-      if (distributorStock) {
-        distributorStock.quantity -= report.quantity;
-        await distributorStock.save();
+      if (employeeStock) {
+        employeeStock.quantity -= report.quantity;
+        await employeeStock.save();
       }
 
       await Product.findByIdAndUpdate(report.product, {
@@ -1412,10 +1412,10 @@ export class DefectiveProductRepository {
     let newStock = { warehouseStock: 0, totalStock: 0 };
 
     if (quantity > 0) {
-      if (report.stockOrigin === "distributor" && report.distributor) {
-        await DistributorStock.findOneAndUpdate(
+      if (report.stockOrigin === "employee" && report.employee) {
+        await EmployeeStock.findOneAndUpdate(
           {
-            distributor: report.distributor,
+            employee: report.employee,
             product: report.product,
             business: businessId,
           },
@@ -1589,15 +1589,15 @@ export class DefectiveProductRepository {
     const branchId = isCustomerWarranty
       ? report.replacementBranch
       : report.branch;
-    const distributorId = isCustomerWarranty
-      ? report.replacementDistributor
-      : report.distributor;
+    const employeeId = isCustomerWarranty
+      ? report.replacementEmployee
+      : report.employee;
 
     if (shouldRestore && quantity > 0) {
-      if (stockOrigin === "distributor" && distributorId) {
-        await DistributorStock.findOneAndUpdate(
+      if (stockOrigin === "employee" && employeeId) {
+        await EmployeeStock.findOneAndUpdate(
           {
-            distributor: distributorId,
+            employee: employeeId,
             product: productId,
             business: businessId,
           },

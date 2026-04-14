@@ -26,7 +26,7 @@ const run = async () => {
 
     const recentSales = await Sale.find({})
       .select(
-        "saleId saleDate productName adminProfit distributorProfit totalProfit",
+        "saleId saleDate productName adminProfit employeeProfit totalProfit",
       )
       .sort({ saleDate: -1 })
       .limit(10)

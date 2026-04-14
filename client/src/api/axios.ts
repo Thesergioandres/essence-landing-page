@@ -164,9 +164,9 @@ api.interceptors.response.use(
 
     const code = (error.response?.data as { code?: string } | undefined)?.code;
 
-    if (error.response?.status === 403 && code === "owner_inactive") {
-      localStorage.setItem("accessHoldReason", "owner_inactive");
-      window.location.href = "/account-hold?reason=owner_inactive";
+    if (error.response?.status === 403 && (code === "owner_inactive" || code === "SUBSCRIPTION_INACTIVE")) {
+      localStorage.setItem("accessHoldReason", code);
+      window.location.href = `/account-hold?reason=${code}`;
       return Promise.reject(error);
     }
 

@@ -2,8 +2,8 @@ export const EMPLOYEE_ROLE = "employee";
 
 export const EMPLOYEE_ROLE_ALIASES = [
   EMPLOYEE_ROLE,
-  "distributor",
-  "distribuidor",
+  "employee",
+  "employee",
 ] as const;
 
 export const isEmployeeRole = (role?: string | null): boolean =>

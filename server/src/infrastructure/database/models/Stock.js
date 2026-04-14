@@ -12,7 +12,7 @@ const stockSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
-    distributor: {
+    employee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -35,7 +35,7 @@ const stockSchema = new mongoose.Schema(
 
 // Index compuesto para evitar duplicados
 stockSchema.index(
-  { business: 1, product: 1, distributor: 1 },
+  { business: 1, product: 1, employee: 1 },
   { unique: true }
 );
 

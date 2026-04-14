@@ -55,7 +55,7 @@ export default function BusinessGate({
     if (
       !loading &&
       !hydrating &&
-      user?.role === "super_admin" &&
+      (user?.role === "super_admin" || user?.role === "god") &&
       user?.status === "active" &&
       memberships.length === 0
     ) {

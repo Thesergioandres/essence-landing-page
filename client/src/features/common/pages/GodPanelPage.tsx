@@ -27,7 +27,7 @@ interface PlanCardConfig {
   currency: string;
   limits: {
     branches: number;
-    distributors: number;
+    employees: number;
   };
   features: {
     businessAssistant: boolean;
@@ -47,11 +47,11 @@ interface SubscriptionBusinessRow {
   plan: PlanKey;
   customLimits?: {
     branches?: number;
-    distributors?: number;
+    employees?: number;
   } | null;
   limits?: {
-    limits: { branches: number; distributors: number };
-    usage: { branches: number; distributors: number };
+    limits: { branches: number; employees: number };
+    usage: { branches: number; employees: number };
   } | null;
 }
 
@@ -139,7 +139,7 @@ export default function GodPanel() {
       monthlyPrice: 19,
       yearlyPrice: 190,
       currency: "USD",
-      limits: { branches: 1, distributors: 2 },
+      limits: { branches: 1, employees: 2 },
       features: { businessAssistant: false },
     },
     pro: {
@@ -149,7 +149,7 @@ export default function GodPanel() {
       monthlyPrice: 49,
       yearlyPrice: 490,
       currency: "USD",
-      limits: { branches: 3, distributors: 10 },
+      limits: { branches: 3, employees: 10 },
       features: { businessAssistant: false },
     },
     enterprise: {
@@ -159,7 +159,7 @@ export default function GodPanel() {
       monthlyPrice: 99,
       yearlyPrice: 990,
       currency: "USD",
-      limits: { branches: 10, distributors: 50 },
+      limits: { branches: 10, employees: 50 },
       features: { businessAssistant: true },
     },
   });
@@ -359,7 +359,7 @@ export default function GodPanel() {
     businessId: string,
     payload: {
       plan?: "starter" | "pro" | "enterprise";
-      customLimits?: { branches?: number; distributors?: number };
+      customLimits?: { branches?: number; employees?: number };
     }
   ) => {
     setIssueAction(`subscription-${businessId}`);
@@ -473,7 +473,7 @@ export default function GodPanel() {
           setUsers(prev => prev.filter(u => u._id !== userId));
           setFeedback(
             `✅ Eliminado: ${deleteStats.deletedBusinesses} empresas, ` +
-              `${deleteStats.deletedDistributorUsers} distribuidores, ` +
+              `${deleteStats.deletedEmployeeUsers} employees, ` +
               `${deleteStats.deletedProducts} productos, ` +
               `${deleteStats.deletedSales} ventas, ` +
               `${deleteStats.deletedCustomers} clientes, ` +
@@ -1042,12 +1042,12 @@ export default function GodPanel() {
 
                           <label className="block space-y-1">
                             <span className="text-gray-300">
-                              Distribuidores
+                              Employees
                             </span>
                             <input
                               type="number"
                               min={1}
-                              value={plan.limits.distributors}
+                              value={plan.limits.employees}
                               onChange={e =>
                                 setPlanConfigs(prev => ({
                                   ...prev,
@@ -1055,7 +1055,7 @@ export default function GodPanel() {
                                     ...prev[planKey],
                                     limits: {
                                       ...prev[planKey].limits,
-                                      distributors: Math.max(
+                                      employees: Math.max(
                                         1,
                                         Number(e.target.value) || 1
                                       ),
@@ -1242,8 +1242,8 @@ export default function GodPanel() {
                           <div className="text-xs text-gray-300">
                             Uso sedes: {row.limits?.usage?.branches || 0}/
                             {row.limits?.limits?.branches || 0} · Dist:{" "}
-                            {row.limits?.usage?.distributors || 0}/
-                            {row.limits?.limits?.distributors || 0}
+                            {row.limits?.usage?.employees || 0}/
+                            {row.limits?.limits?.employees || 0}
                           </div>
                         </div>
 
@@ -1296,7 +1296,7 @@ export default function GodPanel() {
                               type="number"
                               min={1}
                               placeholder="Override dist"
-                              value={row.customLimits?.distributors ?? ""}
+                              value={row.customLimits?.employees ?? ""}
                               onChange={e =>
                                 setSubscriptionRows(prev =>
                                   prev.map(item =>
@@ -1305,7 +1305,7 @@ export default function GodPanel() {
                                           ...item,
                                           customLimits: {
                                             ...(item.customLimits || {}),
-                                            distributors:
+                                            employees:
                                               Number(e.target.value) ||
                                               undefined,
                                           },
@@ -1576,7 +1576,7 @@ export default function GodPanel() {
                   <li className="flex items-start gap-2">
                     <span className="text-red-400">•</span>
                     <span>
-                      Todos los distribuidores vinculados a esas empresas
+                      Todos los employees vinculados a esas empresas
                     </span>
                   </li>
                   <li className="flex items-start gap-2">

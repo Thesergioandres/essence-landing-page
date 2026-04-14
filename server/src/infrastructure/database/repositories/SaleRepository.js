@@ -43,7 +43,7 @@ export class SaleRepository {
    * @returns {Promise<Object|null>}
    */
   async findById(id) {
-    return Sale.findById(id).populate("product").populate("distributor").lean();
+    return Sale.findById(id).populate("product").populate("employee").lean();
   }
 
   /**
@@ -58,7 +58,7 @@ export class SaleRepository {
   /**
    * List sales with pagination and filters
    * @param {string} businessId
-   * @param {Object} options - { page, limit, branchId, distributorId, startDate, endDate, statsOnly }
+   * @param {Object} options - { page, limit, branchId, employeeId, startDate, endDate, statsOnly }
    * @returns {Promise<{ sales: Array, stats: Object, total: number, page: number, totalPages: number }>}
    */
   async list(businessId, options = {}) {
@@ -66,7 +66,7 @@ export class SaleRepository {
       page = 1,
       limit = 20,
       branchId,
-      distributorId,
+      employeeId,
       productId,
       startDate,
       endDate,
@@ -80,8 +80,8 @@ export class SaleRepository {
       filter.branch = branchId;
     }
 
-    if (distributorId) {
-      filter.distributor = distributorId;
+    if (employeeId) {
+      filter.employee = employeeId;
     }
 
     if (productId) {
@@ -103,11 +103,11 @@ export class SaleRepository {
       );
     }
     if (
-      matchFilter.distributor &&
-      typeof matchFilter.distributor === "string"
+      matchFilter.employee &&
+      typeof matchFilter.employee === "string"
     ) {
-      matchFilter.distributor = Sale.base.Types.ObjectId.createFromHexString(
-        matchFilter.distributor,
+      matchFilter.employee = Sale.base.Types.ObjectId.createFromHexString(
+        matchFilter.employee,
       );
     }
     if (matchFilter.branch && typeof matchFilter.branch === "string") {
@@ -125,7 +125,7 @@ export class SaleRepository {
           totalRevenue: {
             $sum: { $multiply: ["$salePrice", "$quantity"] },
           },
-          totalDistributorProfit: { $sum: "$distributorProfit" },
+          totalEmployeeProfit: { $sum: "$employeeProfit" },
           totalAdminProfit: { $sum: "$adminProfit" },
           totalProfit: { $sum: "$totalProfit" },
         },
@@ -135,7 +135,7 @@ export class SaleRepository {
     const stats = statsAggregation[0] || {
       totalSales: 0,
       totalRevenue: 0,
-      totalDistributorProfit: 0,
+      totalEmployeeProfit: 0,
       totalAdminProfit: 0,
       totalProfit: 0,
     };
@@ -155,10 +155,10 @@ export class SaleRepository {
       Sale.find(filter)
         .populate(
           "product",
-          "name sku clientPrice suggestedPrice distributorPrice",
+          "name sku clientPrice suggestedPrice employeePrice",
         )
         .populate("branch", "name")
-        .populate("distributor", "name email")
+        .populate("employee", "name email")
         .populate("paymentMethod", "name code")
         .populate(
           "creditId",
@@ -176,24 +176,24 @@ export class SaleRepository {
       credit: sale.creditId || sale.credit,
     }));
 
-    const distributorIds = [
+    const employeeIds = [
       ...new Set(
         normalizedSales
           .map((sale) => {
-            const distributor = sale?.distributor;
-            if (!distributor) return null;
-            if (typeof distributor === "object") {
-              return distributor?._id ? String(distributor._id) : null;
+            const employee = sale?.employee;
+            if (!employee) return null;
+            if (typeof employee === "object") {
+              return employee?._id ? String(employee._id) : null;
             }
-            return String(distributor);
+            return String(employee);
           })
           .filter(Boolean),
       ),
     ];
 
-    if (distributorIds.length > 0) {
+    if (employeeIds.length > 0) {
       const fixedCommissionUsers = await User.find({
-        _id: { $in: distributorIds },
+        _id: { $in: employeeIds },
         $or: [{ isCommissionFixed: true }, { fixedCommissionOnly: true }],
       })
         .select(
@@ -211,20 +211,20 @@ export class SaleRepository {
       );
 
       for (const sale of normalizedSales) {
-        const distributor = sale?.distributor;
-        const distributorId =
-          typeof distributor === "object"
-            ? String(distributor?._id || "")
-            : String(distributor || "");
+        const employee = sale?.employee;
+        const employeeId =
+          typeof employee === "object"
+            ? String(employee?._id || "")
+            : String(employee || "");
 
-        const fixedRate = fixedRateByUser.get(distributorId);
+        const fixedRate = fixedRateByUser.get(employeeId);
         if (fixedRate === null || fixedRate === undefined) continue;
 
         const revenue = resolveSaleRevenue(sale);
-        const distributorProfit = (revenue * fixedRate) / 100;
+        const employeeProfit = (revenue * fixedRate) / 100;
 
-        sale.distributorProfitPercentage = fixedRate;
-        sale.distributorProfit = distributorProfit;
+        sale.employeeProfitPercentage = fixedRate;
+        sale.employeeProfit = employeeProfit;
         sale.commissionBonus = 0;
         sale.commissionBonusAmount = 0;
         sale.isCommissionFixed = true;

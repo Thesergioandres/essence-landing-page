@@ -2,18 +2,18 @@ import type { SalesReadRepository } from "../../domain/sales/SalesReadRepository
 import type {
   AllSalesFilters,
   AllSalesResponse,
-  DistributorSalesFilters,
-  DistributorSalesResponse,
+  EmployeeSalesFilters,
+  EmployeeSalesResponse,
 } from "../../domain/sales/sales.types";
 
 export class SalesReadUseCases {
   constructor(private readonly repository: SalesReadRepository) {}
 
-  async getDistributorSales<TSale = unknown, TStats = unknown>(params: {
-    distributorId?: string;
-    filters?: DistributorSalesFilters;
-  }): Promise<DistributorSalesResponse<TSale, TStats>> {
-    return this.repository.getDistributorSales<TSale, TStats>(params);
+  async getEmployeeSales<TSale = unknown, TStats = unknown>(params: {
+    employeeId?: string;
+    filters?: EmployeeSalesFilters;
+  }): Promise<EmployeeSalesResponse<TSale, TStats>> {
+    return this.repository.getEmployeeSales<TSale, TStats>(params);
   }
 
   async getAllSales<TSale = unknown, TStats = unknown>(

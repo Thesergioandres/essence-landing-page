@@ -33,12 +33,12 @@ const productSchema = new mongoose.Schema(
         return this.purchasePrice * 1.3; // 30% automático
       },
     },
-    distributorPrice: {
+    employeePrice: {
       type: Number,
-      required: [true, "El precio para distribuidor es obligatorio"],
-      min: [0, "El precio para distribuidor no puede ser negativo"],
+      required: [true, "El precio para employee es obligatorio"],
+      min: [0, "El precio para employee no puede ser negativo"],
     },
-    distributorPriceManual: {
+    employeePriceManual: {
       type: Boolean,
       default: false,
     },
@@ -46,7 +46,7 @@ const productSchema = new mongoose.Schema(
       type: Number,
       min: [0, "El precio para cliente no puede ser negativo"],
     },
-    distributorCommission: {
+    employeeCommission: {
       type: Number,
       default: 0,
       min: [0, "La comisión no puede ser negativa"],

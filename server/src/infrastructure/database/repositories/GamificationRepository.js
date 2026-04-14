@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
-import DistributorStats from "../models/DistributorStats.js";
+import EmployeeStats from "../models/EmployeeStats.js";
 import GamificationConfig from "../models/GamificationConfig.js";
 import Membership from "../models/Membership.js";
 import PeriodWinner from "../models/PeriodWinner.js";
 import Sale from "../models/Sale.js";
-import { getDistributorCommissionInfo } from "../../services/distributorPricing.service.js";
+import { getEmployeeCommissionInfo } from "../../services/employeePricing.service.js";
 import {
   applySaleGamification,
   computePointsForSale,
@@ -12,7 +12,7 @@ import {
 } from "../../services/gamification.service.js";
 
 export class GamificationRepository {
-  async getBusinessDistributorIds(businessId) {
+  async getBusinessEmployeeIds(businessId) {
     const memberships = await Membership.find({
       business: businessId,
       status: "active",
@@ -21,21 +21,21 @@ export class GamificationRepository {
     return memberships.map((m) => m.user);
   }
 
-  async getAdjustedCommission(distributorId, businessId) {
-    const info = await getDistributorCommissionInfo(distributorId, businessId);
+  async getAdjustedCommission(employeeId, businessId) {
+    const info = await getEmployeeCommissionInfo(employeeId, businessId);
     return {
       position: info.position,
       bonusCommission: info.bonusCommission,
       periodStart: info.periodStart,
       periodEnd: info.periodEnd,
-      totalDistributors: info.totalDistributors,
+      totalEmployees: info.totalEmployees,
     };
   }
 
   async checkAndEvaluatePeriod(businessId) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
-    const allowedDistributors =
-      await this.getBusinessDistributorIds(businessId);
+    const allowedEmployees =
+      await this.getBusinessEmployeeIds(businessId);
 
     const config = await GamificationConfig.findOne();
 
@@ -75,22 +75,22 @@ export class GamificationRepository {
       };
     }
 
-    const topDistributors = await Sale.aggregate([
+    const topEmployees = await Sale.aggregate([
       {
         $match: {
           saleDate: { $gte: startDate, $lte: endDate },
           paymentStatus: "confirmado",
           business: businessObjectId,
-          // CRITICAL: Only include sales WITH a distributor (exclude admin sales)
-          distributor: { $ne: null },
-          ...(allowedDistributors.length
-            ? { distributor: { $in: allowedDistributors } }
+          // CRITICAL: Only include sales WITH a employee (exclude admin sales)
+          employee: { $ne: null },
+          ...(allowedEmployees.length
+            ? { employee: { $in: allowedEmployees } }
             : {}),
         },
       },
       {
         $group: {
-          _id: "$distributor",
+          _id: "$employee",
           totalSales: { $sum: 1 },
           totalUnits: { $sum: "$quantity" },
           totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
@@ -102,15 +102,15 @@ export class GamificationRepository {
           from: "users",
           localField: "_id",
           foreignField: "_id",
-          as: "distributor",
+          as: "employee",
         },
       },
-      { $unwind: "$distributor" },
+      { $unwind: "$employee" },
       { $sort: { totalRevenue: -1 } },
       { $limit: 3 },
     ]);
 
-    if (topDistributors.length === 0) {
+    if (topEmployees.length === 0) {
       config.currentPeriodStart = now;
       await config.save();
       return {
@@ -119,7 +119,7 @@ export class GamificationRepository {
       };
     }
 
-    const winner = topDistributors[0];
+    const winner = topEmployees[0];
     const bonuses = [
       config.topPerformerBonus || 50000,
       config.secondPlaceBonus || 0,
@@ -132,15 +132,15 @@ export class GamificationRepository {
       startDate,
       endDate,
       winner: winner._id,
-      winnerName: winner.distributor.name,
-      winnerEmail: winner.distributor.email,
+      winnerName: winner.employee.name,
+      winnerEmail: winner.employee.email,
       totalSales: winner.totalSales,
       totalRevenue: winner.totalRevenue,
       totalProfit: winner.totalProfit,
       salesCount: winner.totalSales,
       bonusAmount: bonuses[0],
-      topPerformers: topDistributors.map((dist, index) => ({
-        distributor: dist._id,
+      topPerformers: topEmployees.map((dist, index) => ({
+        employee: dist._id,
         position: index + 1,
         totalRevenue: dist.totalRevenue,
         salesCount: dist.totalSales,
@@ -149,12 +149,12 @@ export class GamificationRepository {
       notes: "Evaluación automática del sistema",
     });
 
-    for (let i = 0; i < topDistributors.length; i++) {
-      const dist = topDistributors[i];
-      let stats = await DistributorStats.findOne({ distributor: dist._id });
+    for (let i = 0; i < topEmployees.length; i++) {
+      const dist = topEmployees[i];
+      let stats = await EmployeeStats.findOne({ employee: dist._id });
 
       if (!stats) {
-        stats = await DistributorStats.create({ distributor: dist._id });
+        stats = await EmployeeStats.create({ employee: dist._id });
       }
 
       stats.totalBonusEarned += bonuses[i] || 0;
@@ -183,7 +183,7 @@ export class GamificationRepository {
     config.lastEvaluationDate = now;
     await config.save();
 
-    await this.applyResetPolicy(businessId, config, allowedDistributors);
+    await this.applyResetPolicy(businessId, config, allowedEmployees);
 
     return {
       message: "Período evaluado automáticamente",
@@ -192,7 +192,7 @@ export class GamificationRepository {
     };
   }
 
-  async applyResetPolicy(businessId, config, allowedDistributors) {
+  async applyResetPolicy(businessId, config, allowedEmployees) {
     const policyType = config?.resetPolicy?.type || "reset";
     const carryPercent = Number(config?.resetPolicy?.carryPercent || 0);
     const levels = Array.isArray(config?.levels) ? config.levels : [];
@@ -201,11 +201,11 @@ export class GamificationRepository {
     );
     const lowestLevel = sortedLevels[0] || { id: 1, name: "Novato" };
 
-    const filter = allowedDistributors?.length
-      ? { distributor: { $in: allowedDistributors } }
+    const filter = allowedEmployees?.length
+      ? { employee: { $in: allowedEmployees } }
       : {};
 
-    const statsList = await DistributorStats.find(filter);
+    const statsList = await EmployeeStats.find(filter);
 
     for (const stats of statsList) {
       if (policyType === "carry") {
@@ -369,8 +369,8 @@ export class GamificationRepository {
     let startDate = params?.startDate;
     let endDate = params?.endDate;
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
-    const allowedDistributors =
-      await this.getBusinessDistributorIds(businessId);
+    const allowedEmployees =
+      await this.getBusinessEmployeeIds(businessId);
     const config = await GamificationConfig.findOne();
 
     const now = new Date();
@@ -415,23 +415,23 @@ export class GamificationRepository {
       endDate = now;
     }
 
-    // Build the distributor filter - only filter by allowedDistributors if it has entries
-    // Otherwise, just ensure distributor is not null
-    const normalizedAllowedDistributors = allowedDistributors.flatMap((id) => {
+    // Build the employee filter - only filter by allowedEmployees if it has entries
+    // Otherwise, just ensure employee is not null
+    const normalizedAllowedEmployees = allowedEmployees.flatMap((id) => {
       if (id instanceof mongoose.Types.ObjectId) return [id, id.toString()];
       if (typeof id === "string" && mongoose.isValidObjectId(id)) {
         return [new mongoose.Types.ObjectId(id), id];
       }
       return [id];
     });
-    const distributorFilter =
-      normalizedAllowedDistributors.length > 0
+    const employeeFilter =
+      normalizedAllowedEmployees.length > 0
         ? {
-            distributor: {
-              $in: normalizedAllowedDistributors,
+            employee: {
+              $in: normalizedAllowedEmployees,
             },
           }
-        : { distributor: { $ne: null } };
+        : { employee: { $ne: null } };
 
     let ranking = await Sale.aggregate([
       {
@@ -440,12 +440,12 @@ export class GamificationRepository {
           // 💰 CASH FLOW: Solo ventas confirmadas para ranking
           paymentStatus: "confirmado",
           business: businessObjectId,
-          ...distributorFilter,
+          ...employeeFilter,
         },
       },
       {
         $group: {
-          _id: "$distributor",
+          _id: "$employee",
           totalSales: { $sum: 1 },
           totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
           totalProfit: { $sum: "$totalProfit" },
@@ -456,10 +456,10 @@ export class GamificationRepository {
           from: "users",
           localField: "_id",
           foreignField: "_id",
-          as: "distributor",
+          as: "employee",
         },
       },
-      { $unwind: "$distributor" },
+      { $unwind: "$employee" },
       { $sort: { totalRevenue: -1 } },
     ]);
 
@@ -473,12 +473,12 @@ export class GamificationRepository {
             saleDate: { $gte: fallbackStart, $lte: now },
             paymentStatus: "confirmado",
             business: businessObjectId,
-            ...distributorFilter,
+            ...employeeFilter,
           },
         },
         {
           $group: {
-            _id: "$distributor",
+            _id: "$employee",
             totalSales: { $sum: 1 },
             totalUnits: { $sum: "$quantity" },
             totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
@@ -490,10 +490,10 @@ export class GamificationRepository {
             from: "users",
             localField: "_id",
             foreignField: "_id",
-            as: "distributor",
+            as: "employee",
           },
         },
-        { $unwind: "$distributor" },
+        { $unwind: "$employee" },
         { $sort: { totalRevenue: -1 } },
       ]);
       if (ranking.length > 0) {
@@ -511,12 +511,12 @@ export class GamificationRepository {
             saleDate: { $gte: fallbackStart, $lte: now },
             paymentStatus: "confirmado",
             business: businessObjectId,
-            ...distributorFilter,
+            ...employeeFilter,
           },
         },
         {
           $group: {
-            _id: "$distributor",
+            _id: "$employee",
             totalSales: { $sum: 1 },
             totalUnits: { $sum: "$quantity" },
             totalRevenue: { $sum: { $multiply: ["$salePrice", "$quantity"] } },
@@ -528,10 +528,10 @@ export class GamificationRepository {
             from: "users",
             localField: "_id",
             foreignField: "_id",
-            as: "distributor",
+            as: "employee",
           },
         },
-        { $unwind: "$distributor" },
+        { $unwind: "$employee" },
         { $sort: { totalRevenue: -1 } },
       ]);
       if (ranking.length > 0) {
@@ -540,26 +540,26 @@ export class GamificationRepository {
       }
     }
 
-    const distributorIds = ranking
-      .map((r) => r.distributor?._id || r._id)
+    const employeeIds = ranking
+      .map((r) => r.employee?._id || r._id)
       .filter(Boolean);
-    const statsList = distributorIds.length
-      ? await DistributorStats.find({ distributor: { $in: distributorIds } })
-          .select("distributor totalPoints currentLevel periodWins")
+    const statsList = employeeIds.length
+      ? await EmployeeStats.find({ employee: { $in: employeeIds } })
+          .select("employee totalPoints currentLevel periodWins")
           .lean()
       : [];
     const statsMap = new Map(
-      statsList.map((stat) => [stat.distributor.toString(), stat]),
+      statsList.map((stat) => [stat.employee.toString(), stat]),
     );
 
     return {
       rankings: ranking.map((r, index) => {
-        const distributorId = (r.distributor?._id || r._id)?.toString();
-        const stats = distributorId ? statsMap.get(distributorId) : null;
+        const employeeId = (r.employee?._id || r._id)?.toString();
+        const stats = employeeId ? statsMap.get(employeeId) : null;
         return {
-          distributorId: r.distributor?._id || r._id,
-          distributorName: r.distributor?.name || "Distribuidor",
-          distributorEmail: r.distributor?.email || "",
+          employeeId: r.employee?._id || r._id,
+          employeeName: r.employee?.name || "Employee",
+          employeeEmail: r.employee?.email || "",
           totalSales: r.totalSales || 0,
           totalUnits: r.totalUnits || 0,
           totalRevenue: r.totalRevenue || 0,
@@ -592,15 +592,15 @@ export class GamificationRepository {
     };
   }
 
-  async getDistributorStats(distributorId) {
-    let stats = await DistributorStats.findOne({ distributor: distributorId });
+  async getEmployeeStats(employeeId) {
+    let stats = await EmployeeStats.findOne({ employee: employeeId });
 
     if (!stats) {
-      stats = await DistributorStats.create({ distributor: distributorId });
+      stats = await EmployeeStats.create({ employee: employeeId });
     }
 
     const pendingSales = await Sale.find({
-      distributor: distributorId,
+      employee: employeeId,
       paymentStatus: "confirmado",
       gamificationPointsApplied: { $ne: true },
     })
@@ -616,23 +616,23 @@ export class GamificationRepository {
         });
       }
 
-      stats = await DistributorStats.findOne({ distributor: distributorId });
+      stats = await EmployeeStats.findOne({ employee: employeeId });
     }
 
     return stats;
   }
 
-  async recalculatePoints(businessId, distributorId = null) {
+  async recalculatePoints(businessId, employeeId = null) {
     const config = await GamificationConfig.findOne().lean();
     if (!config) {
-      return { updatedDistributors: 0, updatedSales: 0 };
+      return { updatedEmployees: 0, updatedSales: 0 };
     }
 
-    const allowedDistributors = distributorId
-      ? [distributorId]
-      : await this.getBusinessDistributorIds(businessId);
+    const allowedEmployees = employeeId
+      ? [employeeId]
+      : await this.getBusinessEmployeeIds(businessId);
 
-    const normalizedDistributors = allowedDistributors.map((id) =>
+    const normalizedEmployees = allowedEmployees.map((id) =>
       id instanceof mongoose.Types.ObjectId
         ? id
         : new mongoose.Types.ObjectId(id),
@@ -641,7 +641,7 @@ export class GamificationRepository {
     const salesFilter = {
       business: new mongoose.Types.ObjectId(businessId),
       paymentStatus: "confirmado",
-      distributor: { $in: normalizedDistributors },
+      employee: { $in: normalizedEmployees },
     };
 
     const sales = await Sale.find(salesFilter).populate("product").lean();
@@ -649,9 +649,9 @@ export class GamificationRepository {
     const totals = new Map();
     for (const sale of sales) {
       const points = computePointsForSale(config, sale, sale.product);
-      const distributorKey = sale.distributor.toString();
-      const current = totals.get(distributorKey) || 0;
-      totals.set(distributorKey, current + points);
+      const employeeKey = sale.employee.toString();
+      const current = totals.get(employeeKey) || 0;
+      totals.set(employeeKey, current + points);
 
       await Sale.updateOne(
         { _id: sale._id },
@@ -664,14 +664,14 @@ export class GamificationRepository {
       );
     }
 
-    let updatedDistributors = 0;
-    for (const distributor of normalizedDistributors) {
-      const distributorKey = distributor.toString();
-      const totalPoints = totals.get(distributorKey) || 0;
-      let stats = await DistributorStats.findOne({ distributor });
+    let updatedEmployees = 0;
+    for (const employee of normalizedEmployees) {
+      const employeeKey = employee.toString();
+      const totalPoints = totals.get(employeeKey) || 0;
+      let stats = await EmployeeStats.findOne({ employee });
 
       if (!stats) {
-        stats = await DistributorStats.create({ distributor });
+        stats = await EmployeeStats.create({ employee });
       }
 
       stats.totalPoints = totalPoints;
@@ -682,10 +682,10 @@ export class GamificationRepository {
       stats.currentLevelId = level?.id || 1;
 
       await stats.save();
-      updatedDistributors += 1;
+      updatedEmployees += 1;
     }
 
-    return { updatedDistributors, updatedSales: sales.length };
+    return { updatedEmployees, updatedSales: sales.length };
   }
 
   async getWinners(businessId, { limit = 20, page = 1 } = {}) {

@@ -20,15 +20,15 @@ async function addIndexes() {
     console.log("✅ Índices de productos creados");
 
     // Índices para ventas
-    await db.collection("sales").createIndex({ distributor: 1, saleDate: -1 });
+    await db.collection("sales").createIndex({ employee: 1, saleDate: -1 });
     await db
       .collection("sales")
-      .createIndex({ business: 1, distributor: 1, saleDate: -1 });
+      .createIndex({ business: 1, employee: 1, saleDate: -1 });
     await db.collection("sales").createIndex({ paymentStatus: 1 });
     await db.collection("sales").createIndex({ saleDate: -1 });
     await db
       .collection("sales")
-      .createIndex({ distributor: 1, paymentStatus: 1, saleDate: -1 });
+      .createIndex({ employee: 1, paymentStatus: 1, saleDate: -1 });
     console.log("✅ Índices de ventas creados");
 
     // Índices para usuarios
@@ -38,15 +38,15 @@ async function addIndexes() {
 
     // Índices para stock
     await db
-      .collection("distributorstocks")
-      .createIndex({ distributor: 1, product: 1 }, { unique: true });
-    await db.collection("distributorstocks").createIndex({ distributor: 1 });
+      .collection("employeestocks")
+      .createIndex({ employee: 1, product: 1 }, { unique: true });
+    await db.collection("employeestocks").createIndex({ employee: 1 });
     console.log("✅ Índices de stock creados");
 
     // Índices para gamificación
     await db
-      .collection("distributorstats")
-      .createIndex({ distributor: 1 }, { unique: true });
+      .collection("employeestats")
+      .createIndex({ employee: 1 }, { unique: true });
     await db.collection("periodwinners").createIndex({ periodStart: -1 });
     console.log("✅ Índices de gamificación creados");
 

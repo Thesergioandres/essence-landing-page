@@ -758,7 +758,7 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
                               P. Cliente Final
                             </th>
                             <th className="px-3 py-2.5 text-right text-[10px] font-medium uppercase text-gray-400 sm:px-4 sm:py-3 sm:text-xs">
-                              P. Distribuidor
+                              P. Employee
                             </th>
                           </>
                         ) : (
@@ -784,8 +784,8 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
                             : null;
                         const purchasePrice = product?.purchasePrice || 0;
                         const clientPrice = product?.clientPrice || 0;
-                        const distributorPrice =
-                          product?.distributorPrice || clientPrice;
+                        const employeePrice =
+                          product?.employeePrice || clientPrice;
                         const quantity = item.quantity || 0;
                         const profitPerUnit = clientPrice - purchasePrice;
                         const totalProfit = profitPerUnit * quantity;
@@ -827,7 +827,7 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
                                   ${clientPrice.toLocaleString()}
                                 </td>
                                 <td className="px-3 py-2.5 text-right text-xs text-blue-300 sm:px-4 sm:py-3 sm:text-sm">
-                                  ${distributorPrice.toLocaleString()}
+                                  ${employeePrice.toLocaleString()}
                                 </td>
                               </>
                             ) : (

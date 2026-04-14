@@ -14,7 +14,7 @@ export interface BusinessFeatures {
   reports?: boolean;
   transfers?: boolean;
   promotions?: boolean;
-  distributors?: boolean;
+  employees?: boolean;
   rankings?: boolean;
   branches?: boolean;
   credits?: boolean;
@@ -28,7 +28,7 @@ export interface BusinessConfig {
 
 export interface PlanLimits {
   branches: number;
-  distributors: number;
+  employees: number;
 }
 
 export interface BusinessPlanSnapshot {
@@ -125,8 +125,8 @@ export interface Membership {
   permissions?: Record<string, Record<string, boolean>>;
 }
 
-// ==================== DISTRIBUTOR TYPES ====================
-export interface Distributor {
+// ==================== EMPLOYEE TYPES ====================
+export interface Employee {
   _id: string;
   name: string;
   email: string;
@@ -201,7 +201,7 @@ export interface BusinessAssistantRecommendationItem {
   stock: {
     warehouseStock: number;
     branchesStock?: number;
-    distributorsStock?: number;
+    employeesStock?: number;
     unassignedStock?: number;
     totalStock: number;
     lowStockAlert: number;

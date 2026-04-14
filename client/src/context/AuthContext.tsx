@@ -27,7 +27,7 @@ const shouldClearSession = (error: unknown) => {
     ?.response?.data?.code;
 
   if (status === 401) return true;
-  if (status === 403 && code !== "owner_inactive" && code !== "pending") {
+  if (status === 403 && code !== "owner_inactive" && code !== "SUBSCRIPTION_INACTIVE" && code !== "pending") {
     return true;
   }
 

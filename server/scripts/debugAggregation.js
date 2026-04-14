@@ -14,12 +14,12 @@ async function debugAggregation() {
     await mongoose.connect(mongoUri);
     console.log("✅ Connected to MongoDB");
 
-    const distributorId = "6980295759d41f4bb69d13d1";
+    const employeeId = "6980295759d41f4bb69d13d1";
     const businessId = "698021575c78b477eaa6d07d";
 
     const filter = {
       business: businessId,
-      distributor: distributorId,
+      employee: employeeId,
     };
 
     console.log("\n🔍 Filter:", JSON.stringify(filter, null, 2));
@@ -35,10 +35,10 @@ async function debugAggregation() {
       console.log(`   ID: ${sale._id}`);
       console.log(`   saleId: ${sale.saleId}`);
       console.log(`   business: ${sale.business}`);
-      console.log(`   distributor: ${sale.distributor}`);
+      console.log(`   employee: ${sale.employee}`);
       console.log(`   quantity: ${sale.quantity}`);
       console.log(`   salePrice: ${sale.salePrice}`);
-      console.log(`   distributorProfit: ${sale.distributorProfit}`);
+      console.log(`   employeeProfit: ${sale.employeeProfit}`);
       console.log(`   totalProfit: ${sale.totalProfit}`);
     }
 
@@ -52,7 +52,7 @@ async function debugAggregation() {
           totalRevenue: {
             $sum: { $multiply: ["$salePrice", "$quantity"] },
           },
-          totalDistributorProfit: { $sum: "$distributorProfit" },
+          totalEmployeeProfit: { $sum: "$employeeProfit" },
           totalAdminProfit: { $sum: "$adminProfit" },
           totalProfit: { $sum: "$totalProfit" },
         },

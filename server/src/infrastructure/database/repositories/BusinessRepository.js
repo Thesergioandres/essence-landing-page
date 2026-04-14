@@ -87,7 +87,7 @@ export class BusinessRepository {
     const landingTemplate = this.validateLandingTemplate(data.landingTemplate);
 
     const creatorUser = await User.findById(creatorId)
-      .select("selectedPlan")
+      .select("selectedPlan role")
       .lean();
     const selectedPlan = creatorUser?.selectedPlan;
     const effectivePlan =
@@ -116,7 +116,7 @@ export class BusinessRepository {
     await Membership.create({
       user: creatorId,
       business: business._id,
-      role: "admin",
+      role: creatorUser?.role || "super_admin",
       status: "active",
     });
 

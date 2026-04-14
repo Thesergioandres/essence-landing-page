@@ -6,7 +6,7 @@ const repository = new AdvancedAnalyticsPersistenceUseCase();
 const resolveAnalyticsScope = (req) => {
   const privacy = resolveFinancialPrivacyContext(req);
   return {
-    scopeDistributorId: privacy.scopeDistributorId,
+    scopeEmployeeId: privacy.scopeEmployeeId,
     hideFinancialData: privacy.hideFinancialData,
   };
 };
@@ -149,7 +149,7 @@ export class AdvancedAnalyticsController {
     }
   }
 
-  async getDistributorPerformance(req, res) {
+  async getEmployeePerformance(req, res) {
     try {
       const businessId = req.businessId;
       if (!businessId) {
@@ -160,7 +160,7 @@ export class AdvancedAnalyticsController {
 
       const { startDate, endDate } = req.query;
       const scope = resolveAnalyticsScope(req);
-      const performance = await repository.getDistributorPerformance(
+      const performance = await repository.getEmployeePerformance(
         businessId,
         startDate,
         endDate,
@@ -280,7 +280,7 @@ export class AdvancedAnalyticsController {
     }
   }
 
-  async getDistributorRankings(req, res) {
+  async getEmployeeRankings(req, res) {
     try {
       const businessId = req.businessId;
       if (!businessId) {
@@ -291,7 +291,7 @@ export class AdvancedAnalyticsController {
 
       const { startDate, endDate } = req.query;
       const scope = resolveAnalyticsScope(req);
-      const data = await repository.getDistributorRankings(
+      const data = await repository.getEmployeeRankings(
         businessId,
         startDate,
         endDate,

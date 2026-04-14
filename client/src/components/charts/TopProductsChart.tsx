@@ -44,7 +44,7 @@ interface TopProductsChartProps {
   data?: ProductDatum[];
   metricMode?: MetricMode;
   hideFinancialData?: boolean;
-  showOwnDistributorEarnings?: boolean;
+  showOwnEmployeeEarnings?: boolean;
   showAdminFinancials?: boolean;
   title?: string;
 }
@@ -79,7 +79,7 @@ export const TopProductsChart: React.FC<TopProductsChartProps> = ({
   data,
   metricMode = "quantity",
   hideFinancialData = false,
-  showOwnDistributorEarnings,
+  showOwnEmployeeEarnings,
   showAdminFinancials,
   title,
 }) => {
@@ -161,7 +161,7 @@ export const TopProductsChart: React.FC<TopProductsChartProps> = ({
   }, [endDate, limit, metricMode, reloadKey, shouldFetch, startDate]);
 
   const sourceData = data ?? fetchedData;
-  const canShowOwnEarnings = showOwnDistributorEarnings ?? !hideFinancialData;
+  const canShowOwnEarnings = showOwnEmployeeEarnings ?? !hideFinancialData;
   const canShowAdminFinancials =
     (showAdminFinancials ?? !hideFinancialData) && !hideFinancialData;
 

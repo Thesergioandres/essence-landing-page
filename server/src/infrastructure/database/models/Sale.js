@@ -59,12 +59,12 @@ const saleSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
-    distributor: {
+    employee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: false,
     },
-    distributorNameSnapshot: {
+    employeeNameSnapshot: {
       type: String,
       trim: true,
       default: null,
@@ -100,7 +100,7 @@ const saleSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
-    distributorPrice: {
+    employeePrice: {
       type: Number,
       required: true,
     },
@@ -119,7 +119,7 @@ const saleSchema = new mongoose.Schema(
       index: true,
     },
     // Ganancias calculadas
-    distributorProfit: {
+    employeeProfit: {
       type: Number,
       default: 0,
     },
@@ -140,8 +140,8 @@ const saleSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    // Porcentaje total de ganancia del distribuidor (20%, 21%, 23%, o 25%)
-    distributorProfitPercentage: {
+    // Porcentaje total de ganancia del employee (20%, 21%, 23%, o 25%)
+    employeeProfitPercentage: {
       type: Number,
       default: 20,
     },
@@ -172,11 +172,11 @@ const saleSchema = new mongoose.Schema(
     },
     sourceLocation: {
       type: String,
-      enum: ["warehouse", "branch", "distributor"],
+      enum: ["warehouse", "branch", "employee"],
       default: null,
       index: true,
     },
-    // Usuario que registró la venta (para ventas admin o cuando distributor es null)
+    // Usuario que registró la venta (para ventas admin o cuando employee es null)
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -326,8 +326,8 @@ const saleSchema = new mongoose.Schema(
 // Índices para acelerar listados y filtros comunes
 saleSchema.index({ saleDate: -1 });
 saleSchema.index({ business: 1, saleDate: -1 });
-saleSchema.index({ distributor: 1, saleDate: -1 });
-saleSchema.index({ business: 1, distributor: 1, saleDate: -1 });
+saleSchema.index({ employee: 1, saleDate: -1 });
+saleSchema.index({ business: 1, employee: 1, saleDate: -1 });
 saleSchema.index({ business: 1, branch: 1, saleDate: -1 });
 saleSchema.index({ business: 1, product: 1, saleDate: -1 });
 saleSchema.index({ business: 1, customer: 1, saleDate: -1 });
@@ -377,54 +377,54 @@ saleSchema.pre("save", function (next) {
   const costBasis = this.averageCostAtSale || this.purchasePrice;
 
   if (this.isPromotion) {
-    const hasDistributor = Boolean(this.distributor);
-    if (hasDistributor) {
-      const distributorPrice = Number(this.distributorPrice || this.salePrice);
-      this.distributorProfit =
-        (this.salePrice - distributorPrice) * this.quantity;
-      this.adminProfit = (distributorPrice - costBasis) * this.quantity;
-      this.totalGroupProfit = this.distributorProfit + this.adminProfit;
+    const hasEmployee = Boolean(this.employee);
+    if (hasEmployee) {
+      const employeePrice = Number(this.employeePrice || this.salePrice);
+      this.employeeProfit =
+        (this.salePrice - employeePrice) * this.quantity;
+      this.adminProfit = (employeePrice - costBasis) * this.quantity;
+      this.totalGroupProfit = this.employeeProfit + this.adminProfit;
       this.totalProfit = this.totalGroupProfit;
     } else {
       this.adminProfit = (this.salePrice - costBasis) * this.quantity;
-      this.distributorProfit = 0;
-      this.distributorProfitPercentage = 0;
+      this.employeeProfit = 0;
+      this.employeeProfitPercentage = 0;
       this.totalGroupProfit = this.adminProfit;
       this.totalProfit = this.totalGroupProfit;
     }
-  } else if (!this.distributor) {
+  } else if (!this.employee) {
     // Solo hay ganancia del admin: (precio de venta - costo) * cantidad
     this.adminProfit = (this.salePrice - costBasis) * this.quantity;
-    this.distributorProfit = 0;
-    this.distributorProfitPercentage = 0;
+    this.employeeProfit = 0;
+    this.employeeProfitPercentage = 0;
     this.totalGroupProfit = this.adminProfit;
     this.totalProfit = this.totalGroupProfit;
   } else {
-    // Venta de distribuidor
-    // El distribuidor recibe una comisión sobre el precio de venta según su ranking
+    // Venta de employee
+    // El employee recibe una comisión sobre el precio de venta según su ranking
     // 🥇 1º: 25%, 🥈 2º: 23%, 🥉 3º: 21%, Resto: 20%
-    const profitPercentage = this.distributorProfitPercentage ?? 20;
+    const profitPercentage = this.employeeProfitPercentage ?? 20;
 
-    // PRECIO PARA DISTRIBUIDOR = Lo que el distribuidor PAGA al admin
+    // PRECIO PARA EMPLOYEE = Lo que el employee PAGA al admin
     // Ejemplo: Venta $22,000 con 20% comisión
     // Precio para dist = $22,000 × 80% = $17,600 (lo que paga al admin)
-    const priceForDistributor =
+    const priceForEmployee =
       this.salePrice * ((100 - profitPercentage) / 100);
-    this.distributorPrice = priceForDistributor;
+    this.employeePrice = priceForEmployee;
 
-    // GANANCIA DEL DISTRIBUIDOR = Precio Venta - Precio que paga al admin
+    // GANANCIA DEL EMPLOYEE = Precio Venta - Precio que paga al admin
     // Ejemplo: $22,000 - $17,600 = $4,400 (su comisión del 20%)
-    this.distributorProfit =
-      (this.salePrice - priceForDistributor) * this.quantity;
+    this.employeeProfit =
+      (this.salePrice - priceForEmployee) * this.quantity;
 
-    // GANANCIA DEL ADMIN = Precio Venta - Costo - Ganancia Distribuidor
+    // GANANCIA DEL ADMIN = Precio Venta - Costo - Ganancia Employee
     // Ejemplo: $22,000 - $10,500 - $4,400 = $7,100
     this.adminProfit =
-      (this.salePrice - costBasis - (this.salePrice - priceForDistributor)) *
+      (this.salePrice - costBasis - (this.salePrice - priceForEmployee)) *
       this.quantity;
 
-    // Ganancia total del grupo (admin + distribuidor)
-    this.totalGroupProfit = this.distributorProfit + this.adminProfit;
+    // Ganancia total del grupo (admin + employee)
+    this.totalGroupProfit = this.employeeProfit + this.adminProfit;
     this.totalProfit = this.totalGroupProfit;
   }
 

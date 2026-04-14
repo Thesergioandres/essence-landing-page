@@ -28,12 +28,12 @@ describe("User Model - Creación y Validaciones", () => {
       name: "Usuario Test",
       email: "test@example.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
 
     expect(user.name).toBe("Usuario Test");
     expect(user.email).toBe("test@example.com");
-    expect(user.role).toBe("distribuidor");
+    expect(user.role).toBe("employee");
     expect(user.password).toBe("password123");
   });
 
@@ -43,7 +43,7 @@ describe("User Model - Creación y Validaciones", () => {
       name: "Usuario Test",
       email: "test2@example.com",
       password: plainPassword,
-      role: "distribuidor",
+      role: "employee",
     });
 
     expect(user.password).toBe(plainPassword);
@@ -60,7 +60,7 @@ describe("User Model - Creación y Validaciones", () => {
       name: "Usuario 1",
       email: "duplicate@example.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
 
     await expect(
@@ -68,7 +68,7 @@ describe("User Model - Creación y Validaciones", () => {
         name: "Usuario 2",
         email: "duplicate@example.com",
         password: "password456",
-        role: "distribuidor",
+        role: "employee",
       })
     ).rejects.toThrow();
   });
@@ -78,7 +78,7 @@ describe("User Model - Creación y Validaciones", () => {
       name: "Usuario Test",
       email: "invalid-email",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
 
     await expect(user.save()).rejects.toThrow();
@@ -97,18 +97,18 @@ describe("User Model - Roles", () => {
     expect(user.role).toBe("admin");
   });
 
-  test('Debe aceptar role "distribuidor"', async () => {
+  test('Debe aceptar role "employee"', async () => {
     const user = await User.create({
-      name: "Distribuidor Test",
+      name: "Employee Test",
       email: "dist@example.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
 
-    expect(user.role).toBe("distribuidor");
+    expect(user.role).toBe("employee");
   });
 
-  test('Debe tener role por defecto "distribuidor"', async () => {
+  test('Debe tener role por defecto "employee"', async () => {
     const user = await User.create({
       name: "Usuario Test",
       email: "user@example.com",
@@ -136,7 +136,7 @@ describe("User Model - Información Adicional", () => {
       name: "Usuario Test",
       email: "test@example.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
       phone: "1234567890",
       address: "Calle Test 123",
     });
@@ -150,7 +150,7 @@ describe("User Model - Información Adicional", () => {
       name: "Usuario Test",
       email: "test@example.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
 
     expect(user.phone).toBeUndefined();
@@ -162,7 +162,7 @@ describe("User Model - Información Adicional", () => {
       name: "Usuario Test",
       email: "test@example.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
 
     expect(user.active).toBe(true);
@@ -173,7 +173,7 @@ describe("User Model - Información Adicional", () => {
       name: "Usuario Test",
       email: "test@example.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
 
     user.active = false;
@@ -190,7 +190,7 @@ describe("User Model - Timestamps", () => {
       name: "Usuario Test",
       email: "test@example.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
 
     expect(user.createdAt).toBeDefined();
@@ -202,7 +202,7 @@ describe("User Model - Timestamps", () => {
       name: "Usuario Test",
       email: "test@example.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
 
     expect(user.updatedAt).toBeDefined();
@@ -214,7 +214,7 @@ describe("User Model - Timestamps", () => {
       name: "Usuario Test",
       email: "test@example.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
 
     const originalUpdatedAt = user.updatedAt;

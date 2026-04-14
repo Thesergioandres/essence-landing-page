@@ -335,7 +335,7 @@ export default function BusinessAssistant() {
   // Feature flags
   const features = useFeatures([
     "credits",
-    "distributors",
+    "employees",
     "inventory",
     "promotions",
     "expenses",
@@ -355,7 +355,7 @@ export default function BusinessAssistant() {
         total: number;
         warehouse: number;
         branches: number;
-        distributors: number;
+        employees: number;
         unassigned: number;
       }
     >
@@ -541,7 +541,7 @@ export default function BusinessAssistant() {
 
       // Obtener precios de los productos del backend (ya están en recommendations)
       const productPrices: { id: string; price: number }[] = [];
-      const distributorPrices: { id: string; price: number }[] = [];
+      const employeePrices: { id: string; price: number }[] = [];
       const recMap = new Map(
         (data?.recommendations || []).map(rec => [rec.productId, rec])
       );
@@ -553,11 +553,11 @@ export default function BusinessAssistant() {
           product?.clientPrice ||
           product?.suggestedPrice ||
           0;
-        const distributorPrice =
-          product?.distributorPrice || product?.clientPrice || price || 0;
+        const employeePrice =
+          product?.employeePrice || product?.clientPrice || price || 0;
         if (!price) continue;
         productPrices.push({ id: productId, price });
-        distributorPrices.push({ id: productId, price: distributorPrice });
+        employeePrices.push({ id: productId, price: employeePrice });
       }
 
       if (productPrices.length === 0) {
@@ -566,7 +566,7 @@ export default function BusinessAssistant() {
 
       // Calcular precio combo con descuento sugerido
       const totalPrice = productPrices.reduce((sum, p) => sum + p.price, 0);
-      const totalDistributorPrice = distributorPrices.reduce(
+      const totalEmployeePrice = employeePrices.reduce(
         (sum, p) => sum + p.price,
         0
       );
@@ -575,9 +575,9 @@ export default function BusinessAssistant() {
         0,
         Math.round(totalPrice * (1 - discountPct / 100))
       );
-      const promoDistributorPrice = Math.max(
+      const promoEmployeePrice = Math.max(
         0,
-        Math.round(totalDistributorPrice * (1 - discountPct / 100))
+        Math.round(totalEmployeePrice * (1 - discountPct / 100))
       );
 
       const comboItems = productPrices.map(item => ({
@@ -592,7 +592,7 @@ export default function BusinessAssistant() {
         description: promo.description,
         comboItems,
         promotionPrice: promoPrice,
-        distributorPrice: promoDistributorPrice,
+        employeePrice: promoEmployeePrice,
         originalPrice: Math.round(totalPrice),
         discount: {
           type: "percentage",
@@ -683,9 +683,9 @@ export default function BusinessAssistant() {
           existing.stock.warehouseStock;
         const branchesStock =
           inventorySnapshot?.branches ?? existing.stock.branchesStock ?? 0;
-        const distributorsStock =
-          inventorySnapshot?.distributors ??
-          existing.stock.distributorsStock ??
+        const employeesStock =
+          inventorySnapshot?.employees ??
+          existing.stock.employeesStock ??
           0;
         const unassignedStock =
           inventorySnapshot?.unassigned ?? existing.stock.unassignedStock ?? 0;
@@ -701,7 +701,7 @@ export default function BusinessAssistant() {
             totalStock,
             warehouseStock,
             branchesStock,
-            distributorsStock,
+            employeesStock,
             unassignedStock,
             lowStockAlert,
           },
@@ -721,7 +721,7 @@ export default function BusinessAssistant() {
       const warehouseStock =
         inventorySnapshot?.warehouse ?? product.warehouseStock ?? 0;
       const branchesStock = inventorySnapshot?.branches ?? 0;
-      const distributorsStock = inventorySnapshot?.distributors ?? 0;
+      const employeesStock = inventorySnapshot?.employees ?? 0;
       const unassignedStock = inventorySnapshot?.unassigned ?? 0;
       const price = product.clientPrice ?? product.suggestedPrice ?? 0;
       const cost = product.averageCost || product.purchasePrice || 0;
@@ -741,7 +741,7 @@ export default function BusinessAssistant() {
         stock: {
           warehouseStock,
           branchesStock,
-          distributorsStock,
+          employeesStock,
           unassignedStock,
           totalStock,
           lowStockAlert: product.lowStockAlert ?? 0,
@@ -1223,7 +1223,7 @@ export default function BusinessAssistant() {
               total: number;
               warehouse: number;
               branches: number;
-              distributors: number;
+              employees: number;
               unassigned: number;
             }
           >
@@ -1249,8 +1249,8 @@ export default function BusinessAssistant() {
             branchDetails.length > 0 ? branchesFromDetails : item.branches || 0;
 
           const warehouse = item.warehouse || 0;
-          const distributors = item.distributors || 0;
-          const total = warehouse + branches + distributors;
+          const employees = item.employees || 0;
+          const total = warehouse + branches + employees;
           const systemTotal = item.systemTotal || 0;
           const unassigned = systemTotal - total;
 
@@ -1258,7 +1258,7 @@ export default function BusinessAssistant() {
             total,
             warehouse,
             branches,
-            distributors,
+            employees,
             unassigned,
           };
           return acc;
@@ -1584,16 +1584,16 @@ export default function BusinessAssistant() {
 
     if (inventorySnapshot) {
       lines.push(
-        `Stock total: ${inventorySnapshot.total} (Bodega ${inventorySnapshot.warehouse} · Sedes ${inventorySnapshot.branches} · Distribuidores ${inventorySnapshot.distributors})`
+        `Stock total: ${inventorySnapshot.total} (Bodega ${inventorySnapshot.warehouse} · Sedes ${inventorySnapshot.branches} · Employees ${inventorySnapshot.employees})`
       );
       if (inventorySnapshot.unassigned > 0) {
         lines.push(`Sin asignar: ${inventorySnapshot.unassigned}`);
       }
     } else {
       const branches = item.stock.branchesStock ?? 0;
-      const distributors = item.stock.distributorsStock ?? 0;
+      const employees = item.stock.employeesStock ?? 0;
       lines.push(
-        `Stock total: ${item.stock.totalStock} (Bodega ${item.stock.warehouseStock} · Sedes ${branches} · Distribuidores ${distributors})`
+        `Stock total: ${item.stock.totalStock} (Bodega ${item.stock.warehouseStock} · Sedes ${branches} · Employees ${employees})`
       );
       if ((item.stock.unassignedStock || 0) > 0) {
         lines.push(`Sin asignar: ${item.stock.unassignedStock}`);
@@ -1799,9 +1799,9 @@ export default function BusinessAssistant() {
                 💳 Créditos
               </span>
             )}
-            {features.distributors && (
+            {features.employees && (
               <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-200">
-                👥 Distribuidores
+                👥 Employees
               </span>
             )}
             {features.promotions && (
@@ -3080,10 +3080,10 @@ export default function BusinessAssistant() {
                   const price = item?.clientPrice ?? item?.suggestedPrice ?? 0;
                   return sum + (Number(price) || 0);
                 }, 0);
-                const totalDistributorPrice = promoProducts.reduce(
+                const totalEmployeePrice = promoProducts.reduce(
                   (sum, item) => {
                     const price =
-                      item?.distributorPrice ??
+                      item?.employeePrice ??
                       item?.clientPrice ??
                       item?.suggestedPrice ??
                       0;
@@ -3100,16 +3100,16 @@ export default function BusinessAssistant() {
                   0,
                   Math.round(totalClientPrice * (1 - discountPct / 100))
                 );
-                const suggestedDistributorPrice = Math.max(
+                const suggestedEmployeePrice = Math.max(
                   0,
-                  Math.round(totalDistributorPrice * (1 - discountPct / 100))
+                  Math.round(totalEmployeePrice * (1 - discountPct / 100))
                 );
                 const clientMarginPct = totalClientPrice
                   ? ((totalClientPrice - totalCost) / totalClientPrice) * 100
                   : 0;
-                const distributorMarginPct = totalDistributorPrice
-                  ? ((totalDistributorPrice - totalCost) /
-                      totalDistributorPrice) *
+                const employeeMarginPct = totalEmployeePrice
+                  ? ((totalEmployeePrice - totalCost) /
+                      totalEmployeePrice) *
                     100
                   : 0;
                 const promoClientMarginPct = suggestedClientPrice
@@ -3117,9 +3117,9 @@ export default function BusinessAssistant() {
                       suggestedClientPrice) *
                     100
                   : 0;
-                const promoDistributorMarginPct = suggestedDistributorPrice
-                  ? ((suggestedDistributorPrice - totalCost) /
-                      suggestedDistributorPrice) *
+                const promoEmployeeMarginPct = suggestedEmployeePrice
+                  ? ((suggestedEmployeePrice - totalCost) /
+                      suggestedEmployeePrice) *
                     100
                   : 0;
                 const clientSavings = Math.max(
@@ -3177,8 +3177,8 @@ export default function BusinessAssistant() {
                           Cliente: {formatCurrencyCOP(totalClientPrice)}
                         </span>
                         <span>
-                          Distribuidor:{" "}
-                          {formatCurrencyCOP(totalDistributorPrice)}
+                          Employee:{" "}
+                          {formatCurrencyCOP(totalEmployeePrice)}
                         </span>
                         <span>Compra: {formatCurrencyCOP(totalCost)}</span>
                       </div>
@@ -3187,7 +3187,7 @@ export default function BusinessAssistant() {
                           Margen cliente: {clientMarginPct.toFixed(1)}%
                         </span>
                         <span>
-                          Margen distrib: {distributorMarginPct.toFixed(1)}%
+                          Margen distrib: {employeeMarginPct.toFixed(1)}%
                         </span>
                       </div>
                       <div className="mt-1 flex flex-wrap gap-2 text-slate-300">
@@ -3197,14 +3197,14 @@ export default function BusinessAssistant() {
                         </span>
                         <span>
                           Promo distrib:{" "}
-                          {formatCurrencyCOP(suggestedDistributorPrice)}
+                          {formatCurrencyCOP(suggestedEmployeePrice)}
                         </span>
                         <span>
                           Margen promo: {promoClientMarginPct.toFixed(1)}%
                         </span>
                         <span>
                           Margen promo distrib:{" "}
-                          {promoDistributorMarginPct.toFixed(1)}%
+                          {promoEmployeeMarginPct.toFixed(1)}%
                         </span>
                       </div>
                       <div className="mt-1 text-slate-300">
@@ -3298,7 +3298,7 @@ export default function BusinessAssistant() {
                 </p>
                 <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-gray-400">
                   <li>Confirma ventas recientes con estado confirmado.</li>
-                  <li>Actualiza stock de bodega y distribuidores.</li>
+                  <li>Actualiza stock de bodega y employees.</li>
                   <li>Revisa precios y costos promedio.</li>
                 </ul>
               </div>
@@ -3338,7 +3338,7 @@ export default function BusinessAssistant() {
                               Stock total: {item.stock.totalStock} · Bodega:{" "}
                               {item.stock.warehouseStock} · Sedes:{" "}
                               {item.stock.branchesStock ?? 0} · Dist:{" "}
-                              {item.stock.distributorsStock ?? 0} · Margen:{" "}
+                              {item.stock.employeesStock ?? 0} · Margen:{" "}
                               {formatPctOrDash(
                                 item.metrics.recentMarginPct,
                                 !showPrice
@@ -3497,7 +3497,7 @@ export default function BusinessAssistant() {
                               <p className="text-xs text-gray-400">
                                 Bodega: {item.stock.warehouseStock} · Sedes:{" "}
                                 {item.stock.branchesStock ?? 0} · Dist:{" "}
-                                {item.stock.distributorsStock ?? 0} · Alerta:{" "}
+                                {item.stock.employeesStock ?? 0} · Alerta:{" "}
                                 {item.stock.lowStockAlert}
                                 {item.metrics.daysCover !== null
                                   ? ` · Cobertura: ${item.metrics.daysCover}d`

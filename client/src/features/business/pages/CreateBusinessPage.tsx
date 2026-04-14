@@ -18,7 +18,7 @@ const defaultFeatures: BusinessFeatures = {
   transfers: true,
   promotions: true,
   branches: true,
-  distributors: true,
+  employees: true,
   rankings: true,
   credits: true,
   customers: true,

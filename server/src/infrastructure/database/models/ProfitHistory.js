@@ -7,7 +7,7 @@ const profitHistorySchema = new mongoose.Schema(
       ref: "Business",
       index: true,
     },
-    // Referencia al usuario (distribuidor o admin)
+    // Referencia al usuario (employee o admin)
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

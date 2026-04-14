@@ -112,7 +112,7 @@ export default function CreditDetail() {
   const customer = credit.customer as Customer;
   const sale = credit.sale as Sale | undefined;
   const createdBy = credit.createdBy as User | undefined;
-  const distributor = sale?.distributor as User | undefined;
+  const employee = sale?.employee as User | undefined;
 
   return (
     <div className="space-y-6 overflow-hidden p-6">
@@ -195,32 +195,32 @@ export default function CreditDetail() {
             Responsable del Crédito
           </h2>
           <div className="space-y-3">
-            {distributor ? (
+            {employee ? (
               <>
                 <div className="flex items-center gap-3 rounded-lg border border-indigo-100 bg-indigo-50 p-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white">
-                    {distributor.name?.charAt(0).toUpperCase() || "D"}
+                    {employee.name?.charAt(0).toUpperCase() || "D"}
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">
-                      {distributor.name}
+                      {employee.name}
                     </p>
-                    <p className="text-sm text-indigo-600">Distribuidor</p>
+                    <p className="text-sm text-indigo-600">Employee</p>
                   </div>
                 </div>
-                {distributor.email && (
+                {employee.email && (
                   <div className="flex justify-between border-b border-gray-100 pb-2">
                     <span className="text-sm text-gray-600">Email:</span>
                     <span className="text-sm text-gray-900">
-                      {distributor.email}
+                      {employee.email}
                     </span>
                   </div>
                 )}
-                {distributor.phone && (
+                {employee.phone && (
                   <div className="flex justify-between border-b border-gray-100 pb-2">
                     <span className="text-sm text-gray-600">Teléfono:</span>
                     <span className="text-sm text-gray-900">
-                      {distributor.phone}
+                      {employee.phone}
                     </span>
                   </div>
                 )}
@@ -362,11 +362,11 @@ export default function CreditDetail() {
                     {formatCurrency(profitInfo.adminProfit)}
                   </span>
                 </div>
-                {profitInfo.isDistributorSale && (
+                {profitInfo.isEmployeeSale && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Ganancia Distrib.:</span>
                     <span className="text-indigo-600">
-                      {formatCurrency(profitInfo.distributorProfit)}
+                      {formatCurrency(profitInfo.employeeProfit)}
                     </span>
                   </div>
                 )}
@@ -391,11 +391,11 @@ export default function CreditDetail() {
                     {Number(profitInfo.profitMarginPercentage || 0).toFixed(1)}%
                   </span>
                 </div>
-                {profitInfo.isDistributorSale && (
+                {profitInfo.isEmployeeSale && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Comisión Distrib.:</span>
                     <span className="text-indigo-600">
-                      {Number(profitInfo.distributorProfitPercentage || 0)}%
+                      {Number(profitInfo.employeeProfitPercentage || 0)}%
                     </span>
                   </div>
                 )}
@@ -424,15 +424,15 @@ export default function CreditDetail() {
                 )}
               </div>
 
-              {profitInfo.isDistributorSale &&
-                profitInfo.amountDistributorOwesToAdmin !== undefined &&
-                profitInfo.amountDistributorOwesToAdmin > 0 && (
+              {profitInfo.isEmployeeSale &&
+                profitInfo.amountEmployeeOwesToAdmin !== undefined &&
+                profitInfo.amountEmployeeOwesToAdmin > 0 && (
                   <div className="rounded-lg bg-indigo-100 px-4 py-2">
                     <span className="text-sm text-indigo-800">
-                      El distribuidor debe entregar:{" "}
+                      El employee debe entregar:{" "}
                       <strong>
                         {formatCurrency(
-                          profitInfo.amountDistributorOwesToAdmin
+                          profitInfo.amountEmployeeOwesToAdmin
                         )}
                       </strong>
                     </span>

@@ -525,7 +525,7 @@ export default function DefectiveProductsManagement() {
                   Fecha
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
-                  Distribuidor
+                  Employee
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-300">
                   Origen
@@ -554,9 +554,9 @@ export default function DefectiveProductsManagement() {
               {filteredReports.map(report => {
                 const product =
                   typeof report.product === "object" ? report.product : null;
-                const distributor =
-                  typeof report.distributor === "object"
-                    ? report.distributor
+                const employee =
+                  typeof report.employee === "object"
+                    ? report.employee
                     : null;
                 const branch =
                   typeof report.branch === "object" ? report.branch : null;
@@ -581,13 +581,13 @@ export default function DefectiveProductsManagement() {
                       })}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
-                      {report.distributor ? (
+                      {report.employee ? (
                         <>
                           <div className="text-sm font-medium text-white">
-                            {distributor?.name || "N/A"}
+                            {employee?.name || "N/A"}
                           </div>
                           <div className="text-sm text-gray-400">
-                            {distributor?.email || ""}
+                            {employee?.email || ""}
                           </div>
                         </>
                       ) : (
@@ -603,9 +603,9 @@ export default function DefectiveProductsManagement() {
                         <span className="inline-flex items-center rounded-full bg-blue-500/15 px-2.5 py-0.5 text-xs font-medium text-blue-200">
                           📦 Sede: {branch.name}
                         </span>
-                      ) : report.distributor ? (
+                      ) : report.employee ? (
                         <span className="inline-flex items-center rounded-full bg-green-500/15 px-2.5 py-0.5 text-xs font-medium text-green-200">
-                          🚚 Distribuidor
+                          🚚 Employee
                         </span>
                       ) : (
                         <span className="inline-flex items-center rounded-full bg-purple-500/15 px-2.5 py-0.5 text-xs font-medium text-purple-200">

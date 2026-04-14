@@ -97,7 +97,7 @@ const GamificationConfigPage = () => {
     warnings.push("Reset con carry alto: puede inflar el ranking.");
   }
   if ((baseCommissionPercentage || 0) <= 0) {
-    warnings.push("Comision base en 0: distribuidores sin ganancia.");
+    warnings.push("Comision base en 0: employees sin ganancia.");
   }
   if ((baseCommissionPercentage || 0) > 50) {
     warnings.push("Comision base alta: revisa la rentabilidad.");
@@ -107,7 +107,7 @@ const GamificationConfigPage = () => {
     baseCommissionPercentage !== baseCommissionInitial
   ) {
     warnings.push(
-      "Comision base cambiada: el precio distribuidor se recalcula por precio cliente si no hay override manual."
+      "Comision base cambiada: el precio employee se recalcula por precio cliente si no hay override manual."
     );
   }
   for (let i = 1; i < sortedLevels.length; i += 1) {
@@ -222,7 +222,7 @@ const GamificationConfigPage = () => {
       await gamificationService.recalculatePoints();
       if (baseCommissionChanged) {
         alert(
-          "Comision base cambiada: el precio distribuidor se recalcula por precio cliente si no hay override manual."
+          "Comision base cambiada: el precio employee se recalcula por precio cliente si no hay override manual."
         );
       } else {
         alert("Configuración guardada correctamente");
@@ -370,7 +370,7 @@ const GamificationConfigPage = () => {
         </h1>
         <p className="mt-2 max-w-3xl text-sm text-gray-400">
           Define como se calculan los puntos, los rankings y los incentivos.
-          Cambios aqui afectan el desempeño de distribuidores en tiempo real.
+          Cambios aqui afectan el desempeño de employees en tiempo real.
         </p>
       </div>
 
@@ -459,10 +459,10 @@ const GamificationConfigPage = () => {
 
       <div className="mb-6 rounded-xl border border-teal-500/40 bg-teal-900/20 p-6">
         <h2 className="text-2xl font-semibold text-white">
-          Comision Base del Distribuidor
+          Comision Base del Employee
         </h2>
         <p className="mt-2 text-sm text-teal-100/80">
-          Este porcentaje define la ganancia base del distribuidor y afecta el
+          Este porcentaje define la ganancia base del employee y afecta el
           POS, el calculo del "A entregar al admin" y la comision reportada.
         </p>
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -580,7 +580,7 @@ const GamificationConfigPage = () => {
           💰 Bonos por Posicion
         </h2>
         <p className="mt-2 text-sm text-gray-400">
-          Premia a los mejores distribuidores del periodo.
+          Premia a los mejores employees del periodo.
         </p>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -786,7 +786,7 @@ const GamificationConfigPage = () => {
               className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500"
             >
               <option value="sale">Venta total</option>
-              <option value="commission">Comision del distribuidor</option>
+              <option value="commission">Comision del employee</option>
             </select>
             <p className="mt-1 text-xs text-gray-400">
               Si eliges comision, los puntos se calculan sobre la ganancia base.
@@ -853,7 +853,7 @@ const GamificationConfigPage = () => {
           🧗 Niveles y Rangos
         </h2>
         <p className="mt-2 text-sm text-gray-400">
-          Define como crecen los distribuidores y que beneficios obtienen.
+          Define como crecen los employees y que beneficios obtienen.
         </p>
 
         {levels.map((level, index) => (
@@ -901,7 +901,7 @@ const GamificationConfigPage = () => {
                 className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
               />
               <p className="mt-1 text-xs text-gray-500">
-                Se suma a la comision base del distribuidor.
+                Se suma a la comision base del employee.
               </p>
             </div>
             <div>
@@ -1209,7 +1209,7 @@ const GamificationConfigPage = () => {
                 placeholder="🥉"
               />
               <p className="mt-1 text-xs text-gray-500">
-                Icono que se muestra al distribuidor.
+                Icono que se muestra al employee.
               </p>
             </div>
 

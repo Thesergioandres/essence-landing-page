@@ -12,7 +12,7 @@ export const SENSITIVE_COST_FIELD_NAMES = Object.freeze([
 
 export const SENSITIVE_FINANCIAL_ZERO_FIELD_NAMES = Object.freeze([
   "totalRevenue",
-  "distributorProfit",
+  "employeeProfit",
   "adminProfit",
 ]);
 
@@ -42,7 +42,6 @@ const hasHideFinancialFlag = (user, membership) => {
   );
 };
 
-const isDistributorRole = (role) => isEmployeeRole(role);
 
 const resolvePermissionSource = (user, membership) => {
   if (membership?.role) {
@@ -92,20 +91,20 @@ export const resolveFinancialPrivacyContext = (req = {}) => {
   const canViewCosts = canViewCostsByPermission({ user, membership });
 
   const hideByPermission = canViewCosts !== true;
-  const hideByRole = isDistributorRole(effectiveRole);
+  const hideByRole = isEmployeeRole(effectiveRole);
   const hideByFlag = hasHideFinancialFlag(user, membership);
 
   const hideFinancialData = hideByFlag || hideByRole || hideByPermission;
 
-  const scopeDistributorId = hideByRole && currentUserId ? currentUserId : null;
+  const scopeEmployeeId = hideByRole && currentUserId ? currentUserId : null;
 
   return {
     hideFinancialData,
     canViewCosts,
     effectiveRole,
-    isDistributorRole: hideByRole,
+    isEmployeeRole: hideByRole,
     currentUserId,
-    scopeDistributorId,
+    scopeEmployeeId,
   };
 };
 
@@ -125,7 +124,7 @@ export const sanitizeSaleForFinancialPrivacy = (sale = {}) => {
 
   const zeroTopLevelFields = [
     "adminProfit",
-    "distributorProfit",
+    "employeeProfit",
     "totalRevenue",
   ];
 
@@ -165,8 +164,8 @@ export const sanitizeSalesStatsForFinancialPrivacy = (stats = {}) => ({
   totalSales: Number(stats.totalSales || 0),
   confirmedSales: Number(stats.confirmedSales || 0),
   pendingSales: Number(stats.pendingSales || 0),
-  totalDistributorProfit: Number(stats.totalDistributorProfit || 0),
-  myProfit: Number(stats.totalDistributorProfit || 0),
+  totalEmployeeProfit: Number(stats.totalEmployeeProfit || 0),
+  myProfit: Number(stats.totalEmployeeProfit || 0),
 });
 
 export const sanitizeFinancialCostFieldsToNull = (

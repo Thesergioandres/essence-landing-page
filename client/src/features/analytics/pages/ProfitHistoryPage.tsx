@@ -8,7 +8,7 @@ import { creditService } from "../../credits/services";
 import { defectiveProductService } from "../../sales/services";
 import type {
   CreditMetrics,
-  ProfitHistoryAdminDistributor,
+  ProfitHistoryAdminEmployee,
   ProfitHistoryAdminEntry,
   ProfitHistoryAdminOverview,
 } from "../types/analytics.types";
@@ -30,7 +30,7 @@ interface EstimatedProfitData {
   scenario: "A" | "B" | "C" | "D";
   message: string;
   hasBranches: boolean;
-  hasDistributors: boolean;
+  hasEmployees: boolean;
   warehouse: {
     grossProfit: number;
     adminProfit: number;
@@ -59,7 +59,7 @@ interface EstimatedProfitData {
       totalUnits: number;
     }>;
   };
-  distributors: {
+  employees: {
     grossProfit: number;
     adminProfit: number;
     netProfit: number;
@@ -67,7 +67,7 @@ interface EstimatedProfitData {
     totalUnits: number;
     investment: number;
     salesValue: number;
-    distributors: Array<{
+    employees: Array<{
       id: string;
       name: string;
       email: string;
@@ -134,7 +134,7 @@ export default function ProfitHistory() {
   const [estimatedProfit, setEstimatedProfit] =
     useState<EstimatedProfitData | null>(null);
   const [loadingEstimated, setLoadingEstimated] = useState(false);
-  const [selectedDistributor, setSelectedDistributor] = useState<string>("");
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [limit, setLimit] = useState(150);
   const [showEstimatedDetails, setShowEstimatedDetails] = useState(false);
 
@@ -152,7 +152,7 @@ export default function ProfitHistory() {
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
   const isAdmin = ["admin", "super_admin", "god"].includes(currentUser?.role);
   const creditsEnabled = useFeature("credits");
-  const distributorsEnabled = useFeature("distributors");
+  const employeesEnabled = useFeature("employees");
 
   const loadOverview = async () => {
     if (!isAdmin) {
@@ -168,7 +168,7 @@ export default function ProfitHistory() {
         profitHistoryService.getAdminOverview({
           startDate: dateRange.startDate,
           endDate: dateRange.endDate,
-          distributorId: selectedDistributor || undefined,
+          employeeId: selectedEmployee || undefined,
           limit,
         }),
         expenseService.getAll({
@@ -222,28 +222,28 @@ export default function ProfitHistory() {
     void loadEstimatedProfit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    selectedDistributor,
+    selectedEmployee,
     dateRange.startDate,
     dateRange.endDate,
     limit,
     businessId,
   ]);
 
-  const distributors = useMemo<ProfitHistoryAdminDistributor[]>(() => {
+  const employees = useMemo<ProfitHistoryAdminEmployee[]>(() => {
     if (!overview) return [];
-    return overview.distributors ?? [];
+    return overview.employees ?? [];
   }, [overview]);
 
-  const distributorOptions = useMemo(() => {
+  const employeeOptions = useMemo(() => {
     const seen = new Set<string>();
-    return distributors.filter(dist => {
+    return employees.filter(dist => {
       const allow = dist.id === "admin" || isValidObjectId(dist.id);
       if (!allow) return false;
       if (seen.has(dist.id)) return false;
       seen.add(dist.id);
       return true;
     });
-  }, [distributors]);
+  }, [employees]);
 
   const handleQuickRange = (days: number) => {
     const end = new Date();
@@ -328,7 +328,7 @@ export default function ProfitHistory() {
         return (
           <>
             <div
-              className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${distributorsEnabled ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}
+              className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${employeesEnabled ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}
             >
               <div className="rounded-xl border border-gray-800 bg-gradient-to-br from-purple-600/30 via-indigo-600/20 to-gray-900 p-4 text-white shadow-lg">
                 <p className="text-sm text-purple-100">Ganancia bruta</p>
@@ -336,8 +336,8 @@ export default function ProfitHistory() {
                   {formatCurrency(totalProfit)}
                 </p>
                 <p className="text-xs text-purple-100/80">
-                  {distributorsEnabled
-                    ? "Admin + distribuidores"
+                  {employeesEnabled
+                    ? "Admin + employees"
                     : "Total ventas"}
                 </p>
               </div>
@@ -351,21 +351,21 @@ export default function ProfitHistory() {
                   totalExpenses > 0 ||
                   defectiveLosses > 0
                     ? `- ${formatCurrency(totalDeductions + totalExpenses + defectiveLosses)} (deduc. + gastos + defec.)`
-                    : distributorsEnabled
+                    : employeesEnabled
                       ? "Ventas directas + margen"
                       : "Ventas directas"}
                 </p>
               </div>
-              {distributorsEnabled && (
+              {employeesEnabled && (
                 <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 text-white">
                   <p className="text-sm text-gray-300">
-                    Comisiones distribuidores
+                    Comisiones employees
                   </p>
                   <p className="mt-2 text-xl font-semibold text-cyan-300">
-                    {formatCurrency(overview?.totalDistributorCommissions ?? 0)}
+                    {formatCurrency(overview?.totalEmployeeCommissions ?? 0)}
                   </p>
                   <p className="text-xs text-gray-400">
-                    {overview?.distributorCommissionEntries ?? 0} entradas
+                    {overview?.employeeCommissionEntries ?? 0} entradas
                   </p>
                 </div>
               )}
@@ -689,26 +689,26 @@ export default function ProfitHistory() {
                           </div>
                         )}
 
-                      {/* Distribuidores */}
-                      {estimatedProfit.hasDistributors &&
-                        estimatedProfit.distributors.distributors.length >
+                      {/* Employees */}
+                      {estimatedProfit.hasEmployees &&
+                        estimatedProfit.employees.employees.length >
                           0 && (
                           <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
                             <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
-                              👥 Distribuidores (
-                              {estimatedProfit.distributors.distributors.length}
+                              👥 Employees (
+                              {estimatedProfit.employees.employees.length}
                               )
                               <span className="rounded-full bg-gray-700 px-2 py-0.5 text-xs font-normal text-gray-300">
-                                {estimatedProfit.distributors.totalUnits}{" "}
+                                {estimatedProfit.employees.totalUnits}{" "}
                                 unidades
                               </span>
                             </h4>
                             <p className="mb-2 text-xs text-gray-400">
-                              Tu ganancia es solo el margen (precio distribuidor
+                              Tu ganancia es solo el margen (precio employee
                               - costo)
                             </p>
                             <div className="space-y-2">
-                              {estimatedProfit.distributors.distributors
+                              {estimatedProfit.employees.employees
                                 .slice(0, 10)
                                 .map(dist => (
                                   <div
@@ -738,11 +738,11 @@ export default function ProfitHistory() {
                             </div>
                             <div className="mt-2 flex justify-end border-t border-gray-700 pt-2 text-xs">
                               <span className="text-gray-400">
-                                Tu ganancia de distribuidores:
+                                Tu ganancia de employees:
                               </span>
                               <span className="ml-2 font-bold text-emerald-400">
                                 {formatCurrency(
-                                  estimatedProfit.distributors.adminProfit
+                                  estimatedProfit.employees.adminProfit
                                 )}
                               </span>
                             </div>
@@ -889,21 +889,21 @@ export default function ProfitHistory() {
 
       <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4">
         <div
-          className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${distributorsEnabled ? "md:grid-cols-4" : "md:grid-cols-3"}`}
+          className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${employeesEnabled ? "md:grid-cols-4" : "md:grid-cols-3"}`}
         >
-          {distributorsEnabled && (
+          {employeesEnabled && (
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-300">
-                Distribuidor
+                Employee
               </label>
               <select
-                value={selectedDistributor}
-                onChange={e => setSelectedDistributor(e.target.value)}
+                value={selectedEmployee}
+                onChange={e => setSelectedEmployee(e.target.value)}
                 className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
               >
                 <option value="">Todos</option>
                 <option value="admin">Solo ventas admin</option>
-                {distributorOptions
+                {employeeOptions
                   .filter(d => d.id !== "admin")
                   .map(d => (
                     <option key={d.id} value={d.id}>
@@ -959,10 +959,10 @@ export default function ProfitHistory() {
       </div>
 
       <div
-        className={`grid grid-cols-1 gap-6 ${distributorsEnabled ? "xl:grid-cols-4" : ""}`}
+        className={`grid grid-cols-1 gap-6 ${employeesEnabled ? "xl:grid-cols-4" : ""}`}
       >
         <div
-          className={`rounded-xl border border-gray-800 bg-gray-900/70 shadow-lg ${distributorsEnabled ? "xl:col-span-3" : ""}`}
+          className={`rounded-xl border border-gray-800 bg-gray-900/70 shadow-lg ${employeesEnabled ? "xl:col-span-3" : ""}`}
         >
           <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3">
             <div>
@@ -989,15 +989,15 @@ export default function ProfitHistory() {
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Venta
                   </th>
-                  {distributorsEnabled && (
+                  {employeesEnabled && (
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
-                      Distribuidor
+                      Employee
                     </th>
                   )}
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Producto
                   </th>
-                  {distributorsEnabled && (
+                  {employeesEnabled && (
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
                       Ganancia dist
                     </th>
@@ -1014,7 +1014,7 @@ export default function ProfitHistory() {
                 {loading && (
                   <tr>
                     <td
-                      colSpan={distributorsEnabled ? 7 : 5}
+                      colSpan={employeesEnabled ? 7 : 5}
                       className="px-4 py-6 text-center text-gray-400"
                     >
                       Cargando...
@@ -1026,7 +1026,7 @@ export default function ProfitHistory() {
                   (!overview || (overview.entries?.length ?? 0) === 0) && (
                     <tr>
                       <td
-                        colSpan={distributorsEnabled ? 7 : 5}
+                        colSpan={employeesEnabled ? 7 : 5}
                         className="px-4 py-6 text-center text-gray-400"
                       >
                         No hay ventas en el rango seleccionado.
@@ -1067,14 +1067,14 @@ export default function ProfitHistory() {
                             </span>
                           </div>
                         </td>
-                        {distributorsEnabled && (
+                        {employeesEnabled && (
                           <td className="px-4 py-3 text-sm text-gray-100">
                             <div className="flex flex-col">
                               <span className="font-semibold">
-                                {entry.distributorName}
+                                {entry.employeeName}
                               </span>
                               <span className="text-xs text-gray-400">
-                                {entry.distributorEmail || "Admin"}
+                                {entry.employeeEmail || "Admin"}
                               </span>
                             </div>
                           </td>
@@ -1082,9 +1082,9 @@ export default function ProfitHistory() {
                         <td className="px-4 py-3 text-sm text-gray-200">
                           {entry.productName || "-"}
                         </td>
-                        {distributorsEnabled && (
+                        {employeesEnabled && (
                           <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-cyan-300">
-                            {formatCurrency(entry.distributorProfit)}
+                            {formatCurrency(entry.employeeProfit)}
                           </td>
                         )}
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-emerald-300">
@@ -1094,7 +1094,7 @@ export default function ProfitHistory() {
                           {formatCurrency(
                             entry.totalProfit ??
                               (entry.adminProfit || 0) +
-                                (entry.distributorProfit || 0)
+                                (entry.employeeProfit || 0)
                           )}
                         </td>
                       </tr>
@@ -1154,11 +1154,11 @@ export default function ProfitHistory() {
                   </div>
 
                   <div className="mt-3 space-y-2 text-sm text-gray-200">
-                    {distributorsEnabled && (
+                    {employeesEnabled && (
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-gray-400">Distribuidor</span>
+                        <span className="text-gray-400">Employee</span>
                         <span className="text-right font-semibold text-white">
-                          {entry.distributorName}
+                          {entry.employeeName}
                         </span>
                       </div>
                     )}
@@ -1168,11 +1168,11 @@ export default function ProfitHistory() {
                         {entry.productName || "-"}
                       </span>
                     </div>
-                    {distributorsEnabled && (
+                    {employeesEnabled && (
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-gray-400">Ganancia dist</span>
                         <span className="font-semibold text-cyan-300">
-                          {formatCurrency(entry.distributorProfit)}
+                          {formatCurrency(entry.employeeProfit)}
                         </span>
                       </div>
                     )}
@@ -1188,7 +1188,7 @@ export default function ProfitHistory() {
                         {formatCurrency(
                           entry.totalProfit ??
                             (entry.adminProfit || 0) +
-                              (entry.distributorProfit || 0)
+                              (entry.employeeProfit || 0)
                         )}
                       </span>
                     </div>
@@ -1198,30 +1198,30 @@ export default function ProfitHistory() {
           </div>
         </div>
 
-        {distributorsEnabled && (
+        {employeesEnabled && (
           <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4 shadow-lg">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Ranking distribuidores</p>
+                <p className="text-sm text-gray-400">Ranking employees</p>
                 <p className="text-lg font-semibold text-white">
                   Top comisiones
                 </p>
               </div>
               <span className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-semibold text-purple-200">
-                {distributors.filter(d => d.id !== "admin").length} activos
+                {employees.filter(d => d.id !== "admin").length} activos
               </span>
             </div>
 
             <div className="space-y-3">
-              {distributors.length === 0 && (
+              {employees.length === 0 && (
                 <p className="text-sm text-gray-400">
                   Aún no hay ventas registradas en este rango.
                 </p>
               )}
 
-              {distributors
+              {employees
                 .filter(d => d.id !== "admin")
-                .map((dist: ProfitHistoryAdminDistributor) => (
+                .map((dist: ProfitHistoryAdminEmployee) => (
                   <div
                     key={dist.id}
                     className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950/60 px-3 py-2"
@@ -1237,7 +1237,7 @@ export default function ProfitHistory() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-cyan-300">
-                        {formatCurrency(dist.distributorProfit ?? 0)}
+                        {formatCurrency(dist.employeeProfit ?? 0)}
                       </p>
                       <p className="text-xs text-gray-400">Comisión</p>
                     </div>
@@ -1248,13 +1248,13 @@ export default function ProfitHistory() {
             <div className="mt-5 rounded-lg border border-gray-800 bg-gray-950/60 p-3">
               <p className="text-sm font-semibold text-white">Ventas admin</p>
               <p className="text-xs text-gray-400">
-                Incluye ventas directas y margen de cada venta de distribuidor.
+                Incluye ventas directas y margen de cada venta de employee.
               </p>
               <div className="mt-2 flex items-center justify-between">
                 <span className="text-sm text-gray-300">Total admin</span>
                 <span className="font-semibold text-emerald-300">
                   {formatCurrency(
-                    distributors.find(d => d.id === "admin")?.adminProfit || 0
+                    employees.find(d => d.id === "admin")?.adminProfit || 0
                   )}
                 </span>
               </div>

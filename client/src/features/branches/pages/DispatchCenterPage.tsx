@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { distributorService } from "../../employees/services";
+import { employeeService } from "../../employees/services";
 import { productService } from "../../inventory/services/inventory.service";
 import type { Product } from "../../inventory/types/product.types";
 import {
@@ -7,7 +7,7 @@ import {
   dispatchService,
 } from "../services/dispatch.service";
 
-interface DistributorOption {
+interface EmployeeOption {
   _id: string;
   name: string;
   email?: string;
@@ -60,7 +60,7 @@ export default function DispatchCenterPage() {
 
   const [hotSectors, setHotSectors] = useState<{
     canViewFinancialMargins: boolean;
-    distributors: Array<{
+    employees: Array<{
       zoneId: string;
       zoneName: string;
       units: number;
@@ -76,15 +76,15 @@ export default function DispatchCenterPage() {
     }>;
   }>({
     canViewFinancialMargins: false,
-    distributors: [],
+    employees: [],
     branches: [],
   });
 
-  const [distributors, setDistributors] = useState<DistributorOption[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
 
-  const [filterDistributorId, setFilterDistributorId] = useState("");
-  const [draftDistributorId, setDraftDistributorId] = useState("");
+  const [filterEmployeeId, setFilterEmployeeId] = useState("");
+  const [draftEmployeeId, setDraftEmployeeId] = useState("");
   const [draftNotes, setDraftNotes] = useState("");
   const [draftItems, setDraftItems] = useState<DraftItem[]>([
     { productId: "", quantity: 1 },
@@ -93,19 +93,19 @@ export default function DispatchCenterPage() {
   const loadMeta = useCallback(async () => {
     try {
       const [distResponse, productsResponse] = await Promise.all([
-        distributorService.getAll({ active: true }),
+        employeeService.getAll({ active: true }),
         productService.getAll({ isDeleted: false }),
       ]);
 
-      const distributorItems = Array.isArray(distResponse)
+      const employeeItems = Array.isArray(distResponse)
         ? distResponse
         : distResponse?.data || [];
       const productItems = Array.isArray(productsResponse)
         ? productsResponse
         : productsResponse?.data || [];
 
-      setDistributors(
-        distributorItems.filter(
+      setEmployees(
+        employeeItems.filter(
           (item: any) => item?.role === "employee" && item?._id
         )
       );
@@ -119,8 +119,8 @@ export default function DispatchCenterPage() {
     try {
       setLoading(true);
 
-      const commonParams = filterDistributorId
-        ? { distributorId: filterDistributorId }
+      const commonParams = filterEmployeeId
+        ? { employeeId: filterEmployeeId }
         : undefined;
 
       const [pendingRes, inTransitRes, receivedRes, countRes, hotRes] =
@@ -157,7 +157,7 @@ export default function DispatchCenterPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterDistributorId]);
+  }, [filterEmployeeId]);
 
   useEffect(() => {
     loadMeta();
@@ -206,8 +206,8 @@ export default function DispatchCenterPage() {
 
   const submitDraftRequest = async () => {
     try {
-      if (!draftDistributorId) {
-        alert("Selecciona un distribuidor para crear la solicitud");
+      if (!draftEmployeeId) {
+        alert("Selecciona un employee para crear la solicitud");
         return;
       }
 
@@ -225,7 +225,7 @@ export default function DispatchCenterPage() {
 
       setSaving(true);
       await dispatchService.createRequest({
-        distributorId: draftDistributorId,
+        employeeId: draftEmployeeId,
         items: cleanItems,
         notes: draftNotes,
       });
@@ -344,17 +344,17 @@ export default function DispatchCenterPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-200">
-                Filtrar por distribuidor
+                Filtrar por employee
               </label>
               <select
-                value={filterDistributorId}
-                onChange={event => setFilterDistributorId(event.target.value)}
+                value={filterEmployeeId}
+                onChange={event => setFilterEmployeeId(event.target.value)}
                 className="min-h-11 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 text-gray-100"
               >
                 <option value="">Todos</option>
-                {distributors.map(distributor => (
-                  <option key={distributor._id} value={distributor._id}>
-                    {distributor.name}
+                {employees.map(employee => (
+                  <option key={employee._id} value={employee._id}>
+                    {employee.name}
                   </option>
                 ))}
               </select>
@@ -377,24 +377,24 @@ export default function DispatchCenterPage() {
             Crear solicitud manual
           </h2>
           <p className="mt-1 text-sm text-gray-400">
-            Util para generar una solicitud cuando el distribuidor reporta por
+            Util para generar una solicitud cuando el employee reporta por
             telefono o chat.
           </p>
 
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-200">
-                Distribuidor destino
+                Employee destino
               </label>
               <select
-                value={draftDistributorId}
-                onChange={event => setDraftDistributorId(event.target.value)}
+                value={draftEmployeeId}
+                onChange={event => setDraftEmployeeId(event.target.value)}
                 className="min-h-11 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 text-gray-100"
               >
-                <option value="">Seleccionar distribuidor</option>
-                {distributors.map(distributor => (
-                  <option key={distributor._id} value={distributor._id}>
-                    {distributor.name}
+                <option value="">Seleccionar employee</option>
+                {employees.map(employee => (
+                  <option key={employee._id} value={employee._id}>
+                    {employee.name}
                   </option>
                 ))}
               </select>
@@ -501,7 +501,7 @@ export default function DispatchCenterPage() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold text-white">
-                          {getUserLabel(request.distributor)}
+                          {getUserLabel(request.employee)}
                         </p>
                         <p className="text-xs text-gray-400">
                           Creada: {formatDate(request.createdAt)}
@@ -561,7 +561,7 @@ export default function DispatchCenterPage() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold text-white">
-                          {getUserLabel(request.distributor)}
+                          {getUserLabel(request.employee)}
                         </p>
                         <p className="text-xs text-gray-400">
                           Guia: {request.shippingGuide || "sin numero"}
@@ -612,13 +612,13 @@ export default function DispatchCenterPage() {
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
-                Distribuidores Top
+                Employees Top
               </h3>
               <div className="mt-3 space-y-2">
-                {hotSectors.distributors.length === 0 ? (
+                {hotSectors.employees.length === 0 ? (
                   <p className="text-sm text-gray-400">Sin datos</p>
                 ) : (
-                  hotSectors.distributors.map(row => (
+                  hotSectors.employees.map(row => (
                     <div
                       key={row.zoneId}
                       className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900 px-3 py-2"

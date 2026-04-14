@@ -13,17 +13,17 @@ router.use(protect, businessContext, requireFeature("inventory"));
 router.post(
   "/assign",
   requirePermission({ module: "inventory", action: "create" }),
-  StockController.assignToDistributor.bind(StockController),
+  StockController.assignToEmployee.bind(StockController),
 );
 router.post(
   "/withdraw",
   requirePermission({ module: "inventory", action: "update" }),
-  StockController.withdrawFromDistributor.bind(StockController),
+  StockController.withdrawFromEmployee.bind(StockController),
 );
 router.post(
   "/transfer",
   requirePermission({ module: "inventory", action: "update" }),
-  StockController.transferBetweenDistributors.bind(StockController),
+  StockController.transferBetweenEmployees.bind(StockController),
 );
 router.post(
   "/transfer-to-branch",
@@ -31,9 +31,9 @@ router.post(
   StockController.transferToBranch.bind(StockController),
 );
 router.get(
-  "/distributor/:distributorId",
+  "/employee/:employeeId",
   requirePermission({ module: "inventory", action: "read" }),
-  StockController.getDistributorStock.bind(StockController),
+  StockController.getEmployeeStock.bind(StockController),
 );
 router.get(
   "/branch/:branchId?",

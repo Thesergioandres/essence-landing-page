@@ -1,6 +1,6 @@
 describe('Business Logic - Profit Calculations', () => {
-  describe('Distributor Profit Percentage', () => {
-    test('Distribuidor normal debe tener 20%', () => {
+  describe('Employee Profit Percentage', () => {
+    test('Employee normal debe tener 20%', () => {
       const basePercentage = 20;
       const bonus = 0;
       const totalPercentage = basePercentage + bonus;
@@ -8,7 +8,7 @@ describe('Business Logic - Profit Calculations', () => {
       expect(totalPercentage).toBe(20);
     });
 
-    test('Distribuidor 3er lugar debe tener 21%', () => {
+    test('Employee 3er lugar debe tener 21%', () => {
       const basePercentage = 20;
       const bonus = 1;
       const totalPercentage = basePercentage + bonus;
@@ -16,7 +16,7 @@ describe('Business Logic - Profit Calculations', () => {
       expect(totalPercentage).toBe(21);
     });
 
-    test('Distribuidor 2do lugar debe tener 23%', () => {
+    test('Employee 2do lugar debe tener 23%', () => {
       const basePercentage = 20;
       const bonus = 3;
       const totalPercentage = basePercentage + bonus;
@@ -24,7 +24,7 @@ describe('Business Logic - Profit Calculations', () => {
       expect(totalPercentage).toBe(23);
     });
 
-    test('Distribuidor 1er lugar debe tener 25%', () => {
+    test('Employee 1er lugar debe tener 25%', () => {
       const basePercentage = 20;
       const bonus = 5;
       const totalPercentage = basePercentage + bonus;
@@ -44,27 +44,27 @@ describe('Business Logic - Profit Calculations', () => {
     const quantity = 10;
     const percentage = 20;
 
-    test('Ganancia distribuidor = salePrice * 20% * quantity', () => {
-      const distributorProfit = (salePrice * percentage / 100) * quantity;
-      expect(distributorProfit).toBe(400);
+    test('Ganancia employee = salePrice * 20% * quantity', () => {
+      const employeeProfit = (salePrice * percentage / 100) * quantity;
+      expect(employeeProfit).toBe(400);
     });
 
-    test('Pago distribuidor = salePrice * 80% * quantity', () => {
-      const distributorPayment = (salePrice * (100 - percentage) / 100) * quantity;
-      expect(distributorPayment).toBe(1600);
+    test('Pago employee = salePrice * 80% * quantity', () => {
+      const employeePayment = (salePrice * (100 - percentage) / 100) * quantity;
+      expect(employeePayment).toBe(1600);
     });
 
-    test('Ganancia admin = (distributorPayment - cost) * quantity', () => {
-      const distributorPayment = salePrice * (100 - percentage) / 100;
-      const adminProfit = (distributorPayment - purchasePrice) * quantity;
+    test('Ganancia admin = (employeePayment - cost) * quantity', () => {
+      const employeePayment = salePrice * (100 - percentage) / 100;
+      const adminProfit = (employeePayment - purchasePrice) * quantity;
       expect(adminProfit).toBe(600);
     });
 
-    test('Ganancia total = distributorProfit + adminProfit', () => {
-      const distributorProfit = (salePrice * percentage / 100) * quantity;
-      const distributorPayment = salePrice * (100 - percentage) / 100;
-      const adminProfit = (distributorPayment - purchasePrice) * quantity;
-      const totalProfit = distributorProfit + adminProfit;
+    test('Ganancia total = employeeProfit + adminProfit', () => {
+      const employeeProfit = (salePrice * percentage / 100) * quantity;
+      const employeePayment = salePrice * (100 - percentage) / 100;
+      const adminProfit = (employeePayment - purchasePrice) * quantity;
+      const totalProfit = employeeProfit + adminProfit;
 
       expect(totalProfit).toBe(1000);
     });
@@ -76,27 +76,27 @@ describe('Business Logic - Profit Calculations', () => {
     const quantity = 10;
     const percentage = 25;
 
-    test('Ganancia distribuidor = salePrice * 25% * quantity', () => {
-      const distributorProfit = (salePrice * percentage / 100) * quantity;
-      expect(distributorProfit).toBe(500);
+    test('Ganancia employee = salePrice * 25% * quantity', () => {
+      const employeeProfit = (salePrice * percentage / 100) * quantity;
+      expect(employeeProfit).toBe(500);
     });
 
-    test('Pago distribuidor = salePrice * 75% * quantity', () => {
-      const distributorPayment = (salePrice * (100 - percentage) / 100) * quantity;
-      expect(distributorPayment).toBe(1500);
+    test('Pago employee = salePrice * 75% * quantity', () => {
+      const employeePayment = (salePrice * (100 - percentage) / 100) * quantity;
+      expect(employeePayment).toBe(1500);
     });
 
-    test('Ganancia admin = (distributorPayment - cost) * quantity', () => {
-      const distributorPayment = salePrice * (100 - percentage) / 100;
-      const adminProfit = (distributorPayment - purchasePrice) * quantity;
+    test('Ganancia admin = (employeePayment - cost) * quantity', () => {
+      const employeePayment = salePrice * (100 - percentage) / 100;
+      const adminProfit = (employeePayment - purchasePrice) * quantity;
       expect(adminProfit).toBe(500);
     });
 
-    test('Ganancia total = distributorProfit + adminProfit', () => {
-      const distributorProfit = (salePrice * percentage / 100) * quantity;
-      const distributorPayment = salePrice * (100 - percentage) / 100;
-      const adminProfit = (distributorPayment - purchasePrice) * quantity;
-      const totalProfit = distributorProfit + adminProfit;
+    test('Ganancia total = employeeProfit + adminProfit', () => {
+      const employeeProfit = (salePrice * percentage / 100) * quantity;
+      const employeePayment = salePrice * (100 - percentage) / 100;
+      const adminProfit = (employeePayment - purchasePrice) * quantity;
+      const totalProfit = employeeProfit + adminProfit;
 
       expect(totalProfit).toBe(1000);
     });
@@ -112,33 +112,33 @@ describe('Business Logic - Profit Calculations', () => {
       expect(adminProfit).toBe(1000);
     });
 
-    test('Admin vende directamente - distributorProfit = 0', () => {
-      const distributorProfit = 0;
-      expect(distributorProfit).toBe(0);
+    test('Admin vende directamente - employeeProfit = 0', () => {
+      const employeeProfit = 0;
+      expect(employeeProfit).toBe(0);
     });
 
     test('Admin vende directamente - totalProfit = adminProfit', () => {
       const adminProfit = (salePrice - purchasePrice) * quantity;
-      const distributorProfit = 0;
-      const totalProfit = distributorProfit + adminProfit;
+      const employeeProfit = 0;
+      const totalProfit = employeeProfit + adminProfit;
 
       expect(totalProfit).toBe(1000);
     });
   });
 
   describe('Price Validations', () => {
-    test('purchasePrice debe ser menor que distributorPrice', () => {
+    test('purchasePrice debe ser menor que employeePrice', () => {
       const purchasePrice = 100;
-      const distributorPrice = 150;
+      const employeePrice = 150;
 
-      expect(purchasePrice).toBeLessThan(distributorPrice);
+      expect(purchasePrice).toBeLessThan(employeePrice);
     });
 
-    test('distributorPrice debe ser menor que salePrice', () => {
-      const distributorPrice = 150;
+    test('employeePrice debe ser menor que salePrice', () => {
+      const employeePrice = 150;
       const salePrice = 200;
 
-      expect(distributorPrice).toBeLessThan(salePrice);
+      expect(employeePrice).toBeLessThan(salePrice);
     });
 
     test('purchasePrice debe ser menor que salePrice', () => {
@@ -231,35 +231,35 @@ describe('Business Logic - Sale ID Format', () => {
 describe('Business Logic - Ranking System', () => {
   test('Ranking debe basarse en ingresos totales', () => {
     const sales = [
-      { distributor: 'A', revenue: 10000 },
-      { distributor: 'B', revenue: 8000 },
-      { distributor: 'C', revenue: 12000 },
+      { employee: 'A', revenue: 10000 },
+      { employee: 'B', revenue: 8000 },
+      { employee: 'C', revenue: 12000 },
     ];
 
     const ranked = [...sales].sort((a, b) => b.revenue - a.revenue);
 
-    expect(ranked[0].distributor).toBe('C'); // 1er lugar
-    expect(ranked[1].distributor).toBe('A'); // 2do lugar
-    expect(ranked[2].distributor).toBe('B'); // 3er lugar
+    expect(ranked[0].employee).toBe('C'); // 1er lugar
+    expect(ranked[1].employee).toBe('A'); // 2do lugar
+    expect(ranked[2].employee).toBe('B'); // 3er lugar
   });
 
   test('Solo ventas confirmadas deben contar para ranking', () => {
     const sales = [
-      { distributor: 'A', revenue: 10000, status: 'confirmado' },
-      { distributor: 'B', revenue: 50000, status: 'pendiente' },
+      { employee: 'A', revenue: 10000, status: 'confirmado' },
+      { employee: 'B', revenue: 50000, status: 'pendiente' },
     ];
 
     const confirmedSales = sales.filter((s) => s.status === 'confirmado');
     const ranked = confirmedSales.sort((a, b) => b.revenue - a.revenue);
 
-    expect(ranked[0].distributor).toBe('A');
+    expect(ranked[0].employee).toBe('A');
     expect(ranked.length).toBe(1);
   });
 
   test('Empate en ventas mantiene orden de primero en llegar', () => {
     const sales = [
-      { distributor: 'A', revenue: 10000, timestamp: new Date('2025-01-01') },
-      { distributor: 'B', revenue: 10000, timestamp: new Date('2025-01-02') },
+      { employee: 'A', revenue: 10000, timestamp: new Date('2025-01-01') },
+      { employee: 'B', revenue: 10000, timestamp: new Date('2025-01-02') },
     ];
 
     // Ambos tienen mismo revenue, pero A llegó primero
@@ -270,7 +270,7 @@ describe('Business Logic - Ranking System', () => {
       return b.revenue - a.revenue;
     });
 
-    expect(ranked[0].distributor).toBe('A');
+    expect(ranked[0].employee).toBe('A');
   });
 });
 

@@ -137,9 +137,9 @@ export const businessContext = async (req, res, next) => {
       }
     }
 
-    // Si el creador (super admin) perdió acceso, bloquear a los distribuidores del negocio
+    // Si el creador (super admin) perdió acceso, bloquear a los employees del negocio
     if (isEmployeeRole(membership?.role) && !isGod) {
-      addDebugLog(`[businessContext] Checking distribuidor's owner status...`);
+      addDebugLog(`[businessContext] Checking employee's owner status...`);
 
       // Resolver owner/admin principal: membership admin más antiguo o creador
       const primaryAdminMembership = await Membership.findOne({
@@ -166,7 +166,7 @@ export const businessContext = async (req, res, next) => {
 
       if (ownerInactive) {
         addDebugLog(
-          `[businessContext] ❌ ERROR: Owner is inactive, blocking distribuidor`,
+          `[businessContext] ❌ ERROR: Owner is inactive, blocking employee`,
         );
         logAuthError({
           message: "Acceso deshabilitado: owner_inactive",
@@ -190,7 +190,9 @@ export const businessContext = async (req, res, next) => {
     req.business = business;
     req.businessId = businessId;
     req.membership = membership;
-    next();
+
+    // Inyectar el Cortacorriente (Subscripción) automáticamente
+    return checkSubscription(req, res, next);
   } catch (error) {
     console.log(`[businessContext] ❌ EXCEPTION:`, error.message);
     logAuthError({
@@ -475,7 +477,7 @@ export const checkPlanLimits = (resourceKey) => {
         });
       }
 
-      if (!["branches", "distributors"].includes(resourceKey)) {
+      if (!["branches", "employees"].includes(resourceKey)) {
         return res.status(500).json({
           success: false,
           message: "Recurso de límite inválido",
@@ -501,7 +503,7 @@ export const checkPlanLimits = (resourceKey) => {
         message:
           resourceKey === "branches"
             ? "Has alcanzado el límite de sedes de tu plan"
-            : "Has alcanzado el límite de distribuidores de tu plan",
+            : "Has alcanzado el límite de employees de tu plan",
         plan,
         limits,
         usage,
@@ -516,3 +518,86 @@ export const checkPlanLimits = (resourceKey) => {
     }
   };
 };
+
+// Cortacorriente (Middleare de Suscripción)
+export async function checkSubscription(req, res, next) {
+  try {
+    const isGod = req.user?.role === "god";
+    if (isGod) {
+      return next();
+    }
+
+    const businessId = req.businessId || req.business?._id?.toString();
+    if (!businessId) {
+      return res.status(400).json({
+        success: false,
+        message: "Falta contexto de negocio para validar la suscripción",
+      });
+    }
+
+    const business =
+      req.business || (await Business.findById(businessId).lean());
+    if (!business) {
+      return res.status(404).json({
+        success: false,
+        message: "Negocio no encontrado",
+      });
+    }
+
+    // Resolver dueño (por lo general el creator o el admin más antiguo)
+    const primaryAdminMembership = await Membership.findOne({
+      business: businessId,
+      role: "admin",
+      status: "active",
+    })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    const ownerUserId = primaryAdminMembership?.user || business.createdBy;
+    if (!ownerUserId) {
+      return res.status(403).json({
+        success: false,
+        message: "No se pudo resolver el creador o dueño del negocio",
+      });
+    }
+
+    const owner = await User.findById(ownerUserId).select(
+      "status active subscriptionExpiresAt",
+    );
+
+    if (!owner) {
+      return res.status(403).json({
+        success: false,
+        message: "El propietario del negocio ya no existe en el sistema",
+      });
+    }
+
+    const ownerExpired =
+      owner.subscriptionExpiresAt &&
+      new Date(owner.subscriptionExpiresAt).getTime() < Date.now();
+
+    const isSuspendedOrExpired = ["suspended", "expired"].includes(
+      owner.status,
+    );
+
+    if (ownerExpired || isSuspendedOrExpired || !owner.active) {
+      return res.status(403).json({
+        success: false,
+        code: "SUBSCRIPTION_INACTIVE",
+        message: "Suscripción del negocio inactiva o expirada.",
+        subscriptionExpiresAt: owner.subscriptionExpiresAt || null,
+        status: owner.status,
+      });
+    }
+
+    // Todo bien
+    next();
+  } catch (error) {
+    console.error("[checkSubscription] Error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Error verificando suscripción",
+      error: error.message,
+    });
+  }
+}

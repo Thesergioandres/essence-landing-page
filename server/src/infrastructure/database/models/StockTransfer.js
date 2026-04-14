@@ -7,12 +7,12 @@ const stockTransferSchema = new mongoose.Schema(
       ref: "Business",
       index: true,
     },
-    fromDistributor: {
+    fromEmployee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    toDistributor: {
+    toEmployee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: false,
@@ -63,8 +63,8 @@ const stockTransferSchema = new mongoose.Schema(
 );
 
 // Índices para búsquedas rápidas
-stockTransferSchema.index({ fromDistributor: 1, createdAt: -1 });
-stockTransferSchema.index({ toDistributor: 1, createdAt: -1 });
+stockTransferSchema.index({ fromEmployee: 1, createdAt: -1 });
+stockTransferSchema.index({ toEmployee: 1, createdAt: -1 });
 stockTransferSchema.index({ toBranch: 1, createdAt: -1 });
 stockTransferSchema.index({ product: 1, createdAt: -1 });
 stockTransferSchema.index({ createdAt: -1 });

@@ -60,12 +60,12 @@ export const computePointsForSale = (config, sale, product) => {
 
   let pointsAmount = saleAmount;
   if (pointsBase === "commission") {
-    const distributorProfit = Number(sale.distributorProfit || 0);
-    if (distributorProfit > 0) {
-      pointsAmount = distributorProfit;
-    } else if (sale.distributorProfitPercentage) {
+    const employeeProfit = Number(sale.employeeProfit || 0);
+    if (employeeProfit > 0) {
+      pointsAmount = employeeProfit;
+    } else if (sale.employeeProfitPercentage) {
       pointsAmount =
-        saleAmount * (Number(sale.distributorProfitPercentage) / 100);
+        saleAmount * (Number(sale.employeeProfitPercentage) / 100);
     }
   }
 

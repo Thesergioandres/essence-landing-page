@@ -370,8 +370,8 @@ export default function Onboarding() {
                       label: "Sedes",
                       desc: "Gestión de sucursales y puntos de venta.",
                     },
-                    distributors: {
-                      label: "Distribuidores",
+                    employees: {
+                      label: "Employees",
                       desc: "Red de distribución y comisiones.",
                     },
                     rankings: {

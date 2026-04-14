@@ -64,7 +64,7 @@ const routeCoverage = [
     detail: "Operacion, ventas, reportes, configuracion y soporte",
   },
   {
-    label: "Distribuidor",
+    label: "Employee",
     count: 27,
     detail: "Catalogo, ventas, envios y modo operativo",
   },
@@ -88,7 +88,7 @@ const manualSections: ManualSection[] = [
 
 Essence ERP concentra en un solo lugar la operacion diaria de ventas, inventario y rentabilidad.
 
-- Control de mercancia en bodega, sedes y distribuidores.
+- Control de mercancia en bodega, sedes y employees.
 - Registro de ventas normales, promocionales y ventas con pago a plazos.
 - Seguimiento de garantias, novedades de calidad y traslados.
 - Lectura de indicadores para cuidar utilidad y flujo de caja.
@@ -100,7 +100,7 @@ Essence ERP concentra en un solo lugar la operacion diaria de ventas, inventario
 | --- | --- | --- |
 | dueño | Direccion total de la plataforma y de todas las empresas | No requiere operar cada venta del dia |
 | Gerencia administrativa | Gestion completa de la empresa activa | Depende del plan y permisos de su equipo |
-| Distribuidor | Ventas, catalogo y logistica asignada | Puede operar sin acceso a costos sensibles |
+| Employee | Ventas, catalogo y logistica asignada | Puede operar sin acceso a costos sensibles |
 | Equipo operativo | Tareas puntuales segun autorizacion | No realiza cambios de administracion global |
 
 ## Verticales del dominio
@@ -152,7 +152,7 @@ La plataforma prioriza continuidad para el equipo:
 ## Redirecciones por rol
 
 - dueño y gerencia administrativa: panel de gestion.
-- Distribuidor: panel distribuidor.
+- Employee: panel employee.
 - Si alguien entra a una zona no autorizada, se redirige al panel permitido.
 `,
   },
@@ -195,9 +195,9 @@ Ejemplos de modulos que pueden variar por plan:
 - Promociones
 - Gamificacion comercial
 
-## Modo operativo distribuidor
+## Modo operativo employee
 
-Si un distribuidor entra por una ruta administrativa, la plataforma lo dirige automaticamente a su ruta operativa equivalente.
+Si un employee entra por una ruta administrativa, la plataforma lo dirige automaticamente a su ruta operativa equivalente.
 `,
   },
   {
@@ -209,7 +209,7 @@ Si un distribuidor entra por una ruta administrativa, la plataforma lo dirige au
     tags: ["rutas", "navegacion", "modulos"],
     icon: Compass,
     checkpoints: [
-      "Usar el prefijo correcto (/admin o /distributor).",
+      "Usar el prefijo correcto (/admin o /employee).",
       "Confirmar permisos vigentes antes de acciones criticas.",
       "Revisar redirecciones antiguas antes de reportar un problema.",
     ],
@@ -221,7 +221,7 @@ Si un distribuidor entra por una ruta administrativa, la plataforma lo dirige au
 - /productos
 - /producto/:id
 - /categoria/:slug
-- /staff-catalog/:distributorId
+- /staff-catalog/:employeeId
 - /account-hold
 
 ## Rutas de autenticación
@@ -244,7 +244,7 @@ Si un distribuidor entra por una ruta administrativa, la plataforma lo dirige au
 - Comercial: promotions, advertising, customers, segments, providers.
 - Calidad: warranties, defective-products.
 
-## Rutas distribuidor
+## Rutas employee
 
 - Core: dashboard, products, catalog, share-catalog, advertising.
 - Venta: register-sale, register-promotion, sales, credits.
@@ -255,10 +255,10 @@ Si un distribuidor entra por una ruta administrativa, la plataforma lo dirige au
   },
   {
     id: "05-catalogo",
-    title: "Catalogo Publico Y Distribuidor",
+    title: "Catalogo Publico Y Employee",
     subtitle:
       "Venta asistida con filtros, enlaces compartibles y PDF comercial.",
-    audience: "Admin, distribuidor, equipo comercial",
+    audience: "Admin, employee, equipo comercial",
     readingTime: "9 min",
     tags: ["catalogo", "ventas", "marketing"],
     icon: Megaphone,
@@ -274,11 +274,11 @@ Si un distribuidor entra por una ruta administrativa, la plataforma lo dirige au
 - Muestra promociones activas para acelerar conversion comercial.
 - Permite descargar un PDF listo para enviar a clientes.
 
-## Catalogo distribuidor
+## Catalogo employee
 
-- Muestra solo los productos que el distribuidor puede ofrecer.
+- Muestra solo los productos que el employee puede ofrecer.
 - Incluye filtros de precio, categoria y disponibilidad.
-- Cada distribuidor puede compartir su enlace publico individual.
+- Cada employee puede compartir su enlace publico individual.
 - Incluye botones rapidos para WhatsApp, Telegram, Facebook, X, LinkedIn y correo.
 
 ## Compartir catalogo
@@ -286,7 +286,7 @@ Si un distribuidor entra por una ruta administrativa, la plataforma lo dirige au
 - La pantalla de compartir permite copiar enlace y validar vista previa.
 - En celular usa la opcion de compartir del equipo; en escritorio permite copiado rapido.
 
-## Catalogo publico de distribuidor
+## Catalogo publico de employee
 
 - Presenta el catalogo como vitrina para cliente final.
 - Puede mostrar datos de contacto para cierre directo.
@@ -326,14 +326,14 @@ Cuando ingresas nueva mercancia, el sistema recalcula el costo promedio para man
 
 ## Regla operativa
 
-No confirmar ventas con stock incierto. La consistencia de bodega, sedes y distribuidores depende de mantener entradas y salidas sincronizadas.
+No confirmar ventas con stock incierto. La consistencia de bodega, sedes y employees depende de mantener entradas y salidas sincronizadas.
 `,
   },
   {
     id: "07-stock-transferencias",
     title: "Gestion De Stock Y Transferencias",
     subtitle: "Asignar, retirar y trasladar mercancia entre equipos y sedes.",
-    audience: "Admin, distribuidor operativo",
+    audience: "Admin, employee operativo",
     readingTime: "9 min",
     tags: ["inventario", "logistica", "traslados"],
     icon: Warehouse,
@@ -344,13 +344,13 @@ No confirmar ventas con stock incierto. La consistencia de bodega, sedes y distr
     ],
     markdown: `## Gestion de stock (administracion)
 
-- Permite asignar mercancia a distribuidores y tambien retirarla cuando corresponde.
+- Permite asignar mercancia a employees y tambien retirarla cuando corresponde.
 - Permite trasladar unidades entre sedes con observaciones de control.
 - Antes de mover inventario, muestra disponibilidad real en el punto de salida.
 
-## Transferencias distribuidor
+## Transferencias employee
 
-- El distribuidor puede trasladar mercancia a otro distribuidor autorizado.
+- El employee puede trasladar mercancia a otro employee autorizado.
 - Tambien puede enviar stock a sedes habilitadas.
 - Siempre hay confirmacion previa para evitar errores de digitacion.
 
@@ -365,7 +365,7 @@ No confirmar ventas con stock incierto. La consistencia de bodega, sedes y distr
     id: "08-despachos",
     title: "Despachos Y Transito",
     subtitle: "Seguimiento completo desde solicitud hasta recepcion final.",
-    audience: "Admin logistica y distribuidor",
+    audience: "Admin logistica y employee",
     readingTime: "9 min",
     tags: ["despachos", "logistica", "traslados"],
     icon: Truck,
@@ -402,7 +402,7 @@ Al aprobar la recepcion, la mercancia se suma al inventario disponible para la v
     id: "09-ventas-estandar",
     title: "Venta Estandar",
     subtitle: "Registro comercial completo con control de inventario y cobro.",
-    audience: "Admin y distribuidor",
+    audience: "Admin y employee",
     readingTime: "12 min",
     tags: ["ventas", "carrito", "credito"],
     icon: ShoppingCart,
@@ -427,7 +427,7 @@ Al aprobar la recepcion, la mercancia se suma al inventario disponible para la v
 
 ## Datos complementarios
 
-- Muestra avance comercial del distribuidor con metas y reconocimientos.
+- Muestra avance comercial del employee con metas y reconocimientos.
 - Presenta resumen de total a cobrar, descuentos y costos extra.
 - Entrega una confirmacion final para cerrar la atencion con el cliente.
 `,
@@ -436,7 +436,7 @@ Al aprobar la recepcion, la mercancia se suma al inventario disponible para la v
     id: "10-ventas-promocion-especial",
     title: "Venta Promocional Y Especial",
     subtitle: "Promociones empaquetadas y ventas especiales por oportunidad.",
-    audience: "Admin y distribuidor comercial",
+    audience: "Admin y employee comercial",
     readingTime: "11 min",
     tags: ["ventas", "promociones", "eventos"],
     icon: Layers,
@@ -468,7 +468,7 @@ Las ventas especiales y promocionales deben revisarse en cierre para validar mar
     id: "11-creditos-cobranza",
     title: "Creditos Y Cobranza",
     subtitle: "Registro de cartera, pagos y efecto en metricas.",
-    audience: "Admin, distribuidor autorizado",
+    audience: "Admin, employee autorizado",
     readingTime: "8 min",
     tags: ["creditos", "ventas", "cobranza"],
     icon: CreditCard,
@@ -486,7 +486,7 @@ Las ventas especiales y promocionales deben revisarse en cierre para validar mar
 ## Pantallas clave
 
 - Admin: /admin/credits y /admin/credits/:id.
-- Distribuidor: /staff/credits.
+- Employee: /staff/credits.
 
 ## Impacto en reportes
 
@@ -548,7 +548,7 @@ Las ventas especiales y promocionales deben revisarse en cierre para validar mar
 
 ## Retiro de inventario como gasto
 
-- Permite retirar mercancia desde bodega, sede o distribuidor.
+- Permite retirar mercancia desde bodega, sede o employee.
 - Exige motivo y cantidad validada para mantener control.
 - Convierte ese retiro en gasto rastreable para auditoria.
 
@@ -583,7 +583,7 @@ Las ventas especiales y promocionales deben revisarse en cierre para validar mar
 
 - Permite descargar informes ejecutivos en PDF.
 - Permite exportar rankings en PDF o Excel.
-- Entrega reporte maestro con ventas, inventario, gastos y distribuidores.
+- Entrega reporte maestro con ventas, inventario, gastos y employees.
 - La descarga completa de datos respeta las politicas de privacidad financiera.
 
 ## Bitacora de auditoria
@@ -597,7 +597,7 @@ Las ventas especiales y promocionales deben revisarse en cierre para validar mar
     id: "15-gamificacion-rankings",
     title: "Gamificacion, Niveles Y Rankings",
     subtitle: "Competencia comercial y bonos de comision variable.",
-    audience: "Direccion comercial y distribuidores",
+    audience: "Direccion comercial y employees",
     readingTime: "7 min",
     tags: ["gamificacion", "rankings", "comisiones"],
     icon: Trophy,
@@ -610,7 +610,7 @@ Las ventas especiales y promocionales deben revisarse en cierre para validar mar
 
 - Ranking actual por periodo (actual o personalizado).
 - Historial de ganadores y bonos otorgados.
-- Podio visual y tabla completa por distribuidor.
+- Podio visual y tabla completa por employee.
 
 ## Indicadores comerciales clave
 
@@ -621,7 +621,7 @@ Las ventas especiales y promocionales deben revisarse en cierre para validar mar
 
 ## Regla de convivencia con comision fija
 
-Si un distribuidor tiene comision fija activa, la jerarquia de comision fija domina sobre bonus de gamificacion.
+Si un employee tiene comision fija activa, la jerarquia de comision fija domina sobre bonus de gamificacion.
 `,
   },
   {
@@ -651,7 +651,7 @@ Si un distribuidor tiene comision fija activa, la jerarquia de comision fija dom
 ## Tab Suscripciones
 
 - Gestion de plan por negocio (starter/pro/enterprise).
-- Limites personalizados de sedes y distribuidores.
+- Limites personalizados de sedes y employees.
 - Modo mantenimiento global.
 - Edicion de precios y funciones por plan.
 
@@ -671,7 +671,7 @@ El panel incluye control estricto por perfil. Si el usuario no es dueño, se blo
     icon: Lock,
     checkpoints: [
       "Nunca exponer costo de compra, costo promedio, proveedor ni utilidad sin autorizacion.",
-      "Respetar la comision fija cuando este definida para un distribuidor.",
+      "Respetar la comision fija cuando este definida para un employee.",
       "Registrar toda salida y recepcion de mercancia en el historial de movimientos.",
     ],
     markdown: `## Blindaje financiero
@@ -692,7 +692,7 @@ La decision de ocultar informacion se basa en:
 
 La regla es directa:
 
-1. Si un distribuidor tiene comision fija, ese porcentaje manda.
+1. Si un employee tiene comision fija, ese porcentaje manda.
 2. Si no tiene comision fija, se aplica el esquema variable del negocio.
 
 Esto evita conflictos y mantiene consistencia en liquidaciones.

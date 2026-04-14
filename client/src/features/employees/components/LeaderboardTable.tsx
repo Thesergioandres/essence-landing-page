@@ -48,17 +48,17 @@ const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
               ? `${points}/${nextLevel.minPoints}`
               : `${points}`;
             return (
-              <tr key={entry.distributorId} className="hover:bg-gray-900/60">
+              <tr key={entry.employeeId} className="hover:bg-gray-900/60">
                 <td className="py-3 pr-4 font-semibold text-white">
                   #{entry.position}
                 </td>
                 <td className="py-3 pr-4">
                   <div className="flex flex-col">
                     <span className="font-semibold text-white">
-                      {entry.distributorName}
+                      {entry.employeeName}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {entry.distributorEmail}
+                      {entry.employeeEmail}
                     </span>
                   </div>
                 </td>

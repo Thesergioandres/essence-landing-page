@@ -41,7 +41,7 @@ const expenseSchema = new mongoose.Schema(
     },
     sourceType: {
       type: String,
-      enum: ["warehouse", "branch", "distributor"],
+      enum: ["warehouse", "branch", "employee"],
       default: null,
     },
     sourceBranch: {
@@ -49,7 +49,7 @@ const expenseSchema = new mongoose.Schema(
       ref: "Branch",
       default: null,
     },
-    sourceDistributor: {
+    sourceEmployee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,

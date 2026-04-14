@@ -70,10 +70,10 @@ jest.unstable_mockModule(planLimitsModulePath, () => ({
   VALID_BUSINESS_PLANS: ["starter", "pro", "enterprise"],
   getBusinessUsage: jest
     .fn()
-    .mockResolvedValue({ branches: 0, distributors: 0 }),
+    .mockResolvedValue({ branches: 0, employees: 0 }),
   resolveBusinessLimits: jest.fn().mockResolvedValue({
     plan: "starter",
-    limits: { branches: 1, distributors: 2 },
+    limits: { branches: 1, employees: 2 },
     source: "plan",
   }),
 }));

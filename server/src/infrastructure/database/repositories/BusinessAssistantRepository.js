@@ -16,15 +16,15 @@ export class BusinessAssistantRepository {
       if (!productId) return acc;
       const warehouse = Number(item.warehouse || 0);
       const branches = Number(item.branches || 0);
-      const distributors = Number(item.distributors || 0);
+      const employees = Number(item.employees || 0);
       const systemTotal = Number(item.systemTotal || 0);
-      const total = warehouse + branches + distributors;
+      const total = warehouse + branches + employees;
       const unassigned = systemTotal > 0 ? Math.max(systemTotal - total, 0) : 0;
       acc[productId] = {
         total,
         warehouse,
         branches,
-        distributors,
+        employees,
         unassigned,
       };
       return acc;
@@ -513,7 +513,7 @@ export class BusinessAssistantRepository {
         total: product.totalStock || 0,
         warehouse: product.warehouseStock || 0,
         branches: 0,
-        distributors: 0,
+        employees: 0,
         unassigned: 0,
       };
 
@@ -719,7 +719,7 @@ export class BusinessAssistantRepository {
       const inventoryValue = costBasis * inventorySnapshot.total;
 
       const justification = [
-        `Stock total ${inventorySnapshot.total} (Bodega ${inventorySnapshot.warehouse} · Sedes ${inventorySnapshot.branches} · Distribuidores ${inventorySnapshot.distributors})`,
+        `Stock total ${inventorySnapshot.total} (Bodega ${inventorySnapshot.warehouse} · Sedes ${inventorySnapshot.branches} · Employees ${inventorySnapshot.employees})`,
         summary.recentUnits > 0
           ? `Ventas ${recentDays}d: ${summary.recentUnits} uds · Tendencia ${unitsGrowthPct >= 0 ? "+" : ""}${unitsGrowthPct.toFixed(1)}%`
           : `Sin ventas confirmadas en ${recentDays}d`,
@@ -752,7 +752,7 @@ export class BusinessAssistantRepository {
         stock: {
           warehouseStock: inventorySnapshot.warehouse,
           branchesStock: inventorySnapshot.branches,
-          distributorsStock: inventorySnapshot.distributors,
+          employeesStock: inventorySnapshot.employees,
           unassignedStock: inventorySnapshot.unassigned,
           totalStock: inventorySnapshot.total,
           lowStockAlert: product.lowStockAlert ?? 0,

@@ -44,18 +44,18 @@ export const getEstimatedProfit = async (req, res, next) => {
 };
 
 /**
- * Get Distributor Estimated Profit
- * Calcula la ganancia estimada del distribuidor basándose en sus ventas
+ * Get Employee Estimated Profit
+ * Calcula la ganancia estimada del employee basándose en sus ventas
  */
-export const getDistributorEstimatedProfit = async (req, res, next) => {
+export const getEmployeeEstimatedProfit = async (req, res, next) => {
   try {
     const businessId = req.headers["x-business-id"] || req.user.business;
-    const distributorId = req.user.id || req.user._id;
+    const employeeId = req.user.id || req.user._id;
 
     const repository = new AnalyticsPersistenceUseCase();
-    const estimatedProfit = await repository.getDistributorEstimatedProfit(
+    const estimatedProfit = await repository.getEmployeeEstimatedProfit(
       businessId,
-      distributorId,
+      employeeId,
     );
 
     res.json({

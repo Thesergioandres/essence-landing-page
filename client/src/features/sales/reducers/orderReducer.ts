@@ -18,8 +18,8 @@ export const initialOrderState: OrderState = {
   locationType: "warehouse",
   locationId: null,
   locationName: "Bodega Principal",
-  isDistributorSale: false,
-  distributorProfitPercentage: 20,
+  isEmployeeSale: false,
+  employeeProfitPercentage: 20,
 
   // Items
   items: [],
@@ -57,18 +57,18 @@ export const initialOrderState: OrderState = {
 // ==================== CALCULATION HELPERS ====================
 const calculateItemMetrics = (
   item: Omit<OrderItem, "subtotal" | "grossProfit">,
-  isDistributorSale = false,
-  distributorProfitPercentage = 20
+  isEmployeeSale = false,
+  employeeProfitPercentage = 20
 ): OrderItem => {
   const subtotal = item.quantity * item.unitPrice;
   const purchasePrice = item.purchasePrice || 0; // Safeguard against undefined/NaN
-  const hasDistributorPrice =
-    typeof item.distributorPrice === "number" &&
-    !Number.isNaN(item.distributorPrice);
-  const grossProfit = isDistributorSale
-    ? hasDistributorPrice
-      ? subtotal - item.quantity * (item.distributorPrice || 0)
-      : subtotal * (distributorProfitPercentage / 100)
+  const hasEmployeePrice =
+    typeof item.employeePrice === "number" &&
+    !Number.isNaN(item.employeePrice);
+  const grossProfit = isEmployeeSale
+    ? hasEmployeePrice
+      ? subtotal - item.quantity * (item.employeePrice || 0)
+      : subtotal * (employeeProfitPercentage / 100)
     : subtotal - item.quantity * purchasePrice;
   return { ...item, subtotal, grossProfit } as OrderItem;
 };
@@ -93,7 +93,7 @@ const recalculateTotals = (state: OrderState): OrderState => {
     0
   );
 
-  const warrantyLoss = state.isDistributorSale
+  const warrantyLoss = state.isEmployeeSale
     ? 0
     : state.warranties.reduce((sum, warranty) => {
         if (warranty.type !== "total_loss") return sum;
@@ -112,14 +112,14 @@ const recalculateTotals = (state: OrderState): OrderState => {
   const totalCosts = state.shippingCost + additionalCharges;
 
   // Net profit calculation:
-  // - For distributor sales, manual discounts reduce the distributor commission
+  // - For employee sales, manual discounts reduce the employee commission
   // - For regular sales, discounts reduce company profit
   // - Additional costs reduce profit (vendor pays these)
   // - Shipping does NOT reduce profit (customer pays this)
-  const adjustedGrossProfit = state.isDistributorSale
+  const adjustedGrossProfit = state.isEmployeeSale
     ? Math.max(0, itemsGrossProfit - discountAmount)
     : itemsGrossProfit;
-  const netProfit = state.isDistributorSale
+  const netProfit = state.isEmployeeSale
     ? adjustedGrossProfit -
       additionalCharges -
       additionalAdjustments -
@@ -176,8 +176,8 @@ export function orderReducer(
             const newQty = item.quantity + action.item.quantity;
             return calculateItemMetrics(
               { ...item, quantity: newQty },
-              state.isDistributorSale,
-              state.distributorProfitPercentage
+              state.isEmployeeSale,
+              state.employeeProfitPercentage
             );
           }
           return item;
@@ -190,8 +190,8 @@ export function orderReducer(
             ...action.item,
             id: uuidv4(),
           },
-          state.isDistributorSale,
-          state.distributorProfitPercentage
+          state.isEmployeeSale,
+          state.employeeProfitPercentage
         );
         newState = { ...state, items: [...state.items, newItem] };
       }
@@ -204,8 +204,8 @@ export function orderReducer(
           const updatedItem = { ...item, ...action.updates };
           return calculateItemMetrics(
             updatedItem,
-            state.isDistributorSale,
-            state.distributorProfitPercentage
+            state.isEmployeeSale,
+            state.employeeProfitPercentage
           );
         }
         return item;
@@ -328,18 +328,18 @@ export function orderReducer(
       newState = { ...state, notes: action.notes };
       break;
 
-    case "SET_DISTRIBUTOR_PROFIT": {
+    case "SET_EMPLOYEE_PROFIT": {
       const updatedItems = state.items.map(item =>
         calculateItemMetrics(
           item,
-          action.isDistributorSale,
+          action.isEmployeeSale,
           action.profitPercentage
         )
       );
       newState = {
         ...state,
-        isDistributorSale: action.isDistributorSale,
-        distributorProfitPercentage: action.profitPercentage,
+        isEmployeeSale: action.isEmployeeSale,
+        employeeProfitPercentage: action.profitPercentage,
         items: updatedItems,
       };
       break;
@@ -351,8 +351,8 @@ export function orderReducer(
         locationType: state.locationType,
         locationId: state.locationId,
         locationName: state.locationName,
-        isDistributorSale: state.isDistributorSale,
-        distributorProfitPercentage: state.distributorProfitPercentage,
+        isEmployeeSale: state.isEmployeeSale,
+        employeeProfitPercentage: state.employeeProfitPercentage,
       };
       break;
 

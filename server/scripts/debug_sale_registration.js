@@ -8,13 +8,13 @@ import "../src/infrastructure/database/models/Branch.js";
 import "../src/infrastructure/database/models/Business.js";
 import "../src/infrastructure/database/models/Customer.js";
 import "../src/infrastructure/database/models/DeliveryMethod.js";
-import DistributorStock from "../src/infrastructure/database/models/DistributorStock.js";
+import EmployeeStock from "../src/infrastructure/database/models/EmployeeStock.js";
 import "../src/infrastructure/database/models/PaymentMethod.js";
 import Product from "../src/infrastructure/database/models/Product.js";
 import Sale from "../src/infrastructure/database/models/Sale.js";
 
 // Utils
-import { getDistributorCommissionInfo } from "../src/infrastructure/services/distributorPricing.service.js";
+import { getEmployeeCommissionInfo } from "../src/infrastructure/services/employeePricing.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,7 +26,7 @@ async function run() {
     console.log("🔌 Conectando a MongoDB...");
     await mongoose.connect(process.env.MONGODB_URI);
 
-    const distributorId = "6976ea761b2368c4bc66ff0f";
+    const employeeId = "6976ea761b2368c4bc66ff0f";
     const productName = "Vape Test Azul"; // Or "Esencia Test Roja"
 
     console.log(`🔎 Buscando producto: ${productName}`);
@@ -49,16 +49,16 @@ async function run() {
 
     // 1. Stock Check
     console.log("1. Verificando Stock...");
-    const stock = await DistributorStock.findOne({
-      distributor: distributorId,
+    const stock = await EmployeeStock.findOne({
+      employee: employeeId,
       product: product._id,
     });
     console.log(`   Stock actual: ${stock ? stock.quantity : "N/A"}`);
 
     // 2. Commission Info
     console.log("2. Calculando Comisiones...");
-    const commissionInfo = await getDistributorCommissionInfo(
-      distributorId,
+    const commissionInfo = await getEmployeeCommissionInfo(
+      employeeId,
       businessId,
     );
     console.log("   Comission Info OK:", commissionInfo.profitPercentage);
@@ -68,13 +68,13 @@ async function run() {
     const saleData = {
       business: businessId,
       saleId: `DEBUG-${Date.now()}`,
-      distributor: distributorId,
+      employee: employeeId,
       product: product._id,
       productName: product.name,
       quantity,
       purchasePrice: product.purchasePrice || 0,
       salePrice,
-      distributorPrice: product.distributorPrice || 0,
+      employeePrice: product.employeePrice || 0,
       paymentMethodCode: "cash",
       isCredit: false,
       saleDate: new Date(),

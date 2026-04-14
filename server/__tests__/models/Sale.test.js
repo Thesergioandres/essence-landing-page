@@ -26,7 +26,7 @@ afterEach(async () => {
 
 describe("Sale Model - Generación de saleId", () => {
   let product;
-  let distributor;
+  let employee;
 
   beforeEach(async () => {
     // Crear producto de prueba
@@ -34,31 +34,31 @@ describe("Sale Model - Generación de saleId", () => {
       name: "Producto Test",
       description: "Descripción test",
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       clientPrice: 200,
       totalStock: 1000,
       category: new mongoose.Types.ObjectId(),
     });
 
-    // Crear distribuidor de prueba
-    distributor = await User.create({
-      name: "Distribuidor Test",
-      email: "distributor@test.com",
+    // Crear employee de prueba
+    employee = await User.create({
+      name: "Employee Test",
+      email: "employee@test.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
   });
 
   test("Debe generar saleId automáticamente con formato SALE-YYYYMMDD-HHMMSS-XXXXXX", async () => {
     const sale = await Sale.create({
-      distributor: distributor._id,
+      employee: employee._id,
       product: product._id,
       quantity: 5,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 5,
-      distributorProfitPercentage: 25,
+      employeeProfitPercentage: 25,
     });
 
     expect(sale.saleId).toBeDefined();
@@ -70,25 +70,25 @@ describe("Sale Model - Generación de saleId", () => {
 
   test("Debe generar saleId únicos en ventas consecutivas", async () => {
     const sale1 = await Sale.create({
-      distributor: distributor._id,
+      employee: employee._id,
       product: product._id,
       quantity: 1,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 0,
-      distributorProfitPercentage: 20,
+      employeeProfitPercentage: 20,
     });
 
     const sale2 = await Sale.create({
-      distributor: distributor._id,
+      employee: employee._id,
       product: product._id,
       quantity: 1,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 0,
-      distributorProfitPercentage: 20,
+      employeeProfitPercentage: 20,
     });
 
     expect(sale1.saleId).toMatch(/^SALE-\d{8}-\d{6}-[A-Z0-9]{6}$/);
@@ -99,180 +99,180 @@ describe("Sale Model - Generación de saleId", () => {
 
 describe("Sale Model - Cálculo de ganancias", () => {
   let product;
-  let distributor;
+  let employee;
 
   beforeEach(async () => {
     product = await Product.create({
       name: "Producto Test",
       description: "Descripción test",
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       totalStock: 1000,
       category: new mongoose.Types.ObjectId(),
     });
 
-    distributor = await User.create({
-      name: "Distribuidor Test",
-      email: "distributor@test.com",
+    employee = await User.create({
+      name: "Employee Test",
+      email: "employee@test.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
   });
 
-  test("Debe calcular correctamente ganancia de distribuidor normal (20%)", async () => {
+  test("Debe calcular correctamente ganancia de employee normal (20%)", async () => {
     const sale = await Sale.create({
-      distributor: distributor._id,
+      employee: employee._id,
       product: product._id,
       quantity: 10,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 0,
-      distributorProfitPercentage: 20,
+      employeeProfitPercentage: 20,
     });
 
-    // distributorProfit = salePrice * 20% * quantity = 200 * 0.20 * 10 = 400
-    expect(sale.distributorProfit).toBe(400);
+    // employeeProfit = salePrice * 20% * quantity = 200 * 0.20 * 10 = 400
+    expect(sale.employeeProfit).toBe(400);
   });
 
-  test("Debe calcular correctamente ganancia de distribuidor 1er lugar (25%)", async () => {
+  test("Debe calcular correctamente ganancia de employee 1er lugar (25%)", async () => {
     const sale = await Sale.create({
-      distributor: distributor._id,
+      employee: employee._id,
       product: product._id,
       quantity: 10,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 5,
-      distributorProfitPercentage: 25,
+      employeeProfitPercentage: 25,
     });
 
-    // distributorProfit = salePrice * 25% * quantity = 200 * 0.25 * 10 = 500
-    expect(sale.distributorProfit).toBe(500);
+    // employeeProfit = salePrice * 25% * quantity = 200 * 0.25 * 10 = 500
+    expect(sale.employeeProfit).toBe(500);
   });
 
-  test("Debe calcular correctamente ganancia de distribuidor 2do lugar (23%)", async () => {
+  test("Debe calcular correctamente ganancia de employee 2do lugar (23%)", async () => {
     const sale = await Sale.create({
-      distributor: distributor._id,
+      employee: employee._id,
       product: product._id,
       quantity: 10,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 3,
-      distributorProfitPercentage: 23,
+      employeeProfitPercentage: 23,
     });
 
-    // distributorProfit = salePrice * 23% * quantity = 200 * 0.23 * 10 = 460
-    expect(sale.distributorProfit).toBe(460);
+    // employeeProfit = salePrice * 23% * quantity = 200 * 0.23 * 10 = 460
+    expect(sale.employeeProfit).toBe(460);
   });
 
-  test("Debe calcular correctamente ganancia de distribuidor 3er lugar (21%)", async () => {
+  test("Debe calcular correctamente ganancia de employee 3er lugar (21%)", async () => {
     const sale = await Sale.create({
-      distributor: distributor._id,
+      employee: employee._id,
       product: product._id,
       quantity: 10,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 1,
-      distributorProfitPercentage: 21,
+      employeeProfitPercentage: 21,
     });
 
-    // distributorProfit = salePrice * 21% * quantity = 200 * 0.21 * 10 = 420
-    expect(sale.distributorProfit).toBe(420);
+    // employeeProfit = salePrice * 21% * quantity = 200 * 0.21 * 10 = 420
+    expect(sale.employeeProfit).toBe(420);
   });
 
-  test("Debe calcular correctamente ganancia admin con distribuidor normal (20%)", async () => {
+  test("Debe calcular correctamente ganancia admin con employee normal (20%)", async () => {
     const sale = await Sale.create({
-      distributor: distributor._id,
+      employee: employee._id,
       product: product._id,
       quantity: 10,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 0,
-      distributorProfitPercentage: 20,
+      employeeProfitPercentage: 20,
     });
 
-    // distributorPayment = salePrice * 80% = 200 * 0.80 = 160
-    // adminProfit = (distributorPayment - purchasePrice) * quantity = (160 - 100) * 10 = 600
+    // employeePayment = salePrice * 80% = 200 * 0.80 = 160
+    // adminProfit = (employeePayment - purchasePrice) * quantity = (160 - 100) * 10 = 600
     expect(sale.adminProfit).toBe(600);
   });
 
-  test("Debe calcular correctamente ganancia admin con distribuidor 1er lugar (25%)", async () => {
+  test("Debe calcular correctamente ganancia admin con employee 1er lugar (25%)", async () => {
     const sale = await Sale.create({
-      distributor: distributor._id,
+      employee: employee._id,
       product: product._id,
       quantity: 10,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 5,
-      distributorProfitPercentage: 25,
+      employeeProfitPercentage: 25,
     });
 
-    // distributorPayment = salePrice * 75% = 200 * 0.75 = 150
-    // adminProfit = (distributorPayment - purchasePrice) * quantity = (150 - 100) * 10 = 500
+    // employeePayment = salePrice * 75% = 200 * 0.75 = 150
+    // adminProfit = (employeePayment - purchasePrice) * quantity = (150 - 100) * 10 = 500
     expect(sale.adminProfit).toBe(500);
   });
 
-  test("Debe calcular correctamente ganancia total (distribuidor + admin)", async () => {
+  test("Debe calcular correctamente ganancia total (employee + admin)", async () => {
     const sale = await Sale.create({
-      distributor: distributor._id,
+      employee: employee._id,
       product: product._id,
       quantity: 10,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 0,
-      distributorProfitPercentage: 20,
+      employeeProfitPercentage: 20,
     });
 
-    // totalProfit = distributorProfit + adminProfit = 400 + 600 = 1000
+    // totalProfit = employeeProfit + adminProfit = 400 + 600 = 1000
     expect(sale.totalProfit).toBe(1000);
   });
 
-  test("Debe calcular correctamente venta directa de admin (sin distribuidor)", async () => {
+  test("Debe calcular correctamente venta directa de admin (sin employee)", async () => {
     const sale = await Sale.create({
-      distributor: null,
+      employee: null,
       product: product._id,
       quantity: 10,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 0,
-      distributorProfitPercentage: 0,
+      employeeProfitPercentage: 0,
     });
 
     // adminProfit = (salePrice - purchasePrice) * quantity = (200 - 100) * 10 = 1000
     expect(sale.adminProfit).toBe(1000);
-    expect(sale.distributorProfit).toBe(0);
+    expect(sale.employeeProfit).toBe(0);
     expect(sale.totalProfit).toBe(1000);
   });
 });
 
 describe("Sale Model - Validaciones", () => {
   let product;
-  let distributor;
+  let employee;
 
   beforeEach(async () => {
     product = await Product.create({
       name: "Producto Test",
       description: "Descripción test",
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       totalStock: 1000,
       category: new mongoose.Types.ObjectId(),
     });
 
-    distributor = await User.create({
-      name: "Distribuidor Test",
-      email: "distributor@test.com",
+    employee = await User.create({
+      name: "Employee Test",
+      email: "employee@test.com",
       password: "password123",
-      role: "distribuidor",
+      role: "employee",
     });
   });
 
@@ -282,35 +282,35 @@ describe("Sale Model - Validaciones", () => {
     await expect(sale.save()).rejects.toThrow();
   });
 
-  test("Debe aceptar distributorProfitPercentage válidos (0, 20, 21, 23, 25)", async () => {
+  test("Debe aceptar employeeProfitPercentage válidos (0, 20, 21, 23, 25)", async () => {
     const validPercentages = [0, 20, 21, 23, 25];
 
     for (const percentage of validPercentages) {
       const sale = await Sale.create({
-        distributor: percentage === 0 ? null : distributor._id,
+        employee: percentage === 0 ? null : employee._id,
         product: product._id,
         quantity: 1,
         purchasePrice: 100,
-        distributorPrice: 150,
+        employeePrice: 150,
         salePrice: 200,
         commissionBonus: percentage === 0 ? 0 : percentage - 20,
-        distributorProfitPercentage: percentage,
+        employeeProfitPercentage: percentage,
       });
 
-      expect(sale.distributorProfitPercentage).toBe(percentage);
+      expect(sale.employeeProfitPercentage).toBe(percentage);
     }
   });
 
   test('Debe tener status de pago por defecto "pendiente"', async () => {
     const sale = await Sale.create({
-      distributor: distributor._id,
+      employee: employee._id,
       product: product._id,
       quantity: 1,
       purchasePrice: 100,
-      distributorPrice: 150,
+      employeePrice: 150,
       salePrice: 200,
       commissionBonus: 0,
-      distributorProfitPercentage: 20,
+      employeeProfitPercentage: 20,
     });
 
     expect(sale.paymentStatus).toBe("pendiente");

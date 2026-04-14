@@ -84,7 +84,7 @@ const buildTotalGroupProfitExpression = () => ({
     {
       $ifNull: [
         "$totalProfit",
-        { $add: ["$adminProfit", "$distributorProfit"] },
+        { $add: ["$adminProfit", "$employeeProfit"] },
       ],
     },
   ],
@@ -92,7 +92,7 @@ const buildTotalGroupProfitExpression = () => ({
 
 const resolveScopedUserObjectId = (options = {}) => {
   const rawId =
-    options.scopeDistributorId || options.distributorId || options.userId;
+    options.scopeEmployeeId || options.employeeId || options.userId;
 
   if (!rawId || !mongoose.isValidObjectId(rawId)) {
     return null;
@@ -112,7 +112,7 @@ const withSaleScope = (match, scopedUserObjectId) => {
   return {
     ...match,
     $or: [
-      { distributor: scopedUserObjectId },
+      { employee: scopedUserObjectId },
       { createdBy: scopedUserObjectId },
     ],
   };
@@ -244,7 +244,7 @@ export class AdvancedAnalyticsRepository {
       creditPendingTodayData,
       creditPendingWeekData,
       creditPendingMonthData,
-      activeDistributors,
+      activeEmployees,
       expensesData,
     ] = await Promise.all([
       Sale.aggregate([
@@ -569,7 +569,7 @@ export class AdvancedAnalyticsRepository {
           },
         },
       ]),
-      // Count active distributors for this business
+      // Count active employees for this business
       isScopedFinancialView
         ? Promise.resolve(1)
         : Membership.countDocuments({
@@ -745,7 +745,7 @@ export class AdvancedAnalyticsRepository {
           combinedRange.sales > 0
             ? combinedRange.revenue / combinedRange.sales
             : 0,
-        totalActiveDistributors: activeDistributors,
+        totalActiveEmployees: activeEmployees,
         totalExpenses: expenses.totalExpenses,
         expensesCount: expenses.count,
       },
@@ -1453,7 +1453,7 @@ export class AdvancedAnalyticsRepository {
     return topProducts;
   }
 
-  async getDistributorPerformance(
+  async getEmployeePerformance(
     businessId,
     startDate,
     endDate,
@@ -1466,7 +1466,7 @@ export class AdvancedAnalyticsRepository {
     const match = withSaleScope(
       {
         business: businessObjectId,
-        distributor: { $ne: null },
+        employee: { $ne: null },
         ...(dateRange ? { saleDate: dateRange } : {}),
       },
       scopedUserObjectId,
@@ -1476,9 +1476,9 @@ export class AdvancedAnalyticsRepository {
       { $match: match },
       {
         $addFields: {
-          distributorObjId: {
+          employeeObjId: {
             $convert: {
-              input: "$distributor",
+              input: "$employee",
               to: "objectId",
               onError: null,
               onNull: null,
@@ -1486,14 +1486,14 @@ export class AdvancedAnalyticsRepository {
           },
         },
       },
-      { $match: { distributorObjId: { $ne: null } } },
+      { $match: { employeeObjId: { $ne: null } } },
       {
         $group: {
-          _id: "$distributorObjId",
+          _id: "$employeeObjId",
           totalSales: { $sum: 1 },
           totalRevenue: { $sum: buildSaleRevenueExpression() },
           totalProfit: { $sum: buildTotalGroupProfitExpression() },
-          distributorProfit: { $sum: "$distributorProfit" },
+          employeeProfit: { $sum: "$employeeProfit" },
         },
       },
       { $sort: { totalRevenue: -1 } },
@@ -1502,17 +1502,17 @@ export class AdvancedAnalyticsRepository {
           from: "users",
           localField: "_id",
           foreignField: "_id",
-          as: "distributor",
+          as: "employee",
         },
       },
-      { $unwind: { path: "$distributor", preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: "$employee", preserveNullAndEmptyArrays: true } },
     ]);
 
     if (shouldHideFinancialData(options)) {
       return performance.map((item) => ({
         ...item,
         totalProfit: 0,
-        distributorProfit: 0,
+        employeeProfit: 0,
       }));
     }
 
@@ -1825,7 +1825,7 @@ export class AdvancedAnalyticsRepository {
     }));
   }
 
-  async getDistributorRankings(businessId, startDate, endDate, options = {}) {
+  async getEmployeeRankings(businessId, startDate, endDate, options = {}) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
     const scopedUserObjectId = resolveScopedUserObjectId(options);
@@ -1834,7 +1834,7 @@ export class AdvancedAnalyticsRepository {
       {
         business: businessObjectId,
         paymentStatus: "confirmado",
-        distributor: { $ne: null },
+        employee: { $ne: null },
         ...(dateRange ? { saleDate: dateRange } : {}),
       },
       scopedUserObjectId,
@@ -1844,9 +1844,9 @@ export class AdvancedAnalyticsRepository {
       { $match: match },
       {
         $addFields: {
-          distributorObjId: {
+          employeeObjId: {
             $convert: {
-              input: "$distributor",
+              input: "$employee",
               to: "objectId",
               onError: null,
               onNull: null,
@@ -1854,10 +1854,10 @@ export class AdvancedAnalyticsRepository {
           },
         },
       },
-      { $match: { distributorObjId: { $ne: null } } },
+      { $match: { employeeObjId: { $ne: null } } },
       {
         $group: {
-          _id: "$distributorObjId",
+          _id: "$employeeObjId",
           totalSalesAll: { $sum: 1 },
           confirmedSales: {
             $sum: {
@@ -1882,11 +1882,11 @@ export class AdvancedAnalyticsRepository {
               ],
             },
           },
-          distributorProfit: {
+          employeeProfit: {
             $sum: {
               $cond: [
                 { $eq: ["$paymentStatus", "confirmado"] },
-                "$distributorProfit",
+                "$employeeProfit",
                 0,
               ],
             },
@@ -1908,23 +1908,23 @@ export class AdvancedAnalyticsRepository {
           from: "users",
           localField: "_id",
           foreignField: "_id",
-          as: "distributorInfo",
+          as: "employeeInfo",
         },
       },
       {
-        $unwind: { path: "$distributorInfo", preserveNullAndEmptyArrays: true },
+        $unwind: { path: "$employeeInfo", preserveNullAndEmptyArrays: true },
       },
     ]);
 
     const mappedRankings = rankings.map((r, index) => ({
       rank: index + 1,
-      distributorId: r._id,
-      distributorName: r.distributorInfo?.name || "Sin nombre",
-      distributorEmail: r.distributorInfo?.email,
+      employeeId: r._id,
+      employeeName: r.employeeInfo?.name || "Sin nombre",
+      employeeEmail: r.employeeInfo?.email,
       totalSales: r.confirmedSales,
       totalRevenue: r.totalRevenue,
       totalProfit: r.totalProfit,
-      distributorProfit: r.distributorProfit,
+      employeeProfit: r.employeeProfit,
       totalQuantity: r.totalQuantity,
       conversionRate:
         r.totalSalesAll > 0 ? (r.confirmedSales / r.totalSalesAll) * 100 : 0,
@@ -1934,7 +1934,7 @@ export class AdvancedAnalyticsRepository {
       return mappedRankings.map((item) => ({
         ...item,
         totalProfit: 0,
-        distributorProfit: 0,
+        employeeProfit: 0,
       }));
     }
 

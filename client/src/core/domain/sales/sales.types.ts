@@ -1,4 +1,4 @@
-export interface DistributorSalesFilters {
+export interface EmployeeSalesFilters {
   startDate?: string;
   endDate?: string;
   productId?: string;
@@ -9,7 +9,7 @@ export interface DistributorSalesFilters {
 export interface AllSalesFilters {
   startDate?: string;
   endDate?: string;
-  distributorId?: string;
+  employeeId?: string;
   productId?: string;
   paymentStatus?: string;
   sortBy?: string;
@@ -18,7 +18,7 @@ export interface AllSalesFilters {
   statsOnly?: boolean;
 }
 
-export interface DistributorSalesResponse<TSale = unknown, TStats = unknown> {
+export interface EmployeeSalesResponse<TSale = unknown, TStats = unknown> {
   sales: TSale[];
   stats: TStats;
 }
@@ -37,7 +37,7 @@ export interface AllSalesResponse<TSale = unknown, TStats = unknown> {
   };
 }
 
-export type SaleLocationType = "warehouse" | "branch" | "distributor";
+export type SaleLocationType = "warehouse" | "branch" | "employee";
 
 export interface SaleAdditionalCostInput {
   type: string;
@@ -68,7 +68,7 @@ export interface PromotionSaleItemInput {
 
 export interface RegisterStandardSaleInput {
   items: StandardSaleItemInput[];
-  distributorId?: string;
+  employeeId?: string;
   branchId?: string;
   notes?: string;
   saleDate?: string;
@@ -91,7 +91,7 @@ export interface RegisterStandardSaleInput {
 
 export interface RegisterPromotionSaleInput {
   items: PromotionSaleItemInput[];
-  distributorId?: string;
+  employeeId?: string;
   branchId?: string;
   notes?: string;
   saleDate?: string;

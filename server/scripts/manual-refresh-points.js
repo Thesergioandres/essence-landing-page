@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import fs from "fs";
 import mongoose from "mongoose";
-import DistributorStats from "../src/infrastructure/database/models/DistributorStats.js";
+import EmployeeStats from "../src/infrastructure/database/models/EmployeeStats.js";
 import Sale from "../src/infrastructure/database/models/Sale.js";
 import { productSchema } from "../src/infrastructure/database/models/Product.js";
 import { GamificationRepository } from "../src/infrastructure/database/repositories/GamificationRepository.js";
@@ -31,26 +31,26 @@ async function main() {
   const repo = new GamificationRepository();
 
   const allSales = await Sale.find({}).select(
-    "paymentStatus distributor salePrice quantity totalProfit business",
+    "paymentStatus employee salePrice quantity totalProfit business",
   );
   console.log(`📊 Total ventas en la base de datos: ${allSales.length}`);
 
   const statusCounts = {};
-  let withDistributorCount = 0;
+  let withEmployeeCount = 0;
 
   allSales.forEach((s) => {
     statusCounts[s.paymentStatus] = (statusCounts[s.paymentStatus] || 0) + 1;
-    if (s.distributor) withDistributorCount++;
+    if (s.employee) withEmployeeCount++;
   });
 
   console.log("📈 Desglose por estado:", statusCounts);
-  console.log(`👤 Ventas con distribuidor asignado: ${withDistributorCount}`);
+  console.log(`👤 Ventas con employee asignado: ${withEmployeeCount}`);
 
-  const confirmedDistributorSales = allSales.filter(
-    (s) => s.paymentStatus === "confirmado" && s.distributor,
+  const confirmedEmployeeSales = allSales.filter(
+    (s) => s.paymentStatus === "confirmado" && s.employee,
   );
   console.log(
-    `✅ Ventas CONFIRMADAS y con DISTRIBUIDOR (son las que dan puntos): ${confirmedDistributorSales.length}`,
+    `✅ Ventas CONFIRMADAS y con EMPLOYEE (son las que dan puntos): ${confirmedEmployeeSales.length}`,
   );
 
   fs.writeFileSync(
@@ -60,9 +60,9 @@ async function main() {
         registeredModels: mongoose.modelNames(),
         totalSales: allSales.length,
         statusCounts,
-        withDistributorCount,
-        confirmedDistributorSalesCount: confirmedDistributorSales.length,
-        sampleDistributorSale: allSales.find((s) => s.distributor),
+        withEmployeeCount,
+        confirmedEmployeeSalesCount: confirmedEmployeeSales.length,
+        sampleEmployeeSale: allSales.find((s) => s.employee),
       },
       null,
       2,
@@ -70,22 +70,22 @@ async function main() {
   );
   console.log("📄 Datos de debug guardados en debug_sales.json");
 
-  if (confirmedDistributorSales.length === 0) {
+  if (confirmedEmployeeSales.length === 0) {
     console.warn(
-      "⚠️ No hay ventas confirmadas con distribuidor asignado. Por eso tienen 0 puntos.",
+      "⚠️ No hay ventas confirmadas con employee asignado. Por eso tienen 0 puntos.",
     );
 
-    const distSales = allSales.filter((s) => s.distributor);
+    const distSales = allSales.filter((s) => s.employee);
     if (distSales.length > 0) {
-      console.log("🔍 Ejemplo de venta de distribuidor:", distSales[0]);
+      console.log("🔍 Ejemplo de venta de employee:", distSales[0]);
     }
     process.exit(0);
   }
 
-  const salesWithDistributor = confirmedDistributorSales;
+  const salesWithEmployee = confirmedEmployeeSales;
   const businesses = [
     ...new Set(
-      salesWithDistributor.map((s) => s.business?.toString()).filter(Boolean),
+      salesWithEmployee.map((s) => s.business?.toString()).filter(Boolean),
     ),
   ];
   console.log(`🏢 Negocios encontrados: ${businesses.length}`);
@@ -121,13 +121,13 @@ async function main() {
   }
 
   console.log("\n🏁 Proceso finalizado. Verificando stats...");
-  const stats = await DistributorStats.find().populate(
-    "distributor",
+  const stats = await EmployeeStats.find().populate(
+    "employee",
     "name email",
   );
   stats.forEach((s) => {
     console.log(
-      `   👤 ${s.distributor?.name || "Desconocido"} (${s.distributor?.email}): ${s.totalPoints} puntos - Nivel: ${s.currentLevel}`,
+      `   👤 ${s.employee?.name || "Desconocido"} (${s.employee?.email}): ${s.totalPoints} puntos - Nivel: ${s.currentLevel}`,
     );
   });
 

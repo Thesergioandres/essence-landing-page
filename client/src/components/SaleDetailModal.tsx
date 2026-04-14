@@ -25,8 +25,8 @@ const formatDateTime = (value?: string) => {
   return parsed.toLocaleString("es-ES");
 };
 
-const getRankInfo = (percentage?: number, hasDistributor?: boolean) => {
-  if (!hasDistributor) {
+const getRankInfo = (percentage?: number, hasEmployee?: boolean) => {
+  if (!hasEmployee) {
     return {
       rank: "Admin",
       emoji: "👑",
@@ -294,13 +294,13 @@ export default function SaleDetailModal({
 
   const product = typeof sale.product === "object" ? sale.product : null;
   const productImageUrl = product?.image?.url || fallbackProductImageUrl;
-  const distributor =
-    typeof sale.distributor === "object" ? sale.distributor : null;
+  const employee =
+    typeof sale.employee === "object" ? sale.employee : null;
   const createdBy = typeof sale.createdBy === "object" ? sale.createdBy : null;
   const customer = typeof sale.customer === "object" ? sale.customer : null;
   const branch = typeof sale.branch === "object" ? sale.branch : null;
 
-  const rankInfo = getRankInfo(sale.distributorProfitPercentage, !!distributor);
+  const rankInfo = getRankInfo(sale.employeeProfitPercentage, !!employee);
   const saleTypeInfo = getSaleTypeInfo(sale);
 
   const totalVenta = Number(sale.salePrice || 0) * Number(sale.quantity || 0);
@@ -314,10 +314,10 @@ export default function SaleDetailModal({
   const costBasis = Number(sale.averageCostAtSale ?? sale.purchasePrice ?? 0);
   const costoTotal = costBasis * Number(sale.quantity || 0);
   const gananciaBruta = totalVenta - costoTotal;
-  const distributorUnitPrice = Number(sale.distributorPrice || 0);
+  const employeeUnitPrice = Number(sale.employeePrice || 0);
   const totalToDeliver =
-    distributor && distributorUnitPrice > 0
-      ? distributorUnitPrice * Number(sale.quantity || 0)
+    employee && employeeUnitPrice > 0
+      ? employeeUnitPrice * Number(sale.quantity || 0)
       : 0;
 
   const warrantyLossFromReports = warrantyProducts.reduce(
@@ -349,8 +349,8 @@ export default function SaleDetailModal({
   const sourceLabel =
     sale.sourceLocation === "branch"
       ? "Sede"
-      : sale.sourceLocation === "distributor"
-        ? "Distribuidor"
+      : sale.sourceLocation === "employee"
+        ? "Employee"
         : "Bodega";
 
   const paymentStatusLabel =
@@ -505,7 +505,7 @@ export default function SaleDetailModal({
                   <div className="mt-3 space-y-2 text-sm">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold text-white">
-                        {distributor?.name || createdBy?.name || "Admin"}
+                        {employee?.name || createdBy?.name || "Admin"}
                       </p>
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-semibold ${rankInfo.color}`}
@@ -513,23 +513,23 @@ export default function SaleDetailModal({
                         {rankInfo.emoji} {rankInfo.rank}
                       </span>
                     </div>
-                    {(distributor?.email || createdBy?.email) && (
+                    {(employee?.email || createdBy?.email) && (
                       <p className="text-slate-300">
-                        Correo: {distributor?.email || createdBy?.email}
+                        Correo: {employee?.email || createdBy?.email}
                       </p>
                     )}
-                    {(distributor?.phone || createdBy?.phone) && (
+                    {(employee?.phone || createdBy?.phone) && (
                       <p className="text-slate-300">
-                        Telefono: {distributor?.phone || createdBy?.phone}
+                        Telefono: {employee?.phone || createdBy?.phone}
                       </p>
                     )}
                     {!hideFinancialData &&
-                      distributor &&
-                      sale.distributorProfitPercentage !== undefined && (
+                      employee &&
+                      sale.employeeProfitPercentage !== undefined && (
                         <p className="text-slate-400">
                           Comisión:{" "}
-                          {formatCurrency(sale.distributorProfit || 0)} (
-                          {sale.distributorProfitPercentage}%)
+                          {formatCurrency(sale.employeeProfit || 0)} (
+                          {sale.employeeProfitPercentage}%)
                         </p>
                       )}
                   </div>
@@ -676,10 +676,10 @@ export default function SaleDetailModal({
                           {formatCurrency(netProfitAdjusted)}
                         </p>
                       </div>
-                      {distributor && totalToDeliver > 0 && (
+                      {employee && totalToDeliver > 0 && (
                         <div className="rounded-lg border border-sky-500/30 bg-sky-500/10 p-2.5 sm:col-span-2">
                           <p className="text-xs text-sky-200">
-                            A entregar a distribuidor
+                            A entregar a employee
                           </p>
                           <p className="font-semibold text-sky-200">
                             {formatCurrency(totalToDeliver)}

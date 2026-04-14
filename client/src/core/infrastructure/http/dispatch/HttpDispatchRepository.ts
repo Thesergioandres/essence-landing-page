@@ -15,7 +15,7 @@ const defaultPagination = {
 
 export class HttpDispatchRepository implements DispatchRepository {
   async createRequest(data: {
-    distributorId: string;
+    employeeId: string;
     items: Array<{ productId: string; quantity: number }>;
     notes?: string;
   }): Promise<DispatchRequest> {
@@ -95,7 +95,7 @@ export class HttpDispatchRepository implements DispatchRepository {
     limit?: number;
   }): Promise<{
     canViewFinancialMargins: boolean;
-    distributors: any[];
+    employees: any[];
     branches: any[];
   }> {
     const response = await api.get("/dispatches/hot-sectors", { params });
@@ -103,8 +103,8 @@ export class HttpDispatchRepository implements DispatchRepository {
 
     return {
       canViewFinancialMargins: payload.canViewFinancialMargins === true,
-      distributors: Array.isArray(payload.distributors)
-        ? payload.distributors
+      employees: Array.isArray(payload.employees)
+        ? payload.employees
         : [],
       branches: Array.isArray(payload.branches) ? payload.branches : [],
     };

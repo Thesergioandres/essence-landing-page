@@ -301,7 +301,7 @@ export const authService = {
     return Boolean(localStorage.getItem(ADMIN_ORIGINAL_TOKEN_KEY));
   },
 
-  async impersonate(distributorId: string): Promise<void> {
+  async impersonate(employeeId: string): Promise<void> {
     const currentToken = localStorage.getItem("token");
     if (!currentToken) {
       throw new Error("No hay sesión activa para iniciar suplantación");
@@ -316,11 +316,11 @@ export const authService = {
       success: boolean;
       token: string;
       user: User;
-    }>(`/auth/impersonate/${distributorId}`);
+    }>(`/auth/impersonate/${employeeId}`);
 
     const payload = (response.data as any)?.data ?? response.data;
     if (!payload?.token || !payload?.user) {
-      throw new Error("Respuesta inválida al suplantar distribuidor");
+      throw new Error("Respuesta inválida al suplantar employee");
     }
 
     applySession({ token: payload.token, user: payload.user });

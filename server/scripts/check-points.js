@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import DistributorStats from "../src/infrastructure/database/models/DistributorStats.js";
+import EmployeeStats from "../src/infrastructure/database/models/EmployeeStats.js";
 import { userSchema } from "../src/infrastructure/database/models/User.js";
 
 dotenv.config();
@@ -20,17 +20,17 @@ async function main() {
     mongoose.model("Product", productSchema);
   }
 
-  const stats = await DistributorStats.find({}).populate("distributor");
-  console.log("📊 Estados de Distribuidores:");
+  const stats = await EmployeeStats.find({}).populate("employee");
+  console.log("📊 Estados de Employees:");
   stats.forEach((s) => {
     console.log(
-      `👤 ${s.distributor?.name} (${s.distributor?.email}): ${s.totalPoints} puntos. Nivel: ${s.currentLevel}`,
+      `👤 ${s.employee?.name} (${s.employee?.email}): ${s.totalPoints} puntos. Nivel: ${s.currentLevel}`,
     );
   });
 
   const saleSample = await mongoose
     .model("Sale")
-    .findOne({ paymentStatus: "confirmado", distributor: { $ne: null } });
+    .findOne({ paymentStatus: "confirmado", employee: { $ne: null } });
   console.log("🔍 Muestra de venta:", {
     id: saleSample?._id,
     points: saleSample?.gamificationPoints,

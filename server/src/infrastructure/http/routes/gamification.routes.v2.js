@@ -12,7 +12,7 @@ const controller = new GamificationController();
 
 router.use(protect, businessContext, requireFeature("gamification"));
 
-router.get("/commission/:distributorId", (req, res) =>
+router.get("/commission/:employeeId", (req, res) =>
   controller.getAdjustedCommission(req, res),
 );
 router.post(
@@ -37,8 +37,8 @@ router.put(
   requirePermission({ module: "config", action: "update" }),
   (req, res) => controller.markBonusPaid(req, res),
 );
-router.get("/stats/:distributorId", (req, res) =>
-  controller.getDistributorStats(req, res),
+router.get("/stats/:employeeId", (req, res) =>
+  controller.getEmployeeStats(req, res),
 );
 router.post(
   "/recalculate-points",

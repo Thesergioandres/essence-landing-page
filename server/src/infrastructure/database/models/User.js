@@ -39,8 +39,8 @@ const userSchema = new mongoose.Schema(
         "user",
         "admin",
         "employee",
-        "distributor",
-        "distribuidor",
+        "employee",
+        "employee",
         "super_admin",
         "god",
       ],
@@ -101,7 +101,7 @@ const userSchema = new mongoose.Schema(
       of: permissionActionSchema,
       default: {},
     },
-    // Solo para distribuidores
+    // Solo para employees
     assignedProducts: [
       {
         type: mongoose.Schema.Types.ObjectId,

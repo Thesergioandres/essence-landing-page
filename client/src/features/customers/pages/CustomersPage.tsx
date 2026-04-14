@@ -59,7 +59,7 @@ const segmentConfig: Record<
 
 export default function Customers() {
   const user = authService.getCurrentUser();
-  const isDistributor = user?.role === "employee";
+  const isEmployee = user?.role === "employee";
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -447,7 +447,7 @@ export default function Customers() {
                         >
                           <Edit className="h-4 w-4" />
                         </button>
-                        {!isDistributor && (
+                        {!isEmployee && (
                           <button
                             onClick={() => handleDelete(customer._id)}
                             className="rounded p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30"

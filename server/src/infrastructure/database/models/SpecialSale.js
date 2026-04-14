@@ -4,7 +4,7 @@ const distributionSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "El nombre del distribuidor es requerido"],
+      required: [true, "El nombre del employee es requerido"],
       trim: true,
     },
     amount: {
@@ -71,7 +71,7 @@ const specialSaleSchema = new mongoose.Schema(
         validator: function (distributions) {
           return distributions && distributions.length > 0;
         },
-        message: "Debe haber al menos un distribuidor en la distribución",
+        message: "Debe haber al menos un employee en la distribución",
       },
     },
     observations: {

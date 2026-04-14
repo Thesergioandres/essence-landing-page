@@ -2,7 +2,6 @@ import { resolveFinancialPrivacyContext } from "../../../../utils/financialPriva
 import { dispatchUseCases } from "../../../application/use-cases/dispatch/buildDispatchUseCases.js";
 import { isEmployeeRole } from "../../../utils/roleAliases.js";
 
-const isDistributorRole = (role) => isEmployeeRole(role);
 
 const isGodRole = (role) => role === "god";
 
@@ -39,8 +38,8 @@ export class DispatchController {
       const effectiveRole = req.membership?.role || req.user?.role;
       const payload = { ...(req.body || {}) };
 
-      if (isDistributorRole(effectiveRole)) {
-        payload.distributorId = String(req.user?._id || req.user?.id || "");
+      if (isEmployeeRole(effectiveRole)) {
+        payload.employeeId = String(req.user?._id || req.user?.id || "");
       }
 
       const request = await createDispatchRequestUseCase.execute({
@@ -70,8 +69,8 @@ export class DispatchController {
       const privacyContext = resolveFinancialPrivacyContext(req);
       const filters = { ...(req.query || {}) };
 
-      if (privacyContext.scopeDistributorId) {
-        filters.distributorId = privacyContext.scopeDistributorId;
+      if (privacyContext.scopeEmployeeId) {
+        filters.employeeId = privacyContext.scopeEmployeeId;
       }
 
       const result = await listDispatchRequestsUseCase.execute({
@@ -115,8 +114,8 @@ export class DispatchController {
 
       const effectiveRole = req.membership?.role || req.user?.role;
       if (
-        isDistributorRole(effectiveRole) &&
-        String(request.distributor?._id || request.distributor) !==
+        isEmployeeRole(effectiveRole) &&
+        String(request.employee?._id || request.employee) !==
           String(req.user?._id || req.user?.id)
       ) {
         return res.status(403).json({
@@ -200,7 +199,7 @@ export class DispatchController {
       const pendingCount = await getPendingDispatchCountUseCase.execute({
         businessId,
         options: {
-          distributorId: privacyContext.scopeDistributorId || undefined,
+          employeeId: privacyContext.scopeEmployeeId || undefined,
         },
       });
 
@@ -234,9 +233,9 @@ export class DispatchController {
         },
       });
 
-      if (privacyContext.scopeDistributorId) {
-        result.distributors = (result.distributors || []).filter(
-          (item) => item.zoneId === String(privacyContext.scopeDistributorId),
+      if (privacyContext.scopeEmployeeId) {
+        result.employees = (result.employees || []).filter(
+          (item) => item.zoneId === String(privacyContext.scopeEmployeeId),
         );
       }
 
