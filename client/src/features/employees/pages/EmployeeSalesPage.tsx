@@ -81,7 +81,7 @@ export default function EmployeeSales() {
 
   const getSaleSourceLabel = (sale: Sale) => {
     const source = sale.sourceLocation;
-    if (source === "employee") return "Inventario empleado";
+    if (source === "employee") return "Inventario employee";
     if (source === "branch") {
       const branchName =
         sale.branchName ||
@@ -93,7 +93,7 @@ export default function EmployeeSales() {
     if (sale.branchName) return `Sede: ${sale.branchName}`;
     if (typeof sale.branch === "object" && sale.branch?.name)
       return `Sede: ${sale.branch.name}`;
-    if (sale.employee) return "Inventario empleado";
+    if (sale.employee) return "Inventario employee";
     return "Bodega central";
   };
 

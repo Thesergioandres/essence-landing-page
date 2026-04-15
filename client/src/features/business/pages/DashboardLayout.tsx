@@ -97,10 +97,7 @@ export default function DashboardLayout() {
           )
         );
       } catch (error) {
-        console.error(
-          "Error cargando employees para suplantación:",
-          error
-        );
+        console.error("Error cargando employees para suplantación:", error);
         setEmployees([]);
       }
     };
@@ -1074,7 +1071,7 @@ export default function DashboardLayout() {
               <option value="" className="bg-gray-900 text-gray-200">
                 {loadingImpersonation
                   ? "Iniciando soporte..."
-                  : "Entrar como employee"}
+                  : "Entrar como empleado"}
               </option>
               {employees.map(employee => (
                 <option
@@ -1110,11 +1107,11 @@ export default function DashboardLayout() {
 
       {/* Main Content */}
       <main
-        className={`content-with-safe-header duration-400 h-screen overflow-y-auto overflow-x-hidden transition-all ease-in-out lg:pt-20 pb-24 md:pb-28 ${
+        className={`content-with-safe-header duration-400 h-screen overflow-y-auto overflow-x-hidden pb-24 transition-all ease-in-out md:pb-28 lg:pt-20 ${
           desktopSidebarOpen ? "lg:ml-72" : "lg:ml-0"
         }`}
       >
-        <div className="mx-auto w-full max-w-screen-2xl p-4 md:p-6 lg:p-8 pb-32">
+        <div className="mx-auto w-full max-w-screen-2xl p-4 pb-32 md:p-6 lg:p-8">
           <DemoSandboxBanner />
           <BusinessGate>
             <AnimatePresence mode="wait" initial={false}>

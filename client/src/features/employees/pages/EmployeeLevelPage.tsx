@@ -210,7 +210,7 @@ export default function EmployeeLevelPage() {
 
         <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
           <h2 className="mb-4 text-lg font-semibold text-white">
-            Ranking de Empleados
+            Ranking de Employees
           </h2>
           <LeaderboardTable rankings={ranking} config={config} />
         </div>

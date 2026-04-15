@@ -388,7 +388,7 @@ export default function EmployeeDashboard() {
             )}
           </div>
           <p className="mt-2 text-sm text-gray-400">
-            Los costos internos permanecen sellados para vista empleado.
+            Los costos internos permanecen sellados para vista employee.
           </p>
         </article>
       </div>
@@ -434,7 +434,7 @@ export default function EmployeeDashboard() {
                     Posición #{rankingInfo.position}
                   </h3>
                   <p className="text-sm text-gray-300">
-                    de {rankingInfo.totalEmployees} empleados
+                    de {rankingInfo.totalEmployees} employees
                   </p>
                 </div>
               </div>

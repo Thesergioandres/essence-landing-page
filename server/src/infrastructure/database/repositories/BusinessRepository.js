@@ -116,7 +116,7 @@ export class BusinessRepository {
     await Membership.create({
       user: creatorId,
       business: business._id,
-      role: creatorUser?.role || "super_admin",
+      role: "admin", // The creator always becomes the "admin" of the business
       status: "active",
     });
 
@@ -289,13 +289,14 @@ export class BusinessRepository {
   }
 
   async getMembers(businessId) {
+    if (!businessId) return [];
     const members = await Membership.find({ business: businessId })
       .populate(
         "user",
         "name email role active fixedCommissionOnly isCommissionFixed customCommissionRate",
       )
       .lean();
-    return members;
+    return members.filter((m) => m && m.user);
   }
 
   async getUserMemberships(userId) {

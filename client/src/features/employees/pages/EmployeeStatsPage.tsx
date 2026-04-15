@@ -962,7 +962,7 @@ export default function EmployeeStats() {
       <div className="report-panel rounded-2xl border border-slate-200/10 bg-[#0A0A0A]/95 p-4 backdrop-blur-xl sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-slate-100">
-            Ranking de Empleados
+            Ranking de Employees
           </h2>
           <div className="rounded-lg border border-slate-300/20 bg-slate-900/65 px-3 py-1.5 text-xs text-slate-300">
             Ventas: {animatedMetrics.totalSales.toLocaleString("es-CO")} |

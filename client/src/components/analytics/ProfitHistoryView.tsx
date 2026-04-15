@@ -294,9 +294,6 @@ export default function ProfitHistoryView({
         const fallbackGross = entryTotals
           .filter(value => value > 0)
           .reduce((sum, value) => sum + value, 0);
-        const fallbackExpenses = entryTotals
-          .filter(value => value < 0)
-          .reduce((sum, value) => sum + value, 0);
 
         // 1. Gross Profit (Ganancia Bruta): Should be Revenue - Cost - Shipping (No Commissions)
         // Note: Backend returns data directly in overview, not in overview.summary
@@ -381,15 +378,13 @@ export default function ProfitHistoryView({
                   {formatCurrency(grossProfit)}
                 </p>
                 <p className="text-xs text-gray-400">
-                  {employeesEnabled
-                    ? "Admin + employees"
-                    : "Total ventas"}
+                  {employeesEnabled ? "Admin + Employees" : "Total ventas"}
                 </p>
               </div>
               {employeesEnabled && (
                 <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 text-white">
                   <p className="text-sm text-gray-300">
-                    Comisiones employees
+                    Comisiones de employees
                     <InfoTooltip text="Total pagado a employees por ventas confirmadas." />
                   </p>
                   <p className="mt-2 text-xl font-semibold text-cyan-300">
@@ -770,16 +765,13 @@ export default function ProfitHistoryView({
 
                       {/* Employees */}
                       {estimatedProfit.hasEmployees &&
-                        estimatedProfit.employees.employees.length >
-                          0 && (
+                        estimatedProfit.employees.employees.length > 0 && (
                           <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
                             <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
                               👥 Employees (
-                              {estimatedProfit.employees.employees.length}
-                              )
+                              {estimatedProfit.employees.employees.length})
                               <span className="rounded-full bg-gray-700 px-2 py-0.5 text-xs font-normal text-gray-300">
-                                {estimatedProfit.employees.totalUnits}{" "}
-                                unidades
+                                {estimatedProfit.employees.totalUnits} unidades
                               </span>
                             </h4>
                             <p className="mb-2 text-xs text-gray-400">
@@ -975,7 +967,7 @@ export default function ProfitHistoryView({
           {employeesEnabled && (
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-300">
-                Employee
+                Employees
               </label>
               <select
                 value={selectedEmployee}
@@ -1140,10 +1132,7 @@ export default function ProfitHistoryView({
                         entry.employeeName &&
                         entry.employeeName !== "Admin"
                       ) {
-                        employeeProfit = Math.max(
-                          0,
-                          totalProfit - adminProfit
-                        );
+                        employeeProfit = Math.max(0, totalProfit - adminProfit);
                       }
                       if (!Number.isFinite(employeeProfit)) {
                         employeeProfit = 0;

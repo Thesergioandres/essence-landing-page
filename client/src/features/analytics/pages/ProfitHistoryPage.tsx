@@ -336,9 +336,7 @@ export default function ProfitHistory() {
                   {formatCurrency(totalProfit)}
                 </p>
                 <p className="text-xs text-purple-100/80">
-                  {employeesEnabled
-                    ? "Admin + employees"
-                    : "Total ventas"}
+                  {employeesEnabled ? "Admin + Employees" : "Total ventas"}
                 </p>
               </div>
               <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 text-white">
@@ -359,7 +357,7 @@ export default function ProfitHistory() {
               {employeesEnabled && (
                 <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 text-white">
                   <p className="text-sm text-gray-300">
-                    Comisiones employees
+                    Comisiones de employees
                   </p>
                   <p className="mt-2 text-xl font-semibold text-cyan-300">
                     {formatCurrency(overview?.totalEmployeeCommissions ?? 0)}
@@ -691,21 +689,18 @@ export default function ProfitHistory() {
 
                       {/* Employees */}
                       {estimatedProfit.hasEmployees &&
-                        estimatedProfit.employees.employees.length >
-                          0 && (
+                        estimatedProfit.employees.employees.length > 0 && (
                           <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
                             <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
                               👥 Employees (
-                              {estimatedProfit.employees.employees.length}
-                              )
+                              {estimatedProfit.employees.employees.length})
                               <span className="rounded-full bg-gray-700 px-2 py-0.5 text-xs font-normal text-gray-300">
-                                {estimatedProfit.employees.totalUnits}{" "}
-                                unidades
+                                {estimatedProfit.employees.totalUnits} unidades
                               </span>
                             </h4>
                             <p className="mb-2 text-xs text-gray-400">
-                              Tu ganancia es solo el margen (precio employee
-                              - costo)
+                              Tu ganancia es solo el margen (precio employee -
+                              costo)
                             </p>
                             <div className="space-y-2">
                               {estimatedProfit.employees.employees

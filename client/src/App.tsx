@@ -29,7 +29,7 @@ const Login = lazy(() => import("./features/auth/pages/LoginPage"));
 const LoginAdmin = lazy(
   () => import("./features/auth/pages/LoginAdminRedirect")
 );
-const LoginEmployee = lazy(
+const LoginEmpleado = lazy(
   () => import("./features/auth/pages/LoginEmployeeRedirect")
 );
 const LoginGod = lazy(() => import("./features/auth/pages/LoginGodRedirect"));
@@ -359,11 +359,8 @@ export default function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/login/admin" element={<LoginAdmin />} />
                   <Route path="/login/god" element={<LoginGod />} />
-                  <Route path="/login/staff" element={<LoginEmployee />} />
-                  <Route
-                    path="/login/employee"
-                    element={<LoginEmployee />}
-                  />
+                  <Route path="/login/staff" element={<LoginEmpleado />} />
+                  <Route path="/login/employee" element={<LoginEmpleado />} />
                   <Route path="/register" element={<Register />} />
                   <Route
                     path="/onboarding"
@@ -464,14 +461,8 @@ export default function App() {
                       }
                     />
                     <Route path="employees" element={<Employees />} />
-                    <Route
-                      path="employees/add"
-                      element={<AddEmployee />}
-                    />
-                    <Route
-                      path="employees/:id"
-                      element={<EmployeeDetail />}
-                    />
+                    <Route path="employees/add" element={<AddEmployee />} />
+                    <Route path="employees/:id" element={<EmployeeDetail />} />
                     <Route
                       path="employees/:id/edit"
                       element={<EditEmployee />}
@@ -747,10 +738,7 @@ export default function App() {
                       </ProtectedRoute>
                     }
                   >
-                    <Route
-                      path="dashboard"
-                      element={<EmployeeDashboard />}
-                    />
+                    <Route path="dashboard" element={<EmployeeDashboard />} />
                     <Route
                       path="products"
                       element={

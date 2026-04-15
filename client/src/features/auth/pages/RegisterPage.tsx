@@ -161,15 +161,23 @@ export default function RegisterPage() {
         logo: null,
       };
 
-      await authService.register(payload);
+      const authData = await authService.register(payload);
       const pendingUser = { name: trimmedName, email: trimmedEmail };
-      setRegisteredUser(pendingUser);
-      sessionStorage.setItem(
-        REGISTER_STEP_STORAGE_KEY,
-        JSON.stringify(pendingUser)
-      );
-      setSuccess("✅ Registro completado. Ahora elige tu plan para continuar.");
-      navigate("/register?step=plan", { replace: true });
+
+      if (authData.role === "god") {
+        setSuccess("✅ Registro completado en modo Administrador Maestro.");
+        navigate("/onboarding", { replace: true });
+      } else {
+        setRegisteredUser(pendingUser);
+        sessionStorage.setItem(
+          REGISTER_STEP_STORAGE_KEY,
+          JSON.stringify(pendingUser)
+        );
+        setSuccess(
+          "✅ Registro completado. Ahora elige tu plan para continuar."
+        );
+        navigate("/register?step=plan", { replace: true });
+      }
     } catch (err) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data

@@ -210,8 +210,8 @@ app.use(mongoSanitize());
 app.use(xss());
 
 // Límite de carga
-app.use(express.json({ limit: "15kb" }));
-app.use(express.urlencoded({ extended: true, limit: "15kb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 app.use(securityHeaders);
 app.use(sanitizeHeaders);

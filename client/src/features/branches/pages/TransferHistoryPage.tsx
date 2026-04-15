@@ -62,8 +62,8 @@ export default function TransferHistory() {
     try {
       setLoading(true);
       const params: any = { page, limit: 20 };
-      if (fromEmployee) params.fromEmployee = fromEmployee;
-      if (toEmployee) params.toEmployee = toEmployee;
+      if (fromEmployee) params.fromEmpleado = fromEmployee;
+      if (toEmployee) params.toEmpleado = toEmployee;
       if (product) params.product = product;
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;

@@ -564,7 +564,7 @@ export default function TeamManagement() {
         </div>
         <div className="bg-white/4 rounded-2xl border border-white/10 p-4 backdrop-blur-[10px]">
           <p className="text-xs uppercase tracking-wide text-gray-400">
-            Admins / Employees
+            Administradores / Employees
           </p>
           <p className="mt-2 text-2xl font-bold text-blue-300">
             {adminCount} / {employeeCount}

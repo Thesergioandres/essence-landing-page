@@ -23,7 +23,7 @@ export interface SaleCustomer {
   address?: string;
 }
 
-export interface SaleEmployee {
+export interface SaleEmpleado {
   _id: string;
   name: string;
   email?: string;
@@ -45,7 +45,7 @@ export interface Sale {
   salePrice: number;
   purchasePrice?: number;
   averageCostAtSale?: number;
-  employee?: SaleEmployee | string | null;
+  employee?: SaleEmpleado | string | null;
   customer?: SaleCustomer | string | null;
   customerName?: string;
   branch?: SaleBranch | string | null;

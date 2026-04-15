@@ -475,7 +475,7 @@ export const analyticsService = {
         week: data?.week || { sales: 0, revenue: 0, profit: 0, trend: 0 },
         month: data?.month || { sales: 0, revenue: 0, profit: 0, trend: 0 },
         topProducts: data?.topProducts || [],
-        topEmployees: data?.topEmployees || [],
+        topEmployees: data?.topEmpleados || [],
         alerts: data?.alerts || [],
       };
     } catch (error) {

@@ -52,7 +52,7 @@ const EmployeeDetail = () => {
         setEmployee(response.employee);
         setError("");
       } catch (err: any) {
-        setError(err.response?.data?.message || "Error al cargar empleado");
+        setError(err.response?.data?.message || "Error al cargar employee");
       } finally {
         setLoading(false);
       }
@@ -103,7 +103,7 @@ const EmployeeDetail = () => {
         const branchesResponse = await branchService.list();
         setBranches(branchesResponse);
 
-        // Cargar memberships del negocio para encontrar el del empleado
+        // Cargar memberships del negocio para encontrar el del employee
         const membersResponse = await businessService.listMembers(
           selectedBusiness._id
         );
@@ -181,7 +181,7 @@ const EmployeeDetail = () => {
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <LoadingSpinner size="lg" message="Cargando empleado..." />
+        <LoadingSpinner size="lg" message="Cargando employee..." />
       </div>
     );
   }
@@ -190,7 +190,7 @@ const EmployeeDetail = () => {
     return (
       <div className="space-y-4 p-6">
         <div className="rounded-lg border border-red-500 bg-red-500/10 p-4 text-sm text-red-400">
-          {error || "Empleado no encontrado"}
+          {error || "Employee no encontrado"}
         </div>
         <div>
           <Button
@@ -198,7 +198,7 @@ const EmployeeDetail = () => {
             variant="outline"
             className="border-gray-700 bg-transparent text-gray-200 hover:bg-gray-800"
           >
-            Volver a Empleados
+            Volver a Employees
           </Button>
         </div>
       </div>
@@ -339,7 +339,7 @@ const EmployeeDetail = () => {
                         Cantidad
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
-                        Precio Empleado
+                        Precio Employee
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                         Alerta Stock Bajo
@@ -540,8 +540,8 @@ const EmployeeDetail = () => {
               Acceso a Bodegas y Puntos de Venta
             </h2>
             <p className="mb-6 text-sm text-gray-400">
-              Selecciona las bodegas/sedes desde las cuales este empleado
-              puede vender productos. Si no seleccionas ninguna, el empleado
+              Selecciona las bodegas/sedes desde las cuales este employee
+              puede vender productos. Si no seleccionas ninguna, el employee
               solo podrá vender desde su inventario personal.
             </p>
 

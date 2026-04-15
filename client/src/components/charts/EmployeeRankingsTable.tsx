@@ -93,7 +93,7 @@ export const EmployeeRankingsTable: React.FC<
         className="rounded-lg border border-gray-800 bg-gray-900 p-6 text-center"
       >
         <h3 className="text-xl font-bold text-white">
-          Ranking de Employees
+          Ranking de Empleados
         </h3>
         <p className="mt-2 text-gray-400">
           No hay employees para los filtros seleccionados.
@@ -112,7 +112,7 @@ export const EmployeeRankingsTable: React.FC<
       <div className="bg-linear-to-r from-purple-600 to-pink-600 p-6">
         <h3 className="flex items-center text-2xl font-bold text-white">
           <TrendingUp className="mr-2 h-6 w-6" />
-          Ranking de Employees
+          Ranking de Empleados
         </h3>
       </div>
       <div className="overflow-x-auto">

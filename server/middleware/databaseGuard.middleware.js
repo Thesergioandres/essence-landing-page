@@ -24,7 +24,19 @@ const WRITE_METHODS = ["POST", "PUT", "PATCH", "DELETE"];
  */
 const isLocalConnection = () => {
   const currentUri = mongoose.connection.host;
-  const prodUri = PROD_URI ? new URL(PROD_URI).hostname : null;
+  let prodUri = null;
+  try {
+    if (PROD_URI) {
+      const parsedUri =
+        PROD_URI.startsWith("mongodb://") ||
+        PROD_URI.startsWith("mongodb+srv://")
+          ? PROD_URI
+          : `mongodb://${PROD_URI}`;
+      prodUri = new URL(parsedUri).hostname;
+    }
+  } catch (error) {
+    console.error("[databaseGuard] Invalid PROD_URI format:", PROD_URI);
+  }
 
   // Si no hay URI de producción configurada, asumir seguro
   if (!prodUri) return true;

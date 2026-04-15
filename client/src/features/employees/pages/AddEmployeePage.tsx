@@ -95,7 +95,7 @@ export default function AddEmployee() {
         setShowLimitModal(true);
       } else {
         const message =
-          apiError?.response?.data?.message || "Error al crear empleado";
+          apiError?.response?.data?.message || "Error al crear employee";
         setError(message);
       }
     } finally {
@@ -110,11 +110,11 @@ export default function AddEmployee() {
           onClick={() => navigate("/admin/employees")}
           className="mb-4 text-sm text-gray-400 hover:text-white"
         >
-          ← Volver a empleados
+          ← Volver a employees
         </button>
-        <h1 className="text-4xl font-bold text-white">Nuevo Empleado</h1>
+        <h1 className="text-4xl font-bold text-white">Nuevo Employee</h1>
         <p className="mt-2 text-gray-400">
-          Completa la información para crear un nuevo empleado
+          Completa la información para crear un nuevo employee
         </p>
       </div>
 
@@ -157,7 +157,7 @@ export default function AddEmployee() {
                 onChange={handleChange}
                 required
                 className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="empleado@email.com"
+                placeholder="employee@email.com"
               />
             </div>
 
@@ -245,7 +245,7 @@ export default function AddEmployee() {
             disabled={loading}
             className="bg-linear-to-r rounded-lg from-purple-600 to-pink-600 px-6 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? "Creando..." : "Crear Empleado"}
+            {loading ? "Creando..." : "Crear Employee"}
           </button>
         </div>
       </form>
@@ -253,8 +253,8 @@ export default function AddEmployee() {
       <PlanLimitModal
         open={showLimitModal}
         onClose={() => setShowLimitModal(false)}
-        title="Límite de empleados alcanzado"
-        description="Tu plan actual alcanzó el máximo de empleados permitidos. Actualiza tu plan para seguir creando empleados."
+        title="Límite de employees alcanzado"
+        description="Tu plan actual alcanzó el máximo de employees permitidos. Actualiza tu plan para seguir creando employees."
         plan={planSnapshot?.plan}
         currentUsage={planSnapshot?.usage.employees}
         currentLimit={planSnapshot?.limits.employees}

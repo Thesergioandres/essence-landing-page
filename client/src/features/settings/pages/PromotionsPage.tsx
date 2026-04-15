@@ -720,10 +720,10 @@ export default function Promotions() {
 
       const hasNoLocations =
         !allLocations && formData.allowedLocations.length === 0;
-      const hasNoEmployees =
+      const hasNoEmpleados =
         !allEmployees && formData.allowedEmployees.length === 0;
       const computedStatus =
-        hasNoLocations && hasNoEmployees ? "paused" : formData.status;
+        hasNoLocations && hasNoEmpleados ? "paused" : formData.status;
 
       const payload: Partial<Promotion> = {
         name: formData.name,

@@ -10,9 +10,9 @@
   },
   "scripts": {
     "start": "node server.js",
-    "dev": "node scripts/devStart.js",
-    "dev:v2": "nodemon --watch controllers --watch models --watch routes --watch services --watch middleware --watch server.js --watch src --ext js,json --exec \"node src/infrastructure/jobs/devStartV2.job.js\"",
-    "dev:no-sync": "nodemon server.js",
+    "dev": "npx kill-port 5000 && node scripts/devStart.js",
+    "dev:v2": "npx kill-port 5000 && nodemon --watch controllers --watch models --watch routes --watch services --watch middleware --watch server.js --watch src --ext js,json --exec \"node src/infrastructure/jobs/devStartV2.job.js\"",
+    "dev:no-sync": "npx kill-port 5000 && nodemon server.js",
     "dev:sync-only": "node scripts/syncProdToLocal.js",
     "dev:sync-v2": "node src/infrastructure/jobs/syncProdToLocalV2.job.js",
     "pretest": "node scripts/validate-test-config.js",

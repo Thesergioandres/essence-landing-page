@@ -34,7 +34,7 @@ const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
         <thead className="border-b border-gray-700 text-xs uppercase tracking-wide text-gray-500">
           <tr>
             <th className="py-2 pr-4">Pos</th>
-            <th className="py-2 pr-4">Empleado</th>
+            <th className="py-2 pr-4">Employee</th>
             <th className="py-2 pr-4 text-right">Puntos</th>
             <th className="py-2 pr-4">Rango</th>
             <th className="py-2 text-right">Progreso</th>

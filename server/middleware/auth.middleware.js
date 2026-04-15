@@ -89,8 +89,15 @@ export const protect = async (req, res, next) => {
             "/api/v2/auth/profile",
           );
           const isLogoutRoute = req.originalUrl.includes("logout");
+          const isSelectPlanRoute = req.originalUrl.includes("select-plan");
+          const isMyMemberships = req.originalUrl.includes("my-memberships");
 
-          if (!isProfileRoute && !isLogoutRoute) {
+          if (
+            !isProfileRoute &&
+            !isLogoutRoute &&
+            !isSelectPlanRoute &&
+            !isMyMemberships
+          ) {
             return res.status(403).json({
               message: "Cuenta pendiente de activaciÃ³n",
               status: "pending",

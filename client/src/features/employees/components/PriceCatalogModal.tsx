@@ -109,7 +109,7 @@ export default function PriceCatalogModal() {
                         <tr>
                           <th className="px-3 py-2 text-left">Producto</th>
                           <th className="px-3 py-2 text-right">
-                            Precio empleado
+                            Precio employee
                           </th>
                           <th className="px-3 py-2 text-right">
                             Precio público

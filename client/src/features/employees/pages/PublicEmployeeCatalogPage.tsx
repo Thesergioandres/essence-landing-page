@@ -361,7 +361,7 @@ export default function PublicEmployeeCatalog() {
       {/* Footer */}
       <div className="border-t border-white/10 bg-white/5 py-6 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 text-center text-sm text-gray-400">
-          <p>Para realizar un pedido, contacta directamente al empleado</p>
+          <p>Para realizar un pedido, contacta directamente al employee</p>
         </div>
       </div>
     </div>

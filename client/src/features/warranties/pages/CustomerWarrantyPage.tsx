@@ -300,7 +300,7 @@ export default function CustomerWarrantyPage() {
     sales.forEach(sale => {
       if (sale.employee) {
         if (typeof sale.employee === "object") {
-          map.set(sale.employee._id, sale.employee.name || "Empleado");
+          map.set(sale.employee._id, sale.employee.name || "Employee");
         } else {
           map.set(sale.employee, "Employee");
         }
@@ -741,7 +741,7 @@ export default function CustomerWarrantyPage() {
                   const resolvedSaleId = sale.saleId || sale._id;
                   const responsibleName = sale.employee
                     ? typeof sale.employee === "object"
-                      ? sale.employee.name || "Empleado"
+                      ? sale.employee.name || "Employee"
                       : "Employee"
                     : typeof sale.createdBy === "object"
                       ? sale.createdBy.name || "Admin"

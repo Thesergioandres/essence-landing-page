@@ -50,7 +50,7 @@ export default function Employees() {
   const loadEmployees = useCallback(async () => {
     try {
       if (!businessId) {
-        setError("Selecciona un negocio para ver empleados");
+        setError("Selecciona un negocio para ver employees");
         setEmployees([]);
         setLoading(false);
         return;
@@ -98,7 +98,7 @@ export default function Employees() {
         setPlanSnapshot(limits);
       }
     } catch (err) {
-      setError("Error al cargar empleados");
+      setError("Error al cargar employees");
       console.error(err);
     } finally {
       setLoading(false);
@@ -133,12 +133,12 @@ export default function Employees() {
 
       toast.success(
         updatedEmployee?.active
-          ? "Empleado activado correctamente"
-          : "Empleado pausado correctamente"
+          ? "Employee activado correctamente"
+          : "Employee pausado correctamente"
       );
     } catch (err) {
-      setError("Error al cambiar estado del empleado");
-      toast.error("No se pudo cambiar el estado del empleado");
+      setError("Error al cambiar estado del employee");
+      toast.error("No se pudo cambiar el estado del employee");
       console.error(err);
     } finally {
       setActionLoadingId(null);
@@ -175,7 +175,7 @@ export default function Employees() {
     } catch (err) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || "Error al eliminar empleado";
+          ?.message || "Error al eliminar employee";
       setError(message);
       toast.error(message);
     } finally {
@@ -187,9 +187,9 @@ export default function Employees() {
     <div className="space-y-8 overflow-hidden">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-white">Empleados</h1>
+          <h1 className="text-4xl font-bold text-white">Employees</h1>
           <p className="mt-2 text-gray-400">
-            Gestiona los empleados y asigna productos
+            Gestiona los employees y asigna productos
           </p>
         </div>
         <button
@@ -197,7 +197,7 @@ export default function Employees() {
           className="bg-linear-to-r inline-flex items-center gap-2 rounded-lg from-purple-600 to-pink-600 px-5 py-3 font-semibold text-white transition hover:from-purple-700 hover:to-pink-700"
         >
           <span className="text-2xl leading-none">＋</span>
-          Nuevo empleado
+          Nuevo employee
         </button>
       </div>
 
@@ -243,11 +243,11 @@ export default function Employees() {
 
       {loading ? (
         <div className="flex h-96 items-center justify-center">
-          <LoadingSpinner size="lg" message="Cargando empleados..." />
+          <LoadingSpinner size="lg" message="Cargando employees..." />
         </div>
       ) : employees.length === 0 ? (
         <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-12 text-center text-gray-400">
-          No hay empleados {filter !== "all" && `${filter}s`}.
+          No hay employees {filter !== "all" && `${filter}s`}.
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -358,7 +358,7 @@ export default function Employees() {
         <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-4 sm:flex-row">
           <div className="text-sm text-gray-400">
             Página {pagination.page} de {pagination.pages} • Total:{" "}
-            {pagination.total} empleados
+            {pagination.total} employees
           </div>
           <div className="flex gap-2">
             <button
@@ -391,15 +391,15 @@ export default function Employees() {
                 Confirmación crítica
               </p>
               <h3 className="mt-2 text-2xl font-bold text-red-100">
-                Eliminar y reasignar empleado
+                Eliminar y reasignar employee
               </h3>
               <p className="mt-4 rounded-lg border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200">
-                ¿Estás seguro? El stock de este empleado regresará a la
+                ¿Estás seguro? El stock de este employee regresará a la
                 bodega principal.
               </p>
               <p className="mt-3 text-sm text-red-100/90">
                 Esta acción también conservará el historial de ventas usando
-                snapshot del nombre del empleado y luego eliminará el
+                snapshot del nombre del employee y luego eliminará el
                 registro de usuario.
               </p>
 
@@ -429,8 +429,8 @@ export default function Employees() {
       <PlanLimitModal
         open={showLimitModal}
         onClose={() => setShowLimitModal(false)}
-        title="Límite de empleados alcanzado"
-        description="Tu plan actual alcanzó el máximo de empleados. Sube de plan para crear nuevos usuarios empleados."
+        title="Límite de employees alcanzado"
+        description="Tu plan actual alcanzó el máximo de employees. Sube de plan para crear nuevos usuarios employees."
         plan={planSnapshot?.plan}
         currentUsage={planSnapshot?.usage.employees}
         currentLimit={planSnapshot?.limits.employees}

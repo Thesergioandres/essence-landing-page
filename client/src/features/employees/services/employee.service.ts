@@ -139,8 +139,8 @@ export const employeeService = {
 
     return {
       message: nextActive
-        ? "Empleado activado correctamente"
-        : "Empleado pausado correctamente",
+        ? "Employee activado correctamente"
+        : "Employee pausado correctamente",
       employee: updatedEmployee,
     };
   },

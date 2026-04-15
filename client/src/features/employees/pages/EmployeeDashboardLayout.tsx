@@ -234,7 +234,7 @@ export default function EmployeeDashboardLayout() {
                   {brandName.toUpperCase()}
                 </h1>
                 <p className="mt-0.5 text-xs text-gray-400 sm:text-sm">
-                  Panel Empleado
+                  Panel Employee
                 </p>
               </div>
             </div>
@@ -949,7 +949,7 @@ export default function EmployeeDashboardLayout() {
                   {user?.name}
                 </p>
                 <p className="text-[10px] text-gray-400 sm:text-xs">
-                  Empleado
+                  Employee
                 </p>
               </div>
             </div>
