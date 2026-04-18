@@ -41,7 +41,7 @@ export class RegisterSaleUseCase {
    * but this UseCase does NOT set those fields from actual stock sources.
    *
    * @param {Object} input - DTO containing sale details
-   * @param {Array} input.items - Array of { productId, quantity, salePrice }
+   * @param {Array} input.items - Array of { productId, quantity, salePrice|unitPrice|finalPrice }
    * @param {Object} input.user - User performing the action
    * @param {mongoose.ClientSession} session - Active transaction session
    */
@@ -84,6 +84,42 @@ export class RegisterSaleUseCase {
     };
 
     const resolvedSaleDate = resolveSaleDate(saleDate);
+
+    const resolveRequestedSalePrice = (item) => {
+      const candidates = [
+        item?.salePrice,
+        item?.unitPrice,
+        item?.finalPrice,
+        item?.price,
+      ];
+
+      for (const value of candidates) {
+        const numeric = Number(value);
+        if (Number.isFinite(numeric) && numeric > 0) {
+          return numeric;
+        }
+      }
+
+      return 0;
+    };
+
+    const resolveCatalogSalePrice = (product) => {
+      const candidates = [
+        product?.clientPrice,
+        product?.salePrice,
+        product?.price,
+        product?.suggestedPrice,
+      ];
+
+      for (const value of candidates) {
+        const numeric = Number(value);
+        if (Number.isFinite(numeric) && numeric > 0) {
+          return numeric;
+        }
+      }
+
+      return 0;
+    };
 
     // 1. Validation (Business Rules)
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -148,11 +184,9 @@ export class RegisterSaleUseCase {
     // 2. PHASE 1: Validate ALL items BEFORE making any changes
     const validatedItems = [];
 
-    let commissionPolicy = CommissionPolicyService.resolveEmployeeCommission(
-      {
-        requestedCommissionRate: employeeProfitPercentage,
-      },
-    );
+    let commissionPolicy = CommissionPolicyService.resolveEmployeeCommission({
+      requestedCommissionRate: employeeProfitPercentage,
+    });
 
     if (employeeId) {
       const commissionInfo = await getEmployeeCommissionInfo(
@@ -161,26 +195,22 @@ export class RegisterSaleUseCase {
       );
 
       if (commissionInfo?.isCommissionFixed) {
-        commissionPolicy = CommissionPolicyService.resolveEmployeeCommission(
-          {
-            isCommissionFixed: true,
-            customCommissionRate:
-              commissionInfo.customCommissionRate ??
-              commissionInfo.profitPercentage,
-          },
-        );
+        commissionPolicy = CommissionPolicyService.resolveEmployeeCommission({
+          isCommissionFixed: true,
+          customCommissionRate:
+            commissionInfo.customCommissionRate ??
+            commissionInfo.profitPercentage,
+        });
       } else {
         const config = await GamificationConfig.findOne().lean();
-        commissionPolicy = CommissionPolicyService.resolveEmployeeCommission(
-          {
-            requestedCommissionRate: employeeProfitPercentage,
-            baseCommissionRate: FinanceService.resolveBaseCommissionPercentage(
-              config,
-              employeeProfitPercentage,
-            ),
-            bonusCommission: commissionInfo?.bonusCommission || 0,
-          },
-        );
+        commissionPolicy = CommissionPolicyService.resolveEmployeeCommission({
+          requestedCommissionRate: employeeProfitPercentage,
+          baseCommissionRate: FinanceService.resolveBaseCommissionPercentage(
+            config,
+            employeeProfitPercentage,
+          ),
+          bonusCommission: commissionInfo?.bonusCommission || 0,
+        });
       }
     }
 
@@ -200,11 +230,6 @@ export class RegisterSaleUseCase {
       0,
     );
     const additionalTotal = additionalChargesTotal + additionalAdjustmentsTotal;
-    const totalSubtotal = items.reduce(
-      (sum, item) =>
-        sum + Number(item.salePrice || 0) * Number(item.quantity || 0),
-      0,
-    );
 
     const normalizedWarranties = Array.isArray(warranties) ? warranties : [];
     const warrantyItems = [];
@@ -292,9 +317,7 @@ export class RegisterSaleUseCase {
         .select("allowedBranches")
         .lean();
 
-      const allowedBranches = Array.isArray(
-        employeeMembership?.allowedBranches,
-      )
+      const allowedBranches = Array.isArray(employeeMembership?.allowedBranches)
         ? employeeMembership.allowedBranches.map((branch) => String(branch))
         : [];
 
@@ -380,19 +403,16 @@ export class RegisterSaleUseCase {
       }
 
       // Anti-Manipulación: Siempre usar el precio real almacenado en la BD
-      const salePrice = product.price || product.salePrice || 0;
+      const requestedSalePrice = resolveRequestedSalePrice(item);
+      const salePrice = resolveCatalogSalePrice(product);
+
+      if (salePrice <= 0) {
+        throw new Error(
+          `Precio de venta inválido para ${product.name}. Configura clientPrice en catálogo antes de vender. Precio recibido en payload: ${requestedSalePrice}.`,
+        );
+      }
 
       const itemSubtotal = Number(salePrice || 0) * Number(quantity || 0);
-      const discountShare =
-        totalSubtotal > 0 ? (itemSubtotal / totalSubtotal) * discountTotal : 0;
-      const additionalShare =
-        totalSubtotal > 0
-          ? (itemSubtotal / totalSubtotal) * additionalTotal
-          : 0;
-      const actualPayment = Math.max(
-        0,
-        itemSubtotal - discountShare - additionalShare,
-      );
 
       productCache.set(String(productId), product);
 
@@ -481,7 +501,6 @@ export class RegisterSaleUseCase {
         quantity,
       );
       const totalProfit = employeeProfit + adminProfit;
-      const adminNetProfit = adminProfit - additionalShare - discountShare;
 
       validatedItems.push({
         productId,
@@ -489,21 +508,61 @@ export class RegisterSaleUseCase {
         quantity,
         salePrice,
         itemSubtotal,
-        discountShare,
-        actualPayment,
-        additionalShare,
+        discountShare: 0,
+        actualPayment: itemSubtotal,
+        additionalShare: 0,
         costBasis,
         employeePrice,
         employeeProfit,
         adminProfit,
         totalProfit,
-        adminNetProfit,
+        adminNetProfit: adminProfit,
         employeeProfitPercentage: effectiveEmployeeProfitPercentage,
         commissionBonus: appliedCommissionBonus,
         commissionBonusAmount: isEmployeeSale
           ? (salePrice * quantity * appliedCommissionBonus) / 100
           : 0,
       });
+    }
+
+    const totalSubtotal = validatedItems.reduce(
+      (sum, item) => sum + Number(item.itemSubtotal || 0),
+      0,
+    );
+
+    if (!Number.isFinite(totalSubtotal) || totalSubtotal <= 0) {
+      throw new Error(
+        "No se pudo calcular el total de la venta. Verifica que los productos tengan precio de venta válido.",
+      );
+    }
+
+    for (const item of validatedItems) {
+      const discountShare = (item.itemSubtotal / totalSubtotal) * discountTotal;
+      const additionalShare =
+        (item.itemSubtotal / totalSubtotal) * additionalTotal;
+      const actualPayment = Math.max(
+        0,
+        item.itemSubtotal - discountShare - additionalShare,
+      );
+
+      item.discountShare = discountShare;
+      item.additionalShare = additionalShare;
+      item.actualPayment = actualPayment;
+      item.adminNetProfit = item.adminProfit - additionalShare - discountShare;
+    }
+
+    const totalTransactionAmountFromItems = validatedItems.reduce(
+      (sum, item) => sum + Number(item.actualPayment || 0),
+      0,
+    );
+
+    if (
+      !Number.isFinite(totalTransactionAmountFromItems) ||
+      totalTransactionAmountFromItems <= 0
+    ) {
+      throw new Error(
+        "La venta no puede registrarse con total $0. Verifica precios, descuentos y costos adicionales.",
+      );
     }
 
     const validatedProductIds = new Set(
@@ -541,7 +600,7 @@ export class RegisterSaleUseCase {
     // 3. PHASE 2: All validations passed, now make the changes
     const results = [];
     const creditItems = [];
-    let totalTransactionAmount = 0;
+    const totalTransactionAmount = totalTransactionAmountFromItems;
     let netTransactionProfit = 0;
     let adminMembership = null;
 
@@ -627,11 +686,14 @@ export class RegisterSaleUseCase {
         productName: product.name,
         quantity,
         salePrice,
+        unitPrice: salePrice,
+        totalPrice: salePrice * quantity,
         actualPayment,
         discount: discountShare,
         additionalCosts: additionalCostsForSale,
         purchasePrice: product.purchasePrice,
         averageCostAtSale: costBasis,
+        costAtSale: costBasis,
         employeePrice,
         employeeProfit,
         adminProfit,
@@ -821,7 +883,6 @@ export class RegisterSaleUseCase {
         }
       }
 
-      totalTransactionAmount += actualPayment;
       netTransactionProfit += adminNetProfit;
     }
 
@@ -894,8 +955,7 @@ export class RegisterSaleUseCase {
         const lossAmount = hasWarranty ? 0 : unitCost * quantity;
 
         const reportData = {
-          employee:
-            resolvedSourceLocation === "employee" ? employeeId : null,
+          employee: resolvedSourceLocation === "employee" ? employeeId : null,
           branch: resolvedSourceLocation === "branch" ? branchId : null,
           product: warranty.productId,
           business: businessId,

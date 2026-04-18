@@ -24,19 +24,99 @@ export class FinanceService {
   }
   /**
    * Calculates the price meant for the employee (what they pay to admin).
-   * @param {number} salePrice - The final public price
-   * @param {number} profitPercentage - The employee's commission % (e.g. 20)
-   * @returns {number} The price the employee pays
+   *
+   * Supported signatures:
+   * 1) Legacy (sales flows): calculateEmployeePrice(salePrice, profitPercentage)
+   * 2) Dynamic product pricing: calculateEmployeePrice(salePrice, manualPrice, baseCommissionPercentage)
+   *
+   * @returns {number}
    */
-  static calculateEmployeePrice(salePrice, profitPercentage) {
-    if (salePrice < 0) throw new Error("Sale price cannot be negative");
-    const normalizedPercentage =
-      typeof profitPercentage === "number" && Number.isFinite(profitPercentage)
-        ? profitPercentage
-        : 20;
-    const percentage = Math.max(0, Math.min(95, normalizedPercentage));
-    // Price for dist = SalePrice * (100 - Commission) / 100
-    return salePrice * ((100 - percentage) / 100);
+  static calculateEmployeePrice(
+    salePriceInput,
+    manualPriceOrProfitPercentage = null,
+    baseCommissionPercentage = null,
+  ) {
+    // Legacy behavior used by sales flows.
+    if (arguments.length < 3) {
+      const salePrice = Number(salePriceInput);
+      if (!Number.isFinite(salePrice) || salePrice < 0) {
+        throw new Error("Sale price cannot be negative");
+      }
+
+      const normalizedPercentage =
+        typeof manualPriceOrProfitPercentage === "number" &&
+        Number.isFinite(manualPriceOrProfitPercentage)
+          ? manualPriceOrProfitPercentage
+          : 20;
+      const percentage = Math.max(0, Math.min(95, normalizedPercentage));
+
+      // Price for employee = SalePrice - EmployeeCommission
+      return (
+        salePrice -
+        this.calculateEmployeeCommissionAmount(salePrice, percentage)
+      );
+    }
+
+    const salePrice = Number(salePriceInput);
+    if (!Number.isFinite(salePrice) || salePrice < 0) {
+      throw new Error("Sale price cannot be negative");
+    }
+
+    const manualPrice =
+      typeof manualPriceOrProfitPercentage === "number" &&
+      Number.isFinite(manualPriceOrProfitPercentage) &&
+      manualPriceOrProfitPercentage >= 0
+        ? manualPriceOrProfitPercentage
+        : null;
+
+    if (manualPrice !== null) {
+      return manualPrice;
+    }
+
+    const normalizedBaseCommission = this.resolveBaseCommissionPercentage(
+      baseCommissionPercentage,
+      20,
+    );
+    const percentage = Math.max(0, Math.min(95, normalizedBaseCommission));
+
+    // Dynamic formula for products in automatic mode.
+    const employeeCommission = this.calculateEmployeeCommissionAmount(
+      salePrice,
+      percentage,
+    );
+    return salePrice - employeeCommission;
+  }
+
+  /**
+   * Calculates the commission amount earned by employee from sale price.
+   * @param {number} salePrice
+   * @param {number} commissionPercentage
+   * @param {number} quantity
+   * @returns {number}
+   */
+  static calculateEmployeeCommissionAmount(
+    salePrice,
+    commissionPercentage,
+    quantity = 1,
+  ) {
+    const normalizedSalePrice = Number(salePrice);
+    const normalizedPercentage = Number(commissionPercentage);
+    const normalizedQuantity = Number(quantity);
+
+    if (!Number.isFinite(normalizedSalePrice) || normalizedSalePrice < 0) {
+      throw new Error("Sale price cannot be negative");
+    }
+
+    const percentage = Number.isFinite(normalizedPercentage)
+      ? Math.max(0, Math.min(95, normalizedPercentage))
+      : 0;
+
+    const qty =
+      Number.isFinite(normalizedQuantity) && normalizedQuantity > 0
+        ? normalizedQuantity
+        : 1;
+
+    return normalizedSalePrice * (percentage / 100) * qty;
   }
 
   /**
@@ -54,20 +134,20 @@ export class FinanceService {
    * Calculates the Admin's gross profit.
    * @param {number} salePrice
    * @param {number} costBasis - The average cost or purchase price
-   * @param {number} employeeProfit - The amount given to employee
+   * @param {number} employeeProfit - Commission amount given to employee
    * @param {number} quantity
    * @returns {number}
    */
-  static calculateAdminProfit(
-    salePrice,
-    costBasis,
-    employeeProfit,
-    quantity,
-  ) {
+  static calculateAdminProfit(salePrice, costBasis, employeeProfit, quantity) {
     const totalRevenue = salePrice * quantity;
     const totalCost = costBasis * quantity;
-    // Revenue - Cost - EmployeeShare
-    return totalRevenue - totalCost - employeeProfit;
+    const employeeCommissionAmount =
+      Number.isFinite(Number(employeeProfit)) && Number(employeeProfit) > 0
+        ? Number(employeeProfit)
+        : 0;
+
+    // Revenue - Cost - EmployeeCommission (owner sale => employeeCommission=0)
+    return totalRevenue - totalCost - employeeCommissionAmount;
   }
 
   /**

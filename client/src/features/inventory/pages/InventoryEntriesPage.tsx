@@ -1,17 +1,17 @@
 import {
-    ArrowDownToLine,
-    Building2,
-    Calendar,
-    Edit2,
-    Filter,
-    Loader2,
-    Package,
-    Plus,
-    Search,
-    Trash2,
-    Truck,
-    Warehouse,
-    X,
+  ArrowDownToLine,
+  Building2,
+  Calendar,
+  Edit2,
+  Filter,
+  Loader2,
+  Package,
+  Plus,
+  Search,
+  Trash2,
+  Truck,
+  Warehouse,
+  X,
 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -20,9 +20,9 @@ import ProductSelector from "../../../components/ProductSelector";
 import { branchService } from "../../branches/services";
 import { gamificationService } from "../../common/services";
 import {
-    categoryService,
-    inventoryService,
-    productService,
+  categoryService,
+  inventoryService,
+  productService,
 } from "../../inventory/services/inventory.service";
 import { providerService } from "../../settings/services";
 import type { Product } from "../types/product.types";
@@ -235,17 +235,30 @@ export default function InventoryEntries() {
   }, []);
 
   useEffect(() => {
-    if (employeeManual || !newProductData.clientPrice) return;
-    const client = Number(newProductData.clientPrice);
-    if (Number.isNaN(client)) return;
-    const autoPrice = Math.round(
-      client * (1 - (baseCommissionPercentage || 0) / 100)
+    if (employeeManual) return;
+
+    const salePrice = Number(
+      newProductData.clientPrice || newProductData.suggestedPrice
     );
+    if (Number.isNaN(salePrice) || salePrice < 0) return;
+
+    const normalizedCommission = Math.min(
+      95,
+      Math.max(0, Number(baseCommissionPercentage) || 0)
+    );
+    const commissionAmount = salePrice * (normalizedCommission / 100);
+    const autoPrice = Number((salePrice - commissionAmount).toFixed(2));
+
     setNewProductData(current => ({
       ...current,
       employeePrice: autoPrice.toString(),
     }));
-  }, [baseCommissionPercentage, employeeManual, newProductData.clientPrice]);
+  }, [
+    baseCommissionPercentage,
+    employeeManual,
+    newProductData.clientPrice,
+    newProductData.suggestedPrice,
+  ]);
 
   const handleAddToCart = () => {
     if (!formData.product || !formData.quantity) {
@@ -349,7 +362,9 @@ export default function InventoryEntries() {
 
     try {
       const purchasePrice = Number(newProductData.purchasePrice);
-      const employeePrice = Number(newProductData.employeePrice);
+      const manualEmployeePrice = employeeManual
+        ? Number(newProductData.employeePrice)
+        : null;
       const totalStock = Number(newProductData.totalStock || 0);
       const clientPrice = newProductData.clientPrice
         ? Number(newProductData.clientPrice)
@@ -359,7 +374,12 @@ export default function InventoryEntries() {
         throw new Error("El precio de compra debe ser un número válido");
       }
 
-      if (Number.isNaN(employeePrice) || employeePrice < 0) {
+      if (
+        employeeManual &&
+        (manualEmployeePrice === null ||
+          Number.isNaN(manualEmployeePrice) ||
+          manualEmployeePrice < 0)
+      ) {
         throw new Error("El precio de empleado debe ser un número válido");
       }
 
@@ -383,7 +403,9 @@ export default function InventoryEntries() {
         purchasePrice,
         suggestedPrice:
           Number(newProductData.suggestedPrice) || purchasePrice * 1.3,
-        employeePrice,
+        ...(employeeManual
+          ? { employeePrice: manualEmployeePrice as number }
+          : {}),
         employeePriceManual: employeeManual,
         clientPrice,
         category: newProductData.category,
@@ -1376,8 +1398,8 @@ export default function InventoryEntries() {
                                 placeholder="Se calcula automáticamente (editable)"
                               />
                               <p className="mt-1 text-xs text-gray-500">
-                                Se calcula segun la comision base, pero puedes
-                                ajustarlo
+                                Se calcula segun precio de venta y comision
+                                base, pero puedes ajustarlo
                               </p>
                             </div>
 
@@ -1389,22 +1411,9 @@ export default function InventoryEntries() {
                                 type="number"
                                 value={newProductData.clientPrice}
                                 onChange={e => {
-                                  const client = Number(e.target.value);
-                                  const updates: Partial<
-                                    typeof newProductData
-                                  > = {
-                                    clientPrice: e.target.value,
-                                  };
-                                  if (!employeeManual && !isNaN(client)) {
-                                    updates.employeePrice = Math.round(
-                                      client *
-                                        (1 -
-                                          (baseCommissionPercentage || 0) / 100)
-                                    ).toString();
-                                  }
                                   setNewProductData({
                                     ...newProductData,
-                                    ...updates,
+                                    clientPrice: e.target.value,
                                   });
                                 }}
                                 required

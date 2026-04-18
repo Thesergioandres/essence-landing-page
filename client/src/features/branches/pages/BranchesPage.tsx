@@ -213,15 +213,21 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
   };
 
   const handleToggleActive = async (branch: Branch) => {
+    const branchId = branch?._id;
+    if (!branchId) {
+      setError("No se pudo identificar la sede para actualizar");
+      return;
+    }
+
     setError("");
     setSuccess("");
-    setUpdatingId(branch._id);
+    setUpdatingId(branchId);
     try {
-      const updateRes = await branchService.update(branch._id, {
+      const updateRes = await branchService.update(branchId, {
         active: branch.active === false ? true : false,
       });
       const updated = (updateRes as any).branch || updateRes;
-      setBranches(prev => prev.map(b => (b._id === branch._id ? updated : b)));
+      setBranches(prev => prev.map(b => (b._id === branchId ? updated : b)));
       setSuccess(
         `Sede ${updated.active === false ? "desactivada" : "activada"}`
       );
@@ -234,16 +240,22 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
   };
 
   const handleDelete = async (branch: Branch) => {
+    const branchId = branch?._id;
+    if (!branchId) {
+      setError("No se pudo identificar la sede para eliminar");
+      return;
+    }
+
     const confirmDelete = window.confirm(
       `¿Eliminar la sede "${branch.name}"? Esta acción no se puede deshacer.`
     );
     if (!confirmDelete) return;
     setError("");
     setSuccess("");
-    setDeletingId(branch._id);
+    setDeletingId(branchId);
     try {
-      await branchService.remove(branch._id);
-      setBranches(prev => prev.filter(b => b._id !== branch._id));
+      await branchService.remove(branchId);
+      setBranches(prev => prev.filter(b => b._id !== branchId));
       setSuccess("Sede eliminada");
     } catch (err) {
       console.error("deleteBranch", err);

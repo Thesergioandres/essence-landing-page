@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "../../../shared/components/ui/Input";
 import type { ProductFormData } from "../types/product.types";
 
@@ -9,7 +9,26 @@ interface ProductFormProps {
   isLoading: boolean;
   categories: { _id: string; name: string }[];
   onCreateCategory?: (name: string) => Promise<void>;
+  baseCommissionPercentage?: number;
 }
+
+const calculateAutomaticEmployeePrice = (
+  salePriceRaw: number,
+  baseCommissionPercentageRaw: number
+) => {
+  const salePrice = Number(salePriceRaw);
+  if (!Number.isFinite(salePrice) || salePrice < 0) {
+    return 0;
+  }
+
+  const normalizedCommission = Math.min(
+    95,
+    Math.max(0, Number(baseCommissionPercentageRaw) || 0)
+  );
+
+  const commissionAmount = salePrice * (normalizedCommission / 100);
+  return Number((salePrice - commissionAmount).toFixed(2));
+};
 
 export const ProductForm = ({
   initialData,
@@ -17,6 +36,7 @@ export const ProductForm = ({
   isLoading,
   categories,
   onCreateCategory,
+  baseCommissionPercentage = 20,
 }: ProductFormProps) => {
   const [formData, setFormData] = useState<ProductFormData>(
     initialData || {
@@ -30,15 +50,72 @@ export const ProductForm = ({
       image: null,
     }
   );
+  const [employeeManual, setEmployeeManual] = useState(false);
   const [showCategoryInput, setShowCategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
+
+  useEffect(() => {
+    if (employeeManual) return;
+
+    const automaticEmployeePrice = calculateAutomaticEmployeePrice(
+      Number(formData.clientPrice),
+      baseCommissionPercentage
+    );
+
+    if (Number(formData.employeePrice) === automaticEmployeePrice) {
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      employeePrice: automaticEmployeePrice,
+    }));
+  }, [
+    baseCommissionPercentage,
+    employeeManual,
+    formData.clientPrice,
+    formData.employeePrice,
+  ]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+
+    if (name === "employeePrice") {
+      setEmployeeManual(true);
+    }
+
+    const numericFields = new Set([
+      "purchasePrice",
+      "clientPrice",
+      "employeePrice",
+      "suggestedPrice",
+    ]);
+
+    const parsedValue = numericFields.has(name)
+      ? value === ""
+        ? 0
+        : Number(value)
+      : value;
+
+    setFormData(prev => ({ ...prev, [name]: parsedValue }));
+  };
+
+  const handleAutomaticEmployeeModeChange = (automaticMode: boolean) => {
+    setEmployeeManual(!automaticMode);
+    if (!automaticMode) {
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      employeePrice: calculateAutomaticEmployeePrice(
+        Number(prev.clientPrice),
+        baseCommissionPercentage
+      ),
+    }));
   };
 
   const handleSubmit = (e: FormEvent) => {
@@ -170,13 +247,27 @@ export const ProductForm = ({
             onChange={handleChange}
             required
           />
+
+          <label className="inline-flex items-center gap-2 text-xs font-medium text-blue-200">
+            <input
+              type="checkbox"
+              checked={!employeeManual}
+              onChange={event =>
+                handleAutomaticEmployeeModeChange(event.target.checked)
+              }
+              className="h-3.5 w-3.5 rounded border border-blue-500 bg-blue-950/40"
+            />
+            Precio empleado automatico ({baseCommissionPercentage}%)
+          </label>
+
           <Input
             label="Precio Empleado"
             name="employeePrice"
             type="number"
             value={formData.employeePrice}
             onChange={handleChange}
-            required
+            disabled={!employeeManual}
+            required={employeeManual}
           />
         </div>
       </div>

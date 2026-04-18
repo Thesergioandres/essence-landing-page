@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import ProductSelector from "../../../components/ProductSelector";
 import { invalidateProductCache } from "../../../hooks/useProductCache";
@@ -328,8 +329,7 @@ export default function Promotions() {
     if (employees.length === 0) return;
     if (formData.allowedEmployees.length === 0) return;
 
-    const allSelected =
-      formData.allowedEmployees.length === employees.length;
+    const allSelected = formData.allowedEmployees.length === employees.length;
 
     if (allSelected) {
       lastAllowedEmployeesRef.current = formData.allowedEmployees;
@@ -368,6 +368,15 @@ export default function Promotions() {
     formData.employeePrice > 0 &&
     formData.promotionPrice > 0 &&
     formData.promotionPrice < formData.employeePrice;
+
+  const preventInvalidNumberInput = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    // Prevent exponent and signed input to keep plain positive numeric values.
+    if (/^[a-zA-Z]$/.test(e.key) || ["+", "-"].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -682,8 +691,7 @@ export default function Promotions() {
           productImage: product?.image?.url,
           productPrice: product?.clientPrice || product?.suggestedPrice || 0,
           purchasePrice: product?.averageCost ?? product?.purchasePrice ?? 0,
-          employeePrice:
-            product?.employeePrice || product?.clientPrice || 0,
+          employeePrice: product?.employeePrice || product?.clientPrice || 0,
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice || 0,
         };
@@ -1131,349 +1139,271 @@ export default function Promotions() {
       )}
 
       {/* Create/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-10">
-          <div className="w-full max-w-7xl rounded-xl border border-gray-700 bg-gray-900 shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-700 p-4">
-              <h2 className="text-xl font-semibold text-white">
-                {editingPromo ? "Editar Promoción" : "Nueva Promoción"}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  resetForm();
-                }}
-                className="text-gray-400 hover:text-white"
+      {showModal &&
+        createPortal(
+          <div className="z-80 fixed inset-0 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-10">
+            <div className="w-full max-w-7xl rounded-xl border border-gray-700 bg-gray-900 shadow-xl">
+              <div className="flex items-center justify-between border-b border-gray-700 p-4">
+                <h2 className="text-xl font-semibold text-white">
+                  {editingPromo ? "Editar Promoción" : "Nueva Promoción"}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    resetForm();
+                  }}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <form
+                onSubmit={handleSubmit}
+                className="max-h-[70vh] overflow-y-auto p-4"
               >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleSubmit}
-              className="max-h-[70vh] overflow-y-auto p-4"
-            >
-              <div className="grid gap-6 md:grid-cols-2">
-                {/* Left Column */}
-                <div className="space-y-4">
-                  {/* Name */}
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-300">
-                      Nombre *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={e =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
-                      placeholder="Ej: Combo Verano"
-                      required
-                    />
-                  </div>
-
-                  {/* Description */}
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-300">
-                      Descripción
-                    </label>
-                    <textarea
-                      value={formData.description}
-                      onChange={e =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                      rows={2}
-                      className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
-                      placeholder="Descripción de la promoción..."
-                    />
-                  </div>
-
-                  {/* Type */}
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-300">
-                      Tipo *
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(
-                        Object.entries(typeConfig) as [
-                          PromotionType,
-                          typeof typeConfig.bundle,
-                        ][]
-                      ).map(([key, config]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() =>
-                            setFormData({ ...formData, type: key })
-                          }
-                          className={`flex items-center gap-2 rounded-lg border p-3 text-left transition ${
-                            formData.type === key
-                              ? "border-purple-500 bg-purple-900/30"
-                              : "border-gray-700 hover:border-gray-600"
-                          }`}
-                        >
-                          <span className={`rounded-lg p-2 ${config.color}`}>
-                            {config.icon}
-                          </span>
-                          <div>
-                            <p className="text-sm font-medium text-white">
-                              {config.label}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {config.description}
-                            </p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Image */}
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-300">
-                      Imagen
-                      {generatingCollage && (
-                        <span className="ml-2 inline-flex items-center gap-1 text-xs text-purple-400">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Generando collage...
-                        </span>
-                      )}
-                    </label>
-                    {imagePreview ? (
-                      <div className="relative">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="h-32 w-full rounded-lg object-cover"
-                        />
-                        {generatingCollage && (
-                          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50">
-                            <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setImagePreview(null);
-                            setImageBase64(null);
-                            manualImageRef.current = true; // Prevent auto-generation unless user resets
-                          }}
-                          className="absolute right-2 top-2 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="relative flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-600 p-6 transition hover:border-purple-500">
-                        {generatingCollage && (
-                          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-800">
-                            <div className="text-center">
-                              <Loader2 className="mx-auto h-8 w-8 animate-spin text-purple-400" />
-                              <p className="mt-2 text-xs text-gray-400">
-                                Generando collage...
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                        />
-                        <div className="text-center">
-                          <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
-                          <p className="mt-1 text-sm text-gray-400">
-                            Subir imagen
-                          </p>
-                        </div>
-                      </label>
-                    )}
-                  </div>
-
-                  {/* Dates */}
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-6 md:grid-cols-2">
+                  {/* Left Column */}
+                  <div className="space-y-4">
+                    {/* Name */}
                     <div>
                       <label className="mb-1 block text-sm font-medium text-gray-300">
-                        Fecha inicio
+                        Nombre *
                       </label>
                       <input
-                        type="date"
-                        value={formData.startDate}
+                        type="text"
+                        value={formData.name}
+                        onChange={e =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                        placeholder="Ej: Combo Verano"
+                        required
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-300">
+                        Descripción
+                      </label>
+                      <textarea
+                        value={formData.description}
                         onChange={e =>
                           setFormData({
                             ...formData,
-                            startDate: e.target.value,
+                            description: e.target.value,
                           })
                         }
-                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                        rows={2}
+                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                        placeholder="Descripción de la promoción..."
                       />
                     </div>
+
+                    {/* Type */}
                     <div>
                       <label className="mb-1 block text-sm font-medium text-gray-300">
-                        Fecha fin
+                        Tipo *
                       </label>
-                      <input
-                        type="date"
-                        value={formData.endDate}
-                        onChange={e =>
-                          setFormData({ ...formData, endDate: e.target.value })
-                        }
-                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Branches */}
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-300">
-                      Sucursales (opcional)
-                    </label>
-                    <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/60 p-3">
-                      <label className="flex items-center justify-between gap-3 text-sm text-gray-200">
-                        <span>Todas las sucursales</span>
-                        <input
-                          type="checkbox"
-                          checked={allLocations}
-                          onChange={e => {
-                            const enabled = e.target.checked;
-                            setAllLocations(enabled);
-                            if (enabled) {
-                              lastAllowedLocationsRef.current =
-                                formData.allowedLocations;
-                              setFormData({
-                                ...formData,
-                                allowedLocations: [],
-                              });
-                            } else {
-                              const restored =
-                                lastAllowedLocationsRef.current || [];
-                              setFormData({
-                                ...formData,
-                                allowedLocations: restored,
-                              });
+                      <div className="grid grid-cols-2 gap-2">
+                        {(
+                          Object.entries(typeConfig) as [
+                            PromotionType,
+                            typeof typeConfig.bundle,
+                          ][]
+                        ).map(([key, config]) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() =>
+                              setFormData({ ...formData, type: key })
                             }
-                          }}
-                          className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                        />
-                      </label>
-
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {branches.map(branch => {
-                          const checked = formData.allowedLocations.includes(
-                            branch._id
-                          );
-                          return (
-                            <label
-                              key={branch._id}
-                              className={`flex items-center justify-between rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-200 transition ${
-                                allLocations
-                                  ? "opacity-50"
-                                  : "hover:border-purple-500/60"
-                              }`}
-                            >
-                              <span className="truncate">{branch.name}</span>
-                              <input
-                                type="checkbox"
-                                disabled={allLocations}
-                                checked={checked}
-                                onChange={() => {
-                                  if (allLocations) return;
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    allowedLocations: checked
-                                      ? prev.allowedLocations.filter(
-                                          id => id !== branch._id
-                                        )
-                                      : [...prev.allowedLocations, branch._id],
-                                  }));
-                                }}
-                                className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                              />
-                            </label>
-                          );
-                        })}
+                            className={`flex items-center gap-2 rounded-lg border p-3 text-left transition ${
+                              formData.type === key
+                                ? "border-purple-500 bg-purple-900/30"
+                                : "border-gray-700 hover:border-gray-600"
+                            }`}
+                          >
+                            <span className={`rounded-lg p-2 ${config.color}`}>
+                              {config.icon}
+                            </span>
+                            <div>
+                              <p className="text-sm font-medium text-white">
+                                {config.label}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {config.description}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
                       </div>
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Si no seleccionas sedes, la promocion aplica en todas.
-                    </p>
-                  </div>
 
-                  {/* Employees */}
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-300">
-                      Employees (opcional)
-                    </label>
-                    <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/60 p-3">
-                      <label className="flex items-center justify-between gap-3 text-sm text-gray-200">
-                        <span>Todos los employees</span>
-                        <input
-                          type="checkbox"
-                          checked={allEmployees}
-                          onChange={e => {
-                            const enabled = e.target.checked;
-                            setAllEmployees(enabled);
-                            if (enabled) {
-                              lastAllowedEmployeesRef.current =
-                                formData.allowedEmployees;
-                              setFormData({
-                                ...formData,
-                                allowedEmployees: [],
-                              });
-                            } else {
-                              setFormData({
-                                ...formData,
-                                allowedEmployees: [],
-                              });
-                            }
-                          }}
-                          className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                        />
+                    {/* Image */}
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-300">
+                        Imagen
+                        {generatingCollage && (
+                          <span className="ml-2 inline-flex items-center gap-1 text-xs text-purple-400">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Generando collage...
+                          </span>
+                        )}
                       </label>
-
-                      {employees.length === 0 ? (
-                        <p className="text-xs text-gray-500">
-                          No hay employees registrados.
-                        </p>
+                      {imagePreview ? (
+                        <div className="relative">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="h-32 w-full rounded-lg object-cover"
+                          />
+                          {generatingCollage && (
+                            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50">
+                              <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImagePreview(null);
+                              setImageBase64(null);
+                              manualImageRef.current = true; // Prevent auto-generation unless user resets
+                            }}
+                            className="absolute right-2 top-2 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
                       ) : (
+                        <label className="relative flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-600 p-6 transition hover:border-purple-500">
+                          {generatingCollage && (
+                            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-800">
+                              <div className="text-center">
+                                <Loader2 className="mx-auto h-8 w-8 animate-spin text-purple-400" />
+                                <p className="mt-2 text-xs text-gray-400">
+                                  Generando collage...
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                          <div className="text-center">
+                            <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
+                            <p className="mt-1 text-sm text-gray-400">
+                              Subir imagen
+                            </p>
+                          </div>
+                        </label>
+                      )}
+                    </div>
+
+                    {/* Dates */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-300">
+                          Fecha inicio
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.startDate}
+                          onChange={e =>
+                            setFormData({
+                              ...formData,
+                              startDate: e.target.value,
+                            })
+                          }
+                          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-300">
+                          Fecha fin
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.endDate}
+                          onChange={e =>
+                            setFormData({
+                              ...formData,
+                              endDate: e.target.value,
+                            })
+                          }
+                          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Branches */}
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-300">
+                        Sucursales (opcional)
+                      </label>
+                      <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/60 p-3">
+                        <label className="flex items-center justify-between gap-3 text-sm text-gray-200">
+                          <span>Todas las sucursales</span>
+                          <input
+                            type="checkbox"
+                            checked={allLocations}
+                            onChange={e => {
+                              const enabled = e.target.checked;
+                              setAllLocations(enabled);
+                              if (enabled) {
+                                lastAllowedLocationsRef.current =
+                                  formData.allowedLocations;
+                                setFormData({
+                                  ...formData,
+                                  allowedLocations: [],
+                                });
+                              } else {
+                                const restored =
+                                  lastAllowedLocationsRef.current || [];
+                                setFormData({
+                                  ...formData,
+                                  allowedLocations: restored,
+                                });
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
+                          />
+                        </label>
+
                         <div className="grid gap-2 sm:grid-cols-2">
-                          {employees.map(employee => {
-                            const checked =
-                              formData.allowedEmployees.includes(
-                                employee._id
-                              );
+                          {branches.map(branch => {
+                            const checked = formData.allowedLocations.includes(
+                              branch._id
+                            );
                             return (
                               <label
-                                key={employee._id}
+                                key={branch._id}
                                 className={`flex items-center justify-between rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-200 transition ${
-                                  allEmployees
+                                  allLocations
                                     ? "opacity-50"
                                     : "hover:border-purple-500/60"
                                 }`}
                               >
-                                <span className="truncate">
-                                  {employee.name}
-                                </span>
+                                <span className="truncate">{branch.name}</span>
                                 <input
                                   type="checkbox"
-                                  disabled={allEmployees}
+                                  disabled={allLocations}
                                   checked={checked}
                                   onChange={() => {
-                                    if (allEmployees) return;
+                                    if (allLocations) return;
                                     setFormData(prev => ({
                                       ...prev,
-                                      allowedEmployees: checked
-                                        ? prev.allowedEmployees.filter(
-                                            id => id !== employee._id
+                                      allowedLocations: checked
+                                        ? prev.allowedLocations.filter(
+                                            id => id !== branch._id
                                           )
                                         : [
-                                            ...prev.allowedEmployees,
-                                            employee._id,
+                                            ...prev.allowedLocations,
+                                            branch._id,
                                           ],
                                     }));
                                   }}
@@ -1483,500 +1413,594 @@ export default function Promotions() {
                             );
                           })}
                         </div>
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Si no seleccionas employees, la promocion aplica en
-                      todos.
-                    </p>
-                  </div>
-
-                  {/* Options */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-300">
-                        Límite total
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.usageLimit}
-                        onChange={e =>
-                          setFormData({
-                            ...formData,
-                            usageLimit: e.target.value,
-                          })
-                        }
-                        placeholder="Sin límite"
-                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-300">
-                        Límite por cliente
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.usageLimitPerCustomer}
-                        onChange={e =>
-                          setFormData({
-                            ...formData,
-                            usageLimitPerCustomer: e.target.value,
-                          })
-                        }
-                        placeholder="Sin límite"
-                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="showInCatalog"
-                      checked={formData.showInCatalog}
-                      onChange={e =>
-                        setFormData({
-                          ...formData,
-                          showInCatalog: e.target.checked,
-                        })
-                      }
-                      className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                    />
-                    <label
-                      htmlFor="showInCatalog"
-                      className="text-sm text-gray-300"
-                    >
-                      Mostrar en catálogo público
-                    </label>
-                  </div>
-                </div>
-
-                {/* Right Column - Products */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-300">
-                      Productos incluidos *
-                    </label>
-                    <ProductSelector
-                      value=""
-                      onChange={
-                        handleProductSelect as (
-                          productId: string,
-                          product?: unknown
-                        ) => void
-                      }
-                      placeholder="Buscar producto para agregar..."
-                      showStock={true}
-                      excludeProductIds={comboItems.map(item => item.product)}
-                      excludePromotions={true}
-                    />
-                  </div>
-
-                  {/* Combo Items List */}
-                  <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-gray-700 p-2">
-                    {comboItems.length === 0 ? (
-                      <p className="py-8 text-center text-gray-500">
-                        Agrega productos a la promoción
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Si no seleccionas sedes, la promocion aplica en todas.
                       </p>
-                    ) : (
-                      comboItems.map(item => (
-                        <div
-                          key={item.product}
-                          className="flex items-center gap-3 rounded-lg bg-gray-800 p-3"
-                        >
-                          {item.productImage ? (
-                            <img
-                              src={item.productImage}
-                              alt={item.productName}
-                              className="h-10 w-10 rounded object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded bg-gray-700">
-                              <Package className="h-5 w-5 text-gray-500" />
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-white">
-                              {item.productName}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Precio normal: {formatCurrency(item.productPrice)}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              min="1"
-                              value={item.quantity}
-                              onChange={e =>
-                                updateComboItem(
-                                  item.product,
-                                  "quantity",
-                                  parseInt(e.target.value) || 1
-                                )
-                              }
-                              className="w-16 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-center text-white"
-                            />
-                            <span className="text-xs text-gray-500">uds</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeComboItem(item.product)}
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            <X className="h-5 w-5" />
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Price Summary & Financial Breakdown */}
-                  {comboItems.length > 0 && (
-                    <div className="space-y-4">
-                      {/* Original Price & Promo Price */}
-                      <div className="rounded-lg border border-purple-700/50 bg-purple-900/20 p-4">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-400">
-                            Precio original:
-                          </span>
-                          <span className="font-medium text-gray-300">
-                            {formatCurrency(calculateOriginalPrice())}
-                          </span>
-                        </div>
-                        <div className="mt-3">
-                          <label className="mb-1 block text-sm font-medium text-purple-300">
-                            Precio de la promoción *
-                          </label>
+                    {/* Employees */}
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-300">
+                        Employees (opcional)
+                      </label>
+                      <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/60 p-3">
+                        <label className="flex items-center justify-between gap-3 text-sm text-gray-200">
+                          <span>Todos los employees</span>
                           <input
-                            type="number"
-                            min="0"
-                            step="100"
-                            value={
-                              formData.promotionPrice === 0
-                                ? ""
-                                : formData.promotionPrice
-                            }
-                            onChange={e =>
-                              setFormData({
-                                ...formData,
-                                promotionPrice: parseFloat(e.target.value) || 0,
-                              })
-                            }
-                            onBlur={e => {
-                              if (e.target.value === "") {
-                                setFormData({ ...formData, promotionPrice: 0 });
+                            type="checkbox"
+                            checked={allEmployees}
+                            onChange={e => {
+                              const enabled = e.target.checked;
+                              setAllEmployees(enabled);
+                              if (enabled) {
+                                lastAllowedEmployeesRef.current =
+                                  formData.allowedEmployees;
+                                setFormData({
+                                  ...formData,
+                                  allowedEmployees: [],
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  allowedEmployees: [],
+                                });
                               }
                             }}
-                            className="w-full rounded-lg border border-purple-700/50 bg-purple-900/30 px-4 py-2 text-xl font-bold text-purple-300 focus:border-purple-500 focus:outline-none"
-                            required
+                            className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
                           />
-                        </div>
+                        </label>
+
+                        {employees.length === 0 ? (
+                          <p className="text-xs text-gray-500">
+                            No hay employees registrados.
+                          </p>
+                        ) : (
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {employees.map(employee => {
+                              const checked =
+                                formData.allowedEmployees.includes(
+                                  employee._id
+                                );
+                              return (
+                                <label
+                                  key={employee._id}
+                                  className={`flex items-center justify-between rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-200 transition ${
+                                    allEmployees
+                                      ? "opacity-50"
+                                      : "hover:border-purple-500/60"
+                                  }`}
+                                >
+                                  <span className="truncate">
+                                    {employee.name}
+                                  </span>
+                                  <input
+                                    type="checkbox"
+                                    disabled={allEmployees}
+                                    checked={checked}
+                                    onChange={() => {
+                                      if (allEmployees) return;
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        allowedEmployees: checked
+                                          ? prev.allowedEmployees.filter(
+                                              id => id !== employee._id
+                                            )
+                                          : [
+                                              ...prev.allowedEmployees,
+                                              employee._id,
+                                            ],
+                                      }));
+                                    }}
+                                    className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
+                                  />
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Si no seleccionas employees, la promocion aplica en
+                        todos.
+                      </p>
+                    </div>
 
-                      {/* 📊 INGENERÍA DE PRECIOS - Responsive Grid */}
-                      {formData.promotionPrice > 0 &&
-                        (() => {
-                          // Calculate financial metrics
-                          const totalCost = comboItems.reduce(
-                            (sum, item) =>
-                              sum + (item.purchasePrice || 0) * item.quantity,
-                            0
-                          );
-                          const employeeCostTotal = comboItems.reduce(
-                            (sum, item) =>
-                              sum +
-                              (item.employeePrice || 0) * item.quantity,
-                            0
-                          );
-                          const totalPublicNormal = calculateOriginalPrice();
-                          const adminProfit =
-                            formData.promotionPrice - totalCost;
-                          // CHANGE: Markup (ROI) = (Profit / Cost) * 100
-                          const adminMargin =
-                            totalCost > 0
-                              ? Math.round((adminProfit / totalCost) * 100)
-                              : 0;
-                          const employeeProfit =
-                            formData.promotionPrice -
-                            (formData.employeePrice || 0);
-                          const customerSavings =
-                            totalPublicNormal - formData.promotionPrice;
-                          const adminProfitB2B =
-                            formData.employeePrice - totalCost;
-                          // CHANGE: Markup (ROI) = (Profit / Cost) * 100
-                          const adminMarginB2B =
-                            totalCost > 0
-                              ? Math.round((adminProfitB2B / totalCost) * 100)
-                              : 0;
+                    {/* Options */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-300">
+                          Límite total
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.usageLimit}
+                          onChange={e =>
+                            setFormData({
+                              ...formData,
+                              usageLimit: e.target.value,
+                            })
+                          }
+                          placeholder="Sin límite"
+                          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-300">
+                          Límite por cliente
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.usageLimitPerCustomer}
+                          onChange={e =>
+                            setFormData({
+                              ...formData,
+                              usageLimitPerCustomer: e.target.value,
+                            })
+                          }
+                          placeholder="Sin límite"
+                          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
 
-                          const belowCostAlert =
-                            formData.employeePrice > 0 &&
-                            formData.employeePrice < totalCost;
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="showInCatalog"
+                        checked={formData.showInCatalog}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            showInCatalog: e.target.checked,
+                          })
+                        }
+                        className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
+                      />
+                      <label
+                        htmlFor="showInCatalog"
+                        className="text-sm text-gray-300"
+                      >
+                        Mostrar en catálogo público
+                      </label>
+                    </div>
+                  </div>
 
-                          return (
-                            <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-3 sm:p-4">
-                              <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold text-gray-300 sm:text-sm">
-                                📊 Ingeniería de Precios
-                              </h4>
+                  {/* Right Column - Products */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-300">
+                        Productos incluidos *
+                      </label>
+                      <ProductSelector
+                        value=""
+                        onChange={
+                          handleProductSelect as (
+                            productId: string,
+                            product?: unknown
+                          ) => void
+                        }
+                        placeholder="Buscar producto para agregar..."
+                        showStock={true}
+                        excludeProductIds={comboItems.map(item => item.product)}
+                        excludePromotions={true}
+                      />
+                    </div>
 
-                              {/* Alert if employee price below cost */}
-                              {belowCostAlert && (
-                                <div className="mb-3 rounded-lg border border-red-500/50 bg-red-900/30 p-2 text-xs text-red-400 sm:text-sm">
-                                  ⚠️ Precio employee por debajo del margen
-                                  establecido
-                                </div>
-                              )}
+                    {/* Combo Items List */}
+                    <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-gray-700 p-2">
+                      {comboItems.length === 0 ? (
+                        <p className="py-8 text-center text-gray-500">
+                          Agrega productos a la promoción
+                        </p>
+                      ) : (
+                        comboItems.map(item => (
+                          <div
+                            key={item.product}
+                            className="flex items-center gap-3 rounded-lg bg-gray-800 p-3"
+                          >
+                            {item.productImage ? (
+                              <img
+                                src={item.productImage}
+                                alt={item.productName}
+                                className="h-10 w-10 rounded object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded bg-gray-700">
+                                <Package className="h-5 w-5 text-gray-500" />
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-white">
+                                {item.productName}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Precio normal:{" "}
+                                {formatCurrency(item.productPrice)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={e =>
+                                  updateComboItem(
+                                    item.product,
+                                    "quantity",
+                                    parseInt(e.target.value) || 1
+                                  )
+                                }
+                                className="w-16 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-center text-white"
+                              />
+                              <span className="text-xs text-gray-500">uds</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeComboItem(item.product)}
+                              className="text-red-400 hover:text-red-300"
+                            >
+                              <X className="h-5 w-5" />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
 
-                              {/* Responsive Grid: 1 col mobile, 2 col tablet, 3 col desktop */}
-                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                {/* Column 1: Admin Costs */}
-                                <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 p-3">
-                                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-purple-400 sm:text-xs">
-                                    💼 Mi Estructura
-                                  </p>
-                                  <div className="space-y-3">
-                                    <div>
-                                      <span className="block text-[10px] uppercase text-gray-500">
-                                        Costo
-                                      </span>
-                                      <span className="block truncate text-lg font-semibold text-gray-300">
-                                        {formatCurrency(totalCost)}
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="block text-[10px] uppercase text-gray-500">
-                                        Ganancia
-                                      </span>
-                                      <span
-                                        className={`block truncate text-lg font-bold ${adminProfit >= 0 ? "text-green-400" : "text-red-400"}`}
-                                      >
-                                        {formatCurrency(adminProfit)}
-                                        <span className="ml-1 text-xs font-normal opacity-75">
-                                          ({adminMargin}% ROI)
+                    {/* Price Summary & Financial Breakdown */}
+                    {comboItems.length > 0 && (
+                      <div className="space-y-4">
+                        {/* Original Price & Promo Price */}
+                        <div className="rounded-lg border border-purple-700/50 bg-purple-900/20 p-4">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-400">
+                              Precio original:
+                            </span>
+                            <span className="font-medium text-gray-300">
+                              {formatCurrency(calculateOriginalPrice())}
+                            </span>
+                          </div>
+                          <div className="mt-3">
+                            <label className="mb-1 block text-sm font-medium text-purple-300">
+                              Precio de la promoción *
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              inputMode="decimal"
+                              value={
+                                formData.promotionPrice === 0
+                                  ? ""
+                                  : formData.promotionPrice
+                              }
+                              onKeyDown={preventInvalidNumberInput}
+                              onChange={e =>
+                                setFormData({
+                                  ...formData,
+                                  promotionPrice:
+                                    parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              onBlur={e => {
+                                if (e.target.value === "") {
+                                  setFormData({
+                                    ...formData,
+                                    promotionPrice: 0,
+                                  });
+                                }
+                              }}
+                              className="w-full rounded-lg border border-purple-700/50 bg-purple-900/30 px-4 py-2 text-xl font-bold text-purple-300 focus:border-purple-500 focus:outline-none"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        {/* 📊 INGENERÍA DE PRECIOS - Responsive Grid */}
+                        {formData.promotionPrice > 0 &&
+                          (() => {
+                            // Calculate financial metrics
+                            const totalCost = comboItems.reduce(
+                              (sum, item) =>
+                                sum + (item.purchasePrice || 0) * item.quantity,
+                              0
+                            );
+                            const employeeCostTotal = comboItems.reduce(
+                              (sum, item) =>
+                                sum + (item.employeePrice || 0) * item.quantity,
+                              0
+                            );
+                            const totalPublicNormal = calculateOriginalPrice();
+                            const adminProfit =
+                              formData.promotionPrice - totalCost;
+                            // CHANGE: Markup (ROI) = (Profit / Cost) * 100
+                            const adminMargin =
+                              totalCost > 0
+                                ? Math.round((adminProfit / totalCost) * 100)
+                                : 0;
+                            const employeeProfit =
+                              formData.promotionPrice -
+                              (formData.employeePrice || 0);
+                            const customerSavings =
+                              totalPublicNormal - formData.promotionPrice;
+                            const adminProfitB2B =
+                              formData.employeePrice - totalCost;
+                            // CHANGE: Markup (ROI) = (Profit / Cost) * 100
+                            const adminMarginB2B =
+                              totalCost > 0
+                                ? Math.round((adminProfitB2B / totalCost) * 100)
+                                : 0;
+
+                            const belowCostAlert =
+                              formData.employeePrice > 0 &&
+                              formData.employeePrice < totalCost;
+
+                            return (
+                              <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-3 sm:p-4">
+                                <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold text-gray-300 sm:text-sm">
+                                  📊 Ingeniería de Precios
+                                </h4>
+
+                                {/* Alert if employee price below cost */}
+                                {belowCostAlert && (
+                                  <div className="mb-3 rounded-lg border border-red-500/50 bg-red-900/30 p-2 text-xs text-red-400 sm:text-sm">
+                                    ⚠️ Precio employee por debajo del margen
+                                    establecido
+                                  </div>
+                                )}
+
+                                {/* Responsive Grid: 1 col mobile, 2 col tablet, 3 col desktop */}
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                  {/* Column 1: Admin Costs */}
+                                  <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                                    <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-purple-400 sm:text-xs">
+                                      💼 Mi Estructura
+                                    </p>
+                                    <div className="space-y-3">
+                                      <div>
+                                        <span className="block text-[10px] uppercase text-gray-500">
+                                          Costo
                                         </span>
-                                      </span>
+                                        <span className="block truncate text-lg font-semibold text-gray-300">
+                                          {formatCurrency(totalCost)}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="block text-[10px] uppercase text-gray-500">
+                                          Ganancia
+                                        </span>
+                                        <span
+                                          className={`block truncate text-lg font-bold ${adminProfit >= 0 ? "text-green-400" : "text-red-400"}`}
+                                        >
+                                          {formatCurrency(adminProfit)}
+                                          <span className="ml-1 text-xs font-normal opacity-75">
+                                            ({adminMargin}% ROI)
+                                          </span>
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
 
-                                {/* Column 2: Employee (B2B) */}
-                                <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 p-3">
-                                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-blue-400 sm:text-xs">
-                                    🏷️ Employee
-                                  </p>
-                                  <div className="space-y-3">
-                                    <div>
-                                      <span className="mb-1 block text-[10px] uppercase text-gray-500">
-                                        Precio B2B
-                                      </span>
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        step="100"
-                                        value={formData.employeePrice || ""}
-                                        onChange={e =>
-                                          setFormData({
-                                            ...formData,
-                                            employeePrice:
-                                              parseFloat(e.target.value) || 0,
-                                          })
-                                        }
-                                        className="w-full rounded border border-gray-600 bg-gray-800 px-2 py-1.5 text-base font-semibold text-white focus:border-purple-500 focus:outline-none"
-                                        placeholder="$0"
-                                      />
-                                      <div className="mt-1 flex items-center justify-between">
-                                        <span className="text-[10px] text-gray-400">
-                                          Precio base sin promo:{" "}
-                                          {formatCurrency(employeeCostTotal)}
+                                  {/* Column 2: Employee (B2B) */}
+                                  <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                                    <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-blue-400 sm:text-xs">
+                                      🏷️ Employee
+                                    </p>
+                                    <div className="space-y-3">
+                                      <div>
+                                        <span className="mb-1 block text-[10px] uppercase text-gray-500">
+                                          Precio B2B
                                         </span>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          step="any"
+                                          inputMode="decimal"
+                                          value={formData.employeePrice || ""}
+                                          onKeyDown={preventInvalidNumberInput}
+                                          onChange={e =>
                                             setFormData({
                                               ...formData,
                                               employeePrice:
-                                                employeeCostTotal,
-                                            });
-                                          }}
-                                          className="rounded border border-gray-600 px-2 py-0.5 text-[10px] text-gray-300 transition hover:border-purple-500"
-                                        >
-                                          Usar base
-                                        </button>
-                                      </div>
-                                      {isPromotionPriceBelowB2B && (
-                                        <div className="mt-2 rounded border border-red-500/50 bg-red-900/30 px-2 py-1 text-xs text-red-300">
-                                          El precio de la promocion debe ser
-                                          mayor o igual al precio B2B.
+                                                parseFloat(e.target.value) || 0,
+                                            })
+                                          }
+                                          className="w-full rounded border border-gray-600 bg-gray-800 px-2 py-1.5 text-base font-semibold text-white focus:border-purple-500 focus:outline-none"
+                                          placeholder="$0"
+                                        />
+                                        <div className="mt-1 flex items-center justify-between">
+                                          <span className="text-[10px] text-gray-400">
+                                            Precio base sin promo:{" "}
+                                            {formatCurrency(employeeCostTotal)}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setFormData({
+                                                ...formData,
+                                                employeePrice:
+                                                  employeeCostTotal,
+                                              });
+                                            }}
+                                            className="rounded border border-gray-600 px-2 py-0.5 text-[10px] text-gray-300 transition hover:border-purple-500"
+                                          >
+                                            Usar base
+                                          </button>
                                         </div>
-                                      )}
-                                    </div>
-                                    {formData.employeePrice > 0 && (
-                                      <div>
-                                        <span className="block text-[10px] uppercase text-gray-500">
-                                          Ganancia Dist.
-                                        </span>
-                                        <span
-                                          className={`block truncate text-lg font-semibold ${employeeProfit >= 0 ? "text-blue-400" : "text-red-400"}`}
-                                        >
-                                          {formatCurrency(employeeProfit)}
-                                          {formData.employeePrice > 0 && (
-                                            <span className="ml-1 text-xs font-normal opacity-75">
-                                              (
-                                              {Math.round(
-                                                (employeeProfit /
-                                                  formData.employeePrice) *
-                                                  100
-                                              )}
-                                              % ROI)
-                                            </span>
-                                          )}
-                                        </span>
+                                        {isPromotionPriceBelowB2B && (
+                                          <div className="mt-2 rounded border border-red-500/50 bg-red-900/30 px-2 py-1 text-xs text-red-300">
+                                            El precio de la promocion debe ser
+                                            mayor o igual al precio B2B.
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                    {formData.employeePrice > 0 && (
-                                      <>
-                                        <div className="my-1 border-t border-gray-700"></div>
+                                      {formData.employeePrice > 0 && (
                                         <div>
                                           <span className="block text-[10px] uppercase text-gray-500">
-                                            Mi Ganancia B2B
+                                            Ganancia Dist.
                                           </span>
                                           <span
-                                            className={`block truncate text-lg font-semibold ${
-                                              adminProfitB2B <= 0
-                                                ? "text-red-500"
-                                                : adminMarginB2B < 10
-                                                  ? "text-yellow-500"
-                                                  : "text-green-500"
-                                            }`}
+                                            className={`block truncate text-lg font-semibold ${employeeProfit >= 0 ? "text-blue-400" : "text-red-400"}`}
                                           >
-                                            {formatCurrency(adminProfitB2B)}{" "}
-                                            <span className="text-xs">
-                                              ({adminMarginB2B}% ROI)
-                                            </span>
+                                            {formatCurrency(employeeProfit)}
+                                            {formData.employeePrice > 0 && (
+                                              <span className="ml-1 text-xs font-normal opacity-75">
+                                                (
+                                                {Math.round(
+                                                  (employeeProfit /
+                                                    formData.employeePrice) *
+                                                    100
+                                                )}
+                                                % ROI)
+                                              </span>
+                                            )}
                                           </span>
                                         </div>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Column 3: Customer Savings */}
-                                <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 p-3 sm:col-span-2 lg:col-span-1">
-                                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-green-400 sm:text-xs">
-                                    🎁 Cliente Final
-                                  </p>
-                                  <div className="space-y-3">
-                                    <div>
-                                      <span className="block text-[10px] uppercase text-gray-500">
-                                        Precio Normal
-                                      </span>
-                                      <span className="block truncate text-lg font-semibold text-gray-400 line-through">
-                                        {formatCurrency(totalPublicNormal)}
-                                      </span>
+                                      )}
+                                      {formData.employeePrice > 0 && (
+                                        <>
+                                          <div className="my-1 border-t border-gray-700"></div>
+                                          <div>
+                                            <span className="block text-[10px] uppercase text-gray-500">
+                                              Mi Ganancia B2B
+                                            </span>
+                                            <span
+                                              className={`block truncate text-lg font-semibold ${
+                                                adminProfitB2B <= 0
+                                                  ? "text-red-500"
+                                                  : adminMarginB2B < 10
+                                                    ? "text-yellow-500"
+                                                    : "text-green-500"
+                                              }`}
+                                            >
+                                              {formatCurrency(adminProfitB2B)}{" "}
+                                              <span className="text-xs">
+                                                ({adminMarginB2B}% ROI)
+                                              </span>
+                                            </span>
+                                          </div>
+                                        </>
+                                      )}
                                     </div>
-                                    <div>
-                                      <span className="block text-[10px] uppercase text-gray-500">
-                                        Ahorra
-                                      </span>
-                                      <span
-                                        className={`block truncate text-lg font-bold ${customerSavings > 0 ? "text-green-400" : "text-yellow-400"}`}
-                                      >
-                                        {formatCurrency(customerSavings)}
-                                      </span>
+                                  </div>
+
+                                  {/* Column 3: Customer Savings */}
+                                  <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 p-3 sm:col-span-2 lg:col-span-1">
+                                    <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-green-400 sm:text-xs">
+                                      🎁 Cliente Final
+                                    </p>
+                                    <div className="space-y-3">
+                                      <div>
+                                        <span className="block text-[10px] uppercase text-gray-500">
+                                          Precio Normal
+                                        </span>
+                                        <span className="block truncate text-lg font-semibold text-gray-400 line-through">
+                                          {formatCurrency(totalPublicNormal)}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="block text-[10px] uppercase text-gray-500">
+                                          Ahorra
+                                        </span>
+                                        <span
+                                          className={`block truncate text-lg font-bold ${customerSavings > 0 ? "text-green-400" : "text-yellow-400"}`}
+                                        >
+                                          {formatCurrency(customerSavings)}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })()}
+                            );
+                          })()}
 
-                      {/* Old savings display - kept for backwards compatibility */}
-                      {calculateSavings() > 0 && (
-                        <div className="flex items-center justify-between rounded-lg border border-green-500/30 bg-green-900/30 p-2">
-                          <span className="text-sm text-green-400">
-                            💰 Ahorro para el cliente:
-                          </span>
-                          <span className="font-bold text-green-400">
-                            {formatCurrency(calculateSavings())} (
-                            {calculateSavingsPercentage()}%)
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Preview Card */}
-                  {formData.name && comboItems.length > 0 && (
-                    <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
-                      <p className="mb-2 text-xs font-medium uppercase text-gray-500">
-                        Vista previa
-                      </p>
-                      <div className="flex gap-3">
-                        {imagePreview ? (
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            className="h-16 w-16 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-700">
-                            <Package className="h-8 w-8 text-gray-500" />
+                        {/* Old savings display - kept for backwards compatibility */}
+                        {calculateSavings() > 0 && (
+                          <div className="flex items-center justify-between rounded-lg border border-green-500/30 bg-green-900/30 p-2">
+                            <span className="text-sm text-green-400">
+                              💰 Ahorro para el cliente:
+                            </span>
+                            <span className="font-bold text-green-400">
+                              {formatCurrency(calculateSavings())} (
+                              {calculateSavingsPercentage()}%)
+                            </span>
                           </div>
                         )}
-                        <div>
-                          <p className="font-semibold text-white">
-                            {formData.name}
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            {comboItems.length} producto
-                            {comboItems.length > 1 ? "s" : ""} incluido
-                            {comboItems.length > 1 ? "s" : ""}
-                          </p>
-                          <div className="mt-1 flex items-baseline gap-2">
-                            <span className="text-lg font-bold text-purple-400">
-                              {formatCurrency(formData.promotionPrice)}
-                            </span>
-                            {calculateSavingsPercentage() > 0 && (
-                              <span className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">
-                                -{calculateSavingsPercentage()}%
+                      </div>
+                    )}
+
+                    {/* Preview Card */}
+                    {formData.name && comboItems.length > 0 && (
+                      <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
+                        <p className="mb-2 text-xs font-medium uppercase text-gray-500">
+                          Vista previa
+                        </p>
+                        <div className="flex gap-3">
+                          {imagePreview ? (
+                            <img
+                              src={imagePreview}
+                              alt="Preview"
+                              className="h-16 w-16 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-700">
+                              <Package className="h-8 w-8 text-gray-500" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-semibold text-white">
+                              {formData.name}
+                            </p>
+                            <p className="text-sm text-gray-400">
+                              {comboItems.length} producto
+                              {comboItems.length > 1 ? "s" : ""} incluido
+                              {comboItems.length > 1 ? "s" : ""}
+                            </p>
+                            <div className="mt-1 flex items-baseline gap-2">
+                              <span className="text-lg font-bold text-purple-400">
+                                {formatCurrency(formData.promotionPrice)}
                               </span>
-                            )}
+                              {calculateSavingsPercentage() > 0 && (
+                                <span className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">
+                                  -{calculateSavingsPercentage()}%
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Form Actions */}
-              <div className="mt-6 flex justify-end gap-3 border-t border-gray-700 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    resetForm();
-                  }}
-                  className="rounded-lg border border-gray-700 px-4 py-2 text-gray-300 transition hover:bg-gray-800"
-                  disabled={saving}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || isPromotionPriceBelowB2B}
-                  className="flex items-center gap-2 rounded-lg bg-purple-600 px-6 py-2 font-medium text-white transition hover:bg-purple-700 disabled:opacity-50"
-                >
-                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {editingPromo ? "Guardar cambios" : "Crear promoción"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                {/* Form Actions */}
+                <div className="mt-6 flex justify-end gap-3 border-t border-gray-700 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      resetForm();
+                    }}
+                    className="rounded-lg border border-gray-700 px-4 py-2 text-gray-300 transition hover:bg-gray-800"
+                    disabled={saving}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving || isPromotionPriceBelowB2B}
+                    className="flex items-center gap-2 rounded-lg bg-purple-600 px-6 py-2 font-medium text-white transition hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {editingPromo ? "Guardar cambios" : "Crear promoción"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Metrics Modal */}
       {showMetrics && metrics && (

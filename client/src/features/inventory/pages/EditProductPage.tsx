@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { gamificationService } from "../../common/services";
 import {
@@ -23,6 +23,23 @@ interface FormState {
   ingredients: string;
   benefits: string;
 }
+
+const calculateAutomaticEmployeePrice = (
+  salePriceRaw: number,
+  baseCommissionPercentageRaw: number
+) => {
+  if (!Number.isFinite(salePriceRaw) || salePriceRaw < 0) {
+    return 0;
+  }
+
+  const normalizedCommission = Math.min(
+    95,
+    Math.max(0, Number(baseCommissionPercentageRaw) || 0)
+  );
+
+  const commissionAmount = salePriceRaw * (normalizedCommission / 100);
+  return Number((salePriceRaw - commissionAmount).toFixed(2));
+};
 
 export default function EditProduct() {
   const navigate = useNavigate();
@@ -87,36 +104,88 @@ export default function EditProduct() {
     }
   }, [id]);
 
-  useEffect(() => {
-    if (!formData || employeeManual) return;
-    const client = Number(formData.clientPrice);
-    if (Number.isNaN(client)) return;
-    const autoPrice = Math.round(
-      client * (1 - (baseCommissionPercentage || 0) / 100)
-    );
-    if (autoPrice.toString() === formData.employeePrice) return;
-    setFormData(current =>
-      current
-        ? {
-            ...current,
-            employeePrice: autoPrice.toString(),
-          }
-        : current
-    );
-  }, [baseCommissionPercentage, employeeManual, formData]);
+  const salePriceForPricing = useMemo(() => {
+    const clientPrice = Number(formData?.clientPrice);
+    if (Number.isFinite(clientPrice) && clientPrice >= 0) {
+      return clientPrice;
+    }
+
+    const suggestedPrice = Number(formData?.suggestedPrice);
+    if (Number.isFinite(suggestedPrice) && suggestedPrice >= 0) {
+      return suggestedPrice;
+    }
+
+    return 0;
+  }, [formData?.clientPrice, formData?.suggestedPrice]);
+
+  const automaticEmployeePrice = useMemo(
+    () =>
+      calculateAutomaticEmployeePrice(
+        salePriceForPricing,
+        baseCommissionPercentage
+      ),
+    [baseCommissionPercentage, salePriceForPricing]
+  );
+
+  const effectiveEmployeePrice = useMemo(() => {
+    if (!employeeManual) {
+      return automaticEmployeePrice;
+    }
+
+    const manualPrice = Number(formData?.employeePrice);
+    if (!Number.isFinite(manualPrice) || manualPrice < 0) {
+      return 0;
+    }
+
+    return manualPrice;
+  }, [automaticEmployeePrice, employeeManual, formData?.employeePrice]);
+
+  const handleAutomaticEmployeeModeChange = (automaticMode: boolean) => {
+    setEmployeeManual(!automaticMode);
+    setFormData(current => {
+      if (!current) {
+        return current;
+      }
+
+      if (automaticMode) {
+        return {
+          ...current,
+          employeePrice: "",
+        };
+      }
+
+      if (current.employeePrice) {
+        return current;
+      }
+
+      return {
+        ...current,
+        employeePrice:
+          automaticEmployeePrice > 0 ? automaticEmployeePrice.toString() : "",
+      };
+    });
+  };
 
   const loadProduct = async (productId: string) => {
     try {
       setLoading(true);
       const response = await productService.getById(productId);
       setProduct(response);
-      setEmployeeManual(Boolean(response.employeePriceManual));
+      const manualValue =
+        typeof response.employeePriceManualValue === "number"
+          ? response.employeePriceManualValue
+          : response.employeePrice;
+      const isManual =
+        response.employeePriceManual === true &&
+        Number.isFinite(Number(manualValue));
+
+      setEmployeeManual(isManual);
       setFormData({
         name: response.name,
         description: response.description,
         purchasePrice: response.purchasePrice?.toString() ?? "0",
         suggestedPrice: response.suggestedPrice?.toString() ?? "0",
-        employeePrice: response.employeePrice?.toString() ?? "0",
+        employeePrice: isManual ? String(manualValue ?? "") : "",
         clientPrice: response.clientPrice?.toString() ?? "0",
         totalStock: response.totalStock?.toString() ?? "0",
         warehouseStock: response.warehouseStock?.toString() ?? "0",
@@ -189,24 +258,6 @@ export default function EditProduct() {
       return;
     }
 
-    // Auto-calcular employeePrice cuando cambia clientPrice segun comision base
-    if (name === "clientPrice" && !employeeManual) {
-      const clientPrice = Number(value) || 0;
-      const employeePrice = Math.round(
-        clientPrice * (1 - (baseCommissionPercentage || 0) / 100)
-      );
-      setFormData(current =>
-        current
-          ? {
-              ...current,
-              clientPrice: value,
-              employeePrice: employeePrice.toString(),
-            }
-          : current
-      );
-      return;
-    }
-
     setFormData(current =>
       current
         ? {
@@ -244,7 +295,9 @@ export default function EditProduct() {
     try {
       const purchasePrice = Number(formData.purchasePrice);
       const suggestedPrice = Number(formData.suggestedPrice);
-      const employeePrice = Number(formData.employeePrice);
+      const manualEmployeePrice = employeeManual
+        ? Number(formData.employeePrice)
+        : null;
       const clientPrice = Number(formData.clientPrice);
       const totalStock = Number(formData.totalStock || 0);
       const warehouseStock = Number(formData.warehouseStock || 0);
@@ -256,6 +309,15 @@ export default function EditProduct() {
 
       if (Number.isNaN(totalStock) || totalStock < 0) {
         throw new Error("El stock total debe ser un número válido");
+      }
+
+      if (
+        employeeManual &&
+        (manualEmployeePrice === null ||
+          Number.isNaN(manualEmployeePrice) ||
+          manualEmployeePrice < 0)
+      ) {
+        throw new Error("El precio de empleado debe ser un número válido");
       }
 
       const ingredients = formData.ingredients
@@ -273,7 +335,9 @@ export default function EditProduct() {
         description: formData.description.trim(),
         purchasePrice,
         suggestedPrice,
-        employeePrice,
+        ...(employeeManual
+          ? { employeePrice: manualEmployeePrice as number }
+          : {}),
         employeePriceManual: employeeManual,
         clientPrice,
         totalStock,
@@ -419,20 +483,43 @@ export default function EditProduct() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-blue-400">
-                    Precio para Employee
-                  </label>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <label className="block text-sm font-medium text-blue-400">
+                      Precio para empleado
+                    </label>
+                    <label className="inline-flex items-center gap-2 text-[11px] font-medium text-blue-200">
+                      <input
+                        type="checkbox"
+                        checked={!employeeManual}
+                        onChange={event =>
+                          handleAutomaticEmployeeModeChange(
+                            event.target.checked
+                          )
+                        }
+                        className="h-3.5 w-3.5 rounded border border-blue-500 bg-blue-950/40"
+                      />
+                      Automatico ({baseCommissionPercentage}%)
+                    </label>
+                  </div>
                   <input
                     type="number"
                     name="employeePrice"
-                    value={formData.employeePrice}
+                    value={
+                      employeeManual
+                        ? formData.employeePrice
+                        : automaticEmployeePrice > 0
+                          ? automaticEmployeePrice.toString()
+                          : ""
+                    }
                     onChange={handleChange}
+                    disabled={!employeeManual}
                     min="0"
                     step="1"
-                    className="w-full rounded-lg border border-blue-500 bg-blue-900/20 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-blue-500 bg-blue-900/20 px-4 py-3 text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-80"
                   />
                   <p className="mt-1 text-xs text-blue-600">
-                    Precio que paga el employee
+                    Automatico: precio de venta - (precio de venta x comision).
+                    Manual fija un valor persistente.
                   </p>
                 </div>
 
@@ -465,14 +552,14 @@ export default function EditProduct() {
                     {/* B2B: Selling to Employee */}
                     <div>
                       <p className="text-[10px] uppercase text-gray-500">
-                        Venta a Employee (B2B)
+                        Venta a empleado (B2B)
                       </p>
                       {(() => {
                         const cost =
                           (product?.averageCost && product.averageCost > 0
                             ? product.averageCost
                             : Number(formData.purchasePrice)) || 0;
-                        const price = Number(formData.employeePrice) || 0;
+                        const price = effectiveEmployeePrice;
                         const profit = price - cost;
                         const roi =
                           cost > 0 ? Math.round((profit / cost) * 100) : 0;

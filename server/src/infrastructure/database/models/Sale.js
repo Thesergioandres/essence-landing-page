@@ -108,6 +108,21 @@ const saleSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    // Snapshot explícito del precio unitario final vendido
+    unitPrice: {
+      type: Number,
+      default: null,
+    },
+    // Snapshot del total bruto por línea (unitPrice * quantity)
+    totalPrice: {
+      type: Number,
+      default: null,
+    },
+    // Snapshot de costo usado para la rentabilidad de la línea
+    costAtSale: {
+      type: Number,
+      default: null,
+    },
     isPromotion: {
       type: Boolean,
       default: false,
@@ -372,16 +387,44 @@ saleSchema.pre("validate", function (next) {
 // Calcular ganancias antes de guardar
 // Usamos averageCost (costo promedio ponderado) si está disponible, sino purchasePrice
 saleSchema.pre("save", function (next) {
+  const normalizedUnitPrice = Number(this.unitPrice);
+  if (!Number.isFinite(normalizedUnitPrice) || normalizedUnitPrice <= 0) {
+    this.unitPrice = Number(this.salePrice || 0);
+  }
+
+  const normalizedSalePrice = Number(this.salePrice);
+  if (normalizedSalePrice <= 0 && Number(this.unitPrice || 0) > 0) {
+    this.salePrice = Number(this.unitPrice);
+  }
+
+  const normalizedTotalPrice = Number(this.totalPrice);
+  if (!Number.isFinite(normalizedTotalPrice) || normalizedTotalPrice < 0) {
+    this.totalPrice =
+      Number(this.unitPrice || this.salePrice || 0) *
+      Number(this.quantity || 0);
+  }
+
+  const normalizedCostAtSale = Number(this.costAtSale);
+  if (!Number.isFinite(normalizedCostAtSale) || normalizedCostAtSale < 0) {
+    this.costAtSale = Number(this.averageCostAtSale ?? this.purchasePrice ?? 0);
+  }
+
+  const normalizedAverageCost = Number(this.averageCostAtSale);
+  if (!Number.isFinite(normalizedAverageCost) || normalizedAverageCost < 0) {
+    this.averageCostAtSale = Number(this.costAtSale || this.purchasePrice || 0);
+  }
+
   // Determinar el costo a usar: averageCost del producto o purchasePrice de la venta
   // El averageCost se debe pasar como this.averageCostAtSale si se calculó antes
-  const costBasis = this.averageCostAtSale || this.purchasePrice;
+  const costBasis = Number(
+    this.costAtSale || this.averageCostAtSale || this.purchasePrice || 0,
+  );
 
   if (this.isPromotion) {
     const hasEmployee = Boolean(this.employee);
     if (hasEmployee) {
       const employeePrice = Number(this.employeePrice || this.salePrice);
-      this.employeeProfit =
-        (this.salePrice - employeePrice) * this.quantity;
+      this.employeeProfit = (this.salePrice - employeePrice) * this.quantity;
       this.adminProfit = (employeePrice - costBasis) * this.quantity;
       this.totalGroupProfit = this.employeeProfit + this.adminProfit;
       this.totalProfit = this.totalGroupProfit;
@@ -408,14 +451,12 @@ saleSchema.pre("save", function (next) {
     // PRECIO PARA EMPLOYEE = Lo que el employee PAGA al admin
     // Ejemplo: Venta $22,000 con 20% comisión
     // Precio para dist = $22,000 × 80% = $17,600 (lo que paga al admin)
-    const priceForEmployee =
-      this.salePrice * ((100 - profitPercentage) / 100);
+    const priceForEmployee = this.salePrice * ((100 - profitPercentage) / 100);
     this.employeePrice = priceForEmployee;
 
     // GANANCIA DEL EMPLOYEE = Precio Venta - Precio que paga al admin
     // Ejemplo: $22,000 - $17,600 = $4,400 (su comisión del 20%)
-    this.employeeProfit =
-      (this.salePrice - priceForEmployee) * this.quantity;
+    this.employeeProfit = (this.salePrice - priceForEmployee) * this.quantity;
 
     // GANANCIA DEL ADMIN = Precio Venta - Costo - Ganancia Employee
     // Ejemplo: $22,000 - $10,500 - $4,400 = $7,100
@@ -449,10 +490,13 @@ saleSchema.pre("save", function (next) {
   // profitabilityPercentage: qué % de la venta TOTAL es ganancia NETA
   // Fórmula correcta financieramente: (Ganancia Neta / Total Venta) * 100
   // costPercentage: qué % del precio unitario es costo base
-  const totalSaleAmount = this.salePrice * this.quantity;
+  const totalSaleAmount = Number(
+    this.totalPrice || this.salePrice * this.quantity || 0,
+  );
   if (totalSaleAmount > 0) {
     this.profitabilityPercentage = (this.netProfit / totalSaleAmount) * 100;
-    this.costPercentage = (costBasis / this.salePrice) * 100;
+    this.costPercentage =
+      this.salePrice > 0 ? (costBasis / this.salePrice) * 100 : 0;
   } else {
     this.profitabilityPercentage = 0;
     this.costPercentage = 0;

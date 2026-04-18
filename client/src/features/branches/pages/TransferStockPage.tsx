@@ -41,12 +41,13 @@ export default function TransferStock() {
         return;
       }
 
-      const [employeesData, stockData, allowedBranchesData] =
-        await Promise.all([
+      const [employeesData, stockData, allowedBranchesData] = await Promise.all(
+        [
           employeeService.getAll({ active: true }).catch(() => []),
           stockService.getEmployeeStock(user._id).catch(() => []),
           stockService.getMyAllowedBranches().catch(() => ({ branches: [] })),
-        ]);
+        ]
+      );
 
       // Filtrar el employee actual de la lista
       const allEmployees = Array.isArray(employeesData)
@@ -279,7 +280,7 @@ export default function TransferStock() {
                 className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2.5 text-gray-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                 required
               >
-                <option value="">Selecciona un employee</option>
+                <option value="">Selecciona un empleaddo</option>
                 {employees.map(dist => (
                   <option key={dist._id} value={dist._id}>
                     {dist.name} - {dist.email}
@@ -401,8 +402,8 @@ export default function TransferStock() {
               <p className="mt-4 text-sm text-amber-300">
                 ⚠️ Esta acción no se puede deshacer. El stock se restará de tu
                 inventario y se agregará al inventario del{" "}
-                {transferType === "employee" ? "empleado" : "sede"}{" "}
-                seleccionado{transferType === "employee" ? "" : "."}.
+                {transferType === "employee" ? "empleado" : "sede"} seleccionado
+                {transferType === "employee" ? "" : "."}.
               </p>
             </div>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">

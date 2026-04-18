@@ -1,8 +1,278 @@
+﻿# DOCUMENTACIÓN MAESTRA — Essence ERP
+
+> Generado automáticamente. Última actualización: 18 de abril de 2026
+
+## ÍNDICE
+
+- [1. Visión General y Propósito](#1-visión-general-y-propósito)
+- [2. Arquitectura del Sistema](#2-arquitectura-del-sistema)
+- [3. Modelos de Datos (ERD)](#3-modelos-de-datos-erd)
+- [4. Lógica de Negocio y Reglas Críticas](#4-lógica-de-negocio-y-reglas-críticas)
+- [5. Seguridad y Roles](#5-seguridad-y-roles)
+- [6. API REST — Especificación de Endpoints](#6-api-rest--especificación-de-endpoints)
+- [7. Flujos de Usuario por Rol](#7-flujos-de-usuario-por-rol)
+- [8. Fórmulas Financieras y Motor de Precios](#8-fórmulas-financieras-y-motor-de-precios)
+- [9. Gestión de Inventario](#9-gestión-de-inventario)
+- [10. Backlog e Historias de Usuario](#10-backlog-e-historias-de-usuario)
+- [11. Requerimientos Funcionales y No Funcionales](#11-requerimientos-funcionales-y-no-funcionales)
+- [12. Plan de Acción y Deuda Técnica](#12-plan-de-acción-y-deuda-técnica)
+- [13. Guía de Despliegue (Deploy)](#13-guía-de-despliegue-deploy)
+- [14. Secciones Adicionales](#14-secciones-adicionales)
+
+## 1. Visión General y Propósito
+
+Esta documentación maestra consolida y reemplaza la documentación histórica del proyecto Essence ERP. Se preserva contenido íntegro en anexos para trazabilidad y se organiza en secciones operativas para mantenimiento.
+
+Fuentes consolidadas principales:
+
+- docs/COMPREHENSIVE_PROJECT_ANALYSIS.md
+- docs/DOCUMENTACION_MAESTRA_ESSENCE.md
+- docs/DOCUMENTACION_UNIFICADA_ESSENCE.md (base consolidada más completa)
+
+## 2. Arquitectura del Sistema
+
+Arquitectura híbrida con backend Node.js/Express en transición a Hexagonal Architecture (V2), frontend React+TypeScript por features y separación de capas de dominio/aplicación/infraestructura. Los diagramas de secuencia y casos de uso extendidos se preservan íntegros en anexos.
+
+Fuentes: docs/COMPREHENSIVE_PROJECT_ANALYSIS.md, docs/DIAGRAMAS_DE_SECUENCIA.md, docs/CASOS_DE_USO_EXTENDIDOS.md
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 2.1 Runtime backend real (Bootstrap y módulos montados)
+
+- El backend productivo se inicializa desde `server/server.js` y expone `/api-docs` + `/api-docs.json` (Swagger/OpenAPI).
+- Seguridad global activa antes de rutas: `helmet`, `express-mongo-sanitize`, `xss-clean`, `securityHeaders`, `sanitizeHeaders`, `suspiciousRequestDetector`, `productionWriteGuard`, `financialShield` y `requestId`.
+- El rate limit general se aplica en `/api` (`apiLimiter`), con endpoint público explícito para SaaS: `GET /api/v2/global-settings/public`.
+- La API real está consolidada en `/api/v2/*` y monta módulos de auth, business, sales, stock, analytics, notifications, push, dispatches, segments, points, uploads, etc.
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 2.2 Workers y jobs condicionados por entorno
+
+- `BA_ENABLE_WORKER=true` activa worker de asistente de negocio.
+- `DEBT_WORKER_ENABLED=true` activa worker de notificaciones de deuda.
+- `BACKUP_WORKER_DISABLED` y `PRODUCTION_BACKUP_WORKER_DISABLED` controlan workers de respaldo.
+- El cleanup de demos corre fuera de tests (`NODE_ENV !== test`).
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 2.3 Mapa real de frontend por features
+
+- `client/src/App.tsx` define lazy loading por módulos (`features/*`) y rutas por rol (`/admin`, `/staff`, `/god`, rutas públicas).
+- Se usa `BusinessGate` para feature flags en UI (`products`, `inventory`, `sales`, `reports`, `transfers`, `gamification`, etc.).
+- Existen flujos operativos adicionales (`/staff/operativo/*`) no descritos en la versión sintética original.
+
+## 3. Modelos de Datos (ERD)
+
+El modelado ERD canónico y decisiones de diseño MongoDB/Mongoose se preservan desde la documentación de ERD y documentación maestra histórica (referencias, índices e integridad referencial por ObjectID).
+
+Fuente: docs/MODELADO_DE_DATOS_ERD.md
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 3.1 Campos críticos no reflejados en el resumen inicial
+
+- `Product`: soporta precio de empleado manual y automático (`employeePriceManual`, `employeePriceManualValue`), costo promedio (`averageCost`), valor total inventario (`totalInventoryValue`) y soft delete (`isDeleted`, `deletedAt`).
+- `Sale`: incluye trazabilidad avanzada (`saleGroupId`, `isComplementarySale`, `parentSaleId`, `warrantyTicketId`), costo al momento de venta (`averageCostAtSale`), estado pago (`pendiente|confirmado`), delivery/payment metadata, costos adicionales y `netProfit`.
+- `DispatchRequest`: flujo logístico con estados `PENDIENTE`, `DESPACHADO`, `RECIBIDO`, `CANCELADO`, incluyendo guía/evidencia y trazabilidad de despacho/recepción.
+- `User`: estados de cuenta (`pending|active|expired|suspended|paused`), control de comisiones (`fixedCommissionOnly`, `isCommissionFixed`, `customCommissionRate`) y permisos modulares.
+- `Business`: feature flags extensos, soporte demo (`isDemo`, `demoExpiresAt`), plan actual y límites personalizados (`customLimits`).
+- `Membership`: restricción por sedes (`allowedBranches`) y permisos granulares por módulo/acción.
+
+## 4. Lógica de Negocio y Reglas Críticas
+
+Se consolidan reglas auditadas de ventas, stock por origen (warehouse/distributor/branch), privacidad financiera, cálculo de ganancias y reconocimiento de ingresos en crédito, incluyendo reportes de corrección master fix.
+
+Fuentes: docs/BUSINESS_LOGIC_COMPLIANCE_AUDIT.md, docs/LOGIC_UPDATE_REPORT.md, docs/MASTER_FIX_SUMMARY.md
+
+## 5. Seguridad y Roles
+
+Se preservan las reglas de estados de usuario, jerarquía GOD/admin/distribuidor, controles de acceso por tenant, aislamiento de datos y ceguera financiera por rol.
+
+Fuentes: docs/DOCUMENTACION_MAESTRA_ESSENCE.md, docs/REQUERIMIENTOS_DEL_SISTEMA.md
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 5.1 Seguridad multi-tenant efectiva (middleware real)
+
+- `protect` valida JWT, normaliza rol, bloquea cuentas inactivas/expiradas y permite rutas limitadas para `pending`.
+- Para empleados, `protect` también consulta estado del owner (`checkBusinessOwnerAccess`) y devuelve bloqueo por negocio inactivo.
+- `businessContext` auto-resuelve `businessId` si falta (membership activo más antiguo), valida acceso al tenant y bloquea empleados si el owner está inactivo (`code: owner_inactive`).
+- `requirePermission` construye permisos efectivos por membership y evalúa módulo/acción con soporte de scope por sede.
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 5.2 Blindaje financiero y limitación de abuso
+
+- `financialShield` aplica scrub recursivo de campos de costo cuando el usuario no tiene permiso de ver costos.
+- `apiLimiter` usa clave compuesta `IP + businessId + fingerprint token`, reduciendo colisiones detrás de proxy y controlando abuso entre tenants/sesiones.
+- Los límites de auth/api son configurables por variables de entorno (`AUTH_RATE_LIMIT_*`, `API_RATE_LIMIT_*`).
+
+## 6. API REST — Especificación de Endpoints
+
+La especificación histórica de contratos REST (headers, patrones de respuesta, endpoints críticos) se conserva y se complementa con el análisis de código en la fase 2.
+
+Fuente: docs/ESPECIFICACION_API_REST.md
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 6.1 Base URL y contratos confirmados en código
+
+- Base actual en frontend (`client/src/api/axios.ts`): `VITE_API_URL` o fallback `http://localhost:5000/api/v2`.
+- Contratos confirmados: `POST /auth/refresh`, `POST /auth/logout`, `GET /business/my-memberships`, `GET /global-settings/public`.
+- Endpoints críticos v2 confirmados en backend:
+  - Ventas: `GET/POST /sales`, `POST /sales/standard`, `POST /sales/promotion`, `PUT /sales/:saleId/confirm-payment`, `DELETE /sales/group/:saleGroupId`.
+  - Stock: `/stock/assign`, `/stock/withdraw`, `/stock/transfer`, `/stock/transfer-to-branch`, `/stock/transfers`, `/stock/reconcile`, `/stock/sync`.
+  - Segmentos: `GET/POST/PUT/DELETE /segments`.
+  - Customer points: `GET /customers/:customerId/points`, `GET /customers/:customerId/points/history`, `POST /customers/:customerId/points/adjust`, `POST /customers/:customerId/points/validate-redemption`, `GET /points/config`.
+  - Dispatch: `/dispatches/requests`, `PATCH /dispatches/requests/:id/dispatch`, `PATCH /dispatches/requests/:id/receive`, `/dispatches/pending-count`, `/dispatches/hot-sectors`.
+  - Push: `GET /push/vapid-key`, `POST /push/subscribe`, `POST /push/unsubscribe`, `PUT /push/subscriptions/:id/preferences`.
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 6.2 Brechas de contrato detectadas (frontend vs backend)
+
+- Segmentos:
+  - Frontend invoca `/customers/segments`.
+  - Backend expone `/segments`.
+- Puntos de cliente:
+  - Frontend invoca `/customers/:id/points/redeem` y `GET /customers/points/config`.
+  - Backend expone `POST /customers/:id/points/validate-redemption` y `GET /points/config`.
+  - `POST /customers/:id/points` no existe en rutas v2 actuales.
+- Sedes/transferencias:
+  - Frontend invoca `GET /branches/:id/transfers` y `POST /branch-transfers/bulk`.
+  - Backend v2 no expone esos endpoints (solo `/branch-transfers` create/list/detail).
+
+## 7. Flujos de Usuario por Rol
+
+Flujos operativos por rol Owner/Distribuidor y casos de uso de negocio (registro de venta, asignación de stock, transferencias atómicas) consolidados para operación diaria.
+
+Fuentes: docs/MANUAL_DE_USUARIO_ESSENCE.md, docs/CASOS_DE_USO_EXTENDIDOS.md
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 7.1 Flujos y módulos activos en rutas de aplicación
+
+- `Admin`: analytics, auditoría, ventas estándar/promoción, gastos, créditos, dispatch center, warranties, advertising, customers/segments, assistant, configuraciones y catálogos.
+- `Staff`: dashboard propio, productos, catálogo compartible, transferencias, solicitudes de despacho, ventas, créditos, stats, nivel gamificación, incidencias y warranties.
+- `God`: panel dedicado (`/god`) con control de nivel sistema.
+- Público: home, catálogo por producto/categoría, storefront por slug, catálogo público por empleado y onboarding.
+
+## 8. Fórmulas Financieras y Motor de Precios
+
+Se preserva la base matemática del sistema: precio distribuidor, comisión, ganancia distribuidor, ganancia admin, ganancia neta y reglas de crédito vs caja confirmada.
+
+Fuentes: docs/DOCUMENTACION_MAESTRA_ESSENCE.md, docs/LOGIC_UPDATE_REPORT.md, docs/BUSINESS_LOGIC_COMPLIANCE_AUDIT.md
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 8.1 Motor dinámico de precio empleado (manual/automático)
+
+- Servicio principal: `server/src/infrastructure/services/productPricing.service.js`.
+- Regla manual: si existe `employeePriceManualValue` válido, se usa como precio final empleado.
+- Regla automática: si no hay manual, se calcula con comisión base del negocio.
+- Fórmula aplicada por dominio (`FinanceService`):
+  - `employeeCommission = salePrice * (commissionPercentage / 100)`
+  - `employeePrice = salePrice - employeeCommission`
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 8.2 Política de comisiones (dominio)
+
+- `CommissionPolicyService` normaliza comisión en rango `0..95`.
+- En modo fijo (`isCommissionFixed=true`) usa `customCommissionRate` cuando existe; si no, protege un mínimo de comisión fija con fallback.
+- En modo variable aplica comisión base + bonus controlado.
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 8.3 Ganancia neta y costo real en venta
+
+- `Sale` persiste `averageCostAtSale` para cálculos de margen con costo histórico coherente.
+- `FinanceService.calculateNetProfit` resta `shippingCost`, `additionalCosts` y `discount` sobre `totalProfit`.
+
+## 9. Gestión de Inventario
+
+Se consolidan reglas de stock atómico por origen, promedio ponderado, rollback por cancelación y flujo de defectuosos, incluyendo consideraciones de simetría de deducción/restauración.
+
+Fuentes: docs/BUSINESS_LOGIC_COMPLIANCE_AUDIT.md, docs/LOGIC_UPDATE_REPORT.md, docs/MASTER_FIX_SUMMARY.md
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 9.1 Operaciones de inventario efectivas en API v2
+
+- Asignación y retiro de stock para empleados/sedes: `/stock/assign`, `/stock/withdraw`, `/stock/transfer`, `/stock/transfer-to-branch`.
+- Consulta de inventario por fuente: `/stock/employee/:employeeId`, `/stock/branch/:branchId`, `/stock/global`, `/stock/my-allowed-branches`.
+- Mantenimiento operativo: `/stock/reconcile`, `/stock/sync`, `/stock/alerts`, `/stock/transfers`.
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 9.2 Flujo logístico de despacho
+
+- Ciclo documentado en código: creación de solicitud (`PENDIENTE`), despacho (`DESPACHADO`), recepción (`RECIBIDO`) y cancelación (`CANCELADO`).
+- Endpoints de operación logística centralizados bajo `/dispatches/*`.
+
+## 10. Backlog e Historias de Usuario
+
+Backlog por épicas e historias de usuario con criterios de aceptación listos para Scrum/Kanban.
+
+Fuente: docs/HISTORIAS_DE_USUARIO_BACKLOG.md
+
+## 11. Requerimientos Funcionales y No Funcionales
+
+SRS formal con RF/RNF para validación QA, incluyendo requisitos críticos de seguridad, rendimiento, atomicidad y privacidad.
+
+Fuente: docs/REQUERIMIENTOS_DEL_SISTEMA.md
+
+## 12. Plan de Acción y Deuda Técnica
+
+Se consolidan riesgos técnicos, deuda y plan por sprints E2E (contratos API, notificaciones/push, permisos, multi-tenant, resiliencia móvil/PWA).
+
+Fuentes: docs/COMPREHENSIVE_PROJECT_ANALYSIS.md, docs/PROTOCOLO_E2E_EXHAUSTIVO_SPRINTS.md
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 12.1 Deuda técnica verificable por desalineación de contratos
+
+- Normalizar frontend de segmentos hacia `/segments` (evitar `/customers/segments`).
+- Ajustar frontend de puntos a contratos existentes (`/points/config`, `validate-redemption`, `adjust`).
+- Resolver llamadas legacy de branches/transfers no expuestas en v2 (`/branches/:id/transfers`, `/branch-transfers/bulk`).
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 12.2 Deuda de consistencia de bootstrap y configuración
+
+- Revisar duplicidad de mounts en `server/server.js` para rutas de `employee/employees` (múltiples `app.use` repetidos).
+- Alinear nombres de variables JWT en ejemplos (`JWT_ACCESS_EXPIRES/JWT_REFRESH_DAYS`) con los usados realmente por código (`JWT_EXPIRE/JWT_REFRESH_EXPIRE`, `JWT_REFRESH_SECRET`).
+
+## 13. Guía de Despliegue (Deploy)
+
+Se conserva la guía de despliegue Railway (migración desde VPS, servicios backend/frontend, secrets, variables de entorno y recomendaciones de seguridad).
+
+Fuente: docs/RAILWAY_DEPLOY.md
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 13.1 Variables de entorno usadas en runtime que faltan en ejemplos
+
+- Frontend (`client/src`): `VITE_VAPID_PUBLIC_KEY`, `VITE_APP_VERSION`, `VITE_PUBLIC_BUSINESS_ID` (no están en `client/.env.example`).
+- Backend (`server/src` y `server/server.js`): uso explícito de `JWT_REFRESH_SECRET`, `JWT_EXPIRE`, `JWT_REFRESH_EXPIRE`, `PRODUCTION_BACKUP_WORKER_DISABLED`, `DEMO_SANDBOX_ENABLED`, `DEMO_TTL_HOURS`, entre otras.
+
+<!-- AGREGADO POR ANÁLISIS DE CÓDIGO -->
+
+### 13.2 Dependencias activas relevantes para operación
+
+- Backend: `bullmq`, `ioredis`, `web-push`, `swagger-jsdoc`, `swagger-ui-express`, `multer-storage-cloudinary`.
+- Frontend: `vite-plugin-pwa`, `workbox-window`, `framer-motion`, `gsap`, `react-window`, `chart.js`, `recharts`, `xlsx`.
+- Recomendación operativa: mantener estas dependencias explícitas en documentación de arquitectura/deploy para evitar subestimar requisitos de infraestructura (Redis, push web, PWA, generación de reportes).
+
+## 14. Secciones Adicionales
+
+### 14.1 Volcado íntegro consolidado previo (fuente principal sin pérdida de detalle)
+
+> Origen: docs/DOCUMENTACION_UNIFICADA_ESSENCE.md
+
 # DOCUMENTACIÓN UNIFICADA ESSENCE
 
 A continuación se consolida toda la documentación del proyecto Essence.
-
-
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: BUSINESS_LOGIC_COMPLIANCE_AUDIT.md -->
@@ -588,7 +858,6 @@ totalSales: { $sum: 1 },
 
 **Recommendation:** Address CRITICAL items before deploying to production. The V2 API needs distributor/branch sales support to maintain inventory integrity.
 
-
 <!-- ========================================== -->
 <!-- DOCUMENTO: CASOS_DE_USO_EXTENDIDOS.md -->
 <!-- ========================================== -->
@@ -604,7 +873,7 @@ usecaseDiagram
   actor "Administrador (Owner)" as Admin
   actor "Distribuidor" as Dist
   actor "GOD (Superadmin)" as God
-  
+
   package "Essence ERP" {
     usecase "Aprobar Cuenta" as UC1
     usecase "Crear Producto" as UC2
@@ -613,7 +882,7 @@ usecaseDiagram
     usecase "Consultar Finanzas" as UC5
     usecase "Realizar Transferencia" as UC6
   }
-  
+
   God --> UC1
   Admin --> UC2
   Admin --> UC3
@@ -629,9 +898,10 @@ usecaseDiagram
 ## 2. Detalle de Casos de Uso Críticos
 
 ### 🛒 CU-04A: Registrar Venta (Como Administrador)
-* **Actor:** Administrador (Owner).
-* **Precondiciones:** JWT válido, suscripción de negocio activa, producto con stock > 0 en `warehouseStock`.
-* **Flujo Principal (Happy Path):**
+
+- **Actor:** Administrador (Owner).
+- **Precondiciones:** JWT válido, suscripción de negocio activa, producto con stock > 0 en `warehouseStock`.
+- **Flujo Principal (Happy Path):**
   1. El Administrador añade N productos al carrito en el POS.
   2. Selecciona método de pago "Efectivo".
   3. El sistema valida stock suficiente en `warehouseStock`.
@@ -639,35 +909,36 @@ usecaseDiagram
   5. El sistema (`FinanceService`) calcula Ganancia = Precio Venta - Costo.
   6. Se guarda el ticket de venta en estado "confirmado".
   7. El sistema arroja éxito HTTP 201 al cliente.
-* **Flujos Alternativos:**
-  * **(3.A)** El producto no tiene stock: Se aborta la operación y se arroja alerta (`Stock Insuficiente`).
-  * **(2.A)** Método de pago "Crédito": El paso 6 cambia a estado `"pendiente"` y no se suma a métricas financieras.
+- **Flujos Alternativos:**
+  - **(3.A)** El producto no tiene stock: Se aborta la operación y se arroja alerta (`Stock Insuficiente`).
+  - **(2.A)** Método de pago "Crédito": El paso 6 cambia a estado `"pendiente"` y no se suma a métricas financieras.
 
 ### 💼 CU-04B: Registrar Venta (Como Distribuidor)
-* **Actor:** Distribuidor.
-* **Precondiciones:** JWT válido, y la cuenta del Administrador (Owner del Negocio) debe estar ACTIVA y sin expirar.
-* **Flujo Principal:**
+
+- **Actor:** Distribuidor.
+- **Precondiciones:** JWT válido, y la cuenta del Administrador (Owner del Negocio) debe estar ACTIVA y sin expirar.
+- **Flujo Principal:**
   1. El Distribuidor entra al POS en su móvil.
-  2. El catálogo *solo* expone productos donde él tenga `DistributorStock` > 0.
+  2. El catálogo _solo_ expone productos donde él tenga `DistributorStock` > 0.
   3. Ejecuta orden de compra de N productos.
-  4. El sistema deduce el stock *exclusivamente* del `DistributorStock` (NO de `warehouseStock`).
+  4. El sistema deduce el stock _exclusivamente_ del `DistributorStock` (NO de `warehouseStock`).
   5. `FinanceService` calcula el % de comisión sobre la base del ranking operativo.
   6. Retorna Ticket donde se revela su comisión ganada pero sin revelar los costos nativos del Owner.
-* **Flujos de Excepción:**
-  * **(Pre-1)** La cuenta del Owner expiró: Cierre de sesión forzado del Distribuidor con mensaje "Su administrador no posee servicio activo".
+- **Flujos de Excepción:**
+  - **(Pre-1)** La cuenta del Owner expiró: Cierre de sesión forzado del Distribuidor con mensaje "Su administrador no posee servicio activo".
 
 ### 📦 CU-03: Asignar Stock Atómico
-* **Actor:** Administrador (Owner).
-* **Precondiciones:** `warehouseStock` suficiente.
-* **Flujo Principal:**
+
+- **Actor:** Administrador (Owner).
+- **Precondiciones:** `warehouseStock` suficiente.
+- **Flujo Principal:**
   1. El Admin elige un Distribuidor y asigna 100 unidades de "Producto X".
   2. Se inicia una Transacción de BD (Transaction Session).
   3. Se deducen 100 unidades de `Product.warehouseStock`.
   4. Se crea o actualiza `DistributorStock` agregando 100 unidades.
   5. Se consolida transacción y ambas mutaciones aplican.
-* **Flujo Alternativo:**
-  * **(3.Error)** El servidor o DB se reinicia en medio del proceso: La transacción hace ROLLBACK. El stock del negocio se recupera sin haber inflado la cuenta del distribuidor.
-
+- **Flujo Alternativo:**
+  - **(3.Error)** El servidor o DB se reinicia en medio del proceso: La transacción hace ROLLBACK. El stock del negocio se recupera sin haber inflado la cuenta del distribuidor.
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: COMPREHENSIVE_PROJECT_ANALYSIS.md -->
@@ -2231,20 +2502,19 @@ Este reporte contiene un análisis exhaustivo del proyecto Essence. Se recomiend
 3. Seguir roadmap Mes 1 (Estabilidad y Seguridad)
 4. Monitorear métricas de éxito semanalmente
 
-
 <!-- ========================================== -->
 <!-- DOCUMENTO: DIAGRAMAS_DE_SECUENCIA.md -->
 <!-- ========================================== -->
 
 # 🔁 DIAGRAMAS DE SECUENCIA (LIFECYCLE)
 
-> **Propósito:** Esquematizar en formato de secuencia los flujos de arquitectura de red y la interacción entre Backend, Base de Datos y Servicios de Dominio. 
+> **Propósito:** Esquematizar en formato de secuencia los flujos de arquitectura de red y la interacción entre Backend, Base de Datos y Servicios de Dominio.
 
 ---
 
 ## 1. Patrón Hexagonal: Registro de Venta y Deducción Atómica
 
-El siguiente diagrama detalla la ruta de los datos atravesando los *Drivers Adapters* (Controller) hacia los *Use Cases* (Aplicación) y finalmente al repositorio de datos.
+El siguiente diagrama detalla la ruta de los datos atravesando los _Drivers Adapters_ (Controller) hacia los _Use Cases_ (Aplicación) y finalmente al repositorio de datos.
 
 ```mermaid
 sequenceDiagram
@@ -2260,21 +2530,21 @@ sequenceDiagram
     ClienteFrontend->>Express middleware: POST /api/sales { items, payment }
     Express middleware->>Express middleware: Valida JWT y BusinessContext
     Express middleware->>Controller: req (auth ok)
-    
+
     Controller->>UseCase: execute(saleDTO, userId, businessId)
-    
+
     UseCase->>DBProduct: lock_and_check_stock(items)
     DBProduct-->>UseCase: stock disponible = true
-    
+
     UseCase->>Finance: calculateAdminProfit(price, costBasis)
     Finance-->>UseCase: 22,000 USD
-    
+
     UseCase->>DBProduct: dec($inc: { warehouseStock: -qty })
     DBProduct-->>UseCase: Ok (Atómico)
-    
+
     UseCase->>DBSale: saveTransaction(saleData)
     DBSale-->>UseCase: Sale ID: Object(XXX)
-    
+
     UseCase-->>Controller: Ticket Result
     Controller-->>ClienteFrontend: HTTP 201 Created (Venta Exitosa)
 ```
@@ -2283,7 +2553,7 @@ sequenceDiagram
 
 ## 2. Herencia de Acceso (Validación Owner para Distributor)
 
-Este diagrama demuestra las reglas de seguridad invisibles operando a nivel de *Middleware*.
+Este diagrama demuestra las reglas de seguridad invisibles operando a nivel de _Middleware_.
 
 ```mermaid
 sequenceDiagram
@@ -2291,19 +2561,18 @@ sequenceDiagram
     actor Dist as Distribuidor (App)
     participant Auth as ProtectMiddleware
     participant DBUser as UserRepository
-    
+
     Dist->>Auth: GET /api/products
     Auth->>Auth: Verifica Local JWT
     Auth->>DBUser: findOne({ id: distribuidor.id })
     DBUser-->>Auth: user ok -> role='distribuidor'
-    
+
     Note over Auth, DBUser: Regla Inflexible Essence
     Auth->>DBUser: findOwner(businessId)
     DBUser-->>Auth: OwnerData { status: 'expired' }
-    
+
     Auth-->>Dist: HTTP 403 Forbidden ("Admin inactivo")
 ```
-
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: DOCUMENTACION_MAESTRA_ESSENCE.md -->
@@ -3445,7 +3714,6 @@ distributorStockSchema.index(
 
 _Fin del Manual Sagrado de Essence_
 
-
 <!-- ========================================== -->
 <!-- DOCUMENTO: ESPECIFICACION_API_REST.md -->
 <!-- ========================================== -->
@@ -3458,9 +3726,9 @@ _Fin del Manual Sagrado de Essence_
 
 ## 1. Reglas Generales de Conexión
 
-*   **URL Base:** `/api/v1`
-*   **Acepta / Retorna:** `application/json`
-*   **Manejo de Respuestas (Patrón Canónico):** Todo éxito vendrá envuelto en un wrapper. Todo fallo regresará con el flag de `success: false`.
+- **URL Base:** `/api/v1`
+- **Acepta / Retorna:** `application/json`
+- **Manejo de Respuestas (Patrón Canónico):** Todo éxito vendrá envuelto en un wrapper. Todo fallo regresará con el flag de `success: false`.
 
 ```json
 /* ÉXITO HTTP 2xx */
@@ -3483,6 +3751,7 @@ _Fin del Manual Sagrado de Essence_
 ## 2. Inyección de Contextos (Headers Mandatorios)
 
 Todo Endpoint que no sea Login, requiere inyectarle al servidor:
+
 1. **Authorization Bearer [JWT]** : Token de seguridad web inyectado por el servicio de `login`.
 2. **x-business-id [STRING_ID]** : Opcional pero crítico. Es el ObjectID de la empresa que está visualizando la persona (El frontend inyecta de su `localStorage` general).
 
@@ -3491,35 +3760,40 @@ Todo Endpoint que no sea Login, requiere inyectarle al servidor:
 ## 3. Endpoints Principales (Ejemplos Críticos)
 
 ### 🔑 Autenticación (Auth)
+
 #### `POST /auth/login`
+
 - **Uso:** Autenticar un usuario y obtener token y roles de respuesta.
 - **Body:** `{ email: "x", password: "y" }`
 - **Response `200`:** `token`, `user: { role, status, _id }`, `memberships: [...]` (Array de accesos a n negocios).
 
 ### 🛒 Registro de Ventas (Sales)
+
 #### `POST /sales/register`
+
 - **Middlewares que pasan:** `[protect, businessContext, checkFeatures('sales')]`
 - **Rol requerdio:** `Admin` o `Distribuidor`.
 - **Body:**
+
 ```json
 {
-  "items": [
-    { "productId": "5fX...", "quantity": 10, "unitPrice": 50000 }
-  ],
+  "items": [{ "productId": "5fX...", "quantity": 10, "unitPrice": 50000 }],
   "paymentMethodId": "cash",
   "shippingCost": 5000,
-  "client": "5fX..." 
+  "client": "5fX..."
 }
 ```
+
 - **Response `201`:** `{ success: true, message: "Venta Registrada y stock deducido" }`
 
 ### 📦 Inventario Global
+
 #### `GET /products`
+
 - **Middlewares:** `[protect, businessContext]`
 - **QueryParams permitidos:** `?page=1&limit=20&search=celular`
 - **NOTA TÉCNICA (CEGUERA DISTRIBUIDOR):** Si este Endpoint lo invoca la ruta conteniendo el JWT de un "Distribuidor", el `SaleController` activará un `DTOFilter` el cual devolverá el objeto mutilado:
-*Censurado = `{ "averageCost": null, "purchasePrice": null, "totalInventoryValue": null }`*.
-
+  _Censurado = `{ "averageCost": null, "purchasePrice": null, "totalInventoryValue": null }`_.
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: HISTORIAS_DE_USUARIO_BACKLOG.md -->
@@ -3534,64 +3808,70 @@ Todo Endpoint que no sea Login, requiere inyectarle al servidor:
 ## 🏔️ ÉPICA 1: Gestión Multi-Tenant y Accesos
 
 **HU-1.1: Registro inicial y estado de cuarentena**
-* **Como** administrador de un nuevo negocio,
-* **Quiero** poder registrar mi perfil y empresa en la plataforma,
-* **Para** comenzar el proceso de onboarding en Essence.
-* **Criterios de Aceptación (CA):**
-  * CA1: El perfil debe nacer con `status: "pending"`.
-  * CA2: No se permite acceso a ningún módulo (HTTP 403) hasta la aprobación de un GOD.
+
+- **Como** administrador de un nuevo negocio,
+- **Quiero** poder registrar mi perfil y empresa en la plataforma,
+- **Para** comenzar el proceso de onboarding en Essence.
+- **Criterios de Aceptación (CA):**
+  - CA1: El perfil debe nacer con `status: "pending"`.
+  - CA2: No se permite acceso a ningún módulo (HTTP 403) hasta la aprobación de un GOD.
 
 **HU-1.2: Aprobación jerárquica (GOD Mode)**
-* **Como** superusuario GOD,
-* **Quiero** poder listar usuarios pendientes y cambiar su estado a `active`,
-* **Para** autorizarlos a usar el sistema.
+
+- **Como** superusuario GOD,
+- **Quiero** poder listar usuarios pendientes y cambiar su estado a `active`,
+- **Para** autorizarlos a usar el sistema.
 
 **HU-1.3: Ceguera del Distribuidor**
-* **Como** owner del negocio,
-* **Quiero** que cuando mis distribuidores ingresen al sistema,
-* **Para** que no puedan ver mi `purchasePrice`, `averageCost`, ni márgenes de ganancia.
-* **CA:**
-  * CA1: El API debe mutilar estos campos financieros en los responses hacia JWTs con rol `distribuidor`.
+
+- **Como** owner del negocio,
+- **Quiero** que cuando mis distribuidores ingresen al sistema,
+- **Para** que no puedan ver mi `purchasePrice`, `averageCost`, ni márgenes de ganancia.
+- **CA:**
+  - CA1: El API debe mutilar estos campos financieros en los responses hacia JWTs con rol `distribuidor`.
 
 ---
 
 ## 🏔️ ÉPICA 2: Operaciones de Inventario
 
 **HU-2.1: Transferencias atómicas entre Sedes**
-* **Como** bodeguero o admin,
-* **Quiero** transferir 50 unidades de la Bodega a la Sucursal Norte,
-* **Para** mantener las sedes abastecidas.
-* **CA:**
-  * CA1: Si la bodega no tiene 50 unidades, arrojar error de validación.
-  * CA2: La operación de resta y suma debe ser una transacción atómica; o pasan ambas o ninguna.
+
+- **Como** bodeguero o admin,
+- **Quiero** transferir 50 unidades de la Bodega a la Sucursal Norte,
+- **Para** mantener las sedes abastecidas.
+- **CA:**
+  - CA1: Si la bodega no tiene 50 unidades, arrojar error de validación.
+  - CA2: La operación de resta y suma debe ser una transacción atómica; o pasan ambas o ninguna.
 
 **HU-2.2: Asignación a Distribuidores**
-* **Como** owner,
-* **Quiero** asignar stock específicamente a un distribuidor,
-* **Para** que él lo venda por su cuenta.
-* **CA:**
-  * CA1: Deduce de `warehouseStock` e incrementa el registro en `DistributorStock`.
+
+- **Como** owner,
+- **Quiero** asignar stock específicamente a un distribuidor,
+- **Para** que él lo venda por su cuenta.
+- **CA:**
+  - CA1: Deduce de `warehouseStock` e incrementa el registro en `DistributorStock`.
 
 ---
 
 ## 🏔️ ÉPICA 3: Finanzas y Punto de Venta (POS)
 
 **HU-3.1: Comisiones Dinámicas por Ranking**
-* **Como** distribuidor,
-* **Quiero** ganar más porcentaje si soy el vendedor número 1,
-* **Para** sentirme motivado.
-* **CA:**
-  * CA1: El motor financiero calculará la ganancia con 25% si está en rango Oro, 20% si es estándar.
+
+- **Como** distribuidor,
+- **Quiero** ganar más porcentaje si soy el vendedor número 1,
+- **Para** sentirme motivado.
+- **CA:**
+  - CA1: El motor financiero calculará la ganancia con 25% si está en rango Oro, 20% si es estándar.
 
 **HU-3.2: Ventas a Crédito (Fiado)**
-* **Como** cajero,
-* **Quiero** registrar una salida de inventario bajo el método "Crédito",
-* **Para** entregar el producto sin recibir el dinero inmediato.
-* **CA:**
-  * CA1: Deduce inventario normalmente.
-  * CA2: Se guarda con `paymentStatus: "pendiente"`.
-  * CA3: No refleja suma en las analíticas de caja neta ni ganancia corporativa hasta ser confirmado.
 
+- **Como** cajero,
+- **Quiero** registrar una salida de inventario bajo el método "Crédito",
+- **Para** entregar el producto sin recibir el dinero inmediato.
+- **CA:**
+  - CA1: Deduce inventario normalmente.
+  - CA2: Se guarda con `paymentStatus: "pendiente"`.
+  - CA3: No refleja suma en las analíticas de caja neta ni ganancia corporativa hasta ser confirmado.
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: LOGIC_UPDATE_REPORT.md -->
@@ -3886,7 +4166,6 @@ DELETE SALE:
 **Code Quality:** Production-ready  
 **Breaking Changes:** None (backward compatible)
 
-
 <!-- ========================================== -->
 <!-- DOCUMENTO: MANUAL_DE_USUARIO_ESSENCE.md -->
 <!-- ========================================== -->
@@ -3902,19 +4181,22 @@ DELETE SALE:
 El nivel Administrador tiene control absoluto de su inventario, finanzas corporativas y distribuidores adscritos.
 
 #### A. ¿Cómo registrar el primer inventario?
+
 1. Dirígete a **Módulo de Inventario > Productos**.
 2. Presiona "Nuevo Producto".
 3. Rellena los datos vitales. Ojo: El sistema te preguntará tu **Precio de Venta Público**.
-4. Ingresa el modelo de costeo: Deja por defecto el *Costo Promedio*. El sistema registrará el costo de tu inversión y todo lo demás será automatizado.
+4. Ingresa el modelo de costeo: Deja por defecto el _Costo Promedio_. El sistema registrará el costo de tu inversión y todo lo demás será automatizado.
 5. Presiona Guardar. El stock ingresado viajará directamente a tu "Bodega Principal" (`warehouseStock`).
 
 #### B. ¿Cómo asignar mercancía a mis distribuidores?
+
 1. Dirígete a **Equipo > Distribuidores**.
 2. Dale al botón "Transferir Mercancía".
 3. Identifica al distribuidor y el producto. Ingresa la cantidad (ej. 100).
-4. El sistema restará mágicamente tus 100 de tu *Bodega Principal* de manera inmediata para protegerte de vender un producto físico dos veces, y le dotará esas 100 unidades al celular o portátil del distribuidor de cara a su inicio de sesión en terreno.
+4. El sistema restará mágicamente tus 100 de tu _Bodega Principal_ de manera inmediata para protegerte de vender un producto físico dos veces, y le dotará esas 100 unidades al celular o portátil del distribuidor de cara a su inicio de sesión en terreno.
 
 #### C. Control Financiero Diario.
+
 1. Accede al **Dashboard**.
 2. Todo lo visualizado en "Ganancia Neta" ya tiene exentos: envíos, comisiones pagadas a distribuidores y ventas que no te han entrado dinero (Fiados). Tienes una contabilidad pura.
 
@@ -3925,15 +4207,17 @@ El nivel Administrador tiene control absoluto de su inventario, finanzas corpora
 El distribuidor no ve costos de compra, operaciones del dueño o ganancias administrativas. El distribuidor solo utiliza Essence ERP como su POS personal optimizado.
 
 #### A. Inicio de Jornada y Venta
+
 1. Al Iniciar Sesión, observarás una vista diferente. Sólo verás un resumen de "Mis Comisiones" ganadas en el mes o día.
 2. Inicia un "**Punto de Venta Automático (POS)**".
 3. Agrega productos a tu carrito virtual de las existencias que el administrador confió en tu cuenta (solo lo que tienes tú, no la bodega gigante).
 4. Configura porcentaje extra si le cobras envío al cliente y presiona generar venta.
 
 #### B. ¿Por qué se ha suspendido mi acceso al ingresar el lunes?
-El ERP trabaja mediante un sistema dependiente. Si tu Patrono Oficial (El Owner) ha dejado caducar la subscripción corporativa de la empresa, el panel no dejará iniciar sesión a ningún distribuidor por regulaciones preventivas del servidor de datos.
-> *"Contacta al Dueño del ERP para reactivar operaciones."*
 
+El ERP trabaja mediante un sistema dependiente. Si tu Patrono Oficial (El Owner) ha dejado caducar la subscripción corporativa de la empresa, el panel no dejará iniciar sesión a ningún distribuidor por regulaciones preventivas del servidor de datos.
+
+> _"Contacta al Dueño del ERP para reactivar operaciones."_
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: MASTER_FIX_SUMMARY.md -->
@@ -4285,14 +4569,13 @@ The `DeleteSaleController` already restores stock to origin correctly. Ensure ne
 
 Ready for production deployment and database restart.
 
-
 <!-- ========================================== -->
 <!-- DOCUMENTO: MODELADO_DE_DATOS_ERD.md -->
 <!-- ========================================== -->
 
 # 🗄️ MODELADO DE DATOS (ERD y Arquitectura MongoDB)
 
-> **Propósito:** Especificar el esquema relacional NoSQL (Mongoose/MongoDB) de la plataforma Essence, detallando las referencias por *ObjectIDs*, los índices de optimización y las fronteras de los documentos.
+> **Propósito:** Especificar el esquema relacional NoSQL (Mongoose/MongoDB) de la plataforma Essence, detallando las referencias por _ObjectIDs_, los índices de optimización y las fronteras de los documentos.
 
 ---
 
@@ -4306,16 +4589,16 @@ erDiagram
     BUSINESS ||--o{ PRODUCT : "Es Dueño"
     BUSINESS ||--o{ SALE : "Registra"
     BUSINESS ||--o{ BRANCH : "Posee"
-    
+
     USER ||--o{ MEMBERSHIP : "Tiene"
     BUSINESS ||--o{ MEMBERSHIP : "Controla"
-    
+
     PRODUCT ||--o{ DISTRIBUTOR_STOCK : "Se fragmenta en"
     USER ||--o{ DISTRIBUTOR_STOCK : "Se le asigna a (Distribuidor)"
-    
+
     PRODUCT ||--o{ BRANCH_STOCK : "Se almacena en"
     BRANCH ||--o{ BRANCH_STOCK : "Guarda"
-    
+
     USER ||--o{ SALE : "Vende (Admin/Dist)"
 
     BUSINESS {
@@ -4367,19 +4650,19 @@ erDiagram
 ## 2. Decisiones de Diseño NoSQL Críticas
 
 ### A. Denormalización vs Referencias
+
 1. **Colecciones Aisladas (Stock):** A diferencia de SQL (una sola tabla gorda con bodegas), en Essence el stock de distribuidores (`DistributorStock`) y de sedes (`BranchStock`) están en colecciones totalmente separadas de la tabla genérica `Products`.
-   * *Razón:* Escalar la búsqueda y mutación (`$inc`) de manera aislada sin bloquear el documento *Product* o inflar su Document Size Límite de 16MB.
-2. **Histórico Inmutable (Sale.items):** Al momento de registrar una venta (`SALE`), los productos dentro de esa venta se guardan como subdocumentos (arrays empotrados), copiando el `price` local y `costBasis` actual. 
-   * *Razón:* Si un producto en el catálogo Master cambia de precio al día siguiente, el recibo de la venta anterior permanecerá inalterado.
+   - _Razón:_ Escalar la búsqueda y mutación (`$inc`) de manera aislada sin bloquear el documento _Product_ o inflar su Document Size Límite de 16MB.
+2. **Histórico Inmutable (Sale.items):** Al momento de registrar una venta (`SALE`), los productos dentro de esa venta se guardan como subdocumentos (arrays empotrados), copiando el `price` local y `costBasis` actual.
+   - _Razón:_ Si un producto en el catálogo Master cambia de precio al día siguiente, el recibo de la venta anterior permanecerá inalterado.
 
 ### B. Índices de Bases de Datos
 
 Para que el Dashboard resuelva analíticas agregadas (Pipeline de $lookup y $sum) de forma sub-segundo, están declarados los siguientes Compound Indexes:
 
-* `saleSchema.index({ business: 1, saleDate: -1 })` : Lectura secuencial de las últimas ventas de un negocio.
-* `saleSchema.index({ business: 1, paymentStatus: 1, saleDate: -1 })` : Recuperación veloz para filtrar únicamente "confirmados" u omitir "créditos pendients".
-* `distributorStockSchema.index({ business: 1, distributor: 1, product: 1 }, { unique: true })` : Index único para impedir stocks duplicados entre mismos productos.
-
+- `saleSchema.index({ business: 1, saleDate: -1 })` : Lectura secuencial de las últimas ventas de un negocio.
+- `saleSchema.index({ business: 1, paymentStatus: 1, saleDate: -1 })` : Recuperación veloz para filtrar únicamente "confirmados" u omitir "créditos pendients".
+- `distributorStockSchema.index({ business: 1, distributor: 1, product: 1 }, { unique: true })` : Index único para impedir stocks duplicados entre mismos productos.
 
 <!-- ========================================== -->
 <!-- DOCUMENTO: RAILWAY_DEPLOY.md -->
@@ -4445,7 +4728,6 @@ Example production values:
 - The legacy VPS scripts and Docker Compose are not required for Railway.
 - Security recommendation: rotate the MongoDB Atlas password after migration, since credentials were shared in plain text.
 
-
 <!-- ========================================== -->
 <!-- DOCUMENTO: REQUERIMIENTOS_DEL_SISTEMA.md -->
 <!-- ========================================== -->
@@ -4458,25 +4740,200 @@ Example production values:
 
 ## ⚙️ 1. Requerimientos Funcionales (RF)
 
-| ID | Módulo | Descripción | Prioridad |
-|:---|:---|:---|:---:|
-| **RF-01** | Autenticación | El sistema debe permitir el inicio de sesión basado en JWT con expiración definida, validando el `status` del usuario en cada petición. | Alta |
-| **RF-02** | Autorización | El sistema debe cancelar el acceso a los *Distribuidores* de manera cascada si la suscripción de su *Owner* (Admin) caduca o es suspendida. | Crítica |
-| **RF-03** | Multi-Tenant | El sistema debe instanciar contextos de sesión basados en un `businessId`, aislando absolutamente la data entre diferentes empresas. | Crítica |
-| **RF-04** | Feature Flags | El sistema debe permitir deshabilitar módulos completos (ej. "*Gamificación*") a nivel de Negocio, bloqueando las peticiones a nivel Router/Middleware. | Media |
-| **RF-05** | Inventario | La actualización de inventario durante una venta debe soportar inserciones atómicas (`$inc` en MongoDB) para evitar *Race Conditions* en ventas simultáneas. | Crítica |
-| **RF-06** | Inventario | El sistema debe calcular el Costo Promedio Ponderado de manera automática única y exclusivamente en las entradas por compras, ignorando salidas o transferencias. | Alta |
-| **RF-07** | Ventas | Las reglas de cálculo de venta para el Administrador deben seguir la ecuación: `(Venta Total) - (Costo) - (Ganancia Distribuidor)`. | Alta |
-| **RF-08** | Ventas | Las ventas con pago "Crédito" deben excluirse de la sumatoria de Ganancias Netas dentro de cualquier Query Analítico. | Crítica |
+| ID        | Módulo        | Descripción                                                                                                                                                       | Prioridad |
+| :-------- | :------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------: |
+| **RF-01** | Autenticación | El sistema debe permitir el inicio de sesión basado en JWT con expiración definida, validando el `status` del usuario en cada petición.                           |   Alta    |
+| **RF-02** | Autorización  | El sistema debe cancelar el acceso a los _Distribuidores_ de manera cascada si la suscripción de su _Owner_ (Admin) caduca o es suspendida.                       |  Crítica  |
+| **RF-03** | Multi-Tenant  | El sistema debe instanciar contextos de sesión basados en un `businessId`, aislando absolutamente la data entre diferentes empresas.                              |  Crítica  |
+| **RF-04** | Feature Flags | El sistema debe permitir deshabilitar módulos completos (ej. "_Gamificación_") a nivel de Negocio, bloqueando las peticiones a nivel Router/Middleware.           |   Media   |
+| **RF-05** | Inventario    | La actualización de inventario durante una venta debe soportar inserciones atómicas (`$inc` en MongoDB) para evitar _Race Conditions_ en ventas simultáneas.      |  Crítica  |
+| **RF-06** | Inventario    | El sistema debe calcular el Costo Promedio Ponderado de manera automática única y exclusivamente en las entradas por compras, ignorando salidas o transferencias. |   Alta    |
+| **RF-07** | Ventas        | Las reglas de cálculo de venta para el Administrador deben seguir la ecuación: `(Venta Total) - (Costo) - (Ganancia Distribuidor)`.                               |   Alta    |
+| **RF-08** | Ventas        | Las ventas con pago "Crédito" deben excluirse de la sumatoria de Ganancias Netas dentro de cualquier Query Analítico.                                             |  Crítica  |
 
 ---
 
 ## 🛡️ 2. Requerimientos No Funcionales (RNF)
 
-| ID | Categoría | Descripción |
-|:---|:---|:---|
-| **RNF-01** | Rendimiento | Las consultas al Dashboard Analítico no deben tardar más de 800ms en procesar volumetria de hasta 1 millón de ventas (requiere índices MongoDB en `saleDate` y `paymentStatus`). |
-| **RNF-02** | Seguridad | El backend no debe confiar en el cálculo financiero enviado por el cliente (Frontend). Los precios de cliente o distribuidor deben cruzarse obligatoriamente con la base de datos de Productos durante la transacción. |
-| **RNF-03** | Privacidad | Las llamadas al API realizadas por rol `distribuidor` para solicitar catálogo de productos, deben enmascarar en el DTO (Data Transfer Object) los campos: `purchasePrice`, `averageCost` y variables financieras de la administración. |
-| **RNF-04** | Disponibilidad| Los endpoints críticos de punto de venta (Sales/POS) deben operar bajo un esquema de alta disponibilidad, orquestando las instancias detrás de PM2 o un orquestador contenedorizado. |
-| **RNF-05** | Mantenibilidad| Todo error procesado en los controladores debe atraparse y unificarse bajo un solo *Error Handler Middleware* para proveer a los clientes un Payload estándar (código, mensaje, detalles técnicos). |
+| ID         | Categoría      | Descripción                                                                                                                                                                                                                            |
+| :--------- | :------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **RNF-01** | Rendimiento    | Las consultas al Dashboard Analítico no deben tardar más de 800ms en procesar volumetria de hasta 1 millón de ventas (requiere índices MongoDB en `saleDate` y `paymentStatus`).                                                       |
+| **RNF-02** | Seguridad      | El backend no debe confiar en el cálculo financiero enviado por el cliente (Frontend). Los precios de cliente o distribuidor deben cruzarse obligatoriamente con la base de datos de Productos durante la transacción.                 |
+| **RNF-03** | Privacidad     | Las llamadas al API realizadas por rol `distribuidor` para solicitar catálogo de productos, deben enmascarar en el DTO (Data Transfer Object) los campos: `purchasePrice`, `averageCost` y variables financieras de la administración. |
+| **RNF-04** | Disponibilidad | Los endpoints críticos de punto de venta (Sales/POS) deben operar bajo un esquema de alta disponibilidad, orquestando las instancias detrás de PM2 o un orquestador contenedorizado.                                                   |
+| **RNF-05** | Mantenibilidad | Todo error procesado en los controladores debe atraparse y unificarse bajo un solo _Error Handler Middleware_ para proveer a los clientes un Payload estándar (código, mensaje, detalles técnicos).                                    |
+
+### 14.2 Protocolo E2E Exhaustivo por Sprints (contenido íntegro)
+
+> Origen: docs/PROTOCOLO_E2E_EXHAUSTIVO_SPRINTS.md
+
+# Protocolo E2E Exhaustivo por Sprints
+
+## 1) Hallazgos criticos previos (evidencia de codigo)
+
+### Critico 1 - Auth contract drift
+
+- Frontend llama endpoints no expuestos en backend:
+  - /auth/refresh
+  - /auth/logout
+  - /business/me/memberships
+- Evidencia frontend:
+  - client/src/api/axios.ts
+  - client/src/features/auth/services/auth.service.ts
+- Evidencia backend:
+  - server/src/infrastructure/http/routes/auth.routes.v2.js
+  - server/src/infrastructure/http/routes/business.routes.v2.js
+- Riesgo: refresh fallido silencioso, logout parcial, asignacion businessId fallida para rol god.
+
+### Critico 2 - Notifications y payload mismatch
+
+- Frontend consume:
+  - GET /notifications/unread-count
+  - DELETE /notifications/cleanup
+  - respuesta con notifications[]
+- Backend expone:
+  - GET /notifications
+  - PUT /notifications/:id/read
+  - PUT /notifications/read-all
+  - DELETE /notifications/:id
+  - respuesta principal con data[] y unreadCount
+- Evidencia:
+  - client/src/features/notifications/services/notification.service.ts
+  - client/src/features/notifications/pages/NotificationsPage.tsx
+  - server/src/infrastructure/http/routes/notification.routes.v2.js
+  - server/src/infrastructure/http/controllers/NotificationController.js
+- Riesgo: campana y bandeja de notificaciones con conteo/estructura inconsistente.
+
+### Critico 3 - Push drift (v1 vs v2 mezclado)
+
+- Frontend mezcla rutas:
+  - /push/vapid-public-key
+  - /push/test
+  - /push/preferences
+  - /api/push/vapid-key
+  - /api/notifications/subscribe
+- Backend expone:
+  - GET /api/v2/push/vapid-key
+  - POST /api/v2/push/subscribe
+  - POST /api/v2/push/unsubscribe
+  - PUT /api/v2/push/subscriptions/:id/preferences
+- Evidencia:
+  - client/src/features/notifications/services/notification.service.ts
+  - client/src/services/pushNotification.service.ts
+  - client/src/components/PushNotificationSettings.tsx
+  - server/src/infrastructure/http/routes/pushSubscription.routes.v2.js
+- Riesgo: suscripciones no persisten o quedan huerfanas.
+
+### Critico 4 - Issues endpoint mismatch
+
+- Frontend usa PATCH /issues/:id.
+- Backend usa PUT /issues/:id/status.
+- Evidencia:
+  - client/src/features/common/services/common.service.ts
+  - server/src/infrastructure/http/routes/issue.routes.v2.js
+- Riesgo: estados de incidencia no actualizan en panel operativo.
+
+### Critico 5 - Segmentos y customer points drift
+
+- Frontend segmentos:
+  - /customers/segments
+- Backend segmentos:
+  - /segments
+- Frontend customer points:
+  - POST /customers/:id/points
+  - POST /customers/:id/points/redeem
+  - GET /customers/points/config
+- Backend customer points:
+  - GET /customers/:customerId/points
+  - POST /customers/:customerId/points/adjust
+  - GET /points/config
+- Evidencia:
+  - client/src/features/customers/services/customer.service.ts
+  - server/src/infrastructure/http/routes/segment.routes.v2.js
+  - server/src/infrastructure/http/routes/customerPoints.routes.v2.js
+- Riesgo: CRM y fidelizacion con 404/405 en rutas criticas.
+
+### Critico 6 - Branch/Transfer legacy calls sin ruta v2
+
+- Frontend aun invoca:
+  - GET /branches/:id/transfers
+  - GET /branches/:id/sales-report
+  - POST /branches/:id/assign-products
+  - POST /branch-transfers/bulk
+- Backend v2 no expone esas rutas.
+- Evidencia:
+  - client/src/features/branches/services/branch.service.ts
+  - server/src/infrastructure/http/routes/branch.routes.v2.js
+  - server/src/infrastructure/http/routes/branchTransfer.routes.v2.js
+- Riesgo: regresiones silenciosas en flujos administrativos de bodega/sedes.
+
+### Alto 7 - Blindaje financiero parcial en middleware global
+
+- En scrub global se limpian purchasePrice, averageCost, supplierId.
+- Campos como profit y totalRevenue no se limpian en ese scrub recursivo global.
+- Evidencia:
+  - server/middleware/financialShield.middleware.js
+  - server/utils/financialPrivacy.js
+- Riesgo: fuga de datos sensibles en respuestas no especializadas.
+
+### Alto 8 - Comision fija con clamp minimo que puede alterar customCommissionRate
+
+- En modo fixed, CommissionPolicyService aplica minimo 30.
+- Regla de negocio declarada: customCommissionRate debe tener prioridad absoluta si isCommissionFixed es true.
+- Evidencia:
+  - server/src/domain/services/CommissionPolicyService.js
+  - server/src/application/use-cases/sales/RegisterSaleUseCase.js
+  - server/utils/distributorPricing.js
+- Riesgo: pago de comision distinto al pactado para distribuidores.
+
+## 2) Plan E2E por sprints (tabla de 5 columnas)
+
+| Sprint                                       | Objetivo de riesgo                                                     | Casos E2E a ejecutar                                                                                                                                                                                                       | Datos y entorno                                                                                             | Criterio de salida                                                                                    |
+| -------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| S1 Contratos Auth y Sesion                   | Cortar fallas de login/sesion por drift de endpoints                   | Login admin/distribuidor/god; reload con sesion; expiracion token; flujo sin refresh endpoint; logout local y servidor; seleccion negocio para god                                                                         | Usuarios seed por rol, negocio activo, token expirado simulado, cabecera x-business-id                      | 0 llamadas a endpoints inexistentes de auth; redirecciones consistentes; sesion estable sin loops 401 |
+| S2 Contratos Notificaciones y Push           | Asegurar mensajeria en tiempo real sin rutas legacy                    | Carga de bandeja, marcar leida individual/todas, eliminar, conteo no leidas derivado de GET /notifications, alta/baja suscripcion push, actualizar preferencias por subscriptionId                                         | Service worker habilitado, navegador con permiso granted/denied, datos de notificaciones de prueba          | 100% operaciones notificacion/push sin 404/405; payloads normalizados sin undefined en UI             |
+| S3 Contratos Incidencias, Segmentos y Puntos | Blindar flujos de soporte y CRM                                        | Crear issue, listar, actualizar estado con PUT /:id/status; CRUD segmentos via /segments; balance/historial/ajuste de puntos y lectura de config                                                                           | Cliente test con creditos, segmentos iniciales, usuario con permisos clients read/update                    | Sin errores de metodo/ruta; consistencia de estados issue y saldos de puntos                          |
+| S4 Ventas y Comisiones                       | Garantizar matematica de comisiones y stock por origen                 | Venta desde bodega/sede/distribuidor; rechazo por stock insuficiente por origen; confirmacion de pago; comparacion comision fija vs variable; validar no intervencion gamificacion cuando fixed                            | Distribuidor A fixed, distribuidor B variable, productos con stock en 3 orígenes, metodos de pago y credito | Formula de comision cumple regla de negocio; stock decrementa exactamente en origen correcto          |
+| S5 Privacidad Financiera                     | Verificar scrub API + ocultamiento UI por rol/permisos/flags           | Mismo endpoint consultado por admin, distribuidor, usuario con HIDE_FINANCIAL_DATA; assert de null/0 en purchasePrice, averageCost, supplierId, profit, totalRevenue; tabla y cards UI con candado/ocultacion              | Usuarios por rol y membresias con combinaciones de permisos, dataset con costos visibles en origen          | Ningun actor no autorizado recibe costos sensibles en API ni en UI                                    |
+| S6 Logistica Dispatch e Inventario           | Validar cadena PENDIENTE -> DESPACHADO -> RECIBIDO e InventoryMovement | Crear solicitud, despachar con guia/evidencia obligatoria, recepcion autorizada (destino o god), rechazo de actor no autorizado, validacion inTransitQuantity y quantity, auditoria movimientos DISPATCH_OUTBOUND/RECEIVED | Distribuidor destino, distribuidor tercero, usuario god, productos con warehouseStock suficiente            | Transicion de estado estricta, trazabilidad completa y sin descuadres de inventario                   |
+| S7 Permisos, Features y Multi-tenant         | Evitar escalamiento de privilegios y fugas cross-tenant                | Matrix de roles (admin/super_admin/god/distribuidor/viewer) por modulo y accion; rutas /admin y /god con middleware de contexto; acceso denegado cuando falta feature o permiso                                            | 2 negocios aislados, usuarios cruzados, permisos granulares por membresia                                   | Ningun acceso cruzado entre tenants; respuestas 403 correctas y sin exposicion de datos               |
+| S8 Resiliencia, UX movil y PWA               | Sostener operacion en campo con red inestable                          | Timeouts, aborts, 500 forzados, reconexion; smoke offline PWA; pruebas touch-first (controles >=44px), sin scroll horizontal, rendimiento de pantallas criticas                                                            | Profiles Playwright desktop/mobile, throttling red, service worker activo                                   | UI estable en errores de red, recuperacion sin bloqueo, experiencia movil operable                    |
+
+## 3) Matriz de contratos API priorizados (tabla de 5 columnas)
+
+| Modulo             | Frontend actual                                                                                            | Backend v2 real                                                                                                                          | Impacto                                           | Prioridad |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | --------- |
+| Auth               | /auth/refresh, /auth/logout, /business/me/memberships                                                      | /auth/login, /auth/register, /auth/select-plan, /auth/profile, /auth/impersonate/:id, /auth/impersonate/revert, /business/my-memberships | Sesion inestable y bootstrap incompleto para god  | P0        |
+| Notifications      | /notifications/unread-count, /notifications/cleanup, espera notifications[]                                | /notifications retorna data[] + unreadCount; sin unread-count ni cleanup dedicados                                                       | Campana y pagina con conteos/datos inconsistentes | P0        |
+| Push               | /push/vapid-public-key, /push/test, /push/preferences, /api/notifications/subscribe                        | /push/vapid-key, /push/subscribe, /push/unsubscribe, /push/subscriptions/:id/preferences                                                 | Suscripciones no guardadas o no actualizables     | P0        |
+| Issues             | PATCH /issues/:id                                                                                          | PUT /issues/:id/status                                                                                                                   | No cierra/reabre incidencias                      | P1        |
+| Segmentos y Puntos | /customers/segments, /customers/:id/points, /customers/:id/points/redeem, /customers/points/config         | /segments, /customers/:id/points, /customers/:id/points/history, /customers/:id/points/adjust, /points/config                            | Falla CRM/fidelizacion y pantallas asociadas      | P1        |
+| Branch/Transfers   | /branches/:id/transfers, /branches/:id/sales-report, /branches/:id/assign-products, /branch-transfers/bulk | Branch v2 sin esas rutas; branch-transfers v2 sin /bulk                                                                                  | Funciones administrativas legacy con 404          | P2        |
+
+## 4) Estrategia de ejecucion
+
+1. Ejecutar S1-S3 antes de cualquier regression funcional amplia.
+2. Ejecutar S4-S6 con datos semilla controlados y snapshots de inventario antes/despues.
+3. Cerrar con S7-S8 para hardening de seguridad, movilidad y resiliencia.
+4. Gate de salida global: cero fallos P0, cero fugas financieras, y cero descuadres de stock en escenarios de despacho/venta.
+
+## 5) Reuso de suite actual y huecos
+
+### Suite existente aprovechable
+
+- client/e2e/01-authentication.spec.ts
+- client/e2e/03-inventory.spec.ts
+- client/e2e/04-sales.spec.ts
+- client/e2e/07-golden-flow.spec.ts
+- client/e2e/09-master-regression.spec.ts
+
+### Huecos que se deben agregar
+
+- Contratos API explicitos (status code + shape) por modulo drift.
+- Casos negativos de permisos por modulo/accion y feature flag.
+- Validacion automatizada de scrub financiero en multiples endpoints.
+- Cadena completa Dispatch con auditoria de InventoryMovement.
+
+## 6) Nota operativa
+
+No se ejecutaron tests en esta etapa. Este documento define el plan de ejecucion y la priorizacion para QA/Engineering.

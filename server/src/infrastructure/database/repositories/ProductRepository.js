@@ -2,8 +2,8 @@ import Branch from "../models/Branch.js";
 import BranchStock from "../models/BranchStock.js";
 import EmployeeStock from "../models/EmployeeStock.js";
 import InventoryEntry from "../models/InventoryEntry.js";
-import User from "../models/User.js";
 import Product from "../models/Product.js";
+import User from "../models/User.js";
 
 export class ProductRepository {
   /**
@@ -244,6 +244,7 @@ export class ProductRepository {
     if (typeof priceData.employeePrice === "number") {
       updateData.employeePrice = priceData.employeePrice;
       updateData.employeePriceManual = true;
+      updateData.employeePriceManualValue = priceData.employeePrice;
     }
 
     if (Object.keys(updateData).length === 0) {

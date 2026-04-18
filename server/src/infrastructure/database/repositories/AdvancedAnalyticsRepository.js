@@ -3,9 +3,9 @@ import Credit from "../models/Credit.js";
 import DefectiveProduct from "../models/DefectiveProduct.js";
 import Expense from "../models/Expense.js";
 import Membership from "../models/Membership.js";
-import SpecialSale from "../models/SpecialSale.js";
 import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
+import SpecialSale from "../models/SpecialSale.js";
 
 const buildColombiaRange = (startStr, endStr) => {
   if (!startStr && !endStr) return null;
@@ -82,17 +82,13 @@ const buildTotalGroupProfitExpression = () => ({
   $ifNull: [
     "$totalGroupProfit",
     {
-      $ifNull: [
-        "$totalProfit",
-        { $add: ["$adminProfit", "$employeeProfit"] },
-      ],
+      $ifNull: ["$totalProfit", { $add: ["$adminProfit", "$employeeProfit"] }],
     },
   ],
 });
 
 const resolveScopedUserObjectId = (options = {}) => {
-  const rawId =
-    options.scopeEmployeeId || options.employeeId || options.userId;
+  const rawId = options.scopeEmployeeId || options.employeeId || options.userId;
 
   if (!rawId || !mongoose.isValidObjectId(rawId)) {
     return null;
@@ -111,10 +107,7 @@ const withSaleScope = (match, scopedUserObjectId) => {
 
   return {
     ...match,
-    $or: [
-      { employee: scopedUserObjectId },
-      { createdBy: scopedUserObjectId },
-    ],
+    $or: [{ employee: scopedUserObjectId }, { createdBy: scopedUserObjectId }],
   };
 };
 
@@ -127,6 +120,55 @@ const withSpecialSaleScope = (match, scopedUserObjectId) => {
     ...match,
     createdBy: scopedUserObjectId,
   };
+};
+
+const buildSaleTransactionKeyExpression = () => ({
+  $ifNull: [
+    "$saleGroupId",
+    {
+      $ifNull: ["$saleId", { $toString: "$_id" }],
+    },
+  ],
+});
+
+const buildSalesMetricsPipeline = ({ match, includeQuantity = false }) => {
+  const groupStage = {
+    _id: null,
+    transactionKeys: {
+      $addToSet: buildSaleTransactionKeyExpression(),
+    },
+    revenue: {
+      $sum: buildSaleRevenueExpression(),
+    },
+    profit: {
+      $sum: buildTotalGroupProfitExpression(),
+    },
+    netProfit: {
+      $sum: buildAdminNetProfitExpression(),
+    },
+  };
+
+  if (includeQuantity) {
+    groupStage.quantity = { $sum: "$quantity" };
+  }
+
+  const projectStage = {
+    _id: 0,
+    sales: { $size: "$transactionKeys" },
+    revenue: 1,
+    profit: 1,
+    netProfit: 1,
+  };
+
+  if (includeQuantity) {
+    projectStage.quantity = 1;
+  }
+
+  return [
+    { $match: match },
+    { $group: groupStage },
+    { $project: projectStage },
+  ];
 };
 
 export class AdvancedAnalyticsRepository {
@@ -247,25 +289,12 @@ export class AdvancedAnalyticsRepository {
       activeEmployees,
       expensesData,
     ] = await Promise.all([
-      Sale.aggregate([
-        { $match: match },
-        {
-          $group: {
-            _id: null,
-            sales: { $sum: 1 },
-            revenue: {
-              $sum: buildSaleRevenueExpression(),
-            },
-            profit: {
-              $sum: buildTotalGroupProfitExpression(),
-            },
-            netProfit: {
-              $sum: buildAdminNetProfitExpression(),
-            },
-            quantity: { $sum: "$quantity" },
-          },
-        },
-      ]),
+      Sale.aggregate(
+        buildSalesMetricsPipeline({
+          match,
+          includeQuantity: true,
+        }),
+      ),
       SpecialSale.aggregate([
         { $match: specialRangeMatch },
         {
@@ -279,24 +308,11 @@ export class AdvancedAnalyticsRepository {
           },
         },
       ]),
-      Sale.aggregate([
-        { $match: todayMatch },
-        {
-          $group: {
-            _id: null,
-            sales: { $sum: 1 },
-            revenue: {
-              $sum: buildSaleRevenueExpression(),
-            },
-            profit: {
-              $sum: buildTotalGroupProfitExpression(),
-            },
-            netProfit: {
-              $sum: buildAdminNetProfitExpression(),
-            },
-          },
-        },
-      ]),
+      Sale.aggregate(
+        buildSalesMetricsPipeline({
+          match: todayMatch,
+        }),
+      ),
       SpecialSale.aggregate([
         { $match: specialTodayMatch },
         {
@@ -309,24 +325,11 @@ export class AdvancedAnalyticsRepository {
           },
         },
       ]),
-      Sale.aggregate([
-        { $match: weekMatch },
-        {
-          $group: {
-            _id: null,
-            sales: { $sum: 1 },
-            revenue: {
-              $sum: buildSaleRevenueExpression(),
-            },
-            profit: {
-              $sum: buildTotalGroupProfitExpression(),
-            },
-            netProfit: {
-              $sum: buildAdminNetProfitExpression(),
-            },
-          },
-        },
-      ]),
+      Sale.aggregate(
+        buildSalesMetricsPipeline({
+          match: weekMatch,
+        }),
+      ),
       SpecialSale.aggregate([
         { $match: specialWeekMatch },
         {
@@ -339,24 +342,11 @@ export class AdvancedAnalyticsRepository {
           },
         },
       ]),
-      Sale.aggregate([
-        { $match: monthMatch },
-        {
-          $group: {
-            _id: null,
-            sales: { $sum: 1 },
-            revenue: {
-              $sum: buildSaleRevenueExpression(),
-            },
-            profit: {
-              $sum: buildTotalGroupProfitExpression(),
-            },
-            netProfit: {
-              $sum: buildAdminNetProfitExpression(),
-            },
-          },
-        },
-      ]),
+      Sale.aggregate(
+        buildSalesMetricsPipeline({
+          match: monthMatch,
+        }),
+      ),
       SpecialSale.aggregate([
         { $match: specialMonthMatch },
         {
@@ -1453,12 +1443,7 @@ export class AdvancedAnalyticsRepository {
     return topProducts;
   }
 
-  async getEmployeePerformance(
-    businessId,
-    startDate,
-    endDate,
-    options = {},
-  ) {
+  async getEmployeePerformance(businessId, startDate, endDate, options = {}) {
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
     const dateRange = buildColombiaRange(startDate, endDate);
     const scopedUserObjectId = resolveScopedUserObjectId(options);

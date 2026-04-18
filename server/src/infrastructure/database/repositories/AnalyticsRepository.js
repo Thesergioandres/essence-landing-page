@@ -43,6 +43,16 @@ export class AnalyticsRepository {
       {
         $group: {
           _id: null,
+          transactionKeys: {
+            $addToSet: {
+              $ifNull: [
+                "$saleGroupId",
+                {
+                  $ifNull: ["$saleId", { $toString: "$_id" }],
+                },
+              ],
+            },
+          },
           // 💰 CASH FLOW: Revenue/Profit solo de ventas confirmadas (pagadas)
           totalRevenue: {
             $sum: {
@@ -77,9 +87,17 @@ export class AnalyticsRepository {
               ],
             },
           },
-          // 📊 COUNT: Todas las ventas (pendientes + confirmadas)
-          totalSales: { $sum: 1 },
+          // 📊 COUNT: Ventas por transacción única (saleGroupId/saleId)
           productsSold: { $sum: "$quantity" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalRevenue: 1,
+          totalProfit: 1,
+          totalSales: { $size: "$transactionKeys" },
+          productsSold: 1,
         },
       },
     ];

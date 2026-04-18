@@ -1,12 +1,17 @@
 import mongoose from "mongoose";
 import { isCloudinaryConfigured } from "../../../../config/cloudinary.js";
-import Business from "../../database/models/Business.js";
-import EmployeeStock from "../../database/models/EmployeeStock.js";
-import InventoryEntry from "../../database/models/InventoryEntry.js";
 import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
 import { CreateProductUseCase } from "../../../application/use-cases/CreateProductUseCase.js";
 import { UpdateStockUseCase } from "../../../application/use-cases/UpdateStockUseCase.js";
 import { ProductPersistenceUseCase } from "../../../application/use-cases/repository-gateways/ProductPersistenceUseCase.js";
+import Business from "../../database/models/Business.js";
+import EmployeeStock from "../../database/models/EmployeeStock.js";
+import InventoryEntry from "../../database/models/InventoryEntry.js";
+import {
+  applyDynamicEmployeePricingToProduct,
+  applyDynamicEmployeePricingToProducts,
+  getBusinessBaseCommissionPercentage,
+} from "../../services/productPricing.service.js";
 
 const productRepository = new ProductPersistenceUseCase();
 
@@ -50,7 +55,13 @@ export const getAllProducts = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 50;
 
     console.log("📦 Fetching products for business:", businessId);
+    const baseCommissionPercentage =
+      await getBusinessBaseCommissionPercentage(businessId);
     let products = await productRepository.findAll(businessId, filter);
+    products = applyDynamicEmployeePricingToProducts(
+      products,
+      baseCommissionPercentage,
+    );
     console.log("✅ Found products:", products.length);
 
     const financialPrivacy = resolveFinancialPrivacyContext(req);
@@ -169,15 +180,25 @@ export const getMyCatalog = async (req, res) => {
     const stockEntries = await EmployeeStock.find(filter)
       .populate({
         path: "product",
-        select: "name description employeePrice clientPrice image category",
+        select:
+          "name description employeePrice employeePriceManual employeePriceManualValue purchasePrice averageCost clientPrice image category",
         populate: { path: "category", select: "name slug" },
       })
       .lean();
 
+    const baseCommissionPercentage = await getBusinessBaseCommissionPercentage(
+      req.businessId || businessHeader,
+    );
+
     const products = stockEntries
       .filter((entry) => entry.product)
       .map((entry) => ({
-        ...sanitizeProductForFinancialPrivacy(entry.product || {}),
+        ...sanitizeProductForFinancialPrivacy(
+          applyDynamicEmployeePricingToProduct(
+            entry.product || {},
+            baseCommissionPercentage,
+          ),
+        ),
         employeeStock: entry.quantity,
       }));
 
@@ -201,6 +222,16 @@ export const getProductById = async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "Product not found" });
     }
+
+    const businessId =
+      req.businessId || req.headers["x-business-id"] || product.business;
+    const baseCommissionPercentage =
+      await getBusinessBaseCommissionPercentage(businessId);
+
+    product = applyDynamicEmployeePricingToProduct(
+      product,
+      baseCommissionPercentage,
+    );
 
     const financialPrivacy = resolveFinancialPrivacyContext(req);
     if (financialPrivacy.hideFinancialData) {
@@ -271,17 +302,29 @@ export const createProduct = async (req, res, next) => {
     };
 
     // Parse numbers
-    if (productData.purchasePrice)
+    if (
+      productData.purchasePrice !== undefined &&
+      productData.purchasePrice !== ""
+    )
       productData.purchasePrice = Number(productData.purchasePrice);
-    if (productData.suggestedPrice)
+    if (
+      productData.suggestedPrice !== undefined &&
+      productData.suggestedPrice !== ""
+    )
       productData.suggestedPrice = Number(productData.suggestedPrice);
-    if (productData.employeePrice)
+    if (
+      productData.employeePrice !== undefined &&
+      productData.employeePrice !== ""
+    )
       productData.employeePrice = Number(productData.employeePrice);
-    if (productData.clientPrice)
+    if (productData.clientPrice !== undefined && productData.clientPrice !== "")
       productData.clientPrice = Number(productData.clientPrice);
-    if (productData.totalStock)
+    if (productData.totalStock !== undefined && productData.totalStock !== "")
       productData.totalStock = Number(productData.totalStock);
-    if (productData.lowStockAlert)
+    if (
+      productData.lowStockAlert !== undefined &&
+      productData.lowStockAlert !== ""
+    )
       productData.lowStockAlert = Number(productData.lowStockAlert);
 
     // 📦 STOCK INICIAL: Asignar el stock inicial directamente a bodega central
@@ -299,6 +342,25 @@ export const createProduct = async (req, res, next) => {
       productData.employeePriceManual = true;
     if (productData.employeePriceManual === "false")
       productData.employeePriceManual = false;
+
+    const isEmployeePriceManual = Boolean(productData.employeePriceManual);
+    if (isEmployeePriceManual) {
+      if (
+        !Number.isFinite(productData.employeePrice) ||
+        productData.employeePrice < 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Debes enviar un precio de empleado válido cuando el modo manual está activo",
+        });
+      }
+
+      productData.employeePriceManualValue = productData.employeePrice;
+    } else {
+      productData.employeePrice = null;
+      productData.employeePriceManualValue = null;
+    }
 
     // Parse arrays
     if (typeof productData.ingredients === "string") {
@@ -348,11 +410,18 @@ export const createProduct = async (req, res, next) => {
     const useCase = new CreateProductUseCase();
     // Para desarrollo local sin replica set, ejecutar sin sesión/transacción
     const product = await useCase.execute(productData, null);
+    const baseCommissionPercentage = await getBusinessBaseCommissionPercentage(
+      productData.business,
+    );
+    const productWithPricing = applyDynamicEmployeePricingToProduct(
+      product,
+      baseCommissionPercentage,
+    );
     console.log("✅ Product created:", product._id);
 
     res.status(201).json({
       success: true,
-      data: product,
+      data: productWithPricing,
     });
   } catch (error) {
     console.error("❌ Error in createProduct:", error);
@@ -386,7 +455,10 @@ export const updateProduct = async (req, res, next) => {
       updateData.purchasePrice = Number(updateData.purchasePrice);
     if (updateData.suggestedPrice !== undefined)
       updateData.suggestedPrice = Number(updateData.suggestedPrice);
-    if (updateData.employeePrice !== undefined)
+    if (
+      updateData.employeePrice !== undefined &&
+      updateData.employeePrice !== ""
+    )
       updateData.employeePrice = Number(updateData.employeePrice);
     if (updateData.clientPrice !== undefined)
       updateData.clientPrice = Number(updateData.clientPrice);
@@ -404,6 +476,44 @@ export const updateProduct = async (req, res, next) => {
       updateData.employeePriceManual = true;
     if (updateData.employeePriceManual === "false")
       updateData.employeePriceManual = false;
+
+    const employeePriceProvided =
+      updateData.employeePrice !== undefined &&
+      updateData.employeePrice !== null &&
+      String(updateData.employeePrice).trim() !== "";
+
+    if (
+      employeePriceProvided &&
+      (!Number.isFinite(updateData.employeePrice) ||
+        updateData.employeePrice < 0)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "employeePrice debe ser un número válido mayor o igual a 0",
+      });
+    }
+
+    if (updateData.employeePriceManual !== undefined) {
+      if (updateData.employeePriceManual === true) {
+        if (!employeePriceProvided) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Debes enviar employeePrice cuando el modo manual está activo",
+          });
+        }
+
+        updateData.employeePriceManualValue = updateData.employeePrice;
+      } else {
+        updateData.employeePrice = null;
+        updateData.employeePriceManualValue = null;
+      }
+    } else if (employeePriceProvided) {
+      updateData.employeePriceManual = true;
+      updateData.employeePriceManualValue = updateData.employeePrice;
+    } else if (updateData.employeePrice === "") {
+      delete updateData.employeePrice;
+    }
 
     // Parse arrays
     if (typeof updateData.ingredients === "string") {
@@ -467,11 +577,18 @@ export const updateProduct = async (req, res, next) => {
       });
     }
 
+    const baseCommissionPercentage =
+      await getBusinessBaseCommissionPercentage(businessId);
+    const productWithPricing = applyDynamicEmployeePricingToProduct(
+      updatedProduct,
+      baseCommissionPercentage,
+    );
+
     console.log("✅ Product updated:", updatedProduct._id);
 
     res.json({
       success: true,
-      data: updatedProduct,
+      data: productWithPricing,
     });
   } catch (error) {
     console.error("❌ Error in updateProduct:", error);
@@ -579,10 +696,17 @@ export const updateProductPrices = async (req, res) => {
       });
     }
 
+    const baseCommissionPercentage =
+      await getBusinessBaseCommissionPercentage(businessId);
+    const productWithPricing = applyDynamicEmployeePricingToProduct(
+      updatedProduct,
+      baseCommissionPercentage,
+    );
+
     return res.json({
       success: true,
       message: "Precios actualizados correctamente",
-      data: updatedProduct,
+      data: productWithPricing,
     });
   } catch (error) {
     return res.status(500).json({

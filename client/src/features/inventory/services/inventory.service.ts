@@ -289,10 +289,8 @@ export const stockService = {
     return response.data;
   },
 
-  async getEmployeeStock(
-    employeeId: string
-  ): Promise<EmployeeStock[]> {
-    const response = await api.get(`/stock/staff/${employeeId}`);
+  async getEmployeeStock(employeeId: string): Promise<EmployeeStock[]> {
+    const response = await api.get(`/stock/employee/${employeeId}`);
 
     let data: any[] = [];
     if (Array.isArray(response.data)) {

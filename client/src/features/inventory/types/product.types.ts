@@ -28,6 +28,9 @@ export interface Product {
   suggestedPrice?: number;
   employeePrice: number;
   employeePriceManual?: boolean;
+  employeePriceManualValue?: number | null;
+  employeePriceMode?: "manual" | "automatic";
+  baseCommissionPercentage?: number;
   clientPrice?: number;
   employeeCommission?: number;
   category?: Category | string;
@@ -165,7 +168,7 @@ export interface ProductPayload {
   description: string;
   purchasePrice: number;
   suggestedPrice?: number;
-  employeePrice: number;
+  employeePrice?: number;
   employeePriceManual?: boolean;
   clientPrice?: number;
   employeeCommission?: number;

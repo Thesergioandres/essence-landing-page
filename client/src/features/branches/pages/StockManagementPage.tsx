@@ -7,12 +7,12 @@ import { branchService, branchTransferService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
 import { employeeService } from "../../employees/services";
 import {
-    productService,
-    stockService,
+  productService,
+  stockService,
 } from "../../inventory/services/inventory.service";
 import type {
-    EmployeeStock,
-    Product,
+  EmployeeStock,
+  Product,
 } from "../../inventory/types/product.types";
 
 type OperationType = "assign" | "withdraw";
@@ -31,15 +31,20 @@ interface StockItem {
   warehouseStock: number;
 }
 
+interface BranchStockPreviewItem {
+  _id: string;
+  product: { _id: string; name: string };
+  quantity: number;
+}
+
 const StockManagement = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const firstSegment = location.pathname.split("/").filter(Boolean)[0] || "";
   const areaBase = firstSegment ? `/${firstSegment}` : "";
   const isEmployeeView = areaBase === "/staff";
-  const isOperativoEmployeeView = location.pathname.startsWith(
-    "/staff/operativo/"
-  );
+  const isOperativoEmployeeView =
+    location.pathname.startsWith("/staff/operativo/");
   const addEmployeeRoute = isOperativoEmployeeView
     ? `${areaBase}/operativo/team`
     : `${areaBase}/employees/add`;
@@ -54,21 +59,19 @@ const StockManagement = () => {
   const [items, setItems] = useState<StockItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-  const [employeeStock, setEmployeeStock] = useState<EmployeeStock[]>(
-    []
-  );
+  const [employeeStock, setEmployeeStock] = useState<EmployeeStock[]>([]);
   const [loadingEmployeeStock, setLoadingEmployeeStock] = useState(false);
   const [originBranchId, setOriginBranchId] = useState<string>("");
   const [targetBranchId, setTargetBranchId] = useState<string>("");
   const [branchItems, setBranchItems] = useState<BranchItem[]>([]);
   const [originBranchStock, setOriginBranchStock] = useState<
-    Array<{
-      _id: string;
-      product: { _id: string; name: string };
-      quantity: number;
-    }>
+    BranchStockPreviewItem[]
+  >([]);
+  const [targetBranchStock, setTargetBranchStock] = useState<
+    BranchStockPreviewItem[]
   >([]);
   const [loadingOriginStock, setLoadingOriginStock] = useState(false);
+  const [loadingTargetStock, setLoadingTargetStock] = useState(false);
   const [branchSelectedProductId, setBranchSelectedProductId] =
     useState<string>("");
   const [branchNotes, setBranchNotes] = useState<string>("");
@@ -80,40 +83,35 @@ const StockManagement = () => {
   const [inventorySearchTerm, setInventorySearchTerm] = useState("");
   const [inventoryCategory, setInventoryCategory] = useState<string>("all");
 
-  const getPermissionAwareMessage = (
-    err: any,
-    fallbackMessage: string,
-    permissionMessage = "No tienes permisos de membresía para gestionar inventario en este negocio"
-  ) => {
-    const status = err?.response?.status;
-    const backendMessage = String(err?.response?.data?.message || "").trim();
-    const rawMessage = String(err?.message || "").trim();
-    const combined = `${backendMessage} ${rawMessage}`.toLowerCase();
+  const getPermissionAwareMessage = useCallback(
+    (
+      err: any,
+      fallbackMessage: string,
+      permissionMessage = "No tienes permisos de membresía para gestionar inventario en este negocio"
+    ) => {
+      const status = err?.response?.status;
+      const backendMessage = String(err?.response?.data?.message || "").trim();
+      const rawMessage = String(err?.message || "").trim();
+      const combined = `${backendMessage} ${rawMessage}`.toLowerCase();
 
-    if (
-      status === 403 ||
-      combined.includes("permiso") ||
-      combined.includes("sin permisos") ||
-      combined.includes("acceso denegado") ||
-      combined.includes("forbidden")
-    ) {
-      return permissionMessage;
-    }
+      if (
+        status === 403 ||
+        combined.includes("permiso") ||
+        combined.includes("sin permisos") ||
+        combined.includes("acceso denegado") ||
+        combined.includes("forbidden")
+      ) {
+        return permissionMessage;
+      }
 
-    return backendMessage || fallbackMessage;
-  };
+      return backendMessage || fallbackMessage;
+    },
+    []
+  );
 
   useEffect(() => {
     loadData();
   }, []);
-
-  useEffect(() => {
-    if (selectedEmployee) {
-      loadEmployeeStock(selectedEmployee);
-    } else {
-      setEmployeeStock([]);
-    }
-  }, [selectedEmployee]);
 
   useEffect(() => {
     setError("");
@@ -152,10 +150,7 @@ const StockManagement = () => {
           : employeesRes.data;
         setEmployees((distList || []).filter((d: User) => d.active));
       } else {
-        console.error(
-          "Error al cargar empleados:",
-          employeesResult.reason
-        );
+        console.error("Error al cargar empleados:", employeesResult.reason);
         setEmployees([]);
       }
 
@@ -182,75 +177,104 @@ const StockManagement = () => {
     }
   };
 
-  const loadEmployeeStock = async (employeeId: string) => {
-    try {
-      setLoadingEmployeeStock(true);
-      const stock = await stockService.getEmployeeStock(employeeId);
-      setEmployeeStock(stock);
-    } catch (err) {
-      console.error("Error al cargar inventario del employee:", err);
-      setError(
-        getPermissionAwareMessage(
-          err,
-          "No se pudo cargar el inventario del empleado",
-          "No tienes permisos para consultar inventario de empleados"
-        )
-      );
+  const loadEmployeeStock = useCallback(
+    async (employeeId: string) => {
+      try {
+        setLoadingEmployeeStock(true);
+        const stock = await stockService.getEmployeeStock(employeeId);
+        setEmployeeStock(stock);
+      } catch (err) {
+        console.error("Error al cargar inventario del employee:", err);
+        setError(
+          getPermissionAwareMessage(
+            err,
+            "No se pudo cargar el inventario del empleado",
+            "No tienes permisos para consultar inventario de empleados"
+          )
+        );
+        setEmployeeStock([]);
+      } finally {
+        setLoadingEmployeeStock(false);
+      }
+    },
+    [getPermissionAwareMessage]
+  );
+
+  useEffect(() => {
+    if (selectedEmployee) {
+      loadEmployeeStock(selectedEmployee);
+    } else {
       setEmployeeStock([]);
-    } finally {
-      setLoadingEmployeeStock(false);
     }
-  };
+  }, [selectedEmployee, loadEmployeeStock]);
+
+  const fetchBranchStockPreview = useCallback(
+    async (branchId: string): Promise<BranchStockPreviewItem[]> => {
+      const isWarehouse =
+        branchId === "warehouse" ||
+        branches.find(b => b._id === branchId)?.isWarehouse;
+
+      if (isWarehouse) {
+        const response = await productService.getAll({
+          limit: 1000,
+          excludePromotions: true,
+        });
+        const productsList = Array.isArray(response)
+          ? response
+          : response.data || [];
+        return productsList
+          .filter((p: Product) => (p.warehouseStock || 0) > 0)
+          .map((p: Product) => ({
+            _id: `warehouse-${p._id}`,
+            product: { _id: p._id, name: p.name },
+            quantity: p.warehouseStock || 0,
+          }));
+      }
+
+      const stockData = await stockService.getBranchStock(branchId);
+      const stockList = Array.isArray(stockData) ? stockData : [];
+      return stockList.map(s => ({
+        _id: s._id,
+        product:
+          typeof s.product === "object"
+            ? { _id: s.product._id, name: s.product.name }
+            : { _id: s.product, name: "" },
+        quantity: s.quantity,
+      }));
+    },
+    [branches]
+  );
 
   const loadOriginBranchStock = useCallback(
     async (branchId: string) => {
       try {
         setLoadingOriginStock(true);
-
-        // Verificar si es bodega (warehouse)
-        const isWarehouse =
-          branchId === "warehouse" ||
-          branches.find(b => b._id === branchId)?.isWarehouse;
-
-        if (isWarehouse) {
-          // Para bodega, usar el warehouseStock de los productos
-          const response = await productService.getAll({
-            limit: 1000,
-            excludePromotions: true,
-          });
-          const productsList = Array.isArray(response)
-            ? response
-            : response.data || [];
-          const warehouseStock = productsList
-            .filter((p: Product) => (p.warehouseStock || 0) > 0)
-            .map((p: Product) => ({
-              _id: `warehouse-${p._id}`,
-              product: { _id: p._id, name: p.name },
-              quantity: p.warehouseStock || 0,
-            }));
-          setOriginBranchStock(warehouseStock);
-        } else {
-          // Para sedes, usar BranchStock
-          const stockData = await stockService.getBranchStock(branchId);
-          const stockList = Array.isArray(stockData) ? stockData : [];
-          const mappedStock = stockList.map(s => ({
-            _id: s._id,
-            product:
-              typeof s.product === "object"
-                ? { _id: s.product._id, name: s.product.name }
-                : { _id: s.product, name: "" },
-            quantity: s.quantity,
-          }));
-          setOriginBranchStock(mappedStock);
-        }
+        const stock = await fetchBranchStockPreview(branchId);
+        setOriginBranchStock(stock);
       } catch (err) {
-        console.error("Error al cargar inventario de la sede:", err);
+        console.error("Error al cargar inventario de la sede origen:", err);
         setOriginBranchStock([]);
       } finally {
         setLoadingOriginStock(false);
       }
     },
-    [branches]
+    [fetchBranchStockPreview]
+  );
+
+  const loadTargetBranchStock = useCallback(
+    async (branchId: string) => {
+      try {
+        setLoadingTargetStock(true);
+        const stock = await fetchBranchStockPreview(branchId);
+        setTargetBranchStock(stock);
+      } catch (err) {
+        console.error("Error al cargar inventario de la sede destino:", err);
+        setTargetBranchStock([]);
+      } finally {
+        setLoadingTargetStock(false);
+      }
+    },
+    [fetchBranchStockPreview]
   );
 
   useEffect(() => {
@@ -260,6 +284,14 @@ const StockManagement = () => {
       setOriginBranchStock([]);
     }
   }, [originBranchId, loadOriginBranchStock]);
+
+  useEffect(() => {
+    if (targetBranchId) {
+      loadTargetBranchStock(targetBranchId);
+    } else {
+      setTargetBranchStock([]);
+    }
+  }, [targetBranchId, loadTargetBranchStock]);
 
   const addItem = () => {
     if (!selectedProductId) {
@@ -473,9 +505,14 @@ const StockManagement = () => {
       await loadData();
 
       // Recargar el stock de la sede origen si fue seleccionada
-      if (originBranchId) {
-        await loadOriginBranchStock(originBranchId);
-      }
+      await Promise.all([
+        originBranchId
+          ? loadOriginBranchStock(originBranchId)
+          : Promise.resolve(),
+        targetBranchId
+          ? loadTargetBranchStock(targetBranchId)
+          : Promise.resolve(),
+      ]);
 
       setBranchItems([]);
       setBranchNotes("");
@@ -514,9 +551,7 @@ const StockManagement = () => {
       )
   );
 
-  const withdrawSelectableProducts = Array.from(
-    employeeStockByProduct.values()
-  )
+  const withdrawSelectableProducts = Array.from(employeeStockByProduct.values())
     .filter(entry => entry.quantity > 0)
     .map(entry => ({
       ...entry.product,
@@ -593,13 +628,20 @@ const StockManagement = () => {
     ...branches.filter(branch => branch.active !== false),
   ];
 
+  const selectedOriginBranch = branchOptions.find(
+    branch => branch._id === originBranchId
+  );
+  const selectedTargetBranch = branchOptions.find(
+    branch => branch._id === targetBranchId
+  );
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 overflow-hidden">
       <div>
         <h1 className="text-4xl font-bold text-white">Gestión de Stock</h1>
         <p className="mt-2 text-gray-400">
-          Asigna o retira múltiples productos de employees o transfiere
-          entre sedes
+          Asigna o retira múltiples productos de empleados o transfiere entre
+          sedes
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button
@@ -611,7 +653,7 @@ const StockManagement = () => {
                 : "border border-gray-700 bg-gray-800/60 text-gray-200 hover:border-blue-500"
             }`}
           >
-            Employees
+            Empleados
           </button>
           <button
             type="button"
@@ -667,7 +709,7 @@ const StockManagement = () => {
                         : null;
                     return (
                       <div key={index} className="text-sm text-yellow-300">
-                        <strong>{product?.name}</strong> - Employee:{" "}
+                        <strong>{product?.name}</strong> - Empleado:{" "}
                         {employee?.name} - Stock: {employeeStock.quantity}
                       </div>
                     );
@@ -723,7 +765,7 @@ const StockManagement = () => {
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-300">
-                    Employee *
+                    Empleado
                   </label>
                   {employees.length === 0 ? (
                     <div className="rounded-lg border border-gray-700 bg-gray-900/50 px-4 py-4 text-sm text-gray-300">
@@ -743,7 +785,7 @@ const StockManagement = () => {
                       className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >
-                      <option value="">Selecciona un employee</option>
+                      <option value="">Selecciona un empleado</option>
                       {employees.map(dist => (
                         <option key={dist._id} value={dist._id}>
                           {dist.name} - {dist.email}
@@ -760,10 +802,7 @@ const StockManagement = () => {
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-white">
                     Inventario de{" "}
-                    {
-                      employees.find(d => d._id === selectedEmployee)
-                        ?.name
-                    }
+                    {employees.find(d => d._id === selectedEmployee)?.name}
                   </h2>
                   {loadingEmployeeStock && <LoadingSpinner size="sm" />}
                 </div>
@@ -806,9 +845,7 @@ const StockManagement = () => {
                                   {product?.name || "Producto desconocido"}
                                 </h3>
                                 <p className="mt-1 text-xs text-gray-400">
-                                  {formatCurrency(
-                                    product?.employeePrice || 0
-                                  )}
+                                  {formatCurrency(product?.employeePrice || 0)}
                                 </p>
                               </div>
                               <div className="text-right">
@@ -1023,9 +1060,8 @@ const StockManagement = () => {
                                 max={
                                   operation === "assign"
                                     ? item.warehouseStock
-                                    : employeeStockByProduct.get(
-                                        item.productId
-                                      )?.quantity
+                                    : employeeStockByProduct.get(item.productId)
+                                        ?.quantity
                                 }
                                 value={item.quantity === 0 ? "" : item.quantity}
                                 onChange={e => {
@@ -1049,9 +1085,8 @@ const StockManagement = () => {
                                     );
                                   } else if (operation === "withdraw") {
                                     const maxQty =
-                                      employeeStockByProduct.get(
-                                        item.productId
-                                      )?.quantity ?? 0;
+                                      employeeStockByProduct.get(item.productId)
+                                        ?.quantity ?? 0;
                                     if (val > maxQty && maxQty > 0) {
                                       updateItemQuantity(
                                         item.productId,
@@ -1161,10 +1196,7 @@ const StockManagement = () => {
                     <div className="flex justify-between text-lg">
                       <span className="text-gray-300">Employee:</span>
                       <span className="font-bold text-blue-400">
-                        {
-                          employees.find(d => d._id === selectedEmployee)
-                            ?.name
-                        }
+                        {employees.find(d => d._id === selectedEmployee)?.name}
                       </span>
                     </div>
                   )}
@@ -1253,6 +1285,90 @@ const StockManagement = () => {
                 className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Ej. Responsable o motivo de la transferencia"
               />
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-purple-500/30 bg-purple-900/10 p-6">
+            <h2 className="mb-4 text-xl font-semibold text-white">
+              Inventario de sedes seleccionadas
+            </h2>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-semibold text-white">
+                    Origen: {selectedOriginBranch?.name || "Sin seleccionar"}
+                  </h3>
+                  {loadingOriginStock && <LoadingSpinner size="sm" />}
+                </div>
+
+                {!originBranchId ? (
+                  <p className="text-sm text-gray-400">
+                    Selecciona una sede origen para ver su inventario.
+                  </p>
+                ) : originBranchStock.length === 0 ? (
+                  <p className="text-sm text-gray-400">
+                    Esta sede no tiene inventario disponible.
+                  </p>
+                ) : (
+                  <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                    {originBranchStock
+                      .slice()
+                      .sort((a, b) => b.quantity - a.quantity)
+                      .map(stock => (
+                        <div
+                          key={`origin-${stock._id}`}
+                          className="flex items-center justify-between rounded-md border border-gray-700/70 bg-gray-800/60 px-3 py-2"
+                        >
+                          <span className="truncate pr-3 text-sm text-gray-200">
+                            {stock.product.name || "Producto sin nombre"}
+                          </span>
+                          <span className="rounded-full bg-blue-500/20 px-2 py-1 text-xs font-semibold text-blue-300">
+                            {stock.quantity}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-semibold text-white">
+                    Destino: {selectedTargetBranch?.name || "Sin seleccionar"}
+                  </h3>
+                  {loadingTargetStock && <LoadingSpinner size="sm" />}
+                </div>
+
+                {!targetBranchId ? (
+                  <p className="text-sm text-gray-400">
+                    Selecciona una sede destino para ver su inventario.
+                  </p>
+                ) : targetBranchStock.length === 0 ? (
+                  <p className="text-sm text-gray-400">
+                    Esta sede no tiene inventario disponible.
+                  </p>
+                ) : (
+                  <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                    {targetBranchStock
+                      .slice()
+                      .sort((a, b) => b.quantity - a.quantity)
+                      .map(stock => (
+                        <div
+                          key={`target-${stock._id}`}
+                          className="flex items-center justify-between rounded-md border border-gray-700/70 bg-gray-800/60 px-3 py-2"
+                        >
+                          <span className="truncate pr-3 text-sm text-gray-200">
+                            {stock.product.name || "Producto sin nombre"}
+                          </span>
+                          <span className="rounded-full bg-emerald-500/20 px-2 py-1 text-xs font-semibold text-emerald-300">
+                            {stock.quantity}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

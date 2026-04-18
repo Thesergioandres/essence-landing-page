@@ -35,17 +35,21 @@ export class GetDashboardStatsUseCase {
       profit: day.profit || 0,
     }));
 
+    const totalTransactions = Number(
+      kpi.totalTransactions ?? kpi.totalSales ?? 0,
+    );
+
     // 4. Calculate average ticket
     const averageTicket =
-      kpi.totalSales > 0
-        ? Math.round((kpi.totalRevenue / kpi.totalSales) * 100) / 100
+      totalTransactions > 0
+        ? Math.round((kpi.totalRevenue / totalTransactions) * 100) / 100
         : 0;
 
     // 5. Return in frontend expected format
     return {
       totalRevenue: kpi.totalRevenue || 0,
       totalNetProfit: kpi.totalProfit || 0,
-      totalSalesCount: kpi.totalSales || 0,
+      totalSalesCount: totalTransactions,
       averageTicket,
       salesTimeline,
       topProducts: topProducts || [],

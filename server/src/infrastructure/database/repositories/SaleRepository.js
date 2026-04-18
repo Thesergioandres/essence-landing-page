@@ -14,6 +14,15 @@ const resolveSaleRevenue = (sale) => {
   return Math.max(0, gross - discount);
 };
 
+const buildSaleTransactionKeyExpression = () => ({
+  $ifNull: [
+    "$saleGroupId",
+    {
+      $ifNull: ["$saleId", { $toString: "$_id" }],
+    },
+  ],
+});
+
 export class SaleRepository {
   /**
    * Creates a new Sale document.
@@ -102,10 +111,7 @@ export class SaleRepository {
         matchFilter.business,
       );
     }
-    if (
-      matchFilter.employee &&
-      typeof matchFilter.employee === "string"
-    ) {
+    if (matchFilter.employee && typeof matchFilter.employee === "string") {
       matchFilter.employee = Sale.base.Types.ObjectId.createFromHexString(
         matchFilter.employee,
       );
@@ -121,13 +127,25 @@ export class SaleRepository {
       {
         $group: {
           _id: null,
-          totalSales: { $sum: 1 },
+          uniqueTransactions: {
+            $addToSet: buildSaleTransactionKeyExpression(),
+          },
           totalRevenue: {
             $sum: { $multiply: ["$salePrice", "$quantity"] },
           },
           totalEmployeeProfit: { $sum: "$employeeProfit" },
           totalAdminProfit: { $sum: "$adminProfit" },
           totalProfit: { $sum: "$totalProfit" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalSales: { $size: "$uniqueTransactions" },
+          totalRevenue: 1,
+          totalEmployeeProfit: 1,
+          totalAdminProfit: 1,
+          totalProfit: 1,
         },
       },
     ]);

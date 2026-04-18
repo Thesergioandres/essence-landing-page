@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useBusiness } from "../../../context/BusinessContext";
 import { LoadingSpinner, PlanLimitModal } from "../../../shared/components/ui";
 import {
-    buildCacheKey,
-    readSessionCache,
-    writeSessionCache,
+  buildCacheKey,
+  readSessionCache,
+  writeSessionCache,
 } from "../../../utils/requestCache";
 import { toast } from "../../../utils/toast";
 import type { User } from "../../auth/types/auth.types";
@@ -78,9 +78,6 @@ export default function Employees() {
       }
 
       const response = await employeeService.getAll(params);
-      const limits = await globalSettingsService
-        .getBusinessLimits()
-        .catch(() => null);
 
       if (Array.isArray(response)) {
         setEmployees(response);
@@ -93,10 +90,6 @@ export default function Employees() {
           pagination: response.pagination,
         });
       }
-
-      if (limits) {
-        setPlanSnapshot(limits);
-      }
     } catch (err) {
       setError("Error al cargar empleados");
       console.error(err);
@@ -108,6 +101,27 @@ export default function Employees() {
   useEffect(() => {
     loadEmployees();
   }, [loadEmployees]);
+
+  useEffect(() => {
+    if (!businessId) {
+      setPlanSnapshot(null);
+      return;
+    }
+
+    let isMounted = true;
+    globalSettingsService
+      .getBusinessLimits()
+      .then(snapshot => {
+        if (isMounted) {
+          setPlanSnapshot(snapshot);
+        }
+      })
+      .catch(() => null);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [businessId]);
 
   const handleToggleActive = async (id: string) => {
     try {
@@ -160,9 +174,7 @@ export default function Employees() {
       setDeleteSubmitting(true);
       const result = await employeeService.delete(deleteTarget._id);
 
-      setEmployees(prev =>
-        prev.filter(item => item._id !== deleteTarget._id)
-      );
+      setEmployees(prev => prev.filter(item => item._id !== deleteTarget._id));
       setPagination(prev => ({
         ...prev,
         total: Math.max(0, prev.total - 1),
@@ -278,9 +290,7 @@ export default function Employees() {
                 <p className="text-sm text-gray-400">📞 {employee.phone}</p>
               )}
               {employee.address && (
-                <p className="text-sm text-gray-400">
-                  📍 {employee.address}
-                </p>
+                <p className="text-sm text-gray-400">📍 {employee.address}</p>
               )}
 
               <div className="mt-4 grid grid-cols-3 gap-2 rounded-lg border border-gray-700 bg-gray-900/50 p-3">
@@ -300,17 +310,14 @@ export default function Employees() {
                   <p className="text-xs text-gray-500">Ganancias</p>
                   <p className="text-lg font-bold text-green-400">
                     $
-                    {(employee as any).stats?.totalProfit?.toFixed(2) ||
-                      "0.00"}
+                    {(employee as any).stats?.totalProfit?.toFixed(2) || "0.00"}
                   </p>
                 </div>
               </div>
 
               <div className="mt-4 flex gap-2">
                 <button
-                  onClick={() =>
-                    navigate(`/admin/employees/${employee._id}`)
-                  }
+                  onClick={() => navigate(`/admin/employees/${employee._id}`)}
                   className="flex-1 rounded-lg border border-purple-500/60 px-4 py-2 text-sm font-medium text-purple-300 transition hover:bg-purple-600/20"
                 >
                   Ver Detalle
@@ -394,13 +401,13 @@ export default function Employees() {
                 Eliminar y reasignar empleado
               </h3>
               <p className="mt-4 rounded-lg border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200">
-                ¿Estás seguro? El stock de este empleado regresará a la
-                bodega principal.
+                ¿Estás seguro? El stock de este empleado regresará a la bodega
+                principal.
               </p>
               <p className="mt-3 text-sm text-red-100/90">
                 Esta acción también conservará el historial de ventas usando
-                snapshot del nombre del empleado y luego eliminará el
-                registro de usuario.
+                snapshot del nombre del empleado y luego eliminará el registro
+                de usuario.
               </p>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">

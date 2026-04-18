@@ -8,13 +8,68 @@ const ipKeyGenerator = (req) => {
   return ip.replace(/^::ffff:/, "");
 };
 
+const isTestEnvironment = () => process.env.NODE_ENV === "test";
+const isDevelopmentEnvironment = () => process.env.NODE_ENV === "development";
+
+const resolveRateLimitMax = (
+  envVarName,
+  fallbackProduction,
+  fallbackDevelopment,
+) => {
+  const rawValue = Number(process.env[envVarName]);
+  if (Number.isFinite(rawValue) && rawValue > 0) {
+    return Math.floor(rawValue);
+  }
+
+  return isDevelopmentEnvironment() ? fallbackDevelopment : fallbackProduction;
+};
+
+const resolveRateLimitWindowMs = (envVarName, fallbackValue) => {
+  const rawValue = Number(process.env[envVarName]);
+  if (Number.isFinite(rawValue) && rawValue > 0) {
+    return Math.floor(rawValue);
+  }
+
+  return fallbackValue;
+};
+
+const resolveRequestBusinessId = (req) => {
+  const rawBusinessId = req.headers["x-business-id"] || req.query?.businessId;
+
+  if (Array.isArray(rawBusinessId)) {
+    return rawBusinessId[0] || "global";
+  }
+
+  return String(rawBusinessId || "global");
+};
+
+const resolveTokenFingerprint = (req) => {
+  const authorization = String(req.headers.authorization || "");
+  if (!authorization.startsWith("Bearer ")) {
+    return "anonymous";
+  }
+
+  // Fingerprint corto para separar sesiones detrás de la misma IP/proxy.
+  return authorization.slice(-16);
+};
+
+const buildApiLimiterKey = (req) => {
+  const ip = ipKeyGenerator(req);
+  const businessId = resolveRequestBusinessId(req);
+  const tokenFingerprint = resolveTokenFingerprint(req);
+  return `${ip}-${businessId}-${tokenFingerprint}`;
+};
+
 /**
  * Rate Limiter para endpoints de autenticación
  * Más restrictivo para prevenir ataques de fuerza bruta
  */
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // máximo 5 intentos por ventana
+  windowMs: resolveRateLimitWindowMs(
+    "AUTH_RATE_LIMIT_WINDOW_MS",
+    15 * 60 * 1000,
+  ), // 15 minutos
+  max: resolveRateLimitMax("AUTH_RATE_LIMIT_MAX", 5, 20),
   message: {
     message:
       "Demasiados intentos de autenticación. Intenta de nuevo en 15 minutos.",
@@ -24,7 +79,7 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   skip: (req) => {
     // Omitir rate limiting en tests
-    return process.env.NODE_ENV === "test";
+    return isTestEnvironment();
   },
   handler: (req, res, next, options) => {
     logApiWarn({
@@ -51,8 +106,8 @@ export const authLimiter = rateLimit({
  * Menos restrictivo, para uso normal
  */
 export const apiLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minuto
-  max: 100, // 100 peticiones por minuto
+  windowMs: resolveRateLimitWindowMs("API_RATE_LIMIT_WINDOW_MS", 1 * 60 * 1000), // 1 minuto
+  max: resolveRateLimitMax("API_RATE_LIMIT_MAX", 180, 1200),
   message: {
     message: "Demasiadas solicitudes. Intenta de nuevo en un momento.",
     code: "RATE_LIMIT_API",
@@ -61,7 +116,7 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false,
   skip: (req) => {
     // Omitir rate limiting en tests
-    return process.env.NODE_ENV === "test";
+    return isTestEnvironment();
   },
   handler: (req, res, next, options) => {
     logApiWarn({
@@ -77,6 +132,7 @@ export const apiLimiter = rateLimit({
     });
     res.status(429).json(options.message);
   },
+  keyGenerator: buildApiLimiterKey,
 });
 
 /**

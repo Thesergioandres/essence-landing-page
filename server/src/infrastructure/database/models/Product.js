@@ -35,12 +35,20 @@ const productSchema = new mongoose.Schema(
     },
     employeePrice: {
       type: Number,
-      required: [true, "El precio para employee es obligatorio"],
+      default: null,
+      required() {
+        return this.employeePriceManual === true;
+      },
       min: [0, "El precio para employee no puede ser negativo"],
     },
     employeePriceManual: {
       type: Boolean,
       default: false,
+    },
+    employeePriceManualValue: {
+      type: Number,
+      default: null,
+      min: [0, "El precio manual de distribuidor no puede ser negativo"],
     },
     clientPrice: {
       type: Number,

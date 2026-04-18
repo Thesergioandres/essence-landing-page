@@ -8,6 +8,10 @@ import api from "../../../api/axios";
 import type { Branch } from "../../business/types/business.types";
 import type { Product } from "../../inventory/types/product.types";
 
+const resolveBranchFromPayload = (payload: any): Branch => {
+  return (payload?.branch || payload?.data || payload) as Branch;
+};
+
 // ==================== BRANCH SERVICE ====================
 export const branchService = {
   async getAll(): Promise<Branch[]> {
@@ -43,7 +47,11 @@ export const branchService = {
     branch: Branch;
   }> {
     const response = await api.post("/branches", data);
-    return response.data;
+    const payload = response.data;
+    return {
+      message: payload?.message || "Sede creada correctamente",
+      branch: resolveBranchFromPayload(payload),
+    };
   },
 
   async update(
@@ -65,7 +73,11 @@ export const branchService = {
     branch: Branch;
   }> {
     const response = await api.put(`/branches/${id}`, data);
-    return response.data;
+    const payload = response.data;
+    return {
+      message: payload?.message || "Sede actualizada correctamente",
+      branch: resolveBranchFromPayload(payload),
+    };
   },
 
   async delete(id: string): Promise<{

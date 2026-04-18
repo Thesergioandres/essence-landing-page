@@ -7,18 +7,18 @@
 import api from "../../../api/axios";
 import type { ProfitHistoryAdminOverview } from "../../analytics/types/analytics.types";
 import type {
-    Achievement,
-    EmployeeStats,
-    EmployeeStatsResponse,
-    GamificationConfig,
-    PeriodWinner,
-    RankingResponse,
-    WinnersResponse,
+  Achievement,
+  EmployeeStats,
+  EmployeeStatsResponse,
+  GamificationConfig,
+  PeriodWinner,
+  RankingResponse,
+  WinnersResponse,
 } from "../../analytics/types/gamification.types";
 import type { User } from "../../auth/types/auth.types";
 import type {
-    BusinessPlanSnapshot,
-    PlanLimits,
+  BusinessPlanSnapshot,
+  PlanLimits,
 } from "../../business/types/business.types";
 import type { ProductImage } from "../../inventory/types/product.types";
 import type { Expense } from "../types/common.types";
@@ -128,6 +128,21 @@ const resolveEntityId = (value: unknown): string | null => {
     resolveEntityId(candidate.$oid) ||
     null
   );
+};
+
+const BUSINESS_LIMITS_CACHE_TTL_MS = 45 * 1000;
+
+type BusinessLimitsCacheEntry = {
+  data: BusinessPlanSnapshot;
+  expiresAt: number;
+};
+
+const businessLimitsCache = new Map<string, BusinessLimitsCacheEntry>();
+const businessLimitsInFlight = new Map<string, Promise<BusinessPlanSnapshot>>();
+
+const resolveBusinessLimitsCacheKey = () => {
+  const businessId = resolveEntityId(localStorage.getItem("businessId"));
+  return businessId || "global";
 };
 
 // ==================== UPLOAD SERVICE ====================
@@ -298,12 +313,44 @@ export const globalSettingsService = {
     return response.data.data;
   },
 
-  async getBusinessLimits(): Promise<BusinessPlanSnapshot> {
-    const response = await api.get<{
-      success: boolean;
-      data: BusinessPlanSnapshot;
-    }>("/global-settings/business-limits");
-    return response.data.data;
+  async getBusinessLimits(options?: {
+    force?: boolean;
+  }): Promise<BusinessPlanSnapshot> {
+    const force = options?.force === true;
+    const cacheKey = resolveBusinessLimitsCacheKey();
+    const now = Date.now();
+
+    if (!force) {
+      const cached = businessLimitsCache.get(cacheKey);
+      if (cached && cached.expiresAt > now) {
+        return cached.data;
+      }
+
+      const inFlight = businessLimitsInFlight.get(cacheKey);
+      if (inFlight) {
+        return inFlight;
+      }
+    }
+
+    const request = api
+      .get<{
+        success: boolean;
+        data: BusinessPlanSnapshot;
+      }>("/global-settings/business-limits")
+      .then(response => {
+        const payload = response.data.data;
+        businessLimitsCache.set(cacheKey, {
+          data: payload,
+          expiresAt: Date.now() + BUSINESS_LIMITS_CACHE_TTL_MS,
+        });
+        return payload;
+      })
+      .finally(() => {
+        businessLimitsInFlight.delete(cacheKey);
+      });
+
+    businessLimitsInFlight.set(cacheKey, request);
+    return request;
   },
 
   async listBusinessSubscriptions(): Promise<BusinessSubscriptionRow[]> {
