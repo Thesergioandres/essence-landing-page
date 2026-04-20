@@ -144,9 +144,9 @@ export default function Providers() {
   const providerModal =
     showModal &&
     createPortal(
-      <div className="z-100 fixed inset-0 overflow-y-auto bg-black/55 p-4 sm:p-6">
-        <div className="mx-auto flex min-h-full w-full max-w-2xl items-center justify-center">
-          <div className="w-full rounded-xl bg-white shadow-2xl dark:bg-gray-800">
+      <div className="z-100 fixed inset-0 overflow-y-auto overscroll-contain bg-black/55 p-4 sm:p-6">
+        <div className="mx-auto flex min-h-full w-full max-w-2xl items-start justify-center py-4 sm:py-8">
+          <div className="flex max-h-[calc(100dvh-2rem)] w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[calc(100dvh-4rem)] dark:bg-gray-800">
             <div className="border-b border-gray-200 p-6 dark:border-gray-700">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {editingProvider ? "Editar Proveedor" : "Nuevo Proveedor"}
@@ -154,7 +154,7 @@ export default function Providers() {
             </div>
             <form
               onSubmit={handleSubmit}
-              className="max-h-[calc(100dvh-8rem)] space-y-4 overflow-y-auto p-6"
+              className="flex-1 space-y-4 overflow-y-auto p-6"
             >
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
