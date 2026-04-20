@@ -94,7 +94,6 @@ const AdvancedDashboard = lazy(
 const AuditLogs = lazy(
   () => import("./features/analytics/pages/AuditLogsPage")
 );
-const Rankings = lazy(() => import("./features/analytics/pages/RankingsPage"));
 const Expenses = lazy(() => import("./features/analytics/pages/ExpensesPage"));
 const ProfitHistory = lazy(
   () => import("./features/analytics/pages/ProfitHistoryPage")
@@ -142,9 +141,6 @@ const EmployeeCredits = lazy(
 );
 const EmployeeStats = lazy(
   () => import("./features/employees/pages/EmployeeStatsPage")
-);
-const EmployeeLevel = lazy(
-  () => import("./features/employees/pages/EmployeeLevelPage")
 );
 const EmployeeCatalog = lazy(
   () => import("./features/employees/pages/EmployeeCatalogPage")
@@ -233,14 +229,8 @@ const CreateBusiness = lazy(
 const BusinessAssistant = lazy(
   () => import("./features/business/pages/BusinessAssistantPage")
 );
-const TeamManagement = lazy(
-  () => import("./features/business/pages/TeamManagementPage")
-);
 const Onboarding = lazy(
   () => import("./features/business/pages/OnboardingPage")
-);
-const GamificationConfig = lazy(
-  () => import("./features/business/pages/GamificationConfigPage")
 );
 
 // Branches pages
@@ -466,13 +456,6 @@ export default function App() {
                         </BusinessGate>
                       }
                     />
-                    <Route path="employees" element={<Employees />} />
-                    <Route path="employees/add" element={<AddEmployee />} />
-                    <Route path="employees/:id" element={<EmployeeDetail />} />
-                    <Route
-                      path="employees/:id/edit"
-                      element={<EditEmployee />}
-                    />
                     <Route
                       path="stock-management"
                       element={
@@ -604,7 +587,6 @@ export default function App() {
                       element={<CreateBusiness />}
                     />
                     <Route path="user-settings" element={<UserSettings />} />
-                    <Route path="team" element={<TeamManagement />} />
                     <Route
                       path="audit-logs"
                       element={
@@ -616,28 +598,6 @@ export default function App() {
                     <Route
                       path="audit"
                       element={<Navigate to="/admin/audit-logs" replace />}
-                    />
-                    <Route
-                      path="gamification-config"
-                      element={
-                        <BusinessGate requiredFeature="gamification">
-                          <GamificationConfig />
-                        </BusinessGate>
-                      }
-                    />
-                    <Route
-                      path="gamification"
-                      element={
-                        <Navigate to="/admin/gamification-config" replace />
-                      }
-                    />
-                    <Route
-                      path="rankings"
-                      element={
-                        <BusinessGate requiredFeature="gamification">
-                          <Rankings />
-                        </BusinessGate>
-                      }
                     />
                     <Route
                       path="defective-products"
@@ -952,14 +912,6 @@ export default function App() {
                       element={
                         <BusinessGate requiredFeature="reports">
                           <EmployeeStats />
-                        </BusinessGate>
-                      }
-                    />
-                    <Route
-                      path="level"
-                      element={
-                        <BusinessGate requiredFeature="gamification">
-                          <EmployeeLevel />
                         </BusinessGate>
                       }
                     />

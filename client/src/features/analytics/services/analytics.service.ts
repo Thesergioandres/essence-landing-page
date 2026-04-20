@@ -573,7 +573,7 @@ export const analyticsService = {
       }>;
     };
   }> {
-    const response = await api.get("/analytics/staff/estimated-profit", {
+    const response = await api.get("/analytics/employee/estimated-profit", {
       params,
     });
     // V2 response: { success: true, data: { grossProfit, products, ... } }

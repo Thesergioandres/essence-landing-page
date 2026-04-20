@@ -6,6 +6,82 @@ import { employeeService } from "../../employees/services";
 import { stockService } from "../../inventory/services/inventory.service";
 import type { EmployeeStock } from "../../inventory/types/product.types";
 
+const sanitizeIdString = (raw: string): string => {
+  const trimmed = String(raw || "").trim();
+  if (
+    !trimmed ||
+    trimmed === "[object Object]" ||
+    trimmed === "undefined" ||
+    trimmed === "null"
+  ) {
+    return "";
+  }
+
+  const objectIdMatch = trimmed.match(/[a-fA-F0-9]{24}/);
+  if (objectIdMatch) {
+    return objectIdMatch[0].toLowerCase();
+  }
+
+  return trimmed;
+};
+
+const resolveEntityId = (value: unknown): string => {
+  if (typeof value === "string") {
+    return sanitizeIdString(value);
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+
+  const candidate = value as {
+    _id?: unknown;
+    id?: unknown;
+    $oid?: unknown;
+    oid?: unknown;
+    toHexString?: () => string;
+    toString?: () => string;
+  };
+
+  const fromToHex =
+    typeof candidate.toHexString === "function"
+      ? sanitizeIdString(candidate.toHexString())
+      : "";
+
+  const nested =
+    resolveEntityId(candidate._id) ||
+    resolveEntityId(candidate.id) ||
+    resolveEntityId(candidate.$oid) ||
+    resolveEntityId(candidate.oid);
+
+  if (fromToHex) {
+    return fromToHex;
+  }
+
+  if (nested) {
+    return nested;
+  }
+
+  if (typeof candidate.toString === "function") {
+    return sanitizeIdString(candidate.toString());
+  }
+
+  return "";
+};
+
+const resolveStockProductId = (stock: EmployeeStock): string => {
+  const rawProductId =
+    typeof stock.product === "string"
+      ? stock.product
+      : (stock.product as { _id?: unknown })?._id;
+
+  return resolveEntityId(rawProductId);
+};
+
 export default function TransferStock() {
   const [employees, setEmployees] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -29,10 +105,13 @@ export default function TransferStock() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const user = JSON.parse(localStorage.getItem("user") || "{}") as {
+        _id?: unknown;
+      };
+      const currentUserId = resolveEntityId(user?._id);
 
       // Verificar que tengamos un ID de usuario válido
-      if (!user._id) {
+      if (!currentUserId) {
         setMessage({
           type: "error",
           text: "No se encontró información del usuario. Por favor, inicia sesión nuevamente.",
@@ -44,7 +123,7 @@ export default function TransferStock() {
       const [employeesData, stockData, allowedBranchesData] = await Promise.all(
         [
           employeeService.getAll({ active: true }).catch(() => []),
-          stockService.getEmployeeStock(user._id).catch(() => []),
+          stockService.getEmployeeStock(currentUserId).catch(() => []),
           stockService.getMyAllowedBranches().catch(() => ({ branches: [] })),
         ]
       );
@@ -54,9 +133,10 @@ export default function TransferStock() {
         ? employeesData
         : employeesData?.data || [];
 
-      const filteredEmployees = allEmployees.filter(
-        (d: User) => d._id !== user._id && d.active
-      );
+      const filteredEmployees = allEmployees.filter((d: User) => {
+        const employeeId = resolveEntityId((d as { _id?: unknown })._id);
+        return Boolean(employeeId && employeeId !== currentUserId && d.active);
+      });
 
       setEmployees(filteredEmployees);
       // Solo mostrar las sedes a las que tiene acceso
@@ -77,8 +157,7 @@ export default function TransferStock() {
   const getAvailableStock = () => {
     if (!selectedProduct) return 0;
     const stock = myStock.find(s => {
-      const productId =
-        typeof s.product === "string" ? s.product : s.product._id;
+      const productId = resolveStockProductId(s);
       return productId === selectedProduct;
     });
     return stock?.quantity || 0;
@@ -177,16 +256,24 @@ export default function TransferStock() {
 
   const getDestinationName = () => {
     if (transferType === "employee") {
-      return employees.find(d => d._id === selectedEmployee)?.name || "";
+      return (
+        employees.find(
+          d =>
+            resolveEntityId((d as { _id?: unknown })._id) === selectedEmployee
+        )?.name || ""
+      );
     } else {
-      return branches.find(b => b._id === selectedBranch)?.name || "";
+      return (
+        branches.find(
+          b => resolveEntityId((b as { _id?: unknown })._id) === selectedBranch
+        )?.name || ""
+      );
     }
   };
 
   const getProductName = () => {
     const stock = myStock.find(s => {
-      const productId =
-        typeof s.product === "string" ? s.product : s.product._id;
+      const productId = resolveStockProductId(s);
       return productId === selectedProduct;
     });
     if (!stock) return "";
@@ -281,11 +368,23 @@ export default function TransferStock() {
                 required
               >
                 <option value="">Selecciona un empleaddo</option>
-                {employees.map(dist => (
-                  <option key={dist._id} value={dist._id}>
-                    {dist.name} - {dist.email}
-                  </option>
-                ))}
+                {employees.map((dist, index) => {
+                  const employeeId = resolveEntityId(
+                    (dist as { _id?: unknown })._id
+                  );
+                  if (!employeeId) {
+                    return null;
+                  }
+
+                  return (
+                    <option
+                      key={`employee-${employeeId}-${index}`}
+                      value={employeeId}
+                    >
+                      {dist.name} - {dist.email}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           ) : (
@@ -300,12 +399,24 @@ export default function TransferStock() {
                 required
               >
                 <option value="">Selecciona una sede</option>
-                {branches.map(branch => (
-                  <option key={branch._id} value={branch._id}>
-                    {branch.name}
-                    {branch.address ? ` - ${branch.address}` : ""}
-                  </option>
-                ))}
+                {branches.map((branch, index) => {
+                  const branchId = resolveEntityId(
+                    (branch as { _id?: unknown })._id
+                  );
+                  if (!branchId) {
+                    return null;
+                  }
+
+                  return (
+                    <option
+                      key={`branch-${branchId}-${index}`}
+                      value={branchId}
+                    >
+                      {branch.name}
+                      {branch.address ? ` - ${branch.address}` : ""}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           )}
@@ -327,17 +438,21 @@ export default function TransferStock() {
               <option value="">Selecciona un producto</option>
               {myStock
                 .filter(s => s.quantity > 0)
-                .map(stock => {
-                  const productId =
-                    typeof stock.product === "string"
-                      ? stock.product
-                      : stock.product._id;
+                .map((stock, index) => {
+                  const productId = resolveStockProductId(stock);
+                  if (!productId) {
+                    return null;
+                  }
+
                   const productName =
                     typeof stock.product === "string"
                       ? "Producto"
                       : stock.product.name;
                   return (
-                    <option key={productId} value={productId}>
+                    <option
+                      key={`product-${productId}-${index}`}
+                      value={productId}
+                    >
                       {productName} - Disponible: {stock.quantity} unidades
                     </option>
                   );
@@ -438,18 +553,15 @@ export default function TransferStock() {
             </p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {myStock.map(stock => {
-                const productId =
-                  typeof stock.product === "string"
-                    ? stock.product
-                    : stock.product._id;
+              {myStock.map((stock, index) => {
+                const productId = resolveStockProductId(stock);
                 const productName =
                   typeof stock.product === "string"
                     ? "Producto"
                     : stock.product.name;
                 return (
                   <div
-                    key={productId}
+                    key={productId ? `stock-${productId}` : `stock-${index}`}
                     className="rounded-lg border border-gray-700 bg-gray-900/30 p-4"
                   >
                     <h3 className="font-medium text-gray-200">{productName}</h3>

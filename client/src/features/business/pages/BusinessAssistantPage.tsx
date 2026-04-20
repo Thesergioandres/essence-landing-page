@@ -6,19 +6,19 @@ import { businessAssistantService } from "../../business/services";
 import { creditService } from "../../credits/services";
 import type { CreditMetrics } from "../../credits/types/credit.types";
 import {
-    categoryService,
-    productService,
-    stockService,
+  categoryService,
+  productService,
+  stockService,
 } from "../../inventory/services/inventory.service";
 import type { Category, Product } from "../../inventory/types/product.types";
 import { promotionService } from "../../settings/services";
 import type {
-    BusinessAssistantConfig,
-    BusinessAssistantJobStatus,
-    BusinessAssistantPromotion,
-    BusinessAssistantRecommendationAction,
-    BusinessAssistantRecommendationItem,
-    BusinessAssistantRecommendationsResponse,
+  BusinessAssistantConfig,
+  BusinessAssistantJobStatus,
+  BusinessAssistantPromotion,
+  BusinessAssistantRecommendationAction,
+  BusinessAssistantRecommendationItem,
+  BusinessAssistantRecommendationsResponse,
 } from "../types/business.types";
 
 const formatCurrencyCOP = (value: number) => {
@@ -339,7 +339,6 @@ export default function BusinessAssistant() {
     "inventory",
     "promotions",
     "expenses",
-    "gamification",
   ]);
 
   const [loading, setLoading] = useState(true);
@@ -684,9 +683,7 @@ export default function BusinessAssistant() {
         const branchesStock =
           inventorySnapshot?.branches ?? existing.stock.branchesStock ?? 0;
         const employeesStock =
-          inventorySnapshot?.employees ??
-          existing.stock.employeesStock ??
-          0;
+          inventorySnapshot?.employees ?? existing.stock.employeesStock ?? 0;
         const unassignedStock =
           inventorySnapshot?.unassigned ?? existing.stock.unassignedStock ?? 0;
         const lowStockAlert =
@@ -1807,11 +1804,6 @@ export default function BusinessAssistant() {
             {features.promotions && (
               <span className="rounded-full bg-sky-500/20 px-3 py-1 text-xs font-medium text-sky-200">
                 🎯 Promociones
-              </span>
-            )}
-            {features.gamification && (
-              <span className="rounded-full bg-orange-500/20 px-3 py-1 text-xs font-medium text-orange-200">
-                🏆 Gamificación
               </span>
             )}
           </div>
@@ -3080,17 +3072,14 @@ export default function BusinessAssistant() {
                   const price = item?.clientPrice ?? item?.suggestedPrice ?? 0;
                   return sum + (Number(price) || 0);
                 }, 0);
-                const totalEmployeePrice = promoProducts.reduce(
-                  (sum, item) => {
-                    const price =
-                      item?.employeePrice ??
-                      item?.clientPrice ??
-                      item?.suggestedPrice ??
-                      0;
-                    return sum + (Number(price) || 0);
-                  },
-                  0
-                );
+                const totalEmployeePrice = promoProducts.reduce((sum, item) => {
+                  const price =
+                    item?.employeePrice ??
+                    item?.clientPrice ??
+                    item?.suggestedPrice ??
+                    0;
+                  return sum + (Number(price) || 0);
+                }, 0);
                 const totalCost = promoProducts.reduce((sum, item) => {
                   const cost = item?.averageCost ?? item?.purchasePrice ?? 0;
                   return sum + (Number(cost) || 0);
@@ -3108,8 +3097,7 @@ export default function BusinessAssistant() {
                   ? ((totalClientPrice - totalCost) / totalClientPrice) * 100
                   : 0;
                 const employeeMarginPct = totalEmployeePrice
-                  ? ((totalEmployeePrice - totalCost) /
-                      totalEmployeePrice) *
+                  ? ((totalEmployeePrice - totalCost) / totalEmployeePrice) *
                     100
                   : 0;
                 const promoClientMarginPct = suggestedClientPrice
@@ -3177,8 +3165,7 @@ export default function BusinessAssistant() {
                           Cliente: {formatCurrencyCOP(totalClientPrice)}
                         </span>
                         <span>
-                          Employee:{" "}
-                          {formatCurrencyCOP(totalEmployeePrice)}
+                          Employee: {formatCurrencyCOP(totalEmployeePrice)}
                         </span>
                         <span>Compra: {formatCurrencyCOP(totalCost)}</span>
                       </div>

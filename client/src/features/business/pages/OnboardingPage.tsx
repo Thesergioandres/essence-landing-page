@@ -10,13 +10,18 @@ const defaultFeatures: BusinessFeatures = {
   products: true,
   inventory: true,
   sales: true,
-  gamification: true,
   incidents: true,
   expenses: true,
   assistant: false,
   reports: true,
   transfers: true,
+  promotions: true,
+  branches: true,
+  employees: true,
+  rankings: false,
   credits: true,
+  customers: true,
+  defectiveProducts: true,
 };
 
 export default function Onboarding() {
@@ -40,10 +45,9 @@ export default function Onboarding() {
     if (memberships.length > 0) {
       // Si ya tiene negocio, llévalo directo al dashboard
       const role = memberships[0]?.role;
-      navigate(
-        role === "admin" ? "/admin/analytics" : "/staff/dashboard",
-        { replace: true }
-      );
+      navigate(role === "admin" ? "/admin/analytics" : "/staff/dashboard", {
+        replace: true,
+      });
     }
   }, [memberships, navigate]);
 
@@ -129,9 +133,7 @@ export default function Onboarding() {
     // Redirigir según el rol del usuario
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const redirectPath =
-      user.role === "employee"
-        ? "/staff/dashboard"
-        : "/admin/analytics";
+      user.role === "employee" ? "/staff/dashboard" : "/admin/analytics";
 
     console.log("[Onboarding] Redirecting to:", redirectPath);
 
@@ -316,7 +318,6 @@ export default function Onboarding() {
                     "expenses",
                     "reports",
                     "assistant",
-                    "gamification",
                     "transfers",
                     "incidents",
                     "promotions",
@@ -337,10 +338,6 @@ export default function Onboarding() {
                     sales: {
                       label: "Ventas",
                       desc: "Registro de ventas, filtros por fecha y análisis.",
-                    },
-                    gamification: {
-                      label: "Gamificación",
-                      desc: "Rankings, retos y premios para tu equipo.",
                     },
                     incidents: {
                       label: "Incidencias",

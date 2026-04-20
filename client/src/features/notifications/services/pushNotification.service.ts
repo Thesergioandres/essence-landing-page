@@ -192,7 +192,6 @@ async function sendSubscriptionToServer(
         stock: true,
         credits: true,
         subscriptions: true,
-        gamification: true,
       },
     });
 

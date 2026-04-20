@@ -66,6 +66,26 @@ export class EmployeeController {
     }
   }
 
+  async updateBaseCommissionPercentage(req, res) {
+    try {
+      const businessId = req.businessId;
+      const { baseCommissionPercentage } = req.body || {};
+
+      const employee = await repository.updateBaseCommissionPercentage(
+        req.params.id,
+        businessId,
+        baseCommissionPercentage,
+      );
+
+      return res.json({ success: true, data: employee });
+    } catch (error) {
+      const status = error.statusCode || 500;
+      return res
+        .status(status)
+        .json({ success: false, message: error.message });
+    }
+  }
+
   async delete(req, res) {
     try {
       const businessId = req.businessId;

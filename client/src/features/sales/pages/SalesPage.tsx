@@ -6,9 +6,9 @@ import SaleDetailModal from "../../../components/SaleDetailModal";
 import { LoadingSpinner } from "../../../shared/components/ui";
 import { exportToExcel, exportToPDF } from "../../../utils/exportUtils";
 import {
-    buildCacheKey,
-    readSessionCache,
-    writeSessionCache,
+  buildCacheKey,
+  readSessionCache,
+  writeSessionCache,
 } from "../../../utils/requestCache";
 import { authService } from "../../auth/services";
 import type { User } from "../../auth/types/auth.types";
@@ -33,7 +33,6 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
   // Hooks para features
   const employeesEnabled = useFeature("employees");
   const branchesEnabled = useFeature("branches");
-  const gamificationEnabled = useFeature("gamification");
   const creditsEnabled = useFeature("credits");
   const { hideFinancialData, scopeEmployeeId } = useFinancialPrivacy();
 
@@ -65,9 +64,9 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
   const [saleTypeFilter, setSaleTypeFilter] = useState<
     "all" | "normal" | "promotion" | "special"
   >("all");
-  const [sortBy, setSortBy] = useState<
-    "date-desc" | "date-asc" | "employee"
-  >("date-desc");
+  const [sortBy, setSortBy] = useState<"date-desc" | "date-asc" | "employee">(
+    "date-desc"
+  );
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [confirmingAll, setConfirmingAll] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -115,9 +114,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
           (typeof sale.branch === "object" ? sale.branch?.name : "") ||
           "General";
         const employeeName =
-          (typeof sale.employee === "object"
-            ? sale.employee?.name
-            : "") ||
+          (typeof sale.employee === "object" ? sale.employee?.name : "") ||
           (typeof sale.createdBy === "object" ? sale.createdBy?.name : "Admin");
         const productName =
           typeof sale.product === "object"
@@ -1255,11 +1252,6 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                         Responsable
                       </th>
                     )}
-                    {employeesEnabled && gamificationEnabled && (
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
-                        Rango
-                      </th>
-                    )}
                     {employeesEnabled && (
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-400">
                         {hideFinancialData ? "Mis Ganancias" : "Comisión"}
@@ -1335,42 +1327,6 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                       ? getGroupSaleTypeLabel(group.sales)
                       : getSaleTypeLabel(getSaleType(firstSale));
 
-                    // Determinar rango según comisión
-                    let rankBadge = {
-                      emoji: "👑",
-                      text: "Admin",
-                      color: "bg-purple-500/20 text-purple-300",
-                    };
-                    if (employee) {
-                      const percentage =
-                        firstSale.employeeProfitPercentage || 20;
-                      if (percentage === 25) {
-                        rankBadge = {
-                          emoji: "🥇",
-                          text: "1º",
-                          color: "bg-yellow-500/20 text-yellow-300",
-                        };
-                      } else if (percentage === 23) {
-                        rankBadge = {
-                          emoji: "🥈",
-                          text: "2º",
-                          color: "bg-gray-500/20 text-gray-200",
-                        };
-                      } else if (percentage === 21) {
-                        rankBadge = {
-                          emoji: "🥉",
-                          text: "3º",
-                          color: "bg-orange-500/20 text-orange-300",
-                        };
-                      } else {
-                        rankBadge = {
-                          emoji: "📊",
-                          text: "Normal",
-                          color: "bg-blue-500/20 text-blue-300",
-                        };
-                      }
-                    }
-
                     return (
                       <React.Fragment key={group.id}>
                         {/* Fila principal del grupo o venta individual */}
@@ -1434,17 +1390,6 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                               </div>
                             </td>
                           )}
-                          {employeesEnabled &&
-                            gamificationEnabled &&
-                            !hideFinancialData && (
-                              <td className="whitespace-nowrap px-6 py-4">
-                                <span
-                                  className={`rounded-full px-2 py-1 text-xs font-semibold ${rankBadge.color}`}
-                                >
-                                  {rankBadge.emoji} {rankBadge.text}
-                                </span>
-                              </td>
-                            )}
                           {employeesEnabled && (
                             <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-200">
                               {employee ? (
@@ -1456,8 +1401,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                                   {!hideFinancialData && (
                                     <span className="ml-1 text-xs text-gray-500">
                                       (
-                                      {firstSale.employeeProfitPercentage ??
-                                        20}
+                                      {firstSale.employeeProfitPercentage ?? 20}
                                       %)
                                     </span>
                                   )}
@@ -1544,8 +1488,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                           )}
                           {showAmountToDeliver && (
                             <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
-                              {employee &&
-                              group.totalEmployeeProfit > 0 ? (
+                              {employee && group.totalEmployeeProfit > 0 ? (
                                 <span className="text-yellow-400">
                                   $
                                   {(
@@ -1701,13 +1644,6 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                                     {/* Vacío */}
                                   </td>
                                 )}
-                                {employeesEnabled &&
-                                  gamificationEnabled &&
-                                  !hideFinancialData && (
-                                    <td className="whitespace-nowrap px-6 py-3">
-                                      {/* Vacío */}
-                                    </td>
-                                  )}
                                 {employeesEnabled && (
                                   <td className="whitespace-nowrap px-6 py-3">
                                     {/* Vacío */}
@@ -1757,8 +1693,7 @@ export default function Sales({ hideAdminProfit = false }: SalesPageProps) {
                                 )}
                                 {showAmountToDeliver && (
                                   <td className="whitespace-nowrap px-6 py-3 text-sm text-yellow-400">
-                                    {employee &&
-                                    (sale.employeeProfit || 0) > 0
+                                    {employee && (sale.employeeProfit || 0) > 0
                                       ? `$${(getSaleRevenue(sale) - (sale.employeeProfit || 0)).toLocaleString()}`
                                       : "-"}
                                   </td>

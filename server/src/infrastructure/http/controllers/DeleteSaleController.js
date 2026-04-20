@@ -4,6 +4,11 @@
  */
 
 import mongoose from "mongoose";
+import { SalePersistenceUseCase } from "../../../application/use-cases/repository-gateways/SalePersistenceUseCase.js";
+import {
+  buildPromotionSalesSummary,
+  normalizeId,
+} from "../../../utils/promotionMetrics.js";
 import BranchStock from "../../database/models/BranchStock.js";
 import Credit from "../../database/models/Credit.js";
 import DefectiveProduct from "../../database/models/DefectiveProduct.js";
@@ -12,12 +17,6 @@ import Product from "../../database/models/Product.js";
 import ProfitHistory from "../../database/models/ProfitHistory.js";
 import Promotion from "../../database/models/Promotion.js";
 import Sale from "../../database/models/Sale.js";
-import { rollbackSaleGamification } from "../../services/gamification.service.js";
-import {
-  buildPromotionSalesSummary,
-  normalizeId,
-} from "../../../utils/promotionMetrics.js";
-import { SalePersistenceUseCase } from "../../../application/use-cases/repository-gateways/SalePersistenceUseCase.js";
 
 const saleRepository = new SalePersistenceUseCase();
 
@@ -64,10 +63,7 @@ async function restoreStock(sale, session) {
   const businessId = sale.business || null;
 
   // Determine where stock came from and restore it
-  if (
-    sourceLocation === "employee" ||
-    (!sourceLocation && sale.employee)
-  ) {
+  if (sourceLocation === "employee" || (!sourceLocation && sale.employee)) {
     await EmployeeStock.findOneAndUpdate(
       {
         employee: sale.employee,
@@ -414,9 +410,6 @@ export async function deleteSale(req, res) {
         session: session || undefined,
       });
 
-      // Roll back gamification points if they were applied
-      await rollbackSaleGamification({ sale });
-
       if (useTransaction) {
         await session.commitTransaction();
       }
@@ -513,7 +506,6 @@ export async function deleteSaleGroup(req, res) {
       for (const sale of sales) {
         await restoreStock(sale, session || undefined);
         await deleteRelatedRecords(sale, session || undefined);
-        await rollbackSaleGamification({ sale });
       }
 
       await rollbackPromotionMetricsForGroup({

@@ -7,7 +7,6 @@ interface PushPreferences {
   stock: boolean;
   credits: boolean;
   subscriptions: boolean;
-  gamification: boolean;
 }
 
 export default function PushNotificationSettings() {
@@ -21,7 +20,6 @@ export default function PushNotificationSettings() {
     stock: true,
     credits: true,
     subscriptions: true,
-    gamification: true,
   });
   const [showPreferences, setShowPreferences] = useState(false);
 
@@ -243,7 +241,6 @@ export default function PushNotificationSettings() {
               { key: "stock", label: "Stock bajo", icon: "📦" },
               { key: "credits", label: "Créditos por vencer", icon: "💳" },
               { key: "subscriptions", label: "Membresías", icon: "👤" },
-              { key: "gamification", label: "Logros y metas", icon: "🏆" },
             ].map(({ key, label, icon }) => (
               <label
                 key={key}

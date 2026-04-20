@@ -368,7 +368,7 @@ export class BusinessController {
         business: req.businessId,
       }).populate(
         "user",
-        "name email role active fixedCommissionOnly isCommissionFixed customCommissionRate",
+        "name email role active fixedCommissionOnly isCommissionFixed customCommissionRate baseCommissionPercentage",
       );
 
       res.json({ success: true, data: refreshedMembership || membership });

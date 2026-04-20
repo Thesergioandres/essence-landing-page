@@ -1,7 +1,6 @@
 import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { gamificationService } from "../../common/services";
 import {
   categoryService,
   productService,
@@ -88,23 +87,6 @@ export default function AddProduct() {
     };
     fetchCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    let isActive = true;
-    const loadConfig = async () => {
-      try {
-        const config = await gamificationService.getConfig();
-        if (!isActive) return;
-        setBaseCommissionPercentage(config.baseCommissionPercentage ?? 20);
-      } catch (err) {
-        console.error("Error al cargar comision base:", err);
-      }
-    };
-    loadConfig();
-    return () => {
-      isActive = false;
-    };
   }, []);
 
   useEffect(() => {

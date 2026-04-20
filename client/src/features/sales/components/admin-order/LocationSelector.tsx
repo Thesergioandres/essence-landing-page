@@ -111,11 +111,14 @@ export function LocationSelector({
         )}
       </div>
 
-      {isEmployee && !hasBranchAccess && !hasWarehouseAccess && (
-        <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-          No tienes sedes autorizadas. Solo puedes vender desde Mi Inventario.
-        </div>
-      )}
+      {isEmployee &&
+        !hasBranchAccess &&
+        !hasWarehouseAccess &&
+        locationType !== "employee" && (
+          <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+            No tienes sedes autorizadas. Solo puedes vender desde Mi Inventario.
+          </div>
+        )}
 
       {/* Location Indicator */}
       <div className="mt-3 flex items-center gap-2 text-sm">

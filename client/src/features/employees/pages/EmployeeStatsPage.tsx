@@ -7,15 +7,9 @@ import {
 import { useBusiness } from "../../../context/BusinessContext";
 import { ConfidentialBadge } from "../../../shared/components/ui";
 import { analyticsService } from "../../analytics/services";
-import type {
-  GamificationConfig,
-  RankingEntry,
-} from "../../analytics/types/gamification.types";
 import { useFinancialPrivacy } from "../../auth/utils/financialPrivacy";
-import { gamificationService } from "../../common/services";
 import { saleService } from "../../sales/services";
 import type { Sale } from "../../sales/types/sales.types";
-import LeaderboardTable from "../components/LeaderboardTable";
 
 interface EstimatedProfitProduct {
   productId: string;
@@ -85,9 +79,6 @@ export default function EmployeeStats() {
     useState<EmployeeEstimate | null>(null);
   const [loadingEstimated, setLoadingEstimated] = useState(true);
   const [showEstimatedProducts, setShowEstimatedProducts] = useState(false);
-  const [rankingData, setRankingData] = useState<RankingEntry[]>([]);
-  const [gamificationConfig, setGamificationConfig] =
-    useState<GamificationConfig | null>(null);
   const [animatedMetrics, setAnimatedMetrics] = useState<AnimatedReportMetrics>(
     {
       totalSales: 0,
@@ -191,27 +182,6 @@ export default function EmployeeStats() {
     }
   }, [effectiveBusinessId, hydrating]);
 
-  const loadRanking = React.useCallback(async () => {
-    if (hydrating || !effectiveBusinessId) {
-      setRankingData([]);
-      setGamificationConfig(null);
-      return;
-    }
-
-    try {
-      const [configRes, rankingRes] = await Promise.all([
-        gamificationService.getConfig().catch(() => null),
-        gamificationService
-          .getRanking({ period: "current", businessId: effectiveBusinessId })
-          .catch(() => null),
-      ]);
-      setGamificationConfig(configRes as GamificationConfig | null);
-      setRankingData(rankingRes?.rankings || []);
-    } catch (error) {
-      console.error("Error al cargar ranking:", error);
-    }
-  }, [effectiveBusinessId, hydrating]);
-
   useEffect(() => {
     void loadStats();
   }, [loadStats]);
@@ -219,10 +189,6 @@ export default function EmployeeStats() {
   useEffect(() => {
     void loadEstimatedProfit();
   }, [loadEstimatedProfit]);
-
-  useEffect(() => {
-    void loadRanking();
-  }, [loadRanking]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("es-CO", {
@@ -994,15 +960,13 @@ export default function EmployeeStats() {
       <div className="report-panel rounded-2xl border border-slate-200/10 bg-[#0A0A0A]/95 p-4 backdrop-blur-xl sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-slate-100">
-            Ranking de Employees
+            Resumen de desempeno
           </h2>
           <div className="rounded-lg border border-slate-300/20 bg-slate-900/65 px-3 py-1.5 text-xs text-slate-300">
             Ventas: {animatedMetrics.totalSales.toLocaleString("es-CO")} |
             Unidades: {totalUnits.toLocaleString("es-CO")}
           </div>
         </div>
-
-        <LeaderboardTable rankings={rankingData} config={gamificationConfig} />
 
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-lg border border-slate-300/10 bg-slate-900/60 px-3 py-2 text-sm">

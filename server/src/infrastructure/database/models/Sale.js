@@ -150,12 +150,12 @@ const saleSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    // Bonus de comisión por ranking (porcentaje adicional sobre base del 20%)
+    // Bonus de comisión variable (porcentaje adicional sobre la base)
     commissionBonus: {
       type: Number,
       default: 0,
     },
-    // Porcentaje total de ganancia del employee (20%, 21%, 23%, o 25%)
+    // Porcentaje total de ganancia del employee
     employeeProfitPercentage: {
       type: Number,
       default: 20,
@@ -163,18 +163,6 @@ const saleSchema = new mongoose.Schema(
     commissionBonusAmount: {
       type: Number,
       default: 0,
-    },
-    gamificationPoints: {
-      type: Number,
-      default: 0,
-    },
-    gamificationLevel: {
-      type: String,
-      default: "",
-    },
-    gamificationPointsApplied: {
-      type: Boolean,
-      default: false,
     },
     // Información adicional
     notes: {
@@ -446,22 +434,59 @@ saleSchema.pre("save", function (next) {
     // Venta de employee
     // El employee recibe una comisión sobre el precio de venta según su ranking
     // 🥇 1º: 25%, 🥈 2º: 23%, 🥉 3º: 21%, Resto: 20%
-    const profitPercentage = this.employeeProfitPercentage ?? 20;
+    const normalizedSalePriceForEmployeeFlow = Number(this.salePrice || 0);
+    const explicitPercentage = Number(this.employeeProfitPercentage);
+    const hasExplicitPercentage = Number.isFinite(explicitPercentage);
+
+    const rawEmployeePrice = Number(this.employeePrice);
+    const hasPersistedEmployeePrice =
+      Number.isFinite(rawEmployeePrice) &&
+      rawEmployeePrice >= 0 &&
+      rawEmployeePrice <= normalizedSalePriceForEmployeeFlow;
+
+    const shouldUsePersistedEmployeePrice =
+      !hasExplicitPercentage && hasPersistedEmployeePrice;
+
+    const derivedPercentageFromPrice =
+      shouldUsePersistedEmployeePrice && normalizedSalePriceForEmployeeFlow > 0
+        ? ((normalizedSalePriceForEmployeeFlow - rawEmployeePrice) /
+            normalizedSalePriceForEmployeeFlow) *
+          100
+        : null;
+
+    const normalizedProfitPercentage = hasExplicitPercentage
+      ? explicitPercentage
+      : Number.isFinite(derivedPercentageFromPrice)
+        ? derivedPercentageFromPrice
+        : 0;
+
+    const profitPercentage = Math.max(
+      0,
+      Math.min(95, normalizedProfitPercentage),
+    );
+    this.employeeProfitPercentage = profitPercentage;
 
     // PRECIO PARA EMPLOYEE = Lo que el employee PAGA al admin
     // Ejemplo: Venta $22,000 con 20% comisión
     // Precio para dist = $22,000 × 80% = $17,600 (lo que paga al admin)
-    const priceForEmployee = this.salePrice * ((100 - profitPercentage) / 100);
+    const priceForEmployee = shouldUsePersistedEmployeePrice
+      ? rawEmployeePrice
+      : normalizedSalePriceForEmployeeFlow * ((100 - profitPercentage) / 100);
     this.employeePrice = priceForEmployee;
 
     // GANANCIA DEL EMPLOYEE = Precio Venta - Precio que paga al admin
     // Ejemplo: $22,000 - $17,600 = $4,400 (su comisión del 20%)
-    this.employeeProfit = (this.salePrice - priceForEmployee) * this.quantity;
+    this.employeeProfit =
+      (normalizedSalePriceForEmployeeFlow - priceForEmployee) * this.quantity;
 
     // GANANCIA DEL ADMIN = Precio Venta - Costo - Ganancia Employee
     // Ejemplo: $22,000 - $10,500 - $4,400 = $7,100
+    const employeeCommissionPerUnit =
+      normalizedSalePriceForEmployeeFlow - priceForEmployee;
     this.adminProfit =
-      (this.salePrice - costBasis - (this.salePrice - priceForEmployee)) *
+      (normalizedSalePriceForEmployeeFlow -
+        costBasis -
+        employeeCommissionPerUnit) *
       this.quantity;
 
     // Ganancia total del grupo (admin + employee)

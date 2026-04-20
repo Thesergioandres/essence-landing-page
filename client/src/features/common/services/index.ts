@@ -3,7 +3,6 @@
  */
 export {
   expenseService,
-  gamificationService,
   globalSettingsService,
   issueService,
   optimizationTestService,

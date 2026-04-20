@@ -2,6 +2,82 @@ import { useEffect, useState } from "react";
 import { stockService } from "../../inventory/services/inventory.service";
 import type { EmployeeStock } from "../../inventory/types/product.types";
 
+const sanitizeIdString = (raw: string): string => {
+  const trimmed = String(raw || "").trim();
+  if (
+    !trimmed ||
+    trimmed === "[object Object]" ||
+    trimmed === "undefined" ||
+    trimmed === "null"
+  ) {
+    return "";
+  }
+
+  const objectIdMatch = trimmed.match(/[a-fA-F0-9]{24}/);
+  if (objectIdMatch) {
+    return objectIdMatch[0].toLowerCase();
+  }
+
+  return trimmed;
+};
+
+const resolveEntityId = (value: unknown): string => {
+  if (typeof value === "string") {
+    return sanitizeIdString(value);
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+
+  const candidate = value as {
+    _id?: unknown;
+    id?: unknown;
+    $oid?: unknown;
+    oid?: unknown;
+    toHexString?: () => string;
+    toString?: () => string;
+  };
+
+  const fromToHex =
+    typeof candidate.toHexString === "function"
+      ? sanitizeIdString(candidate.toHexString())
+      : "";
+
+  const nested =
+    resolveEntityId(candidate._id) ||
+    resolveEntityId(candidate.id) ||
+    resolveEntityId(candidate.$oid) ||
+    resolveEntityId(candidate.oid);
+
+  if (fromToHex) {
+    return fromToHex;
+  }
+
+  if (nested) {
+    return nested;
+  }
+
+  if (typeof candidate.toString === "function") {
+    return sanitizeIdString(candidate.toString());
+  }
+
+  return "";
+};
+
+const toStableListKey = (
+  prefix: string,
+  candidateId: unknown,
+  index: number
+): string => {
+  const resolved = resolveEntityId(candidateId);
+  return resolved ? `${prefix}-${resolved}` : `${prefix}-${index}`;
+};
+
 export default function EmployeeProducts() {
   const [stock, setStock] = useState<EmployeeStock[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,14 +215,14 @@ export default function EmployeeProducts() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredStock.map(item => {
+          {filteredStock.map((item, index) => {
             const product =
               typeof item.product === "object" ? item.product : null;
             const isLowStock = item.quantity <= item.lowStockAlert;
 
             return (
               <div
-                key={item._id}
+                key={toStableListKey("employee-product", item?._id, index)}
                 className={`rounded-xl border p-6 transition ${
                   isLowStock
                     ? "border-red-500 bg-red-900/20"

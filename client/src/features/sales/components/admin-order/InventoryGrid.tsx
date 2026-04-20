@@ -10,6 +10,90 @@ import type {
   ProductWithStock,
 } from "../../types/admin-order.types";
 
+const sanitizeIdString = (raw: string): string | null => {
+  const trimmed = String(raw || "").trim();
+  if (
+    !trimmed ||
+    trimmed === "[object Object]" ||
+    trimmed === "undefined" ||
+    trimmed === "null"
+  ) {
+    return null;
+  }
+
+  const objectIdMatch = trimmed.match(/[a-fA-F0-9]{24}/);
+  if (objectIdMatch) {
+    return objectIdMatch[0].toLowerCase();
+  }
+
+  return trimmed;
+};
+
+const resolveEntityId = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    return sanitizeIdString(value);
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as {
+    _id?: unknown;
+    id?: unknown;
+    $oid?: unknown;
+    oid?: unknown;
+    toHexString?: () => string;
+    toString?: () => string;
+  };
+
+  const fromToHex =
+    typeof candidate.toHexString === "function"
+      ? sanitizeIdString(candidate.toHexString())
+      : null;
+
+  const nested =
+    resolveEntityId(candidate._id) ||
+    resolveEntityId(candidate.id) ||
+    resolveEntityId(candidate.$oid) ||
+    resolveEntityId(candidate.oid);
+
+  if (fromToHex) {
+    return fromToHex;
+  }
+
+  if (nested) {
+    return nested;
+  }
+
+  if (typeof candidate.toString === "function") {
+    return sanitizeIdString(candidate.toString());
+  }
+
+  return null;
+};
+
+const toStableProductKey = (
+  product: ProductWithStock,
+  index: number
+): string => {
+  const resolvedId = resolveEntityId(product._id);
+  if (resolvedId) {
+    return resolvedId;
+  }
+
+  const categoryName =
+    typeof product.category === "object"
+      ? product.category?.name || "uncategorized"
+      : product.category || "uncategorized";
+
+  return `${product.name}-${categoryName}-${index}`;
+};
+
 interface InventoryGridProps {
   products: ProductWithStock[];
   locationType: LocationType;
@@ -112,14 +196,14 @@ export function InventoryGrid({
 
       {/* Product Grid */}
       <div className="grid max-h-[400px] gap-3 overflow-y-auto pr-2 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredProducts.map(product => {
+        {filteredProducts.map((product, index) => {
           const stock = getStock(product);
           const isLowStock = stock > 0 && stock <= 5;
           const isOutOfStock = stock <= 0;
 
           return (
             <div
-              key={product._id}
+              key={toStableProductKey(product, index)}
               className={`relative rounded-lg border p-3 transition ${
                 isOutOfStock
                   ? "border-gray-700 bg-gray-800/20 opacity-50"

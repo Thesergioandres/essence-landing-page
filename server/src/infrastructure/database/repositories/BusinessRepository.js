@@ -260,7 +260,7 @@ export class BusinessRepository {
       { new: true },
     ).populate(
       "user",
-      "name email role active fixedCommissionOnly isCommissionFixed customCommissionRate",
+      "name email role active fixedCommissionOnly isCommissionFixed customCommissionRate baseCommissionPercentage",
     );
 
     if (!membership) {
@@ -292,7 +292,7 @@ export class BusinessRepository {
     const members = await Membership.find({ business: businessId })
       .populate(
         "user",
-        "name email role active fixedCommissionOnly isCommissionFixed customCommissionRate",
+        "name email role active fixedCommissionOnly isCommissionFixed customCommissionRate baseCommissionPercentage",
       )
       .lean();
     return members.filter((m) => m && m.user);

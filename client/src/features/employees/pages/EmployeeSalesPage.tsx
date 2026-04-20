@@ -33,14 +33,35 @@ export default function EmployeeSales() {
           undefined,
           filterParams
         );
-        setSales(response?.sales || []);
-        if (response?.stats) {
-          setStats({
-            totalSales: response.stats.totalSales || 0,
-            totalRevenue: response.stats.totalRevenue || 0,
-            totalProfit: response.stats.totalEmployeeProfit || 0,
-          });
-        }
+        const salesFromApi = response?.sales || [];
+        const statsFromApi = response?.stats;
+
+        setSales(salesFromApi);
+
+        const fallbackTotalSales = salesFromApi.length;
+        const fallbackTotalRevenue = salesFromApi.reduce(
+          (sum, sale) => sum + sale.salePrice * sale.quantity,
+          0
+        );
+        const fallbackTotalProfit = salesFromApi.reduce(
+          (sum, sale) => sum + (sale.employeeProfit || 0),
+          0
+        );
+
+        setStats({
+          totalSales:
+            Number(statsFromApi?.totalSales || 0) > 0
+              ? Number(statsFromApi?.totalSales)
+              : fallbackTotalSales,
+          totalRevenue:
+            Number(statsFromApi?.totalRevenue || 0) > 0
+              ? Number(statsFromApi?.totalRevenue)
+              : fallbackTotalRevenue,
+          totalProfit:
+            Number(statsFromApi?.totalEmployeeProfit || 0) > 0
+              ? Number(statsFromApi?.totalEmployeeProfit)
+              : fallbackTotalProfit,
+        });
       } catch (error) {
         console.error("Error al cargar ventas:", error);
       } finally {
@@ -183,6 +204,7 @@ export default function EmployeeSales() {
         saleDate: string;
         isCredit: boolean;
         hasActiveCredit: boolean;
+        hasPendingConfirmation: boolean;
       }
     >();
 
@@ -198,6 +220,7 @@ export default function EmployeeSales() {
           saleDate: sale.saleDate,
           isCredit: sale.isCredit || false,
           hasActiveCredit: hasActiveCredit(sale),
+          hasPendingConfirmation: sale.paymentStatus === "pendiente",
         });
       }
       const group = groups.get(groupId)!;
@@ -207,6 +230,9 @@ export default function EmployeeSales() {
       group.totalProfit += sale.employeeProfit || 0;
       if (hasActiveCredit(sale)) {
         group.hasActiveCredit = true;
+      }
+      if (sale.paymentStatus === "pendiente") {
+        group.hasPendingConfirmation = true;
       }
     });
 
@@ -446,6 +472,10 @@ export default function EmployeeSales() {
                               <span className="inline-flex items-center gap-1 rounded-full bg-orange-900/30 px-2 py-1 text-xs font-semibold text-orange-400">
                                 💳 Por cobrar
                               </span>
+                            ) : group.hasPendingConfirmation ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-900/30 px-2 py-1 text-xs font-semibold text-amber-400">
+                                ⏳ Pendiente
+                              </span>
                             ) : group.isCredit ? (
                               <span className="inline-flex items-center gap-1 rounded-full bg-green-900/30 px-2 py-1 text-xs font-semibold text-green-400">
                                 ✓ Cobrado
@@ -486,17 +516,13 @@ export default function EmployeeSales() {
                                 text: "1º",
                                 color: "bg-yellow-900/30 text-yellow-400",
                               };
-                            } else if (
-                              sale.employeeProfitPercentage === 23
-                            ) {
+                            } else if (sale.employeeProfitPercentage === 23) {
                               rankBadge = {
                                 emoji: "🥈",
                                 text: "2º",
                                 color: "bg-gray-700/30 text-gray-300",
                               };
-                            } else if (
-                              sale.employeeProfitPercentage === 21
-                            ) {
+                            } else if (sale.employeeProfitPercentage === 21) {
                               rankBadge = {
                                 emoji: "🥉",
                                 text: "3º",
@@ -562,6 +588,10 @@ export default function EmployeeSales() {
                                         </span>
                                       )}
                                     </div>
+                                  ) : sale.paymentStatus === "pendiente" ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-900/30 px-2 py-1 text-xs font-semibold text-amber-400">
+                                      ⏳ Pendiente
+                                    </span>
                                   ) : sale.isCredit ? (
                                     <span className="inline-flex items-center gap-1 rounded-full bg-green-900/30 px-2 py-1 text-xs font-semibold text-green-400">
                                       ✓ Cobrado
@@ -677,6 +707,10 @@ export default function EmployeeSales() {
                               </span>
                             )}
                           </div>
+                        ) : sale.paymentStatus === "pendiente" ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-900/30 px-2 py-1 text-xs font-semibold text-amber-400">
+                            ⏳ Pendiente
+                          </span>
                         ) : sale.isCredit ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-green-900/30 px-2 py-1 text-xs font-semibold text-green-400">
                             ✓ Cobrado

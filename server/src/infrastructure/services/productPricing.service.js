@@ -1,6 +1,5 @@
 import { CommissionPolicyService } from "../../domain/services/CommissionPolicyService.js";
 import { FinanceService } from "../../domain/services/FinanceService.js";
-import GamificationConfig from "../database/models/GamificationConfig.js";
 
 const DEFAULT_BASE_COMMISSION =
   CommissionPolicyService.getDefaultBaseCommission();
@@ -25,28 +24,9 @@ const toProductObject = (product) => {
   return product;
 };
 
-export const getBusinessBaseCommissionPercentage = async (businessId) => {
-  let config = null;
-
-  if (businessId) {
-    try {
-      config = await GamificationConfig.findOne({
-        business: businessId,
-      }).lean();
-    } catch (error) {
-      config = null;
-    }
-  }
-
-  if (!config) {
-    config = await GamificationConfig.findOne().lean();
-  }
-
+export const getBusinessBaseCommissionPercentage = async (_businessId) => {
   return CommissionPolicyService.normalizeCommissionRate(
-    FinanceService.resolveBaseCommissionPercentage(
-      config,
-      DEFAULT_BASE_COMMISSION,
-    ),
+    DEFAULT_BASE_COMMISSION,
     DEFAULT_BASE_COMMISSION,
   );
 };

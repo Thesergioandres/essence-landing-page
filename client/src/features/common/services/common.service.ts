@@ -1,20 +1,11 @@
 /**
  * Common/Utility Services
  * Extracted from monolithic api/services.ts
- * Handles uploads, issues, user access (god panel), gamification
+ * Handles uploads, issues and user access (god panel)
  */
 
 import api from "../../../api/axios";
 import type { ProfitHistoryAdminOverview } from "../../analytics/types/analytics.types";
-import type {
-  Achievement,
-  EmployeeStats,
-  EmployeeStatsResponse,
-  GamificationConfig,
-  PeriodWinner,
-  RankingResponse,
-  WinnersResponse,
-} from "../../analytics/types/gamification.types";
 import type { User } from "../../auth/types/auth.types";
 import type {
   BusinessPlanSnapshot,
@@ -102,48 +93,6 @@ export interface BusinessSubscriptionRow {
   customLimits?: Partial<PlanLimits> | null;
   limits: BusinessPlanSnapshot | null;
 }
-
-const resolveEntityId = (value: unknown): string | null => {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed || trimmed === "[object Object]") {
-      return null;
-    }
-    return trimmed;
-  }
-
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const candidate = value as {
-    _id?: unknown;
-    id?: unknown;
-    $oid?: unknown;
-  };
-
-  return (
-    resolveEntityId(candidate._id) ||
-    resolveEntityId(candidate.id) ||
-    resolveEntityId(candidate.$oid) ||
-    null
-  );
-};
-
-const BUSINESS_LIMITS_CACHE_TTL_MS = 45 * 1000;
-
-type BusinessLimitsCacheEntry = {
-  data: BusinessPlanSnapshot;
-  expiresAt: number;
-};
-
-const businessLimitsCache = new Map<string, BusinessLimitsCacheEntry>();
-const businessLimitsInFlight = new Map<string, Promise<BusinessPlanSnapshot>>();
-
-const resolveBusinessLimitsCacheKey = () => {
-  const businessId = resolveEntityId(localStorage.getItem("businessId"));
-  return businessId || "global";
-};
 
 // ==================== UPLOAD SERVICE ====================
 export const uploadService = {
@@ -313,44 +262,12 @@ export const globalSettingsService = {
     return response.data.data;
   },
 
-  async getBusinessLimits(options?: {
-    force?: boolean;
-  }): Promise<BusinessPlanSnapshot> {
-    const force = options?.force === true;
-    const cacheKey = resolveBusinessLimitsCacheKey();
-    const now = Date.now();
-
-    if (!force) {
-      const cached = businessLimitsCache.get(cacheKey);
-      if (cached && cached.expiresAt > now) {
-        return cached.data;
-      }
-
-      const inFlight = businessLimitsInFlight.get(cacheKey);
-      if (inFlight) {
-        return inFlight;
-      }
-    }
-
-    const request = api
-      .get<{
-        success: boolean;
-        data: BusinessPlanSnapshot;
-      }>("/global-settings/business-limits")
-      .then(response => {
-        const payload = response.data.data;
-        businessLimitsCache.set(cacheKey, {
-          data: payload,
-          expiresAt: Date.now() + BUSINESS_LIMITS_CACHE_TTL_MS,
-        });
-        return payload;
-      })
-      .finally(() => {
-        businessLimitsInFlight.delete(cacheKey);
-      });
-
-    businessLimitsInFlight.set(cacheKey, request);
-    return request;
+  async getBusinessLimits(): Promise<BusinessPlanSnapshot> {
+    const response = await api.get<{
+      success: boolean;
+      data: BusinessPlanSnapshot;
+    }>("/global-settings/business-limits");
+    return response.data.data;
   },
 
   async listBusinessSubscriptions(): Promise<BusinessSubscriptionRow[]> {
@@ -394,161 +311,6 @@ export const optimizationTestService = {
   async runByUrl(url: string): Promise<any> {
     const response = await api.get(url);
     return response.data;
-  },
-};
-
-// ==================== GAMIFICATION SERVICE ====================
-export const gamificationService = {
-  async getConfig(): Promise<GamificationConfig> {
-    const response = await api.get<GamificationConfig>("/gamification/config");
-    return (response.data as any)?.data ?? response.data;
-  },
-
-  async updateConfig(
-    config: Partial<GamificationConfig>
-  ): Promise<{ message: string; config: GamificationConfig }> {
-    const response = await api.put<{
-      message: string;
-      config: GamificationConfig;
-    }>("/gamification/config", config);
-    return (response.data as any)?.data ?? response.data;
-  },
-
-  async getRanking(params?: {
-    period?: string;
-    startDate?: string;
-    endDate?: string;
-    businessId?: string;
-  }): Promise<RankingResponse> {
-    const response = await api.get<RankingResponse>("/gamification/ranking", {
-      params,
-    });
-    return (response.data as any)?.data ?? response.data;
-  },
-
-  async evaluatePeriod(data: {
-    startDate: string;
-    endDate: string;
-    notes?: string;
-  }): Promise<{ message: string; winner: PeriodWinner }> {
-    const response = await api.post<{ message: string; winner: PeriodWinner }>(
-      "/gamification/evaluate",
-      data
-    );
-    return (response.data as any)?.data ?? response.data;
-  },
-
-  async getWinners(params?: {
-    limit?: number;
-    page?: number;
-    businessId?: string;
-  }): Promise<WinnersResponse> {
-    const response = await api.get<WinnersResponse>("/gamification/winners", {
-      params,
-    });
-    const payload = (response.data as any)?.data ?? response.data;
-    const pagination = payload?.pagination || {};
-    return {
-      winners: payload?.winners || [],
-      currentPage: pagination.page || 1,
-      totalPages: pagination.pages || 1,
-      total: pagination.total || 0,
-    };
-  },
-
-  async getEmployeeStats(
-    employeeId: string,
-    params?: { recalculate?: boolean }
-  ): Promise<EmployeeStatsResponse> {
-    const resolvedEmployeeId = resolveEntityId(employeeId);
-    if (!resolvedEmployeeId) {
-      throw new Error("Identificador de empleado inválido");
-    }
-
-    const response = await api.get<EmployeeStatsResponse>(
-      `/gamification/stats/${resolvedEmployeeId}`,
-      {
-        params: params?.recalculate ? { recalculate: "true" } : undefined,
-      }
-    );
-    const payload = (response.data as any)?.data ?? response.data;
-
-    if (payload?.stats) {
-      return payload;
-    }
-
-    const looksLikeStats =
-      payload &&
-      typeof payload === "object" &&
-      ("totalPoints" in payload ||
-        "currentLevel" in payload ||
-        "currentMonthPoints" in payload);
-
-    if (looksLikeStats) {
-      return {
-        stats: payload as EmployeeStats,
-        currentRankingPosition: 0,
-        totalEmployees: 0,
-      };
-    }
-
-    return {
-      stats: {} as EmployeeStats,
-      currentRankingPosition: 0,
-      totalEmployees: 0,
-    };
-  },
-
-  async recalculatePoints(employeeId?: string): Promise<{
-    updatedEmployees: number;
-    updatedSales: number;
-  }> {
-    const response = await api.post("/gamification/recalculate-points", {
-      employeeId: employeeId || null,
-    });
-    return (response.data as any)?.data ?? response.data;
-  },
-
-  async markBonusPaid(
-    winnerId: string
-  ): Promise<{ message: string; winner: PeriodWinner }> {
-    const response = await api.put<{ message: string; winner: PeriodWinner }>(
-      `/gamification/winners/${winnerId}/pay`
-    );
-    return (response.data as any)?.data ?? response.data;
-  },
-
-  async getAchievements(): Promise<Achievement[]> {
-    const response = await api.get<Achievement[]>("/gamification/achievements");
-    return (response.data as any)?.data ?? response.data;
-  },
-
-  async getAdjustedCommission(employeeId: string): Promise<{
-    position: number | null;
-    bonusCommission: number;
-    periodStart: string;
-    periodEnd: string;
-    totalEmployees: number;
-  }> {
-    const resolvedEmployeeId = resolveEntityId(employeeId);
-    if (!resolvedEmployeeId) {
-      throw new Error("Identificador de empleado inválido");
-    }
-
-    const response = await api.get(
-      `/gamification/commission/${resolvedEmployeeId}`
-    );
-    return (response.data as any)?.data ?? response.data;
-  },
-
-  async checkAndEvaluatePeriod(): Promise<{
-    message: string;
-    winner?: PeriodWinner;
-  }> {
-    const response = await api.post<{ message: string; winner?: PeriodWinner }>(
-      "/gamification/check-period"
-    );
-    return (response.data as any)?.data ?? response.data;
   },
 };
 

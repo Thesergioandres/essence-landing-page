@@ -10,14 +10,20 @@ export class HttpSalesWriteRepository implements SalesWriteRepository {
   async registerStandardBulk(
     data: RegisterStandardSaleInput
   ): Promise<RegisterSaleResponse> {
-    const response = await api.post("/sales/standard", data);
+    const { businessId, ...payload } = data;
+    const response = await api.post("/sales/standard", payload, {
+      headers: businessId ? { "x-business-id": businessId } : undefined,
+    });
     return response.data;
   }
 
   async registerPromotionBulk(
     data: RegisterPromotionSaleInput
   ): Promise<RegisterSaleResponse> {
-    const response = await api.post("/sales/promotion", data);
+    const { businessId, ...payload } = data;
+    const response = await api.post("/sales/promotion", payload, {
+      headers: businessId ? { "x-business-id": businessId } : undefined,
+    });
     return response.data;
   }
 }

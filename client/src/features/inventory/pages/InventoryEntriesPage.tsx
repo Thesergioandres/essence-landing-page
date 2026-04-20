@@ -18,7 +18,6 @@ import { createPortal } from "react-dom";
 import { v4 as uuidv4 } from "uuid";
 import ProductSelector from "../../../components/ProductSelector";
 import { branchService } from "../../branches/services";
-import { gamificationService } from "../../common/services";
 import {
   categoryService,
   inventoryService,
@@ -216,23 +215,6 @@ export default function InventoryEntries() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  useEffect(() => {
-    let isActive = true;
-    const loadConfig = async () => {
-      try {
-        const config = await gamificationService.getConfig();
-        if (!isActive) return;
-        setBaseCommissionPercentage(config.baseCommissionPercentage ?? 20);
-      } catch (err) {
-        console.error("Error al cargar comision base:", err);
-      }
-    };
-    loadConfig();
-    return () => {
-      isActive = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (employeeManual) return;

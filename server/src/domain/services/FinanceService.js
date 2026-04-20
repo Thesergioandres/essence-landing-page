@@ -5,6 +5,8 @@
  * NO external dependencies allowed.
  */
 
+const DEFAULT_BASE_COMMISSION_PERCENTAGE = 20;
+
 export class FinanceService {
   /**
    * Resolves base commission percentage from config or fallback value.
@@ -12,7 +14,10 @@ export class FinanceService {
    * @param {number} fallback
    * @returns {number}
    */
-  static resolveBaseCommissionPercentage(configOrValue, fallback = 20) {
+  static resolveBaseCommissionPercentage(
+    configOrValue,
+    fallback = DEFAULT_BASE_COMMISSION_PERCENTAGE,
+  ) {
     if (typeof configOrValue === "number") {
       return Number.isFinite(configOrValue) ? configOrValue : fallback;
     }
@@ -47,7 +52,7 @@ export class FinanceService {
         typeof manualPriceOrProfitPercentage === "number" &&
         Number.isFinite(manualPriceOrProfitPercentage)
           ? manualPriceOrProfitPercentage
-          : 20;
+          : DEFAULT_BASE_COMMISSION_PERCENTAGE;
       const percentage = Math.max(0, Math.min(95, normalizedPercentage));
 
       // Price for employee = SalePrice - EmployeeCommission
@@ -75,7 +80,7 @@ export class FinanceService {
 
     const normalizedBaseCommission = this.resolveBaseCommissionPercentage(
       baseCommissionPercentage,
-      20,
+      DEFAULT_BASE_COMMISSION_PERCENTAGE,
     );
     const percentage = Math.max(0, Math.min(95, normalizedBaseCommission));
 

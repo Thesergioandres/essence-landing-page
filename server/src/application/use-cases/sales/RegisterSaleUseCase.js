@@ -7,11 +7,9 @@ import Branch from "../../../infrastructure/database/models/Branch.js";
 import BranchStock from "../../../infrastructure/database/models/BranchStock.js";
 import DefectiveProduct from "../../../infrastructure/database/models/DefectiveProduct.js";
 import EmployeeStock from "../../../infrastructure/database/models/EmployeeStock.js";
-import GamificationConfig from "../../../infrastructure/database/models/GamificationConfig.js";
 import Membership from "../../../infrastructure/database/models/Membership.js";
 import PaymentMethod from "../../../infrastructure/database/models/PaymentMethod.js";
 import { getEmployeeCommissionInfo } from "../../../infrastructure/services/employeePricing.service.js";
-import { applySaleGamification } from "../../../infrastructure/services/gamification.service.js";
 import {
   employeeRoleQuery,
   isEmployeeRole,
@@ -202,14 +200,11 @@ export class RegisterSaleUseCase {
             commissionInfo.profitPercentage,
         });
       } else {
-        const config = await GamificationConfig.findOne().lean();
         commissionPolicy = CommissionPolicyService.resolveEmployeeCommission({
           requestedCommissionRate: employeeProfitPercentage,
-          baseCommissionRate: FinanceService.resolveBaseCommissionPercentage(
-            config,
+          baseCommissionRate:
+            commissionInfo?.baseCommissionPercentage ??
             employeeProfitPercentage,
-          ),
-          bonusCommission: commissionInfo?.bonusCommission || 0,
         });
       }
     }
@@ -872,14 +867,6 @@ export class RegisterSaleUseCase {
               });
             }
           }
-        }
-
-        if (employeeId) {
-          await applySaleGamification({
-            businessId,
-            sale: createdSale,
-            product,
-          });
         }
       }
 

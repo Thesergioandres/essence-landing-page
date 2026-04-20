@@ -8,42 +8,37 @@ import { CheckCircle, FileText, RefreshCcw, ShoppingBag } from "lucide-react";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import ProductSelector from "../../../components/ProductSelector";
+import { useBusiness } from "../../../context/BusinessContext";
 import type {
-    RegisterSaleResponse,
-    RegisterStandardSaleInput,
+  RegisterSaleResponse,
+  RegisterStandardSaleInput,
 } from "../../../core/domain/sales/sales.types";
 import { useSession } from "../../../hooks/useSession";
 import { Button, Card } from "../../../shared/components/ui";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
-import type {
-    EmployeeStats,
-    GamificationConfig,
-    LevelConfig,
-} from "../../analytics/types/gamification.types";
 import { branchService } from "../../branches/services/branch.service";
 import type { Branch } from "../../business/types/business.types";
-import { gamificationService } from "../../common/services";
 import { employeeService } from "../../employees/services/employee.service";
 import { productsService } from "../../inventory/api/products.service";
 import { stockService } from "../../inventory/services/inventory.service";
 import type { Product } from "../../inventory/types/product.types";
 import {
-    CustomerSelector,
-    FinancialPanel,
-    InventoryGrid,
-    LocationSelector,
-    OrderCart,
-    OrderSummary,
-    WarrantySection,
+  CustomerSelector,
+  FinancialPanel,
+  InventoryGrid,
+  LocationSelector,
+  OrderCart,
+  OrderSummary,
+  WarrantySection,
 } from "../components/admin-order";
 import { initialOrderState, orderReducer } from "../reducers/orderReducer";
 import {
-    defectiveProductService,
-    saleService,
+  defectiveProductService,
+  saleService,
 } from "../services/sales.service";
 import type {
-    AdminOrderPayload,
-    ProductWithStock,
+  AdminOrderPayload,
+  ProductWithStock,
 } from "../types/admin-order.types";
 
 type RegisterStandardSaleHandler = (
@@ -54,11 +49,238 @@ interface StandardSalePageProps {
   registerStandardSale?: RegisterStandardSaleHandler;
 }
 
+const sanitizeIdString = (raw: string): string | null => {
+  const trimmed = String(raw || "").trim();
+  if (
+    !trimmed ||
+    trimmed === "[object Object]" ||
+    trimmed === "undefined" ||
+    trimmed === "null"
+  ) {
+    return null;
+  }
+
+  const objectIdMatch = trimmed.match(/[a-fA-F0-9]{24}/);
+  if (objectIdMatch) {
+    return objectIdMatch[0].toLowerCase();
+  }
+
+  return trimmed;
+};
+
+const toByteArray = (input: unknown, depth = 0): number[] | null => {
+  if (depth > 4 || input == null) {
+    return null;
+  }
+
+  if (Array.isArray(input)) {
+    return input;
+  }
+
+  if (typeof ArrayBuffer !== "undefined" && input instanceof ArrayBuffer) {
+    return Array.from(new Uint8Array(input));
+  }
+
+  if (typeof ArrayBuffer !== "undefined" && ArrayBuffer.isView(input)) {
+    const view = input as ArrayBufferView;
+    return Array.from(
+      new Uint8Array(view.buffer, view.byteOffset, view.byteLength)
+    );
+  }
+
+  if (typeof input === "object") {
+    const candidate = input as {
+      data?: unknown;
+      buffer?: unknown;
+      value?: unknown;
+      type?: unknown;
+    };
+
+    if (
+      typeof candidate.type === "string" &&
+      candidate.type.toLowerCase() === "buffer"
+    ) {
+      return toByteArray(candidate.data, depth + 1);
+    }
+
+    return (
+      toByteArray(candidate.data, depth + 1) ||
+      toByteArray(candidate.buffer, depth + 1) ||
+      toByteArray(candidate.value, depth + 1)
+    );
+  }
+
+  return null;
+};
+
+const bytesToHexObjectId = (bytes: unknown): string | null => {
+  const normalizedBytes = toByteArray(bytes);
+  if (!normalizedBytes || normalizedBytes.length !== 12) {
+    return null;
+  }
+
+  const isValidByteArray = normalizedBytes.every(
+    item => typeof item === "number" && item >= 0 && item <= 255
+  );
+  if (!isValidByteArray) {
+    return null;
+  }
+
+  return normalizedBytes
+    .map(item => item.toString(16).padStart(2, "0"))
+    .join("")
+    .toLowerCase();
+};
+
+const extractObjectIdFromSerialized = (value: unknown): string | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  try {
+    const serialized = JSON.stringify(value);
+    if (!serialized) {
+      return null;
+    }
+
+    const objectIdMatch = serialized.match(/[a-fA-F0-9]{24}/);
+    return objectIdMatch ? objectIdMatch[0].toLowerCase() : null;
+  } catch {
+    return null;
+  }
+};
+
+const resolveEntityId = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    return sanitizeIdString(value);
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as {
+    _id?: unknown;
+    id?: unknown;
+    $oid?: unknown;
+    oid?: unknown;
+    buffer?: unknown;
+    data?: unknown;
+    toHexString?: () => string;
+    toString?: () => string;
+    toJSON?: () => unknown;
+  };
+
+  const fromToHex =
+    typeof candidate.toHexString === "function"
+      ? sanitizeIdString(candidate.toHexString())
+      : null;
+
+  const nested =
+    resolveEntityId(candidate._id) ||
+    resolveEntityId(candidate.id) ||
+    resolveEntityId(candidate.$oid) ||
+    resolveEntityId(candidate.oid);
+
+  const fromBuffer =
+    bytesToHexObjectId(candidate.buffer) || bytesToHexObjectId(candidate.data);
+
+  const fromJson =
+    typeof candidate.toJSON === "function"
+      ? resolveEntityId(candidate.toJSON())
+      : null;
+
+  if (fromToHex) {
+    return fromToHex;
+  }
+
+  if (nested) {
+    return nested;
+  }
+
+  if (fromBuffer) {
+    return fromBuffer;
+  }
+
+  if (fromJson) {
+    return fromJson;
+  }
+
+  if (typeof candidate.toString === "function") {
+    const fromToString = sanitizeIdString(candidate.toString());
+    if (fromToString) {
+      return fromToString;
+    }
+  }
+
+  return extractObjectIdFromSerialized(value);
+};
+
+const resolveBusinessIdFromSessionUser = (sessionUser: unknown): string => {
+  if (!sessionUser || typeof sessionUser !== "object") {
+    return "";
+  }
+
+  const candidate = sessionUser as {
+    business?: unknown;
+    memberships?: Array<{ business?: unknown; status?: unknown }>;
+  };
+
+  const directBusinessId = resolveEntityId(candidate.business);
+  if (directBusinessId) {
+    return directBusinessId;
+  }
+
+  const membershipBusinessIds = Array.isArray(candidate.memberships)
+    ? candidate.memberships
+        .filter(membership => {
+          const status = String(membership?.status || "").toLowerCase();
+          return status !== "pending" && status !== "suspended";
+        })
+        .map(membership => resolveEntityId(membership.business) || "")
+        .filter(Boolean)
+    : [];
+
+  const uniqueBusinessIds = Array.from(new Set(membershipBusinessIds));
+  return uniqueBusinessIds.length === 1 ? uniqueBusinessIds[0] : "";
+};
+
 export default function StandardSalePage({
   registerStandardSale,
 }: StandardSalePageProps = {}) {
-  const { user, loading: userLoading } = useSession(); // Get user from session
+  const { user, loading: userLoading } = useSession();
+  const { businessId: contextBusinessId, hydrating: businessHydrating } =
+    useBusiness();
   const isEmployee = user?.role === "employee";
+  const currentUserId =
+    resolveEntityId(user?._id) ||
+    resolveEntityId((user as { id?: unknown })?.id) ||
+    "";
+  const effectiveBusinessId = useMemo(
+    () =>
+      resolveEntityId(contextBusinessId) ||
+      resolveEntityId(localStorage.getItem("businessId")) ||
+      resolveBusinessIdFromSessionUser(user) ||
+      "",
+    [contextBusinessId, user]
+  );
+
+  useEffect(() => {
+    if (!effectiveBusinessId) {
+      return;
+    }
+
+    const storedBusinessId = resolveEntityId(
+      localStorage.getItem("businessId")
+    );
+    if (storedBusinessId !== effectiveBusinessId) {
+      localStorage.setItem("businessId", effectiveBusinessId);
+    }
+  }, [effectiveBusinessId]);
 
   // State: Order managed by reducer
   const [order, dispatch] = useReducer(orderReducer, {
@@ -82,16 +304,6 @@ export default function StandardSalePage({
   const [dataLoading, setDataLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [gamificationLoading, setGamificationLoading] = useState(false);
-  const [gamificationConfig, setGamificationConfig] =
-    useState<GamificationConfig | null>(null);
-  const [employeeStats, setEmployeeStats] =
-    useState<EmployeeStats | null>(null);
-  const [rankingInfo, setRankingInfo] = useState<{
-    position: number | null;
-    totalEmployees: number;
-    bonusCommission: number;
-  } | null>(null);
   const [saleResult, setSaleResult] = useState<{
     success: boolean;
     saleGroupId: string;
@@ -104,16 +316,16 @@ export default function StandardSalePage({
 
   // Update location when user loads (fix timing issue)
   useEffect(() => {
-    if (user && isEmployee) {
+    if (isEmployee) {
       dispatch({
         type: "SET_LOCATION",
         locationType: "employee",
-        locationId: user?._id || "employee",
+        locationId: currentUserId || "employee",
         locationName: "Mi Inventario",
       });
       dispatch({ type: "SET_PAYMENT_METHOD", method: "transfer" });
     }
-  }, [user, isEmployee]);
+  }, [currentUserId, isEmployee]);
 
   // ==================== DATA FETCHING ====================
   useEffect(() => {
@@ -133,14 +345,80 @@ export default function StandardSalePage({
               .catch(() => ({ branches: [] as Branch[] })),
           ]);
 
-          const employeeBranches = allowedBranchesRes.branches || [];
+          const employeeBranches = (allowedBranchesRes.branches || [])
+            .map((branch, index) => {
+              const normalizedBranchId = resolveEntityId(branch?._id);
+              if (!normalizedBranchId) {
+                return null;
+              }
+
+              return {
+                ...branch,
+                _id: normalizedBranchId,
+                name:
+                  typeof branch?.name === "string" && branch.name.trim()
+                    ? branch.name
+                    : `Sede ${index + 1}`,
+              } as Branch;
+            })
+            .filter((branch): branch is Branch => Boolean(branch));
           setBranches(employeeBranches);
 
-          const allProducts = await productsService.getProducts();
+          const allProducts = await productsService
+            .getProducts()
+            .catch(() => []);
           const distStockMap = new Map<string, number>();
+          const assignedProducts = (distProductsRes.products || [])
+            .map((item: any) => {
+              const rawProduct = item?.product;
+              const productId = resolveEntityId(rawProduct);
+              if (!productId) {
+                return null;
+              }
+
+              const quantity = Number(item?.quantity) || 0;
+              distStockMap.set(productId, quantity);
+
+              return {
+                _id: productId,
+                name:
+                  typeof rawProduct?.name === "string" &&
+                  rawProduct.name.trim().length > 0
+                    ? rawProduct.name
+                    : "Producto sin nombre",
+                purchasePrice:
+                  Number(
+                    rawProduct?.averageCost ??
+                      rawProduct?.purchasePrice ??
+                      rawProduct?.employeePrice ??
+                      0
+                  ) || 0,
+                averageCost:
+                  Number(rawProduct?.averageCost) > 0
+                    ? Number(rawProduct?.averageCost)
+                    : undefined,
+                clientPrice:
+                  Number(
+                    rawProduct?.clientPrice ??
+                      rawProduct?.suggestedPrice ??
+                      rawProduct?.basePrice ??
+                      rawProduct?.employeePrice ??
+                      0
+                  ) || 0,
+                employeePrice: Number(rawProduct?.employeePrice) || 0,
+                warehouseStock: Number(rawProduct?.warehouseStock) || 0,
+                totalStock: Number(rawProduct?.totalStock) || quantity,
+                employeeStock: quantity,
+                category: rawProduct?.category,
+                image: rawProduct?.image ?? rawProduct?.mainImage ?? undefined,
+              } as ProductWithStock;
+            })
+            .filter((product): product is ProductWithStock => Boolean(product));
+
           distProductsRes.products.forEach((item: any) => {
-            if (item.product && item.product._id) {
-              distStockMap.set(String(item.product._id), item.quantity);
+            const productId = resolveEntityId(item?.product);
+            if (productId) {
+              distStockMap.set(productId, Number(item?.quantity) || 0);
             }
           });
 
@@ -152,58 +430,122 @@ export default function StandardSalePage({
             dispatch({
               type: "SET_LOCATION",
               locationType: "branch",
-              locationId: firstBranch._id,
+              locationId: resolveEntityId(firstBranch._id) || firstBranch._id,
               locationName: firstBranch.name,
             });
           } else {
             dispatch({
               type: "SET_LOCATION",
               locationType: "employee",
-              locationId: user?._id || "employee",
+              locationId: currentUserId || "employee",
               locationName: "Mi Inventario",
             });
           }
 
-          const mappedProducts: ProductWithStock[] = (
-            allProducts as Product[]
-          ).map(p => ({
-            _id: p._id,
-            name: p.name,
-            purchasePrice:
-              p.averageCost ?? p.purchasePrice ?? p.employeePrice ?? 0,
-            averageCost: p.averageCost ?? undefined,
-            clientPrice: p.clientPrice ?? p.suggestedPrice ?? 0,
-            employeePrice: p.employeePrice ?? 0,
-            warehouseStock: p.warehouseStock ?? 0, // HYBRID MODEL: Employees CAN see warehouse stock for dropshipping
-            totalStock: p.totalStock ?? 0,
-            employeeStock: distStockMap.get(p._id) || 0,
-            category: p.category,
-            image: p.image ?? undefined,
-          }));
+          const catalogProducts = (allProducts as Product[])
+            .map(p => {
+              const productId = resolveEntityId(p._id);
+              if (!productId) {
+                return null;
+              }
 
-          setProducts(mappedProducts);
+              return {
+                _id: productId,
+                name: p.name,
+                purchasePrice:
+                  p.averageCost ?? p.purchasePrice ?? p.employeePrice ?? 0,
+                averageCost: p.averageCost ?? undefined,
+                clientPrice: p.clientPrice ?? p.suggestedPrice ?? 0,
+                employeePrice: p.employeePrice ?? 0,
+                warehouseStock: p.warehouseStock ?? 0, // HYBRID MODEL: Employees CAN see warehouse stock for dropshipping
+                totalStock: p.totalStock ?? 0,
+                employeeStock: distStockMap.get(productId) || 0,
+                category: p.category,
+                image: p.image ?? undefined,
+              } as ProductWithStock;
+            })
+            .filter((product): product is ProductWithStock => Boolean(product));
+
+          const mergedProductsById = new Map<string, ProductWithStock>();
+
+          catalogProducts.forEach(product => {
+            mergedProductsById.set(product._id, product);
+          });
+
+          assignedProducts.forEach(assignedProduct => {
+            const existingProduct = mergedProductsById.get(assignedProduct._id);
+            if (!existingProduct) {
+              mergedProductsById.set(assignedProduct._id, assignedProduct);
+              return;
+            }
+
+            mergedProductsById.set(assignedProduct._id, {
+              ...existingProduct,
+              name: existingProduct.name || assignedProduct.name,
+              purchasePrice:
+                existingProduct.purchasePrice || assignedProduct.purchasePrice,
+              averageCost:
+                existingProduct.averageCost ?? assignedProduct.averageCost,
+              clientPrice:
+                existingProduct.clientPrice || assignedProduct.clientPrice,
+              employeePrice:
+                existingProduct.employeePrice || assignedProduct.employeePrice,
+              category: existingProduct.category ?? assignedProduct.category,
+              image: existingProduct.image ?? assignedProduct.image,
+              employeeStock:
+                distStockMap.get(assignedProduct._id) ??
+                assignedProduct.employeeStock ??
+                0,
+            });
+          });
+
+          setProducts(Array.from(mergedProductsById.values()));
         } else {
           // Fetch Admin Data
           const [branchesData, productsData] = await Promise.all([
             branchService.getAll(),
             productsService.getProducts(),
           ]);
-          setBranches(branchesData.filter(b => b.active !== false));
+          setBranches(
+            branchesData
+              .map(branch => {
+                const normalizedBranchId = resolveEntityId(branch?._id);
+                if (!normalizedBranchId) {
+                  return null;
+                }
 
-          const productsWithStock: ProductWithStock[] = (
-            productsData as Product[]
-          ).map(p => ({
-            _id: p._id,
-            name: p.name,
-            purchasePrice: p.averageCost ?? p.purchasePrice ?? 0,
-            averageCost: p.averageCost ?? undefined,
-            clientPrice: p.clientPrice ?? p.suggestedPrice ?? 0,
-            employeePrice: p.employeePrice,
-            warehouseStock: p.warehouseStock ?? 0,
-            totalStock: p.totalStock ?? 0,
-            category: p.category,
-            image: p.image ?? undefined,
-          }));
+                return {
+                  ...branch,
+                  _id: normalizedBranchId,
+                } as Branch;
+              })
+              .filter(
+                (branch): branch is Branch =>
+                  Boolean(branch) && branch.active !== false
+              )
+          );
+
+          const productsWithStock = (productsData as Product[])
+            .map(p => {
+              const productId = resolveEntityId(p._id);
+              if (!productId) {
+                return null;
+              }
+
+              return {
+                _id: productId,
+                name: p.name,
+                purchasePrice: p.averageCost ?? p.purchasePrice ?? 0,
+                averageCost: p.averageCost ?? undefined,
+                clientPrice: p.clientPrice ?? p.suggestedPrice ?? 0,
+                employeePrice: p.employeePrice,
+                warehouseStock: p.warehouseStock ?? 0,
+                totalStock: p.totalStock ?? 0,
+                category: p.category,
+                image: p.image ?? undefined,
+              } as ProductWithStock;
+            })
+            .filter((product): product is ProductWithStock => Boolean(product));
           setProducts(productsWithStock);
         }
       } catch (error) {
@@ -214,51 +556,41 @@ export default function StandardSalePage({
     };
 
     fetchData();
-  }, [userLoading, isEmployee, user?._id]);
+  }, [currentUserId, isEmployee, userLoading]);
 
   useEffect(() => {
-    if (!isEmployee || !user?._id) return;
+    if (!isEmployee) {
+      dispatch({
+        type: "SET_EMPLOYEE_PROFIT",
+        isEmployeeSale: false,
+        profitPercentage: 0,
+      });
+      return;
+    }
 
-    let isActive = true;
-    const loadGamification = async () => {
-      try {
-        setGamificationLoading(true);
-        const [configRes, statsRes, rankingRes] = await Promise.all([
-          gamificationService.getConfig(),
-          gamificationService.getEmployeeStats(user._id),
-          gamificationService.getAdjustedCommission(user._id),
-        ]);
-
-        if (!isActive) return;
-        setGamificationConfig(configRes as GamificationConfig);
-        setEmployeeStats(statsRes?.stats ?? null);
-        setRankingInfo({
-          position: rankingRes?.position ?? null,
-          totalEmployees: rankingRes?.totalEmployees ?? 0,
-          bonusCommission: rankingRes?.bonusCommission ?? 0,
-        });
-      } catch (error) {
-        console.error("Error loading gamification info:", error);
-      } finally {
-        if (isActive) setGamificationLoading(false);
-      }
+    const userData = user as {
+      isCommissionFixed?: boolean;
+      customCommissionRate?: number;
     };
+    const fixedRate = Number(userData?.customCommissionRate);
+    const resolvedProfitPercentage =
+      userData?.isCommissionFixed &&
+      Number.isFinite(fixedRate) &&
+      fixedRate >= 0
+        ? fixedRate
+        : 20;
 
-    loadGamification();
-    return () => {
-      isActive = false;
-    };
-  }, [isEmployee, user?._id]);
+    const normalizedProfitPercentage = Math.max(
+      0,
+      Math.min(95, resolvedProfitPercentage)
+    );
 
-  useEffect(() => {
-    const bonus = rankingInfo?.bonusCommission || 0;
-    const profitPercentage = 20 + bonus;
     dispatch({
       type: "SET_EMPLOYEE_PROFIT",
-      isEmployeeSale: isEmployee,
-      profitPercentage,
+      isEmployeeSale: true,
+      profitPercentage: normalizedProfitPercentage,
     });
-  }, [isEmployee, rankingInfo?.bonusCommission]);
+  }, [isEmployee, user]);
 
   // Fetch branch stock when branch location is selected
   useEffect(() => {
@@ -277,10 +609,9 @@ export default function StandardSalePage({
 
         const stockMap = new Map<string, number>();
         branchStockData.forEach(item => {
-          const productId =
-            typeof item.product === "object" ? item.product?._id : item.product;
+          const productId = resolveEntityId(item.product);
           if (productId) {
-            stockMap.set(String(productId), item.quantity || 0);
+            stockMap.set(productId, Number(item.quantity) || 0);
           }
         });
         setBranchStock(stockMap);
@@ -310,8 +641,7 @@ export default function StandardSalePage({
       else if (order.locationType === "branch")
         stock = branchStock.get(p._id) ?? 0;
       // Employee's personal inventory
-      else if (order.locationType === "employee")
-        stock = p.employeeStock ?? 0;
+      else if (order.locationType === "employee") stock = p.employeeStock ?? 0;
 
       const reservedInCart = quantitiesInCartByProduct.get(p._id) || 0;
       const remainingStock = Math.max(0, stock - reservedInCart);
@@ -359,62 +689,9 @@ export default function StandardSalePage({
     [productsWithLocationStock, order.locationType]
   );
 
-  const gamificationSummary = useMemo(() => {
-    const levels = (gamificationConfig?.levels || []) as LevelConfig[];
-    const sorted = [...levels].sort(
-      (a, b) => (a.minPoints || 0) - (b.minPoints || 0)
-    );
-    const points = employeeStats?.totalPoints || 0;
-    let current = sorted[0] || null;
-    for (const level of sorted) {
-      if (points >= (level.minPoints || 0)) {
-        current = level;
-      }
-    }
-    const next = sorted.find(level => (level.minPoints || 0) > points) || null;
-    const currentMin = current?.minPoints || 0;
-    const nextMin = next?.minPoints || currentMin;
-    const pointsToNext = next ? Math.max(0, next.minPoints - points) : 0;
-    const pointsPerCurrencyUnit =
-      gamificationConfig?.generalRules?.pointsPerCurrencyUnit || 0;
-    const pointsPerSaleConfirmed =
-      gamificationConfig?.generalRules?.pointsPerSaleConfirmed || 0;
-    const estimatedRevenueToNext =
-      pointsPerCurrencyUnit > 0 ? pointsToNext / pointsPerCurrencyUnit : null;
-    const estimatedSalesToNext =
-      pointsPerSaleConfirmed > 0
-        ? Math.ceil(pointsToNext / pointsPerSaleConfirmed)
-        : null;
-
-    return {
-      points,
-      current,
-      next,
-      currentMin,
-      nextMin,
-      progressPercent:
-        next && nextMin > currentMin
-          ? Math.min(
-              100,
-              Math.max(
-                0,
-                ((points - currentMin) / (nextMin - currentMin)) * 100
-              )
-            )
-          : 100,
-      pointsToNext,
-      estimatedRevenueToNext,
-      estimatedSalesToNext,
-    };
-  }, [gamificationConfig, employeeStats]);
-
   // ==================== HANDLERS ====================
   const handleLocationChange = useCallback(
-    (
-      type: "warehouse" | "branch" | "employee",
-      id: string,
-      name: string
-    ) => {
+    (type: "warehouse" | "branch" | "employee", id: string, name: string) => {
       // Allow Employees to switch between "employee" (My Inventory) and "branch" (Allowed Warehouse)
       // They cannot select "warehouse" (Main Warehouse) usually, unless its a branch?
       // LocationSelector sends "warehouse" type for the main button.
@@ -424,7 +701,7 @@ export default function StandardSalePage({
       dispatch({
         type: "SET_LOCATION",
         locationType: type as any,
-        locationId: id,
+        locationId: resolveEntityId(id) || id,
         locationName: name,
       });
     },
@@ -433,6 +710,12 @@ export default function StandardSalePage({
 
   const handleAddProduct = useCallback(
     (product: ProductWithStock, quantity: number) => {
+      const productId = resolveEntityId(product._id);
+      if (!productId) {
+        setSubmitError("No se pudo resolver el id del producto.");
+        return;
+      }
+
       let stock = 0;
       if (order.locationType === "warehouse") stock = product.warehouseStock;
       else if (order.locationType === "branch")
@@ -444,7 +727,7 @@ export default function StandardSalePage({
       dispatch({
         type: "ADD_ITEM",
         item: {
-          productId: product._id,
+          productId,
           productName: product.name,
           quantity,
           unitPrice: product.clientPrice,
@@ -543,6 +826,10 @@ export default function StandardSalePage({
         saleGroupId,
       };
 
+      if (isEmployee && currentUserId) {
+        payload.employeeId = currentUserId;
+      }
+
       if (order.paymentProof) {
         payload.paymentProof = order.paymentProof;
         payload.paymentProofMimeType = order.paymentProofMimeType || undefined;
@@ -589,6 +876,8 @@ export default function StandardSalePage({
 
         await registerStandardSaleHandler({
           items: payload.items,
+          employeeId: payload.employeeId,
+          businessId: effectiveBusinessId || undefined,
           locationType: payload.locationType,
           branchId: payload.branchId,
           paymentMethodId: payload.paymentMethodId,
@@ -653,7 +942,13 @@ export default function StandardSalePage({
     } finally {
       setIsSubmitting(false);
     }
-  }, [order]);
+  }, [
+    currentUserId,
+    effectiveBusinessId,
+    isEmployee,
+    order,
+    registerStandardSale,
+  ]);
 
   const handleNewOrder = useCallback(() => {
     dispatch({ type: "CLEAR_ORDER" });
@@ -667,116 +962,6 @@ export default function StandardSalePage({
       currency: "MXN",
       maximumFractionDigits: 0,
     }).format(value);
-
-  const getProductNameById = (productId: string) =>
-    products.find(product => product._id === productId)?.name || productId;
-
-  const getCategoryNameById = (categoryId?: string) => {
-    if (!categoryId) return "Categoria";
-    const found = products.find(product => {
-      const category = product.category as any;
-      return category?._id === categoryId || category === categoryId;
-    });
-    const category = found?.category as any;
-    return category?.name || category || categoryId;
-  };
-
-  const resolveMultiplierLabel = (multiplier: any) => {
-    const type = multiplier?.type || "custom";
-    const targetType = multiplier?.targetType || "all";
-    const targetId = multiplier?.targetId || "";
-
-    if (type === "weekend" || targetType === "weekend") {
-      return "Fines de semana";
-    }
-
-    if (targetType === "product") {
-      return `Producto: ${getProductNameById(targetId)}`;
-    }
-
-    if (targetType === "category") {
-      return `Categoria: ${getCategoryNameById(targetId)}`;
-    }
-
-    return type === "custom" ? "Multiplicador" : type;
-  };
-
-  const projectedPoints = useMemo(() => {
-    if (!isEmployee) return 0;
-    const rules = gamificationConfig?.generalRules;
-    const pointsPerCurrencyUnit = Number(rules?.pointsPerCurrencyUnit || 0);
-    const pointsPerSaleConfirmed = Number(rules?.pointsPerSaleConfirmed || 0);
-    const multipliers = gamificationConfig?.activeMultipliers || [];
-
-    if (!pointsPerCurrencyUnit && !pointsPerSaleConfirmed) return 0;
-
-    const discountAmount =
-      order.discount || (order.subtotal * order.discountPercent) / 100 || 0;
-    const subtotal = order.subtotal || 0;
-
-    const now = new Date();
-    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
-
-    return order.items.reduce((total, item) => {
-      const product = products.find(p => p._id === item.productId) as any;
-      const itemSubtotal = (item.unitPrice || 0) * (item.quantity || 0);
-      const discountShare =
-        subtotal > 0 ? (itemSubtotal / subtotal) * discountAmount : 0;
-      const saleAmount = Math.max(0, itemSubtotal - discountShare);
-      let points = saleAmount * pointsPerCurrencyUnit + pointsPerSaleConfirmed;
-
-      let multiplierValue = 1;
-      for (const multiplier of multipliers) {
-        if (!multiplier?.active) continue;
-        const targetType = multiplier?.targetType || "all";
-        const targetId = String(multiplier?.targetId || "");
-        const value = Number(multiplier?.value || 1);
-
-        if (value <= 0) continue;
-
-        if (multiplier.type === "weekend" || targetType === "weekend") {
-          if (isWeekend) multiplierValue *= value;
-          continue;
-        }
-
-        if (targetType === "all") {
-          multiplierValue *= value;
-          continue;
-        }
-
-        if (targetType === "product") {
-          if (String(item.productId) === targetId) multiplierValue *= value;
-          continue;
-        }
-
-        if (targetType === "category") {
-          const category = product?.category as any;
-          const categoryId = category?._id || category || "";
-          if (String(categoryId) === targetId) multiplierValue *= value;
-        }
-      }
-
-      points *= multiplierValue;
-      return total + Math.max(0, Math.round(points));
-    }, 0);
-  }, [
-    gamificationConfig,
-    isEmployee,
-    order.items,
-    order.discount,
-    order.discountPercent,
-    order.subtotal,
-    products,
-  ]);
-
-  const projectedTotalPoints =
-    (employeeStats?.totalPoints || 0) + projectedPoints;
-  const projectedPointsToNext = gamificationSummary.next
-    ? Math.max(0, gamificationSummary.nextMin - projectedTotalPoints)
-    : 0;
-  const projectedHitsNext = gamificationSummary.next
-    ? projectedPointsToNext === 0
-    : false;
 
   // ==================== LOADING STATE ====================
   if (dataLoading) {
@@ -867,9 +1052,7 @@ export default function StandardSalePage({
                   Registrar Venta
                 </h1>
                 <p className="mt-1 text-sm text-slate-300">
-                  {isEmployee
-                    ? "Panel de Empleado"
-                    : "Panel de Administrador"}
+                  {isEmployee ? "Panel de Empleado" : "Panel de Administrador"}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -1010,152 +1193,6 @@ export default function StandardSalePage({
 
           {/* ============ RIGHT COLUMN: Options & Summary ============ */}
           <div className="space-y-5">
-            {isEmployee && (
-              <div className="rounded-xl border border-gray-700/50 bg-gray-800/30 p-4">
-                <h3 className="mb-3 text-lg font-semibold text-white">
-                  🏅 Mi progreso
-                </h3>
-                {gamificationLoading ? (
-                  <p className="text-sm text-gray-400">
-                    Cargando gamificacion...
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="rounded-lg bg-gray-900/40 p-3">
-                        <p className="text-xs text-gray-400">Rango actual</p>
-                        <p className="text-base font-semibold text-white">
-                          {gamificationSummary.current?.name || "Sin rango"}
-                        </p>
-                      </div>
-                      <div className="rounded-lg bg-gray-900/40 p-3">
-                        <p className="text-xs text-gray-400">Puntos</p>
-                        <p className="text-base font-semibold text-white">
-                          {gamificationSummary.points}
-                        </p>
-                      </div>
-                      <div className="rounded-lg bg-gray-900/40 p-3">
-                        <p className="text-xs text-gray-400">Ranking</p>
-                        <p className="text-base font-semibold text-white">
-                          {rankingInfo?.position
-                            ? `#${rankingInfo.position} / ${rankingInfo.totalEmployees}`
-                            : "Sin ranking"}
-                        </p>
-                      </div>
-                      <div className="rounded-lg bg-gray-900/40 p-3">
-                        <p className="text-xs text-gray-400">Bono comision</p>
-                        <p className="text-base font-semibold text-white">
-                          +{rankingInfo?.bonusCommission || 0}%
-                        </p>
-                      </div>
-                    </div>
-
-                    {gamificationSummary.next ? (
-                      <div className="rounded-lg border border-gray-700/50 bg-gray-900/40 p-3 text-sm">
-                        <p className="text-xs text-gray-400">Siguiente rango</p>
-                        <p className="font-semibold text-white">
-                          {gamificationSummary.next.name}
-                        </p>
-                        <div className="mt-3">
-                          <div className="mb-1 flex items-center justify-between text-xs text-gray-400">
-                            <span>
-                              {gamificationSummary.currentMin} /{" "}
-                              {gamificationSummary.nextMin} pts
-                            </span>
-                            <span>
-                              {Math.round(gamificationSummary.progressPercent)}%
-                            </span>
-                          </div>
-                          <div className="h-2 rounded-full bg-gray-700">
-                            <div
-                              className="h-2 rounded-full bg-purple-500"
-                              style={{
-                                width: `${gamificationSummary.progressPercent}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <p className="mt-1 text-gray-300">
-                          Te faltan {gamificationSummary.pointsToNext} puntos.
-                        </p>
-                        {gamificationSummary.estimatedRevenueToNext !==
-                          null && (
-                          <p className="text-gray-400">
-                            Aprox{" "}
-                            {formatCurrency(
-                              gamificationSummary.estimatedRevenueToNext
-                            )}{" "}
-                            en ventas.
-                          </p>
-                        )}
-                        {gamificationSummary.estimatedSalesToNext !== null && (
-                          <p className="text-gray-400">
-                            O ~{gamificationSummary.estimatedSalesToNext} ventas
-                            confirmadas.
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-gray-700/50 bg-gray-900/40 p-3 text-sm text-gray-300">
-                        Estas en el rango maximo.
-                      </div>
-                    )}
-
-                    <div className="rounded-lg border border-gray-700/50 bg-gray-900/40 p-3 text-sm">
-                      <p className="text-xs text-gray-400">
-                        Multiplicadores activos
-                      </p>
-                      {gamificationConfig?.activeMultipliers?.filter(
-                        m => m.active
-                      ).length ? (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {gamificationConfig?.activeMultipliers
-                            ?.filter(m => m.active)
-                            .map((multiplier, idx) => (
-                              <span
-                                key={`${multiplier.type}-${idx}`}
-                                className="rounded-full bg-purple-500/20 px-3 py-1 text-xs text-purple-200"
-                              >
-                                {resolveMultiplierLabel(multiplier)}
-                                {multiplier.value
-                                  ? ` x${multiplier.value}`
-                                  : ""}
-                              </span>
-                            ))}
-                        </div>
-                      ) : (
-                        <p className="mt-2 text-xs text-gray-500">
-                          No hay multiplicadores activos.
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="rounded-lg border border-gray-700/50 bg-gray-900/40 p-3 text-sm">
-                      <p className="text-xs text-gray-400">
-                        Proyeccion de puntos con este carrito
-                      </p>
-                      <p className="mt-2 text-lg font-semibold text-white">
-                        +{projectedPoints} pts
-                      </p>
-                      <p className="text-sm text-gray-300">
-                        Total estimado: {projectedTotalPoints} pts
-                      </p>
-                      {gamificationSummary.next && (
-                        <p className="text-xs text-gray-400">
-                          {projectedHitsNext
-                            ? `Alcanzas ${gamificationSummary.next.name}`
-                            : `Te faltarian ${projectedPointsToNext} pts para ${gamificationSummary.next.name}`}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500">
-                        Estimado; se confirma al aprobar la venta.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Customer Selector */}
             <CustomerSelector
               customerId={order.customerId}

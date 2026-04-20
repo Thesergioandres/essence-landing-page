@@ -141,6 +141,8 @@ export const saleService = {
       quantity: number;
       salePrice: number;
     }>;
+    employeeId?: string;
+    businessId?: string;
     branchId?: string;
     notes?: string;
     saleDate?: string;
@@ -179,7 +181,10 @@ export const saleService = {
       adminProfit: number;
     };
   }> {
-    const response = await api.post("/sales/standard", data);
+    const { businessId, ...payload } = data;
+    const response = await api.post("/sales/standard", payload, {
+      headers: businessId ? { "x-business-id": businessId } : undefined,
+    });
     return response.data;
   },
 
@@ -191,6 +196,8 @@ export const saleService = {
       salePrice: number;
       isPromotion?: boolean;
     }>;
+    employeeId?: string;
+    businessId?: string;
     branchId?: string;
     notes?: string;
     saleDate?: string;
@@ -229,7 +236,10 @@ export const saleService = {
       adminProfit: number;
     };
   }> {
-    const response = await api.post("/sales/promotion", data);
+    const { businessId, ...payload } = data;
+    const response = await api.post("/sales/promotion", payload, {
+      headers: businessId ? { "x-business-id": businessId } : undefined,
+    });
     return response.data;
   },
 

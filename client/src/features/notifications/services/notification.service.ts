@@ -272,7 +272,6 @@ export const pushSubscriptionService = {
       stock?: boolean;
       credits?: boolean;
       subscriptions?: boolean;
-      gamification?: boolean;
     };
     userAgent?: string;
   }): Promise<{
@@ -304,7 +303,6 @@ export const pushSubscriptionService = {
         stock?: boolean;
         credits?: boolean;
         subscriptions?: boolean;
-        gamification?: boolean;
       };
     }>
   > {
@@ -319,7 +317,6 @@ export const pushSubscriptionService = {
       stock?: boolean;
       credits?: boolean;
       subscriptions?: boolean;
-      gamification?: boolean;
     }
   ): Promise<{ message: string }> {
     const response = await api.put(

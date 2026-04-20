@@ -8,7 +8,6 @@ const featureFlagsSchema = new mongoose.Schema(
     promotions: { type: Boolean, default: true },
     providers: { type: Boolean, default: true },
     clients: { type: Boolean, default: true },
-    gamification: { type: Boolean, default: true },
     incidents: { type: Boolean, default: true },
     expenses: { type: Boolean, default: true },
     notifications: { type: Boolean, default: true },

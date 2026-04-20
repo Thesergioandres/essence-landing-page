@@ -18,6 +18,82 @@ interface ProductWithStock extends Product {
   employeeStock?: number;
 }
 
+const sanitizeIdString = (raw: string): string => {
+  const trimmed = String(raw || "").trim();
+  if (
+    !trimmed ||
+    trimmed === "[object Object]" ||
+    trimmed === "undefined" ||
+    trimmed === "null"
+  ) {
+    return "";
+  }
+
+  const objectIdMatch = trimmed.match(/[a-fA-F0-9]{24}/);
+  if (objectIdMatch) {
+    return objectIdMatch[0].toLowerCase();
+  }
+
+  return trimmed;
+};
+
+const resolveEntityId = (value: unknown): string => {
+  if (typeof value === "string") {
+    return sanitizeIdString(value);
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+
+  const candidate = value as {
+    _id?: unknown;
+    id?: unknown;
+    $oid?: unknown;
+    oid?: unknown;
+    toHexString?: () => string;
+    toString?: () => string;
+  };
+
+  const fromToHex =
+    typeof candidate.toHexString === "function"
+      ? sanitizeIdString(candidate.toHexString())
+      : "";
+
+  const nested =
+    resolveEntityId(candidate._id) ||
+    resolveEntityId(candidate.id) ||
+    resolveEntityId(candidate.$oid) ||
+    resolveEntityId(candidate.oid);
+
+  if (fromToHex) {
+    return fromToHex;
+  }
+
+  if (nested) {
+    return nested;
+  }
+
+  if (typeof candidate.toString === "function") {
+    return sanitizeIdString(candidate.toString());
+  }
+
+  return "";
+};
+
+const toStableListKey = (
+  prefix: string,
+  candidateId: unknown,
+  index: number
+): string => {
+  const resolved = resolveEntityId(candidateId);
+  return resolved ? `${prefix}-${resolved}` : `${prefix}-${index}`;
+};
+
 export default function EmployeeCatalog() {
   const { business } = useBusiness();
   const brandLogo = useBrandLogo();
@@ -402,9 +478,7 @@ export default function EmployeeCatalog() {
         list.sort((a, b) => (b.clientPrice || 0) - (a.clientPrice || 0));
         break;
       case "stock":
-        list.sort(
-          (a, b) => (b.employeeStock || 0) - (a.employeeStock || 0)
-        );
+        list.sort((a, b) => (b.employeeStock || 0) - (a.employeeStock || 0));
         break;
       case "featured":
         list.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
@@ -522,10 +596,7 @@ export default function EmployeeCatalog() {
                   <div className="flex items-center justify-between text-sm text-gray-300">
                     <span>Con stock</span>
                     <span className="font-semibold text-emerald-300">
-                      {
-                        products.filter(p => (p.employeeStock ?? 0) > 0)
-                          .length
-                      }
+                      {products.filter(p => (p.employeeStock ?? 0) > 0).length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm text-gray-300">
@@ -656,12 +727,16 @@ export default function EmployeeCatalog() {
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {activePromotions.map(promo => {
+                {activePromotions.map((promo, index) => {
                   const price = getPromotionPrice(promo);
                   const discountLabel = getPromotionDiscountLabel(promo, price);
                   return (
                     <div
-                      key={promo._id}
+                      key={toStableListKey(
+                        "employee-catalog-promo",
+                        promo?._id,
+                        index
+                      )}
                       className="group overflow-hidden rounded-2xl border border-white/10 bg-gray-950/60 p-5 shadow-lg transition hover:-translate-y-1 hover:border-emerald-400/40"
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -725,9 +800,9 @@ export default function EmployeeCatalog() {
             >
               Todas
             </button>
-            {categories.map(cat => (
+            {categories.map((cat, index) => (
               <button
-                key={cat}
+                key={toStableListKey("employee-catalog-category", cat, index)}
                 onClick={() => setSelectedCategory(cat)}
                 className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-300 sm:px-6 sm:py-3 sm:text-base ${
                   selectedCategory === cat
@@ -958,8 +1033,15 @@ export default function EmployeeCatalog() {
             initial="hidden"
             animate="show"
           >
-            {filteredProducts.map(product => (
-              <motion.div key={product._id} variants={staggerItem}>
+            {filteredProducts.map((product, index) => (
+              <motion.div
+                key={toStableListKey(
+                  "employee-catalog-product",
+                  product?._id,
+                  index
+                )}
+                variants={staggerItem}
+              >
                 <ProductCard
                   product={product}
                   viewMode={viewMode}

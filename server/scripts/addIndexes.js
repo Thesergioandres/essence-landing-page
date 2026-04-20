@@ -43,12 +43,9 @@ async function addIndexes() {
     await db.collection("employeestocks").createIndex({ employee: 1 });
     console.log("✅ Índices de stock creados");
 
-    // Índices para gamificación
-    await db
-      .collection("employeestats")
-      .createIndex({ employee: 1 }, { unique: true });
+    // Índice para historial de periodos
     await db.collection("periodwinners").createIndex({ periodStart: -1 });
-    console.log("✅ Índices de gamificación creados");
+    console.log("✅ Índices de periodos creados");
 
     console.log("\n🎉 Todos los índices creados exitosamente");
   } catch (error) {

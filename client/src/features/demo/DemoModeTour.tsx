@@ -24,12 +24,6 @@ export default function DemoModeTour() {
           "Inventario global en vivo para reponer antes de quedarte sin stock.",
       },
       {
-        target: "#demo-gamification",
-        title: "Sube tus margenes",
-        content:
-          "Gamificacion que motiva al equipo a mover el producto correcto.",
-      },
-      {
         target: "#demo-business-assistant",
         title: "Vende con estrategia",
         content:

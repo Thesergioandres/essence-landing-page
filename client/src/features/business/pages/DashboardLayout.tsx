@@ -21,8 +21,6 @@ import {
   ShoppingBag,
   Star,
   Tag,
-  Target,
-  Trophy,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -323,39 +321,12 @@ export default function DashboardLayout() {
             to: "/admin/advertising",
             icon: Star,
           },
-          {
-            id: "gamification",
-            label: "Gamificación",
-            to: "/admin/gamification",
-            icon: Target,
-            feature: "gamification",
-          },
-          {
-            id: "rankings",
-            label: "Rankings",
-            to: "/admin/rankings",
-            icon: Trophy,
-            feature: "gamification",
-          },
         ],
       },
       {
         id: "administracion-equipo",
         label: "Administración & Equipo",
         items: [
-          {
-            id: "employees",
-            label: "Empleados",
-            to: "/admin/employees",
-            icon: Users,
-            feature: "employees",
-          },
-          {
-            id: "team",
-            label: "Equipo y Permisos",
-            to: "/admin/team",
-            icon: Shield,
-          },
           {
             id: "notifications",
             label: "Notificaciones",

@@ -16,10 +16,8 @@ import CreditPayment from "../models/CreditPayment.js";
 import Customer from "../models/Customer.js";
 import DefectiveProduct from "../models/DefectiveProduct.js";
 import DeliveryMethod from "../models/DeliveryMethod.js";
-import EmployeeStats from "../models/EmployeeStats.js";
 import EmployeeStock from "../models/EmployeeStock.js";
 import Expense from "../models/Expense.js";
-import GamificationConfig from "../models/GamificationConfig.js";
 import InventoryEntry from "../models/InventoryEntry.js";
 import IssueReport from "../models/IssueReport.js";
 import Membership from "../models/Membership.js";
@@ -398,11 +396,9 @@ class GodRepository {
 
         // Employees
         EmployeeStock.deleteMany({ business: { $in: ownedBusinessIds } }),
-        EmployeeStats.deleteMany({ business: { $in: ownedBusinessIds } }),
 
-        // Promotions & Gamification
+        // Promotions & loyalty history
         Promotion.deleteMany({ business: { $in: ownedBusinessIds } }),
-        GamificationConfig.deleteMany({ business: { $in: ownedBusinessIds } }),
         PeriodWinner.deleteMany({ business: { $in: ownedBusinessIds } }),
         PointsHistory.deleteMany({ business: { $in: ownedBusinessIds } }),
 

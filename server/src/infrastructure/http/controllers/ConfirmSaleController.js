@@ -1,13 +1,11 @@
-import Membership from "../../database/models/Membership.js";
-import Product from "../../database/models/Product.js";
-import ProfitHistory from "../../database/models/ProfitHistory.js";
-import Promotion from "../../database/models/Promotion.js";
-import Sale from "../../database/models/Sale.js";
-import { applySaleGamification } from "../../services/gamification.service.js";
 import {
   buildPromotionSalesSummary,
   normalizeId,
 } from "../../../utils/promotionMetrics.js";
+import Membership from "../../database/models/Membership.js";
+import ProfitHistory from "../../database/models/ProfitHistory.js";
+import Promotion from "../../database/models/Promotion.js";
+import Sale from "../../database/models/Sale.js";
 
 export async function confirmSalePayment(req, res) {
   try {
@@ -117,16 +115,6 @@ export async function confirmSalePayment(req, res) {
     }
 
     const updatedSale = await Sale.findById(sale._id).lean();
-    if (updatedSale?.employee) {
-      const product = updatedSale.product
-        ? await Product.findById(updatedSale.product).lean()
-        : null;
-      await applySaleGamification({
-        businessId,
-        sale: updatedSale,
-        product,
-      });
-    }
 
     if (updatedSale?.isPromotion && updatedSale?.promotion) {
       const promotionId = normalizeId(updatedSale.promotion);

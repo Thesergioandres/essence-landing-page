@@ -3,10 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBusiness } from "../../../context/BusinessContext";
 import { ConfidentialBadge } from "../../../shared/components/ui";
-import { authService } from "../../auth/services";
 import { useFinancialPrivacy } from "../../auth/utils/financialPrivacy";
 import { dispatchService } from "../../branches/services";
-import { gamificationService } from "../../common/services";
 import type { Credit } from "../../credits/types/credit.types";
 import { stockService } from "../../inventory/services/inventory.service";
 import type { EmployeeStock } from "../../inventory/types/product.types";
@@ -35,13 +33,108 @@ interface AnimatedDashboardStats {
   productsCount: number;
 }
 
-interface RankingInfo {
-  position: number | null;
-  bonusCommission: number;
-  periodStart: string;
-  periodEnd: string;
-  totalEmployees: number;
-}
+const sanitizeIdString = (value: string): string => {
+  const trimmed = String(value || "").trim();
+  if (
+    !trimmed ||
+    trimmed === "[object Object]" ||
+    trimmed === "undefined" ||
+    trimmed === "null"
+  ) {
+    return "";
+  }
+
+  const objectIdMatch = trimmed.match(/[a-fA-F0-9]{24}/);
+  if (objectIdMatch) {
+    return objectIdMatch[0].toLowerCase();
+  }
+
+  return trimmed;
+};
+
+const bytesToHexObjectId = (bytes: unknown): string => {
+  if (!Array.isArray(bytes) || bytes.length !== 12) {
+    return "";
+  }
+
+  const isValidByteArray = bytes.every(
+    item => typeof item === "number" && item >= 0 && item <= 255
+  );
+  if (!isValidByteArray) {
+    return "";
+  }
+
+  return bytes
+    .map(item => item.toString(16).padStart(2, "0"))
+    .join("")
+    .toLowerCase();
+};
+
+const resolveEntityId = (value: unknown): string => {
+  if (typeof value === "string") {
+    return sanitizeIdString(value);
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+
+  const candidate = value as {
+    _id?: unknown;
+    id?: unknown;
+    $oid?: unknown;
+    oid?: unknown;
+    buffer?: unknown;
+    data?: unknown;
+    toHexString?: () => string;
+    toString?: () => string;
+  };
+
+  const fromToHex =
+    typeof candidate.toHexString === "function"
+      ? sanitizeIdString(candidate.toHexString())
+      : "";
+
+  const nested =
+    resolveEntityId(candidate._id) ||
+    resolveEntityId(candidate.id) ||
+    resolveEntityId(candidate.$oid) ||
+    resolveEntityId(candidate.oid);
+
+  const fromBuffer =
+    bytesToHexObjectId(candidate.buffer) || bytesToHexObjectId(candidate.data);
+
+  if (fromToHex) {
+    return fromToHex;
+  }
+
+  if (fromBuffer) {
+    return fromBuffer;
+  }
+
+  if (nested) {
+    return nested;
+  }
+
+  if (typeof candidate.toString === "function") {
+    return sanitizeIdString(candidate.toString());
+  }
+
+  return "";
+};
+
+const toStableListKey = (
+  prefix: string,
+  candidateId: unknown,
+  index: number
+): string => {
+  const resolved = resolveEntityId(candidateId);
+  return resolved ? `${prefix}-${resolved}` : `${prefix}-${index}`;
+};
 
 export default function EmployeeDashboard() {
   const navigate = useNavigate();
@@ -71,7 +164,6 @@ export default function EmployeeDashboard() {
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
   const [pendingCredits, setPendingCredits] = useState<Credit[]>([]);
   const [myStock, setMyStock] = useState<EmployeeStock[]>([]);
-  const [rankingInfo, setRankingInfo] = useState<RankingInfo | null>(null);
   const [pendingReceptionCount, setPendingReceptionCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -187,20 +279,13 @@ export default function EmployeeDashboard() {
         return;
       }
 
-      const userId = authService.getCurrentUser()?._id || "";
-      const [salesData, stockData, commissionData, shipmentPendingCount] =
-        await Promise.all([
-          saleService
-            .getEmployeeSales(undefined, { limit: 50 })
-            .catch(() => ({ sales: [] })),
-          stockService.getEmployeeStock("me").catch(() => []),
-          userId
-            ? gamificationService
-                .getAdjustedCommission(userId)
-                .catch(() => null)
-            : Promise.resolve(null),
-          dispatchService.getPendingReceptionCount().catch(() => 0),
-        ]);
+      const [salesData, stockData, shipmentPendingCount] = await Promise.all([
+        saleService
+          .getEmployeeSales(undefined, { limit: 50 })
+          .catch(() => ({ sales: [] })),
+        stockService.getEmployeeStock("me").catch(() => []),
+        dispatchService.getPendingReceptionCount().catch(() => 0),
+      ]);
 
       // Filter out promotions from stock data
       const filteredStockData = (stockData || []).filter(item => {
@@ -293,10 +378,6 @@ export default function EmployeeDashboard() {
           .filter(Boolean)
       );
       setMyStock(filteredStockData.slice(0, 6));
-
-      if (commissionData) {
-        setRankingInfo(commissionData);
-      }
 
       setPendingReceptionCount(Number(shipmentPendingCount || 0));
     } catch (error) {
@@ -428,80 +509,6 @@ export default function EmployeeDashboard() {
         </div>
       )}
 
-      {rankingInfo && rankingInfo.position && (
-        <div className="dashboard-stat-card bg-linear-to-br from-yellow-900/24 via-orange-900/18 rounded-2xl border border-yellow-500/40 to-gray-900/70 p-6 backdrop-blur-xl">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex-1">
-              <div className="mb-2 flex items-center gap-3">
-                <span className="text-4xl">
-                  {rankingInfo.position === 1
-                    ? "🥇"
-                    : rankingInfo.position === 2
-                      ? "🥈"
-                      : rankingInfo.position === 3
-                        ? "🥉"
-                        : "🏅"}
-                </span>
-                <div>
-                  <h3 className="text-2xl font-bold text-white">
-                    Posición #{rankingInfo.position}
-                  </h3>
-                  <p className="text-sm text-gray-300">
-                    de {rankingInfo.totalEmployees} employees
-                  </p>
-                </div>
-              </div>
-
-              {rankingInfo.bonusCommission > 0 && (
-                <div className="bg-emerald-500/16 mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/45 px-4 py-2">
-                  <span className="text-xl">💰</span>
-                  <div>
-                    <p className="text-xs text-emerald-300">
-                      Comisión extra activa
-                    </p>
-                    <p className="text-lg font-bold text-emerald-200">
-                      +{rankingInfo.bonusCommission}% en cada venta
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="text-left lg:text-right">
-              <p className="mb-1 text-xs text-gray-400">Período actual</p>
-              <p className="text-sm font-medium text-white">
-                {new Date(rankingInfo.periodStart).toLocaleDateString("es-CO", {
-                  day: "2-digit",
-                  month: "short",
-                })}
-                {" - "}
-                {new Date(rankingInfo.periodEnd).toLocaleDateString("es-CO", {
-                  day: "2-digit",
-                  month: "short",
-                })}
-              </p>
-              <button
-                onClick={() => navigate("/staff/stats")}
-                className="mt-3 text-xs text-cyan-300 underline decoration-cyan-400/70 underline-offset-4 hover:text-cyan-200"
-              >
-                Ver ranking completo →
-              </button>
-            </div>
-          </div>
-
-          {rankingInfo.position <= 3 && (
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <p className="flex items-center gap-2 text-xs text-gray-300">
-                <span>🏆</span>
-                {rankingInfo.position === 1
-                  ? "¡Primer lugar! Ganas $50,000 al final del período"
-                  : "¡Top 3! Sigue vendiendo para ganar el primer lugar ($50,000)"}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <div className="dashboard-stat-card bg-linear-to-br rounded-2xl border border-white/10 from-cyan-900/30 to-gray-900/70 p-6 backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/50">
           <div className="flex items-center justify-between">
@@ -627,9 +634,9 @@ export default function EmployeeDashboard() {
             </div>
             {pendingCredits.length > 0 && (
               <div className="mt-4 space-y-2 border-t border-white/10 pt-4">
-                {pendingCredits.slice(0, 3).map(credit => (
+                {pendingCredits.slice(0, 3).map((credit, index) => (
                   <div
-                    key={credit._id}
+                    key={toStableListKey("pending-credit", credit?._id, index)}
                     className="flex items-center justify-between text-sm"
                   >
                     <span className="max-w-[150px] truncate text-gray-300">
@@ -798,14 +805,14 @@ export default function EmployeeDashboard() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {myStock.map(item => {
+            {myStock.map((item, index) => {
               const product =
                 typeof item.product === "object" ? item.product : null;
               const isLowStock = item.quantity <= item.lowStockAlert;
 
               return (
                 <div
-                  key={item._id}
+                  key={toStableListKey("stock-item", item?._id, index)}
                   className={`rounded-xl border p-4 backdrop-blur-lg transition-all duration-300 ${
                     isLowStock
                       ? "bg-red-900/24 border-red-500/45"
@@ -909,11 +916,14 @@ export default function EmployeeDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
-                {recentSales.map(sale => {
+                {recentSales.map((sale, index) => {
                   const product =
                     typeof sale.product === "object" ? sale.product : null;
                   return (
-                    <tr key={sale._id} className="transition hover:bg-white/5">
+                    <tr
+                      key={toStableListKey("recent-sale", sale?._id, index)}
+                      className="transition hover:bg-white/5"
+                    >
                       <td className="px-4 py-3 text-sm text-gray-300">
                         {formatDate(sale.saleDate)}
                       </td>

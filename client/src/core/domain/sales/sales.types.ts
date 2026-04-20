@@ -69,6 +69,7 @@ export interface PromotionSaleItemInput {
 export interface RegisterStandardSaleInput {
   items: StandardSaleItemInput[];
   employeeId?: string;
+  businessId?: string;
   branchId?: string;
   notes?: string;
   saleDate?: string;
@@ -92,6 +93,7 @@ export interface RegisterStandardSaleInput {
 export interface RegisterPromotionSaleInput {
   items: PromotionSaleItemInput[];
   employeeId?: string;
+  businessId?: string;
   branchId?: string;
   notes?: string;
   saleDate?: string;

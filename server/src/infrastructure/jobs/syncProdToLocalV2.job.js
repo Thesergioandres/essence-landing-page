@@ -89,7 +89,6 @@ const COLLECTIONS_TO_SYNC = [
   { name: "deliverymethods", priority: 1, timestampField: "updatedAt" },
   { name: "providers", priority: 1, timestampField: "updatedAt" },
   { name: "segments", priority: 1, timestampField: "updatedAt" },
-  { name: "gamificationconfigs", priority: 1, timestampField: "updatedAt" },
 
   // Nivel 2: Dependencias de nivel 1
   { name: "products", priority: 2, timestampField: "updatedAt" },
@@ -102,7 +101,6 @@ const COLLECTIONS_TO_SYNC = [
   { name: "stocks", priority: 3, timestampField: "updatedAt" },
   { name: "branchstocks", priority: 3, timestampField: "updatedAt" },
   { name: "employeestocks", priority: 3, timestampField: "updatedAt" },
-  { name: "employeesstats", priority: 3, timestampField: "updatedAt" },
 
   // Nivel 4: Transacciones
   { name: "sales", priority: 4, timestampField: "createdAt" },

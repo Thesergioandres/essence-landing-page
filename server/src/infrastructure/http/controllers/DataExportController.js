@@ -7,6 +7,7 @@
  */
 
 // Import all models
+import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
 import Branch from "../../database/models/Branch.js";
 import BranchStock from "../../database/models/BranchStock.js";
 import BranchTransfer from "../../database/models/BranchTransfer.js";
@@ -17,14 +18,11 @@ import CreditPayment from "../../database/models/CreditPayment.js";
 import Customer from "../../database/models/Customer.js";
 import DefectiveProduct from "../../database/models/DefectiveProduct.js";
 import DeliveryMethod from "../../database/models/DeliveryMethod.js";
-import EmployeeStats from "../../database/models/EmployeeStats.js";
 import EmployeeStock from "../../database/models/EmployeeStock.js";
 import Expense from "../../database/models/Expense.js";
-import GamificationConfig from "../../database/models/GamificationConfig.js";
 import InventoryEntry from "../../database/models/InventoryEntry.js";
 import Membership from "../../database/models/Membership.js";
 import PaymentMethod from "../../database/models/PaymentMethod.js";
-import PointsHistory from "../../database/models/PointsHistory.js";
 import Product from "../../database/models/Product.js";
 import ProfitHistory from "../../database/models/ProfitHistory.js";
 import Promotion from "../../database/models/Promotion.js";
@@ -33,7 +31,6 @@ import Sale from "../../database/models/Sale.js";
 import Segment from "../../database/models/Segment.js";
 import SpecialSale from "../../database/models/SpecialSale.js";
 import StockTransfer from "../../database/models/StockTransfer.js";
-import { resolveFinancialPrivacyContext } from "../../../../utils/financialPrivacy.js";
 
 export class DataExportController {
   /**
@@ -83,7 +80,6 @@ export class DataExportController {
         paymentMethods,
         deliveryMethods,
         promotions,
-        gamificationConfig,
 
         // Inventory
         branchStocks,
@@ -102,8 +98,6 @@ export class DataExportController {
 
         // Analytics
         profitHistory,
-        employeeStats,
-        pointsHistory,
       ] = await Promise.all([
         // Organization
         Business.findById(businessId).lean(),
@@ -126,7 +120,6 @@ export class DataExportController {
         PaymentMethod.find({ business: businessId }).lean(),
         DeliveryMethod.find({ business: businessId }).lean(),
         Promotion.find({ business: businessId }).lean(),
-        GamificationConfig.findOne({ business: businessId }).lean(),
 
         // Inventory
         BranchStock.find({ business: businessId }).lean(),
@@ -145,8 +138,6 @@ export class DataExportController {
 
         // Analytics
         ProfitHistory.find({ business: businessId }).lean(),
-        EmployeeStats.find({ business: businessId }).lean(),
-        PointsHistory.find({ business: businessId }).lean(),
       ]);
 
       // Get users from memberships (already populated without password)
@@ -184,7 +175,6 @@ export class DataExportController {
           paymentMethods,
           deliveryMethods,
           promotions,
-          gamificationConfig,
         },
 
         inventory: {
@@ -206,8 +196,6 @@ export class DataExportController {
 
         analytics: {
           profitHistory,
-          employeeStats,
-          pointsHistory,
         },
 
         summary: {

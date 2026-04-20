@@ -176,6 +176,8 @@ export default function BusinessSelector() {
         </select>
       ) : loading || hydrating ? (
         <p className="text-[11px] text-amber-200/80">Cargando negocios...</p>
+      ) : businessId ? (
+        <p className="text-[11px] text-emerald-200/80">Negocio activo</p>
       ) : (
         <p className="text-[11px] text-amber-200/80">
           Actualizando negocios...

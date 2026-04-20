@@ -7,14 +7,12 @@ import Branch from "../../../infrastructure/database/models/Branch.js";
 import BranchStock from "../../../infrastructure/database/models/BranchStock.js";
 import DefectiveProduct from "../../../infrastructure/database/models/DefectiveProduct.js";
 import EmployeeStock from "../../../infrastructure/database/models/EmployeeStock.js";
-import GamificationConfig from "../../../infrastructure/database/models/GamificationConfig.js";
 import InventoryMovement from "../../../infrastructure/database/models/InventoryMovement.js";
 import Membership from "../../../infrastructure/database/models/Membership.js";
 import PaymentMethod from "../../../infrastructure/database/models/PaymentMethod.js";
 import Promotion from "../../../infrastructure/database/models/Promotion.js";
 import Sale from "../../../infrastructure/database/models/Sale.js";
 import { getEmployeeCommissionInfo } from "../../../infrastructure/services/employeePricing.service.js";
-import { applySaleGamification } from "../../../infrastructure/services/gamification.service.js";
 import {
   buildPromotionSalesSummary,
   normalizeId,
@@ -151,11 +149,9 @@ export class RegisterPromotionSaleUseCase {
     // 2. PHASE 1: Validate ALL items BEFORE making any changes
     const validatedItems = [];
 
-    let commissionPolicy = CommissionPolicyService.resolveEmployeeCommission(
-      {
-        requestedCommissionRate: employeeProfitPercentage,
-      },
-    );
+    let commissionPolicy = CommissionPolicyService.resolveEmployeeCommission({
+      requestedCommissionRate: employeeProfitPercentage,
+    });
 
     if (employeeId) {
       const commissionInfo = await getEmployeeCommissionInfo(
@@ -164,26 +160,19 @@ export class RegisterPromotionSaleUseCase {
       );
 
       if (commissionInfo?.isCommissionFixed) {
-        commissionPolicy = CommissionPolicyService.resolveEmployeeCommission(
-          {
-            isCommissionFixed: true,
-            customCommissionRate:
-              commissionInfo.customCommissionRate ??
-              commissionInfo.profitPercentage,
-          },
-        );
+        commissionPolicy = CommissionPolicyService.resolveEmployeeCommission({
+          isCommissionFixed: true,
+          customCommissionRate:
+            commissionInfo.customCommissionRate ??
+            commissionInfo.profitPercentage,
+        });
       } else {
-        const config = await GamificationConfig.findOne().lean();
-        commissionPolicy = CommissionPolicyService.resolveEmployeeCommission(
-          {
-            requestedCommissionRate: employeeProfitPercentage,
-            baseCommissionRate: FinanceService.resolveBaseCommissionPercentage(
-              config,
-              employeeProfitPercentage,
-            ),
-            bonusCommission: commissionInfo?.bonusCommission || 0,
-          },
-        );
+        commissionPolicy = CommissionPolicyService.resolveEmployeeCommission({
+          requestedCommissionRate: employeeProfitPercentage,
+          baseCommissionRate:
+            commissionInfo?.baseCommissionPercentage ??
+            employeeProfitPercentage,
+        });
       }
     }
 
@@ -1028,14 +1017,6 @@ export class RegisterPromotionSaleUseCase {
             }
           }
         }
-
-        if (employeeId) {
-          await applySaleGamification({
-            businessId,
-            sale: createdSale,
-            product,
-          });
-        }
       }
 
       totalTransactionAmount += actualPayment;
@@ -1111,8 +1092,7 @@ export class RegisterPromotionSaleUseCase {
         const lossAmount = hasWarranty ? 0 : unitCost * quantity;
 
         const reportData = {
-          employee:
-            resolvedSourceLocation === "employee" ? employeeId : null,
+          employee: resolvedSourceLocation === "employee" ? employeeId : null,
           branch: resolvedSourceLocation === "branch" ? branchId : null,
           product: warranty.productId,
           business: businessId,

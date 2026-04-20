@@ -18,6 +18,82 @@ import type { Category, Product } from "../../inventory/types/product.types";
 import { promotionService } from "../../settings/services";
 import type { Promotion } from "../../settings/types/promotion.types";
 
+const sanitizeIdString = (raw: string): string => {
+  const trimmed = String(raw || "").trim();
+  if (
+    !trimmed ||
+    trimmed === "[object Object]" ||
+    trimmed === "undefined" ||
+    trimmed === "null"
+  ) {
+    return "";
+  }
+
+  const objectIdMatch = trimmed.match(/[a-fA-F0-9]{24}/);
+  if (objectIdMatch) {
+    return objectIdMatch[0].toLowerCase();
+  }
+
+  return trimmed;
+};
+
+const resolveEntityId = (value: unknown): string => {
+  if (typeof value === "string") {
+    return sanitizeIdString(value);
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+
+  const candidate = value as {
+    _id?: unknown;
+    id?: unknown;
+    $oid?: unknown;
+    oid?: unknown;
+    toHexString?: () => string;
+    toString?: () => string;
+  };
+
+  const fromToHex =
+    typeof candidate.toHexString === "function"
+      ? sanitizeIdString(candidate.toHexString())
+      : "";
+
+  const nested =
+    resolveEntityId(candidate._id) ||
+    resolveEntityId(candidate.id) ||
+    resolveEntityId(candidate.$oid) ||
+    resolveEntityId(candidate.oid);
+
+  if (fromToHex) {
+    return fromToHex;
+  }
+
+  if (nested) {
+    return nested;
+  }
+
+  if (typeof candidate.toString === "function") {
+    return sanitizeIdString(candidate.toString());
+  }
+
+  return "";
+};
+
+const toStableListKey = (
+  prefix: string,
+  candidateId: unknown,
+  index: number
+): string => {
+  const resolved = resolveEntityId(candidateId);
+  return resolved ? `${prefix}-${resolved}` : `${prefix}-${index}`;
+};
+
 export default function Catalog() {
   const { business } = useBusiness();
   const brandLogo = useBrandLogo();
@@ -764,7 +840,12 @@ export default function Catalog() {
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {activePromotions.map(promo => {
+                {activePromotions.map((promo, promoIndex) => {
+                  const promoKey = toStableListKey(
+                    "catalog-promo",
+                    promo?._id,
+                    promoIndex
+                  );
                   const price = getPromotionPrice(promo);
                   const discountLabel = getPromotionDiscountLabel(promo, price);
                   const promoProducts = getPromotionProducts(promo);
@@ -781,7 +862,7 @@ export default function Catalog() {
 
                   return (
                     <div
-                      key={promo._id}
+                      key={promoKey}
                       className="group overflow-hidden rounded-2xl border border-white/10 bg-gray-950/60 p-5 shadow-lg transition hover:-translate-y-1 hover:border-emerald-400/40"
                       role="button"
                       tabIndex={0}
@@ -821,7 +902,7 @@ export default function Catalog() {
                             {collageImages.length > 0 ? (
                               collageImages.map((imageUrl, index) => (
                                 <div
-                                  key={`${promo._id}-collage-${index}`}
+                                  key={`${promoKey}-collage-${index}`}
                                   className={`overflow-hidden rounded-xl border border-white/10 bg-white/5 ${collageHeightClass}`}
                                 >
                                   <img
@@ -891,7 +972,7 @@ export default function Catalog() {
             </button>
             {categories.map((cat, index) => (
               <button
-                key={cat._id}
+                key={toStableListKey("catalog-category", cat?._id, index)}
                 onClick={() => setSelectedCategory(cat._id)}
                 className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-300 sm:px-6 sm:py-3 sm:text-base ${
                   selectedCategory === cat._id
@@ -1131,8 +1212,11 @@ export default function Catalog() {
             initial="hidden"
             animate="show"
           >
-            {filteredProducts.map(product => (
-              <motion.div key={product._id} variants={staggerItem}>
+            {filteredProducts.map((product, index) => (
+              <motion.div
+                key={toStableListKey("catalog-product", product?._id, index)}
+                variants={staggerItem}
+              >
                 <ProductCard product={product} viewMode={viewMode} />
               </motion.div>
             ))}
@@ -1250,26 +1334,32 @@ export default function Catalog() {
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   {selectedPromotionProducts.length > 0 ? (
-                    selectedPromotionProducts.slice(0, 6).map(product => (
-                      <div
-                        key={product._id}
-                        className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2 py-2"
-                      >
-                        {product.image?.url ? (
-                          <img
-                            src={product.image.url}
-                            alt={product.name}
-                            className="h-10 w-10 rounded-lg object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-lg bg-white/10" />
-                        )}
-                        <span className="text-xs font-semibold text-white">
-                          {product.name}
-                        </span>
-                      </div>
-                    ))
+                    selectedPromotionProducts
+                      .slice(0, 6)
+                      .map((product, index) => (
+                        <div
+                          key={toStableListKey(
+                            "catalog-promo-product",
+                            product?._id,
+                            index
+                          )}
+                          className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2 py-2"
+                        >
+                          {product.image?.url ? (
+                            <img
+                              src={product.image.url}
+                              alt={product.name}
+                              className="h-10 w-10 rounded-lg object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-lg bg-white/10" />
+                          )}
+                          <span className="text-xs font-semibold text-white">
+                            {product.name}
+                          </span>
+                        </div>
+                      ))
                   ) : (
                     <p className="text-xs text-gray-400">
                       No hay productos asociados a esta promocion.
@@ -1288,25 +1378,31 @@ export default function Catalog() {
                   Collage
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  {selectedPromotionProducts.slice(0, 4).map(product => (
-                    <div
-                      key={product._id}
-                      className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5"
-                    >
-                      {product.image?.url ? (
-                        <img
-                          src={product.image.url}
-                          alt={product.name}
-                          className="h-32 w-full bg-white/5 object-contain p-2"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex h-32 items-center justify-center text-xs text-gray-400">
-                          Sin imagen
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  {selectedPromotionProducts
+                    .slice(0, 4)
+                    .map((product, index) => (
+                      <div
+                        key={toStableListKey(
+                          "catalog-promo-collage-product",
+                          product?._id,
+                          index
+                        )}
+                        className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5"
+                      >
+                        {product.image?.url ? (
+                          <img
+                            src={product.image.url}
+                            alt={product.name}
+                            className="h-32 w-full bg-white/5 object-contain p-2"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-32 items-center justify-center text-xs text-gray-400">
+                            Sin imagen
+                          </div>
+                        )}
+                      </div>
+                    ))}
                 </div>
               </div>
             </div>

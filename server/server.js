@@ -51,13 +51,14 @@ import businessRoutesV2 from "./src/infrastructure/http/routes/business.routes.v
 import businessAssistantRoutesV2 from "./src/infrastructure/http/routes/businessAssistant.routes.v2.js";
 import categoryRoutesV2 from "./src/infrastructure/http/routes/category.routes.v2.js";
 import creditRoutesV2 from "./src/infrastructure/http/routes/credit.routes.v2.js";
+import contractRoutesV2 from "./src/infrastructure/http/routes/contract.routes.v2.js";
 import customerRoutesV2 from "./src/infrastructure/http/routes/customer.routes.v2.js";
 import {
   default as employeeRoutesLegacyV2,
   default as employeeRoutesV2,
 } from "./src/infrastructure/http/routes/employee.routes.v2.js";
 import expenseRoutesV2 from "./src/infrastructure/http/routes/expense.routes.v2.js";
-import gamificationRoutesV2 from "./src/infrastructure/http/routes/gamification.routes.v2.js";
+import employeeScheduleRoutesV2 from "./src/infrastructure/http/routes/employeeSchedule.routes.v2.js";
 import globalSettingsRoutesV2 from "./src/infrastructure/http/routes/globalSettings.routes.v2.js";
 import inventoryRoutesV2 from "./src/infrastructure/http/routes/inventory.routes.v2.js";
 import productRoutesV2 from "./src/infrastructure/http/routes/product.routes.v2.js";
@@ -85,7 +86,6 @@ import specialSaleRoutesV2 from "./src/infrastructure/http/routes/specialSale.ro
 // ============================================================================
 // 🟢 V2 BATCH 4 - UTILITIES & CONFIG (Hexagonal Architecture)
 // ============================================================================
-import customerPointsRoutesV2 from "./src/infrastructure/http/routes/customerPoints.routes.v2.js";
 import deliveryMethodRoutesV2 from "./src/infrastructure/http/routes/deliveryMethod.routes.v2.js";
 import paymentMethodRoutesV2 from "./src/infrastructure/http/routes/paymentMethod.routes.v2.js";
 import profitHistoryRoutesV2 from "./src/infrastructure/http/routes/profitHistory.routes.v2.js";
@@ -324,6 +324,7 @@ app.use("/api/v2/branches", branchRoutesV2);
 app.use("/api/v2/business", businessRoutesV2);
 app.use("/api/v2/business-assistant", businessAssistantRoutesV2);
 app.use("/api/v2/categories", categoryRoutesV2);
+app.use("/api/v2/contracts", contractRoutesV2);
 app.use("/api/v2/credits", creditRoutesV2);
 app.use("/api/v2/customers", customerRoutesV2);
 app.use("/api/v2/employee", publicEmployeeRoutesV2);
@@ -335,7 +336,7 @@ app.use("/api/v2/employees", publicEmployeeRoutesV2);
 app.use("/api/v2/employee", employeeRoutesLegacyV2);
 app.use("/api/v2/employees", employeeRoutesLegacyV2);
 app.use("/api/v2/expenses", expenseRoutesV2);
-app.use("/api/v2/gamification", gamificationRoutesV2);
+app.use("/api/v2/schedules", employeeScheduleRoutesV2);
 app.use("/api/v2/global-settings", globalSettingsRoutesV2);
 app.use("/api/v2/inventory", inventoryRoutesV2);
 app.use("/api/v2/products", productRoutesV2);
@@ -362,7 +363,6 @@ app.use("/api/v2/special-sales", specialSaleRoutesV2);
 // ============================================================================
 // 🟢 V2 BATCH 4 - UTILITIES & CONFIG
 // ============================================================================
-app.use("/api/v2", customerPointsRoutesV2);
 app.use("/api/v2/delivery-methods", deliveryMethodRoutesV2);
 app.use("/api/v2/payment-methods", paymentMethodRoutesV2);
 app.use("/api/v2/profit-history", profitHistoryRoutesV2);

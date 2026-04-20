@@ -3,9 +3,7 @@ import Credit from "../models/Credit.js";
 import CreditPayment from "../models/CreditPayment.js";
 import Customer from "../models/Customer.js";
 import Notification from "../models/Notification.js";
-import Product from "../models/Product.js";
 import Sale from "../models/Sale.js";
-import { applySaleGamification } from "../../services/gamification.service.js";
 
 class CreditRepository {
   async create(businessId, data, userId) {
@@ -169,17 +167,6 @@ class CreditRepository {
         paymentConfirmedAt: new Date(),
         paymentConfirmedBy: userId,
       });
-      const sale = await Sale.findById(credit.sale).lean();
-      if (sale?.employee) {
-        const product = sale.product
-          ? await Product.findById(sale.product).lean()
-          : null;
-        await applySaleGamification({
-          businessId: credit.business,
-          sale,
-          product,
-        });
-      }
       console.log(
         `✅ Credit Paid! Linked Sale ${credit.sale} marked as confirmed.`,
       );

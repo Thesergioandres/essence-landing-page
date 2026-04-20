@@ -19,7 +19,6 @@ import {
   ShoppingBag,
   Star,
   Tag,
-  Trophy,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -32,11 +31,9 @@ import ReportIssueButton from "../../../components/ReportIssueButton";
 import { useBusiness } from "../../../context/BusinessContext";
 import { useBrandLogo } from "../../../hooks/useBrandLogo";
 import { useMotionProfile } from "../../../shared/config/motion.config";
-import type { EmployeeStats } from "../../analytics/types/gamification.types";
 import { authService } from "../../auth/services";
 import { dispatchService } from "../../branches/services";
 import type { BusinessFeatures } from "../../business/types/business.types";
-import { gamificationService } from "../../common/services";
 import NotificationPopup from "../../notifications/components/NotificationPopup";
 import PriceCatalogModal from "../components/PriceCatalogModal";
 
@@ -127,9 +124,6 @@ export default function EmployeeDashboardLayout() {
   const [isMobileViewport, setIsMobileViewport] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 1024 : true
   );
-  const [employeeStats, setEmployeeStats] = useState<EmployeeStats | null>(
-    null
-  );
   const [pendingReceptionCount, setPendingReceptionCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedSections, setExpandedSections] = useState<
@@ -145,6 +139,15 @@ export default function EmployeeDashboardLayout() {
   const isImpersonating = authService.isImpersonating();
   const viewAnimationKey = `${location.pathname}${location.search}`;
   const { motionProfile } = useMotionProfile();
+  const currentUserId = useMemo(() => {
+    const sessionUser = authService.getCurrentUser();
+    return (
+      resolveEntityId(sessionUser?._id) ||
+      resolveEntityId((sessionUser as { id?: unknown } | null)?.id) ||
+      resolveEntityId(user?._id) ||
+      resolveEntityId((user as { id?: unknown })?.id)
+    );
+  }, [user]);
 
   const activeMemberships = memberships.filter(
     membership => membership.status === "active"
@@ -190,12 +193,6 @@ export default function EmployeeDashboardLayout() {
             label: "Estadísticas",
             to: "/staff/stats",
             icon: Activity,
-          },
-          {
-            id: "level",
-            label: "Mi Nivel",
-            to: "/staff/level",
-            icon: Trophy,
           },
           {
             id: "notifications",
@@ -538,37 +535,6 @@ export default function EmployeeDashboardLayout() {
   };
 
   useEffect(() => {
-    if (hydrating) {
-      return;
-    }
-
-    if (!user?._id || !businessId) {
-      setEmployeeStats(null);
-      return;
-    }
-
-    let isActive = true;
-
-    const loadGamification = async () => {
-      try {
-        const statsRes = await gamificationService
-          .getEmployeeStats(user._id, { recalculate: true })
-          .catch(() => null);
-
-        if (!isActive) return;
-        setEmployeeStats((statsRes as any)?.stats ?? statsRes ?? null);
-      } catch (error) {
-        console.error("Error loading gamification widget:", error);
-      }
-    };
-
-    loadGamification();
-    return () => {
-      isActive = false;
-    };
-  }, [businessId, hydrating, user?._id]);
-
-  useEffect(() => {
     if (typeof window === "undefined") return;
 
     const syncViewport = () => {
@@ -676,9 +642,6 @@ export default function EmployeeDashboardLayout() {
   if (!user) {
     return null;
   }
-
-  const totalPoints = employeeStats?.totalPoints || 0;
-  const currentLevel = employeeStats?.currentLevel || "Sin rango";
 
   return (
     <div className="bg-app-employee-shell max-w-screen h-screen overflow-hidden overflow-x-hidden bg-[radial-gradient(circle_at_14%_16%,rgba(14,116,144,0.2),transparent_42%),radial-gradient(circle_at_88%_14%,rgba(30,58,138,0.2),transparent_46%),linear-gradient(140deg,#04070d_0%,#090f1b_46%,#050912_100%)]">
@@ -809,14 +772,6 @@ export default function EmployeeDashboardLayout() {
                 </p>
                 <p className="text-[10px] text-gray-400 sm:text-xs">Employee</p>
               </div>
-            </div>
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-1 text-[10px] font-semibold text-cyan-100">
-                {currentLevel}
-              </span>
-              <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[10px] font-semibold text-blue-200">
-                {totalPoints.toLocaleString()} pts
-              </span>
             </div>
             <button
               onClick={handleLogout}

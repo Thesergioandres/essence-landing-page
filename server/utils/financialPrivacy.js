@@ -42,7 +42,6 @@ const hasHideFinancialFlag = (user, membership) => {
   );
 };
 
-
 const resolvePermissionSource = (user, membership) => {
   if (membership?.role) {
     return {
@@ -108,7 +107,10 @@ export const resolveFinancialPrivacyContext = (req = {}) => {
   };
 };
 
-export const sanitizeSaleForFinancialPrivacy = (sale = {}) => {
+export const sanitizeSaleForFinancialPrivacy = (
+  sale = {},
+  { preserveEmployeeProfit = false } = {},
+) => {
   const safeSale = { ...sale };
 
   const nullifyTopLevelFields = [
@@ -122,11 +124,11 @@ export const sanitizeSaleForFinancialPrivacy = (sale = {}) => {
     "supplierId",
   ];
 
-  const zeroTopLevelFields = [
-    "adminProfit",
-    "employeeProfit",
-    "totalRevenue",
-  ];
+  const zeroTopLevelFields = ["adminProfit", "totalRevenue"];
+
+  if (!preserveEmployeeProfit) {
+    zeroTopLevelFields.push("employeeProfit");
+  }
 
   for (const fieldName of nullifyTopLevelFields) {
     if (Object.prototype.hasOwnProperty.call(safeSale, fieldName)) {
@@ -171,13 +173,30 @@ export const sanitizeSalesStatsForFinancialPrivacy = (stats = {}) => ({
 export const sanitizeFinancialCostFieldsToNull = (
   payload,
   seen = new WeakSet(),
+  options = {},
 ) => {
+  const preserveZeroFieldSet =
+    options?.preserveZeroFieldSet instanceof Set
+      ? options.preserveZeroFieldSet
+      : new Set(
+          Array.isArray(options?.preserveZeroFields)
+            ? options.preserveZeroFields
+            : [],
+        );
+
+  const nextOptions =
+    options?.preserveZeroFieldSet instanceof Set
+      ? options
+      : { ...options, preserveZeroFieldSet };
+
   if (payload === null || payload === undefined) {
     return payload;
   }
 
   if (Array.isArray(payload)) {
-    return payload.map((item) => sanitizeFinancialCostFieldsToNull(item, seen));
+    return payload.map((item) =>
+      sanitizeFinancialCostFieldsToNull(item, seen, nextOptions),
+    );
   }
 
   if (typeof payload !== "object") {
@@ -201,12 +220,19 @@ export const sanitizeFinancialCostFieldsToNull = (
       continue;
     }
 
-    if (SENSITIVE_FINANCIAL_ZERO_FIELD_SET.has(fieldName)) {
+    if (
+      SENSITIVE_FINANCIAL_ZERO_FIELD_SET.has(fieldName) &&
+      !preserveZeroFieldSet.has(fieldName)
+    ) {
       sanitized[fieldName] = 0;
       continue;
     }
 
-    sanitized[fieldName] = sanitizeFinancialCostFieldsToNull(value, seen);
+    sanitized[fieldName] = sanitizeFinancialCostFieldsToNull(
+      value,
+      seen,
+      nextOptions,
+    );
   }
 
   return sanitized;

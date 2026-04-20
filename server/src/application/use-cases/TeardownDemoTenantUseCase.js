@@ -12,7 +12,6 @@ import Customer from "../../infrastructure/database/models/Customer.js";
 import DefectiveProduct from "../../infrastructure/database/models/DefectiveProduct.js";
 import DeliveryMethod from "../../infrastructure/database/models/DeliveryMethod.js";
 import DispatchRequest from "../../infrastructure/database/models/DispatchRequest.js";
-import EmployeeStats from "../../infrastructure/database/models/EmployeeStats.js";
 import EmployeeStock from "../../infrastructure/database/models/EmployeeStock.js";
 import Expense from "../../infrastructure/database/models/Expense.js";
 import InventoryEntry from "../../infrastructure/database/models/InventoryEntry.js";
@@ -22,17 +21,17 @@ import Notification from "../../infrastructure/database/models/Notification.js";
 import PaymentMethod from "../../infrastructure/database/models/PaymentMethod.js";
 import PeriodWinner from "../../infrastructure/database/models/PeriodWinner.js";
 import PointsHistory from "../../infrastructure/database/models/PointsHistory.js";
+import Product from "../../infrastructure/database/models/Product.js";
 import ProfitHistory from "../../infrastructure/database/models/ProfitHistory.js";
 import Promotion from "../../infrastructure/database/models/Promotion.js";
 import Provider from "../../infrastructure/database/models/Provider.js";
 import PushSubscription from "../../infrastructure/database/models/PushSubscription.js";
 import RefreshToken from "../../infrastructure/database/models/RefreshToken.js";
+import Sale from "../../infrastructure/database/models/Sale.js";
 import Segment from "../../infrastructure/database/models/Segment.js";
 import SpecialSale from "../../infrastructure/database/models/SpecialSale.js";
 import Stock from "../../infrastructure/database/models/Stock.js";
 import StockTransfer from "../../infrastructure/database/models/StockTransfer.js";
-import Product from "../../infrastructure/database/models/Product.js";
-import Sale from "../../infrastructure/database/models/Sale.js";
 import User from "../../infrastructure/database/models/User.js";
 
 const toStringId = (value) => {
@@ -67,7 +66,6 @@ const scopedModels = [
   ["defectiveProducts", DefectiveProduct],
   ["deliveryMethods", DeliveryMethod],
   ["dispatchRequests", DispatchRequest],
-  ["employeeStats", EmployeeStats],
   ["employeeStocks", EmployeeStock],
   ["expenses", Expense],
   ["inventoryEntries", InventoryEntry],

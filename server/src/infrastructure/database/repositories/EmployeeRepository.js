@@ -90,7 +90,9 @@ export class EmployeeRepository {
 
     const [employees, total] = await Promise.all([
       User.find(filter)
-        .select("name email phone address role active assignedProducts")
+        .select(
+          "name email phone address role active assignedProducts baseCommissionPercentage fixedCommissionOnly isCommissionFixed customCommissionRate",
+        )
         .skip(skip)
         .limit(limit)
         .lean(),
@@ -115,9 +117,7 @@ export class EmployeeRepository {
     }
 
     const businessObjectId = new mongoose.Types.ObjectId(businessId);
-    const objectIds = employeeIds.map(
-      (id) => new mongoose.Types.ObjectId(id),
-    );
+    const objectIds = employeeIds.map((id) => new mongoose.Types.ObjectId(id));
 
     const [stockAgg, salesAgg] = await Promise.all([
       EmployeeStock.aggregate([
@@ -206,10 +206,7 @@ export class EmployeeRepository {
 
     const employee = await User.findOne({ _id: id, role: employeeRoleQuery })
       .select("-password")
-      .populate(
-        "assignedProducts",
-        "name image purchasePrice employeePrice",
-      );
+      .populate("assignedProducts", "name image purchasePrice employeePrice");
 
     if (!employee) {
       const err = new Error("Employee no encontrado");
@@ -272,6 +269,59 @@ export class EmployeeRepository {
     const employee = await User.findByIdAndUpdate(id, updates, {
       new: true,
     }).select("-password");
+
+    if (!employee) {
+      const err = new Error("Employee no encontrado");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    return employee;
+  }
+
+  async updateBaseCommissionPercentage(
+    id,
+    businessId,
+    baseCommissionPercentage,
+  ) {
+    const membership = await Membership.findOne({
+      business: businessId,
+      user: id,
+      role: employeeRoleQuery,
+      status: "active",
+    });
+
+    if (!membership) {
+      const err = new Error("Employee no encontrado en este negocio");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const normalizedRate = Number(baseCommissionPercentage);
+
+    if (!Number.isFinite(normalizedRate)) {
+      const err = new Error("baseCommissionPercentage debe ser numerico");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (normalizedRate < 0 || normalizedRate > 95) {
+      const err = new Error("baseCommissionPercentage debe estar entre 0 y 95");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const employee = await User.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          baseCommissionPercentage: Math.max(0, Math.min(95, normalizedRate)),
+        },
+      },
+      { new: true },
+    ).select(
+      "_id name email role active baseCommissionPercentage fixedCommissionOnly isCommissionFixed customCommissionRate",
+    );
 
     if (!employee) {
       const err = new Error("Employee no encontrado");

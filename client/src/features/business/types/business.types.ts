@@ -7,7 +7,6 @@ export interface BusinessFeatures {
   products?: boolean;
   inventory?: boolean;
   sales?: boolean;
-  gamification?: boolean;
   incidents?: boolean;
   expenses?: boolean;
   assistant?: boolean;

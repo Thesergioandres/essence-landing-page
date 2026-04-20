@@ -295,9 +295,17 @@ export const createProduct = async (req, res, next) => {
     console.log("📁 File:", req.file ? "present" : "missing");
 
     // Process FormData - parse JSON arrays if they come as strings
+    const businessId = req.headers["x-business-id"] || req.businessId;
+    if (!businessId) {
+      return res.status(400).json({
+        success: false,
+        message: "Business ID required",
+      });
+    }
+
     const productData = {
       ...req.body,
-      business: req.headers["x-business-id"],
+      business: businessId,
       createdBy: req.user.id,
     };
 
@@ -445,7 +453,14 @@ export const updateProduct = async (req, res, next) => {
     console.log("📁 File:", req.file ? "present" : "missing");
 
     const { id } = req.params;
-    const businessId = req.headers["x-business-id"];
+    const businessId = req.headers["x-business-id"] || req.businessId;
+
+    if (!businessId) {
+      return res.status(400).json({
+        success: false,
+        message: "Business ID required",
+      });
+    }
 
     // Process FormData - parse JSON arrays if they come as strings
     const updateData = { ...req.body };

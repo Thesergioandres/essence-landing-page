@@ -21,10 +21,8 @@ import CreditPayment from "../src/infrastructure/database/models/CreditPayment.j
 import Customer from "../src/infrastructure/database/models/Customer.js";
 import DefectiveProduct from "../src/infrastructure/database/models/DefectiveProduct.js";
 import DeliveryMethod from "../src/infrastructure/database/models/DeliveryMethod.js";
-import EmployeeStats from "../src/infrastructure/database/models/EmployeeStats.js";
 import EmployeeStock from "../src/infrastructure/database/models/EmployeeStock.js";
 import Expense from "../src/infrastructure/database/models/Expense.js";
-import GamificationConfig from "../src/infrastructure/database/models/GamificationConfig.js";
 import InventoryEntry from "../src/infrastructure/database/models/InventoryEntry.js";
 import IssueReport from "../src/infrastructure/database/models/IssueReport.js";
 import Membership from "../src/infrastructure/database/models/Membership.js";
@@ -73,7 +71,6 @@ const getCollections = () => [
   { model: Stock, name: "stock" },
   { model: StockTransfer, name: "stocktransfers" },
   { model: EmployeeStock, name: "employeestock" },
-  { model: EmployeeStats, name: "employeestats" },
   { model: Provider, name: "providers" },
   { model: Promotion, name: "promotions" },
   { model: Branch, name: "branches" },
@@ -87,7 +84,6 @@ const getCollections = () => [
   { model: IssueReport, name: "issuereports" },
   { model: ProfitHistory, name: "profithistory" },
   { model: PeriodWinner, name: "periodwinners" },
-  { model: GamificationConfig, name: "gamificationconfigs" },
   { model: BusinessAssistantConfig, name: "businessassistantconfigs" },
   { model: AuditLog, name: "auditlogs" },
   { model: RefreshToken, name: "refreshtokens" },

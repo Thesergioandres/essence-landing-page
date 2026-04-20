@@ -54,18 +54,17 @@ const pushSubscriptionSchema = new mongoose.Schema(
       stock: { type: Boolean, default: true },
       credits: { type: Boolean, default: true },
       subscriptions: { type: Boolean, default: true },
-      gamification: { type: Boolean, default: true },
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Índice único para evitar duplicados
 pushSubscriptionSchema.index(
   { user: 1, "subscription.endpoint": 1 },
-  { unique: true }
+  { unique: true },
 );
 
 // Método para verificar si la suscripción está activa
@@ -103,7 +102,7 @@ pushSubscriptionSchema.statics.cleanupInactive = async function (daysOld = 30) {
 
 const PushSubscription = mongoose.model(
   "PushSubscription",
-  pushSubscriptionSchema
+  pushSubscriptionSchema,
 );
 
 export default PushSubscription;

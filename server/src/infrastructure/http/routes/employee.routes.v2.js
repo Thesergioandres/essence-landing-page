@@ -5,6 +5,7 @@ import {
   checkPlanLimits,
   requireFeature,
   requirePermission,
+  requireRole,
 } from "../../../../middleware/business.middleware.js";
 import { EmployeeController } from "../controllers/EmployeeController.js";
 
@@ -31,6 +32,12 @@ router.get(
   "/:id",
   requirePermission({ module: "employees", action: "read" }),
   (req, res) => controller.getById(req, res),
+);
+router.patch(
+  "/:id",
+  requirePermission({ module: "employees", action: "update" }),
+  requireRole(["admin", "super_admin"]),
+  (req, res) => controller.updateBaseCommissionPercentage(req, res),
 );
 router.put(
   "/:id",

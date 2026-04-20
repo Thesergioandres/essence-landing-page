@@ -13,10 +13,8 @@ import Credit from "../src/infrastructure/database/models/Credit.js";
 import CreditPayment from "../src/infrastructure/database/models/CreditPayment.js";
 import Customer from "../src/infrastructure/database/models/Customer.js";
 import DefectiveProduct from "../src/infrastructure/database/models/DefectiveProduct.js";
-import EmployeeStats from "../src/infrastructure/database/models/EmployeeStats.js";
 import EmployeeStock from "../src/infrastructure/database/models/EmployeeStock.js";
 import Expense from "../src/infrastructure/database/models/Expense.js";
-import GamificationConfig from "../src/infrastructure/database/models/GamificationConfig.js";
 import InventoryEntry from "../src/infrastructure/database/models/InventoryEntry.js";
 import IssueReport from "../src/infrastructure/database/models/IssueReport.js";
 import Membership from "../src/infrastructure/database/models/Membership.js";
@@ -76,7 +74,6 @@ export const createBackup = async () => {
       { model: Stock, name: "stock" },
       { model: StockTransfer, name: "stocktransfers" },
       { model: EmployeeStock, name: "employeestock" },
-      { model: EmployeeStats, name: "employeestats" },
       { model: Provider, name: "providers" },
       { model: Promotion, name: "promotions" },
       { model: Branch, name: "branches" },
@@ -90,7 +87,6 @@ export const createBackup = async () => {
       { model: IssueReport, name: "issuereports" },
       { model: ProfitHistory, name: "profithistory" },
       { model: PeriodWinner, name: "periodwinners" },
-      { model: GamificationConfig, name: "gamificationconfigs" },
       { model: BusinessAssistantConfig, name: "businessassistantconfigs" },
       { model: AuditLog, name: "auditlogs" },
       { model: RefreshToken, name: "refreshtokens" },
@@ -125,19 +121,19 @@ export const createBackup = async () => {
       environment: process.env.NODE_ENV || "development",
       mongoUri: (process.env.MONGO_URI || process.env.MONGODB_URI).replace(
         /\/\/[^:]+:[^@]+@/,
-        "//*****:*****@"
+        "//*****:*****@",
       ), // Ocultar credenciales
     };
 
     await fs.writeFile(
       path.join(backupPath, "metadata.json"),
-      JSON.stringify(metadata, null, 2)
+      JSON.stringify(metadata, null, 2),
     );
 
     console.log(`\n✅ Backup creado exitosamente`);
     console.log(`   📂 Ubicación: ${backupPath}`);
     console.log(
-      `   📊 ${totalCollections} colecciones, ${totalDocuments} documentos\n`
+      `   📊 ${totalCollections} colecciones, ${totalDocuments} documentos\n`,
     );
 
     // Limpiar backups antiguos
@@ -201,17 +197,17 @@ export const restoreBackup = async (backupPath) => {
 
     console.log(
       `📋 Backup creado: ${new Date(metadata.timestamp).toLocaleString(
-        "es-ES"
-      )}`
+        "es-ES",
+      )}`,
     );
     console.log(
-      `📊 ${metadata.totalCollections} colecciones, ${metadata.totalDocuments} documentos\n`
+      `📊 ${metadata.totalCollections} colecciones, ${metadata.totalDocuments} documentos\n`,
     );
 
     // Leer archivos JSON
     const files = await fs.readdir(backupPath);
     const jsonFiles = files.filter(
-      (f) => f.endsWith(".json") && f !== "metadata.json"
+      (f) => f.endsWith(".json") && f !== "metadata.json",
     );
 
     let totalRestored = 0;
@@ -239,7 +235,6 @@ export const restoreBackup = async (backupPath) => {
             stock: Stock,
             stocktransfers: StockTransfer,
             employeestock: EmployeeStock,
-            employeestats: EmployeeStats,
             providers: Provider,
             promotions: Promotion,
             branches: Branch,
@@ -253,7 +248,6 @@ export const restoreBackup = async (backupPath) => {
             issuereports: IssueReport,
             profithistory: ProfitHistory,
             periodwinners: PeriodWinner,
-            gamificationconfigs: GamificationConfig,
             businessassistantconfigs: BusinessAssistantConfig,
             auditlogs: AuditLog,
             refreshtokens: RefreshToken,
@@ -269,7 +263,7 @@ export const restoreBackup = async (backupPath) => {
             await Model.insertMany(data);
 
             console.log(
-              `   ✅ ${collectionName}: ${data.length} documentos restaurados`
+              `   ✅ ${collectionName}: ${data.length} documentos restaurados`,
             );
             totalRestored += data.length;
           }

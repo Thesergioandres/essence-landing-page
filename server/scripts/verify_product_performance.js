@@ -52,16 +52,25 @@ const runVerification = async () => {
     console.log("✅ Connected");
 
     console.log("Registering models...");
-    const User = (await import("../src/infrastructure/database/models/User.js")).default;
-    const Business = (await import("../src/infrastructure/database/models/Business.js")).default;
-    const Category = (await import("../src/infrastructure/database/models/Category.js")).default;
-    const Product = (await import("../src/infrastructure/database/models/Product.js")).default;
-    const EmployeeStock = (await import("../src/infrastructure/database/models/EmployeeStock.js"))
+    const User = (await import("../src/infrastructure/database/models/User.js"))
       .default;
-    const Sale = (await import("../src/infrastructure/database/models/Sale.js")).default;
-    const GamificationConfig = (await import("../src/infrastructure/database/models/GamificationConfig.js"))
+    const Business = (
+      await import("../src/infrastructure/database/models/Business.js")
+    ).default;
+    const Category = (
+      await import("../src/infrastructure/database/models/Category.js")
+    ).default;
+    const Product = (
+      await import("../src/infrastructure/database/models/Product.js")
+    ).default;
+    const EmployeeStock = (
+      await import("../src/infrastructure/database/models/EmployeeStock.js")
+    ).default;
+    const Sale = (await import("../src/infrastructure/database/models/Sale.js"))
       .default;
-    const AuditLog = (await import("../src/infrastructure/database/models/AuditLog.js")).default;
+    const AuditLog = (
+      await import("../src/infrastructure/database/models/AuditLog.js")
+    ).default;
     console.log("Models registered.");
 
     // Removed controller import to prevent side-effect crashes

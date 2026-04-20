@@ -96,6 +96,12 @@ const userSchema = new mongoose.Schema(
       min: 0,
       max: 95,
     },
+    baseCommissionPercentage: {
+      type: Number,
+      default: 20,
+      min: 0,
+      max: 95,
+    },
     // Matriz de permisos modular por usuario (fallback fuera de membership)
     modularPermissions: {
       type: Map,

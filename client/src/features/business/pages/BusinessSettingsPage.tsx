@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useBusiness } from "../../../context/BusinessContext";
-import { gamificationService, uploadService } from "../../common/services";
+import { uploadService } from "../../common/services";
 import { businessService } from "../services";
 import type { BusinessFeatures } from "../types/business.types";
 
@@ -20,7 +20,6 @@ const defaultFeatures: BusinessFeatures = {
   products: true,
   inventory: true,
   sales: true,
-  gamification: true,
   incidents: true,
   expenses: true,
   assistant: false,
@@ -29,7 +28,7 @@ const defaultFeatures: BusinessFeatures = {
   promotions: true,
   branches: true,
   employees: true,
-  rankings: true,
+  rankings: false,
   credits: true,
   customers: true,
   defectiveProducts: true,
@@ -125,22 +124,12 @@ export default function BusinessSettings() {
       },
       {
         title: "Equipo comercial",
-        desc: "Motiva y gestiona el canal de empleados.",
+        desc: "Gestiona y opera el canal de empleados.",
         items: [
           {
             key: "employees" as const,
             label: "Empleados",
             helper: "Usuarios externos con ventas propias.",
-          },
-          {
-            key: "gamification" as const,
-            label: "Gamificacion",
-            helper: "Puntos, niveles y reglas de motivacion.",
-          },
-          {
-            key: "rankings" as const,
-            label: "Rankings",
-            helper: "Tablas de posiciones y premios.",
           },
           {
             key: "promotions" as const,
@@ -173,6 +162,7 @@ export default function BusinessSettings() {
         features: {
           ...defaultFeatures,
           assistant: true,
+          rankings: false,
         },
       },
       {
@@ -192,7 +182,6 @@ export default function BusinessSettings() {
           expenses: false,
           incidents: false,
           employees: false,
-          gamification: false,
           rankings: false,
           promotions: false,
           assistant: false,
@@ -201,7 +190,7 @@ export default function BusinessSettings() {
       {
         key: "employees",
         title: "Canal de empleados",
-        desc: "Habilita gamificacion, rankings y red comercial.",
+        desc: "Habilita la red comercial de empleados.",
         features: {
           products: true,
           inventory: true,
@@ -215,8 +204,7 @@ export default function BusinessSettings() {
           expenses: true,
           incidents: false,
           employees: true,
-          gamification: true,
-          rankings: true,
+          rankings: false,
           promotions: true,
           assistant: false,
         } as BusinessFeatures,
@@ -298,7 +286,6 @@ export default function BusinessSettings() {
         businessId,
         form.features as any
       );
-      await gamificationService.recalculatePoints();
       setMessage("Datos del negocio actualizados");
       await refresh();
     } catch (err) {

@@ -31,6 +31,7 @@ export async function listSales(req, res) {
     } = req.query;
 
     const financialPrivacy = resolveFinancialPrivacyContext(req);
+    const isEmployeeScopedEndpoint = req.path.startsWith("/employee");
 
     // Check if this is a employee-specific query
     // Route: /api/v2/sales/employee/:employeeId?
@@ -46,6 +47,12 @@ export async function listSales(req, res) {
       req.membership?.role === "admin" ||
       req.membership?.permissions?.sales?.update === true ||
       req.membership?.permissions?.sales?.delete === true;
+
+    // /sales/employee always means "my sales" for employee role,
+    // regardless of membership permissions.
+    if (isEmployeeScopedEndpoint && isEmployeeRoleUser) {
+      employeeId = req.user.id || req.user._id;
+    }
 
     if (!employeeId && isEmployeeRoleUser && !canViewTeamSalesByMembership) {
       employeeId = req.user.id;
@@ -65,9 +72,15 @@ export async function listSales(req, res) {
       },
     });
 
+    const preserveEmployeeProfit = Boolean(
+      financialPrivacy.isEmployeeRole && financialPrivacy.scopeEmployeeId,
+    );
+
     const sales = financialPrivacy.hideFinancialData
       ? (result.sales || []).map((sale) =>
-          sanitizeSaleForFinancialPrivacy(sale),
+          sanitizeSaleForFinancialPrivacy(sale, {
+            preserveEmployeeProfit,
+          }),
         )
       : result.sales;
 
