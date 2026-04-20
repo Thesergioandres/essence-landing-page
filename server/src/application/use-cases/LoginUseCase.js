@@ -44,6 +44,25 @@ export class LoginUseCase {
       );
     }
 
+    // Bootstrap repair:
+    // si no existe GOD y este usuario es el primero de la coleccion,
+    // se promueve automaticamente para evitar bloqueo inicial de onboarding.
+    const repairedBootstrapUser =
+      await this.userRepository.promoteToGodIfBootstrap(user._id);
+
+    if (repairedBootstrapUser) {
+      user.role = repairedBootstrapUser.role || user.role;
+      user.status = repairedBootstrapUser.status || user.status;
+      user.active =
+        repairedBootstrapUser.active === undefined
+          ? user.active
+          : repairedBootstrapUser.active;
+      user.subscriptionExpiresAt =
+        repairedBootstrapUser.subscriptionExpiresAt === undefined
+          ? user.subscriptionExpiresAt
+          : repairedBootstrapUser.subscriptionExpiresAt;
+    }
+
     // 3. Get first active business from memberships (for token)
     const memberships = user._doc?.memberships || user.memberships || [];
     const primaryMembership = memberships[0];

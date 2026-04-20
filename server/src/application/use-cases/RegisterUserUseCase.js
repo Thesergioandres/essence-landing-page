@@ -47,28 +47,46 @@ export class RegisterUserUseCase {
       // Other defaults handled by Mongoose Schema or added here
     });
 
+    const repairedBootstrapUser =
+      await this.userRepository.promoteToGodIfBootstrap(newUser._id);
+
+    const effectiveUser = repairedBootstrapUser
+      ? {
+          ...newUser,
+          ...repairedBootstrapUser,
+        }
+      : newUser;
+
+    const effectiveRole = effectiveUser.role;
+    const effectiveStatus =
+      effectiveRole === "god" ? "active" : effectiveUser.status;
+    const effectiveActive =
+      effectiveRole === "god" ? true : Boolean(effectiveUser.active);
+    const effectiveSubscriptionExpiresAt =
+      effectiveRole === "god" ? null : effectiveUser.subscriptionExpiresAt;
+
     // 4. Generate Token (Auto-login after register?)
     const token = jwtTokenService.generateAccessToken(
-      newUser._id,
-      newUser.role,
-      newUser.business,
+      effectiveUser._id,
+      effectiveRole,
+      effectiveUser.business,
     );
     const refreshToken = jwtTokenService.generateRefreshToken(
-      newUser._id,
-      newUser.role,
-      newUser.business,
+      effectiveUser._id,
+      effectiveRole,
+      effectiveUser.business,
     );
 
     return {
-      _id: newUser._id,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
+      _id: effectiveUser._id,
+      name: effectiveUser.name,
+      email: effectiveUser.email,
+      role: effectiveRole,
       isFirstUser,
-      status: newUser.status,
-      active: newUser.active,
-      subscriptionExpiresAt: newUser.subscriptionExpiresAt,
-      business: newUser.business,
+      status: effectiveStatus,
+      active: effectiveActive,
+      subscriptionExpiresAt: effectiveSubscriptionExpiresAt,
+      business: effectiveUser.business,
       token,
       refreshToken,
       refreshExpiresAt: jwtTokenService.getTokenExpirationIso(refreshToken),

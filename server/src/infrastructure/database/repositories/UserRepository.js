@@ -12,6 +12,55 @@ export class UserRepository {
   }
 
   /**
+   * Promueve al usuario a rol god en escenario de bootstrap:
+   * - No existe ningun usuario con rol god.
+   * - El usuario objetivo es el primero creado en la coleccion.
+   *
+   * @param {string|import("mongoose").Types.ObjectId} userId
+   * @returns {Promise<Object|null>} Usuario actualizado o null si no aplica.
+   */
+  async promoteToGodIfBootstrap(userId) {
+    if (!userId) return null;
+
+    const [godCount, firstUser] = await Promise.all([
+      User.countDocuments({ role: "god" }),
+      User.findOne({})
+        .sort({ createdAt: 1, _id: 1 })
+        .select(
+          "_id role status active subscriptionExpiresAt pausedRemainingMs",
+        ),
+    ]);
+
+    if (godCount > 0 || !firstUser) {
+      return null;
+    }
+
+    if (String(firstUser._id) !== String(userId)) {
+      return null;
+    }
+
+    const needsUpdate =
+      firstUser.role !== "god" ||
+      firstUser.status !== "active" ||
+      firstUser.active !== true ||
+      firstUser.subscriptionExpiresAt !== null ||
+      Number(firstUser.pausedRemainingMs || 0) !== 0;
+
+    if (!needsUpdate) {
+      return firstUser.toObject();
+    }
+
+    firstUser.role = "god";
+    firstUser.status = "active";
+    firstUser.active = true;
+    firstUser.subscriptionExpiresAt = null;
+    firstUser.pausedRemainingMs = 0;
+    await firstUser.save();
+
+    return firstUser.toObject();
+  }
+
+  /**
    * Find all users (for God Panel)
    * @returns {Promise<Array>}
    */
