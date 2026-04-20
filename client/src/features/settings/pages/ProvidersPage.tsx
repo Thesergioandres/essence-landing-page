@@ -12,6 +12,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { providerService } from "../services";
 
 interface Provider {
@@ -140,6 +141,129 @@ export default function Providers() {
       p.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const providerModal =
+    showModal &&
+    createPortal(
+      <div className="z-100 fixed inset-0 overflow-y-auto bg-black/55 p-4 sm:p-6">
+        <div className="mx-auto flex min-h-full w-full max-w-2xl items-center justify-center">
+          <div className="w-full rounded-xl bg-white shadow-2xl dark:bg-gray-800">
+            <div className="border-b border-gray-200 p-6 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {editingProvider ? "Editar Proveedor" : "Nuevo Proveedor"}
+              </h2>
+            </div>
+            <form
+              onSubmit={handleSubmit}
+              className="max-h-[calc(100dvh-8rem)] space-y-4 overflow-y-auto p-6"
+            >
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Nombre de la empresa *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={e =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Nombre de contacto
+                </label>
+                <input
+                  type="text"
+                  value={formData.contactName}
+                  onChange={e =>
+                    setFormData({ ...formData, contactName: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Teléfono
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={e =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={e =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Dirección
+                </label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={e =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Notas
+                </label>
+                <textarea
+                  value={formData.notes}
+                  onChange={e =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <div className="flex flex-col gap-3 pt-4 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditingProvider(null);
+                  }}
+                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {editingProvider ? "Guardar" : "Crear"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -149,7 +273,7 @@ export default function Providers() {
   }
 
   return (
-    <div className="overflow-hidden p-6">
+    <div className="p-6 pb-32">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -282,121 +406,7 @@ export default function Providers() {
         </div>
       )}
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl dark:bg-gray-800">
-            <div className="border-b border-gray-200 p-6 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {editingProvider ? "Editar Proveedor" : "Nuevo Proveedor"}
-              </h2>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4 p-6">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Nombre de la empresa *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={e =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Nombre de contacto
-                </label>
-                <input
-                  type="text"
-                  value={formData.contactName}
-                  onChange={e =>
-                    setFormData({ ...formData, contactName: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Teléfono
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={e =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={e =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Dirección
-                </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={e =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Notas
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={e =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                  rows={3}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setEditingProvider(null);
-                  }}
-                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-50"
-                >
-                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {editingProvider ? "Guardar" : "Crear"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {providerModal}
     </div>
   );
 }
