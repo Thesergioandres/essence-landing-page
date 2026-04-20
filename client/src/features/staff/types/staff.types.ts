@@ -10,6 +10,8 @@ export interface StaffMemberRow {
   active: boolean;
   phone?: string;
   baseCommissionPercentage: number;
+  commissionApplicable: boolean;
+  isManagementRole: boolean;
   fixedCommissionOnly: boolean;
   isCommissionFixed: boolean;
   customCommissionRate: number | null;

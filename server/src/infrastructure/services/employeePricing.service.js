@@ -3,6 +3,21 @@ import User from "../database/models/User.js";
 
 const DEFAULT_BASE_COMMISSION =
   CommissionPolicyService.getDefaultBaseCommission();
+const MANAGEMENT_ROLES = new Set(["admin", "super_admin", "god"]);
+const COMMISSION_ELIGIBLE_ROLES = new Set(["employee", "operativo"]);
+
+const normalizeRole = (role) => {
+  const normalized = String(role || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+  return normalized === "superadmin" ? "super_admin" : normalized;
+};
+
+const isManagementRole = (role) => MANAGEMENT_ROLES.has(normalizeRole(role));
+const isCommissionEligibleRole = (role) =>
+  COMMISSION_ELIGIBLE_ROLES.has(normalizeRole(role));
 
 export const getEmployeeCommissionInfo = async (
   employeeId,
@@ -11,9 +26,37 @@ export const getEmployeeCommissionInfo = async (
   try {
     const user = await User.findById(employeeId)
       .select(
-        "fixedCommissionOnly isCommissionFixed customCommissionRate baseCommissionPercentage",
+        "role fixedCommissionOnly isCommissionFixed customCommissionRate baseCommissionPercentage",
       )
       .lean();
+
+    if (!user) {
+      return {
+        position: null,
+        bonusCommission: 0,
+        profitPercentage: DEFAULT_BASE_COMMISSION,
+        baseCommissionPercentage: DEFAULT_BASE_COMMISSION,
+        periodStart: null,
+        periodEnd: null,
+        totalEmployees: 0,
+        isCommissionFixed: false,
+        customCommissionRate: null,
+      };
+    }
+
+    if (isManagementRole(user.role) || !isCommissionEligibleRole(user.role)) {
+      return {
+        position: null,
+        bonusCommission: 0,
+        profitPercentage: 0,
+        baseCommissionPercentage: 0,
+        periodStart: null,
+        periodEnd: null,
+        totalEmployees: 0,
+        isCommissionFixed: false,
+        customCommissionRate: null,
+      };
+    }
 
     const isCommissionFixed = Boolean(
       user?.isCommissionFixed || user?.fixedCommissionOnly,

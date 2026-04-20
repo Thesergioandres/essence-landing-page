@@ -4,6 +4,23 @@ import { employeeService } from "../../employees/services";
 import type { StaffMemberRow } from "../types/staff.types";
 
 const DEFAULT_BASE_COMMISSION = 20;
+const MANAGEMENT_ROLES = new Set(["admin", "super_admin", "god"]);
+const COMMISSION_ELIGIBLE_ROLES = new Set(["employee", "operativo"]);
+
+const normalizeRole = (role: unknown) => {
+  const normalized = String(role || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+  return normalized === "superadmin" ? "super_admin" : normalized;
+};
+
+const isManagementRole = (role: unknown) =>
+  MANAGEMENT_ROLES.has(normalizeRole(role));
+
+const isCommissionApplicableRole = (role: unknown) =>
+  COMMISSION_ELIGIBLE_ROLES.has(normalizeRole(role));
 
 const resolveEntityId = (value: unknown): string => {
   if (typeof value === "string") {
@@ -38,6 +55,9 @@ const normalizeRate = (value: unknown, fallback = DEFAULT_BASE_COMMISSION) => {
   return Math.max(0, Math.min(95, candidate));
 };
 
+const resolveCommissionRateForRole = (role: unknown, value: unknown) =>
+  isCommissionApplicableRole(role) ? normalizeRate(value) : 0;
+
 const normalizeMembershipUser = (value: unknown): User | null => {
   if (!value || typeof value !== "object") {
     return null;
@@ -48,10 +68,12 @@ const normalizeMembershipUser = (value: unknown): User | null => {
 
 const sortRows = (rows: StaffMemberRow[]) => {
   const roleRank: Record<string, number> = {
-    admin: 0,
-    super_admin: 0,
-    employee: 1,
-    viewer: 2,
+    god: 0,
+    super_admin: 1,
+    admin: 2,
+    employee: 3,
+    operativo: 3,
+    viewer: 4,
   };
 
   return [...rows].sort((left, right) => {
@@ -85,21 +107,34 @@ export const staffService = {
         continue;
       }
 
+      const resolvedRole = String(
+        member.role || membershipUser?.role || "employee"
+      );
+      const commissionApplicable = isCommissionApplicableRole(resolvedRole);
+
       rowsByEmployeeId.set(employeeId, {
         membershipId: member._id || null,
         employeeId,
         name: membershipUser?.name || "Sin nombre",
         email: membershipUser?.email || "",
-        role: String(member.role || membershipUser?.role || "employee"),
+        role: resolvedRole,
         status: String(member.status || membershipUser?.status || "active"),
         active: membershipUser?.active !== false,
         phone: membershipUser?.phone,
-        baseCommissionPercentage: normalizeRate(
+        baseCommissionPercentage: resolveCommissionRateForRole(
+          resolvedRole,
           membershipUser?.baseCommissionPercentage
         ),
-        fixedCommissionOnly: Boolean(membershipUser?.fixedCommissionOnly),
-        isCommissionFixed: Boolean(membershipUser?.isCommissionFixed),
+        commissionApplicable,
+        isManagementRole: isManagementRole(resolvedRole),
+        fixedCommissionOnly: commissionApplicable
+          ? Boolean(membershipUser?.fixedCommissionOnly)
+          : false,
+        isCommissionFixed: commissionApplicable
+          ? Boolean(membershipUser?.isCommissionFixed)
+          : false,
         customCommissionRate:
+          !commissionApplicable ||
           membershipUser?.customCommissionRate === null ||
           membershipUser?.customCommissionRate === undefined
             ? null
@@ -120,26 +155,37 @@ export const staffService = {
       const existing = rowsByEmployeeId.get(employeeId);
 
       if (existing) {
+        const mergedRole = String(employee.role || existing.role || "employee");
+        const commissionApplicable = isCommissionApplicableRole(mergedRole);
+
         rowsByEmployeeId.set(employeeId, {
           ...existing,
           name: employee.name || existing.name,
           email: employee.email || existing.email,
+          role: mergedRole,
           phone: employee.phone || existing.phone,
           active: employee.active !== false,
           status: employee.status || existing.status,
-          baseCommissionPercentage: normalizeRate(
-            employee.baseCommissionPercentage,
-            existing.baseCommissionPercentage
-          ),
-          fixedCommissionOnly: Boolean(
-            employee.fixedCommissionOnly ?? existing.fixedCommissionOnly
-          ),
-          isCommissionFixed: Boolean(
-            employee.isCommissionFixed ?? existing.isCommissionFixed
-          ),
-          customCommissionRate:
-            employee.customCommissionRate === null ||
-            employee.customCommissionRate === undefined
+          baseCommissionPercentage: commissionApplicable
+            ? normalizeRate(
+                employee.baseCommissionPercentage,
+                existing.baseCommissionPercentage
+              )
+            : 0,
+          commissionApplicable,
+          isManagementRole: isManagementRole(mergedRole),
+          fixedCommissionOnly: commissionApplicable
+            ? Boolean(
+                employee.fixedCommissionOnly ?? existing.fixedCommissionOnly
+              )
+            : false,
+          isCommissionFixed: commissionApplicable
+            ? Boolean(employee.isCommissionFixed ?? existing.isCommissionFixed)
+            : false,
+          customCommissionRate: !commissionApplicable
+            ? null
+            : employee.customCommissionRate === null ||
+                employee.customCommissionRate === undefined
               ? existing.customCommissionRate
               : normalizeRate(employee.customCommissionRate, 0),
           source: "merged",
@@ -148,21 +194,32 @@ export const staffService = {
         continue;
       }
 
+      const resolvedRole = String(employee.role || "employee");
+      const commissionApplicable = isCommissionApplicableRole(resolvedRole);
+
       rowsByEmployeeId.set(employeeId, {
         membershipId: null,
         employeeId,
         name: employee.name || "Sin nombre",
         email: employee.email || "",
-        role: String(employee.role || "employee"),
+        role: resolvedRole,
         status: String(employee.status || "active"),
         active: employee.active !== false,
         phone: employee.phone,
-        baseCommissionPercentage: normalizeRate(
+        baseCommissionPercentage: resolveCommissionRateForRole(
+          resolvedRole,
           employee.baseCommissionPercentage
         ),
-        fixedCommissionOnly: Boolean(employee.fixedCommissionOnly),
-        isCommissionFixed: Boolean(employee.isCommissionFixed),
+        commissionApplicable,
+        isManagementRole: isManagementRole(resolvedRole),
+        fixedCommissionOnly: commissionApplicable
+          ? Boolean(employee.fixedCommissionOnly)
+          : false,
+        isCommissionFixed: commissionApplicable
+          ? Boolean(employee.isCommissionFixed)
+          : false,
         customCommissionRate:
+          !commissionApplicable ||
           employee.customCommissionRate === null ||
           employee.customCommissionRate === undefined
             ? null
@@ -177,11 +234,22 @@ export const staffService = {
 
   async updateBaseCommissionPercentage(
     employeeId: string,
-    baseCommissionPercentage: number
+    baseCommissionPercentage: number,
+    options?: { targetRole?: string }
   ): Promise<number> {
+    if (
+      options?.targetRole &&
+      !isCommissionApplicableRole(options.targetRole)
+    ) {
+      throw new Error("Solo perfiles operativos pueden editar comisión base.");
+    }
+
     const payload = await employeeService.updateBaseCommissionPercentage(
       employeeId,
-      baseCommissionPercentage
+      baseCommissionPercentage,
+      {
+        targetRole: options?.targetRole,
+      }
     );
 
     return normalizeRate(payload.baseCommissionPercentage);

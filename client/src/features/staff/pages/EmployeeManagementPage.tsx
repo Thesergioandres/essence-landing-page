@@ -1,6 +1,7 @@
 import { Activity, Lock, RefreshCw, Search, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useBusiness } from "../../../context/BusinessContext";
+import { useSession } from "../../../hooks/useSession";
 import { Button, LoadingSpinner, toast } from "../../../shared/components/ui";
 import { staffService } from "../services";
 import type { StaffMemberRow } from "../types/staff.types";
@@ -17,11 +18,33 @@ const formatRole = (role: string) => {
   if (normalized === "admin" || normalized === "super_admin") {
     return "Administrador";
   }
+  if (normalized === "god") {
+    return "Desarrollador";
+  }
   if (normalized === "viewer") {
     return "Consulta";
   }
   return "Empleado";
 };
+
+const COMMISSION_ELIGIBLE_ROLES = new Set(["employee", "operativo"]);
+
+const normalizeRole = (role: unknown) => {
+  const normalized = String(role || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+  return normalized === "superadmin" ? "super_admin" : normalized;
+};
+
+const isOwnerRole = (role: unknown) => {
+  const normalized = normalizeRole(role);
+  return normalized === "god" || normalized === "super_admin";
+};
+
+const isCommissionApplicableRole = (role: unknown) =>
+  COMMISSION_ELIGIBLE_ROLES.has(normalizeRole(role));
 
 const toDraftMap = (rows: StaffMemberRow[]) =>
   rows.reduce<Record<string, string>>((accumulator, row) => {
@@ -35,6 +58,7 @@ const toDraftMap = (rows: StaffMemberRow[]) =>
 
 export default function EmployeeManagementPage() {
   const { business } = useBusiness();
+  const { user } = useSession();
   const [rows, setRows] = useState<StaffMemberRow[]>([]);
   const [draftRates, setDraftRates] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -46,6 +70,7 @@ export default function EmployeeManagementPage() {
   >({});
 
   const businessId = business?._id;
+  const currentUserId = String(user?._id || "");
 
   const loadRows = async (mode: "initial" | "refresh" = "initial") => {
     if (!businessId) {
@@ -117,7 +142,9 @@ export default function EmployeeManagementPage() {
   const totals = useMemo(
     () => ({
       active: rows.filter(row => row.active).length,
-      fixed: rows.filter(row => row.isCommissionFixed).length,
+      fixed: rows.filter(
+        row => row.commissionApplicable && row.isCommissionFixed
+      ).length,
       total: rows.length,
     }),
     [rows]
@@ -149,6 +176,13 @@ export default function EmployeeManagementPage() {
       return;
     }
 
+    if (!row.commissionApplicable || !isCommissionApplicableRole(row.role)) {
+      if (options.notifyOnInvalid !== false) {
+        toast.error("La comisión base solo aplica a perfiles operativos.");
+      }
+      return;
+    }
+
     const rawValue = options.rawValue ?? draftRates[employeeId];
     if (String(rawValue ?? "").trim() === "") {
       return;
@@ -173,7 +207,10 @@ export default function EmployeeManagementPage() {
       setSavingRowId(employeeId);
       const updatedRate = await staffService.updateBaseCommissionPercentage(
         employeeId,
-        parsedRate
+        parsedRate,
+        {
+          targetRole: row.role,
+        }
       );
 
       setRows(previous =>
@@ -315,8 +352,20 @@ export default function EmployeeManagementPage() {
               {filteredRows.map(row => {
                 const isSaving = savingRowId === row.employeeId;
                 const isRateLocked = row.isCommissionFixed;
+                const canEditCommission =
+                  row.commissionApplicable &&
+                  isCommissionApplicableRole(row.role);
+                const isSelfOwnerProfile =
+                  Boolean(currentUserId) &&
+                  String(row.employeeId) === currentUserId &&
+                  isOwnerRole(row.role);
+                const showCommissionAsNotApplicable =
+                  !canEditCommission || row.isManagementRole;
+                const hideSync =
+                  showCommissionAsNotApplicable || isSelfOwnerProfile;
                 const draftValue = Number(draftRates[row.employeeId]);
                 const hasPendingChanges =
+                  canEditCommission &&
                   Number.isFinite(draftValue) &&
                   Math.abs(
                     draftValue - Number(row.baseCommissionPercentage || 0)
@@ -349,32 +398,46 @@ export default function EmployeeManagementPage() {
                     </td>
                     <td className="px-4 py-4 align-middle">
                       <div className="flex min-h-11 w-36 items-center rounded-xl border border-slate-700 bg-slate-900/70 px-2">
-                        <input
-                          value={draftRates[row.employeeId] ?? ""}
-                          onChange={event => {
-                            const nextValue = event.target.value;
-                            handleRateChange(row.employeeId, nextValue);
-                            scheduleRateAutoSave(row.employeeId, nextValue);
-                          }}
-                          onBlur={() => flushRateSave(row.employeeId)}
-                          onKeyDown={event => {
-                            if (event.key === "Enter") {
-                              event.preventDefault();
-                              flushRateSave(row.employeeId);
-                            }
-                          }}
-                          type="number"
-                          min={0}
-                          max={95}
-                          step={0.1}
-                          className="h-10 w-full bg-transparent text-right text-sm text-slate-100 outline-none"
-                          aria-label={`Comision base de ${row.name}`}
-                        />
-                        <span className="pl-2 text-xs text-slate-500">%</span>
+                        {canEditCommission ? (
+                          <>
+                            <input
+                              value={draftRates[row.employeeId] ?? ""}
+                              onChange={event => {
+                                const nextValue = event.target.value;
+                                handleRateChange(row.employeeId, nextValue);
+                                scheduleRateAutoSave(row.employeeId, nextValue);
+                              }}
+                              onBlur={() => flushRateSave(row.employeeId)}
+                              onKeyDown={event => {
+                                if (event.key === "Enter") {
+                                  event.preventDefault();
+                                  flushRateSave(row.employeeId);
+                                }
+                              }}
+                              type="number"
+                              min={0}
+                              max={95}
+                              step={0.1}
+                              className="h-10 w-full bg-transparent text-right text-sm text-slate-100 outline-none"
+                              aria-label={`Comision base de ${row.name}`}
+                            />
+                            <span className="pl-2 text-xs text-slate-500">
+                              %
+                            </span>
+                          </>
+                        ) : (
+                          <span className="w-full text-right text-sm font-semibold text-slate-500">
+                            -
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-4 align-middle">
-                      {isRateLocked ? (
+                      {showCommissionAsNotApplicable ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-600/50 bg-slate-800/50 px-3 py-1 text-xs text-slate-400">
+                          No aplica
+                        </span>
+                      ) : isRateLocked ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/35 bg-amber-500/15 px-3 py-1 text-xs text-amber-200">
                           <Lock className="h-3.5 w-3.5" />
                           Comision fija
@@ -387,7 +450,11 @@ export default function EmployeeManagementPage() {
                       )}
                     </td>
                     <td className="px-4 py-4 text-right align-middle">
-                      {isSaving ? (
+                      {hideSync ? (
+                        <span className="inline-flex min-h-11 items-center rounded-xl border border-slate-700/60 bg-slate-800/40 px-3 text-xs text-slate-500">
+                          -
+                        </span>
+                      ) : isSaving ? (
                         <span className="inline-flex min-h-11 items-center rounded-xl border border-cyan-300/40 bg-cyan-500/15 px-3 text-xs text-cyan-100">
                           Guardando...
                         </span>

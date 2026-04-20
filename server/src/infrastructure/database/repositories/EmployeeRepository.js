@@ -10,6 +10,23 @@ import Promotion from "../models/Promotion.js";
 import Sale from "../models/Sale.js";
 import User from "../models/User.js";
 
+const MANAGEMENT_ROLES = new Set(["admin", "super_admin", "god"]);
+const COMMISSION_ELIGIBLE_ROLES = new Set(["employee", "operativo"]);
+
+const normalizeRole = (role) => {
+  const normalized = String(role || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+  return normalized === "superadmin" ? "super_admin" : normalized;
+};
+
+const isManagementRole = (role) => MANAGEMENT_ROLES.has(normalizeRole(role));
+
+const isCommissionEligibleRole = (role) =>
+  COMMISSION_ELIGIBLE_ROLES.has(normalizeRole(role));
+
 export class EmployeeRepository {
   async create(data, businessId) {
     const userExists = await User.findOne({ email: data.email });
@@ -283,7 +300,40 @@ export class EmployeeRepository {
     id,
     businessId,
     baseCommissionPercentage,
+    options = {},
   ) {
+    const targetUser = await User.findById(id).select("_id role");
+
+    if (!targetUser) {
+      const err = new Error("Employee no encontrado");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const normalizedTargetRole = normalizeRole(targetUser.role);
+    const normalizedHeaderRole = options?.targetRoleFromHeader
+      ? normalizeRole(options.targetRoleFromHeader)
+      : "";
+
+    if (normalizedHeaderRole && normalizedHeaderRole !== normalizedTargetRole) {
+      const err = new Error(
+        "El rol del perfil cambió. Recarga la tabla antes de editar.",
+      );
+      err.statusCode = 409;
+      throw err;
+    }
+
+    if (
+      isManagementRole(normalizedTargetRole) ||
+      !isCommissionEligibleRole(normalizedTargetRole)
+    ) {
+      const err = new Error(
+        "Solo perfiles operativos pueden tener comisión base.",
+      );
+      err.statusCode = 403;
+      throw err;
+    }
+
     const membership = await Membership.findOne({
       business: businessId,
       user: id,

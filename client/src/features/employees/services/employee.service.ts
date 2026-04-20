@@ -97,7 +97,8 @@ export const employeeService = {
 
   async updateBaseCommissionPercentage(
     id: string,
-    baseCommissionPercentage: number
+    baseCommissionPercentage: number,
+    options?: { targetRole?: string }
   ): Promise<{
     _id: string;
     name: string;
@@ -109,9 +110,18 @@ export const employeeService = {
     isCommissionFixed?: boolean;
     customCommissionRate?: number | null;
   }> {
-    const response = await api.patch(`/employees/${id}`, {
-      baseCommissionPercentage,
-    });
+    const response = await api.patch(
+      `/employees/${id}`,
+      {
+        baseCommissionPercentage,
+      },
+      {
+        headers:
+          options?.targetRole && String(options.targetRole).trim()
+            ? { "x-target-role": String(options.targetRole).trim() }
+            : undefined,
+      }
+    );
     const apiResponse = response.data;
     return apiResponse.data || apiResponse;
   },

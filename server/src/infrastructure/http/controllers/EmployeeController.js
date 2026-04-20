@@ -70,11 +70,15 @@ export class EmployeeController {
     try {
       const businessId = req.businessId;
       const { baseCommissionPercentage } = req.body || {};
+      const targetRoleFromHeader = req.headers["x-target-role"];
 
       const employee = await repository.updateBaseCommissionPercentage(
         req.params.id,
         businessId,
         baseCommissionPercentage,
+        {
+          targetRoleFromHeader,
+        },
       );
 
       return res.json({ success: true, data: employee });
