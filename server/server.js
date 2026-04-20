@@ -113,18 +113,100 @@ if (process.env.NODE_ENV === "production") {
 const defaultAllowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
+  "https://essenceerp.up.railway.app",
 ];
+
+const extractOrigin = (value) => {
+  if (!value) return null;
+
+  const cleaned = String(value).trim().replace(/\/+$/, "");
+  if (!cleaned) return null;
+
+  try {
+    return new URL(cleaned).origin;
+  } catch {
+    return null;
+  }
+};
+
+const expandOriginCandidates = (rawOrigin) => {
+  const cleaned = String(rawOrigin || "")
+    .trim()
+    .replace(/\/+$/, "");
+
+  if (!cleaned) return [];
+
+  const directOrigin = extractOrigin(cleaned);
+  if (directOrigin) {
+    return [directOrigin];
+  }
+
+  // Acepta valores tipo host:puerto en variables (sin protocolo)
+  if (/^[a-z0-9.-]+(?::\d+)?$/i.test(cleaned)) {
+    return [
+      `https://${cleaned}`,
+      ...(cleaned.startsWith("localhost") || cleaned.startsWith("127.0.0.1")
+        ? [`http://${cleaned}`]
+        : []),
+    ]
+      .map((candidate) => extractOrigin(candidate))
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
 const envOriginsRaw = process.env.ALLOWED_ORIGINS || "";
 const envOrigins = envOriginsRaw
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
 const frontendOrigin = (process.env.FRONTEND_URL || "").trim();
-const allowedOrigins = [
-  ...defaultAllowedOrigins,
-  ...(frontendOrigin ? [frontendOrigin] : []),
-  ...envOrigins,
-];
+
+const allowedOriginSet = new Set(
+  [
+    ...defaultAllowedOrigins,
+    ...(frontendOrigin ? [frontendOrigin] : []),
+    ...envOrigins,
+  ]
+    .flatMap(expandOriginCandidates)
+    .filter(Boolean),
+);
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+
+    const normalizedOrigin = extractOrigin(origin);
+    const isAllowed =
+      Boolean(normalizedOrigin) && allowedOriginSet.has(normalizedOrigin);
+
+    if (isAllowed) {
+      return callback(null, true);
+    }
+
+    console.log("Origin bloqueado:", origin);
+    console.log("Allowed origins:", [...allowedOriginSet]);
+
+    if (process.env.NODE_ENV === "production") {
+      return callback(new Error("No permitido por CORS"));
+    }
+
+    return callback(null, true); // Temporalmente permitir todos para debug
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "x-business-id",
+    "X-Business-Id",
+  ],
+  exposedHeaders: ["Content-Length", "X-Requested-With"],
+  maxAge: 86400, // 24 horas de cache para preflight
+};
 
 // Conectar a MongoDB y Redis
 await connectDB();
@@ -224,49 +306,10 @@ if (process.env.DEBUG_DB === "true") {
 }
 
 // Middlewares - CORS Configuration v5.0 - Enhanced for Production
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Permitir requests sin origin (mobile apps, curl, etc.)
-      if (!origin) return callback(null, true);
-
-      // Verificar si el origin está en la lista permitida
-      const isAllowed = allowedOrigins.some((allowed) => {
-        if (typeof allowed === "string") {
-          return allowed === origin;
-        } else if (allowed instanceof RegExp) {
-          return allowed.test(origin);
-        }
-        return false;
-      });
-
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        console.log("Origin bloqueado:", origin);
-        if (process.env.NODE_ENV === "production") {
-          callback(new Error("No permitido por CORS"));
-        } else {
-          callback(null, true); // Temporalmente permitir todos para debug
-        }
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "x-business-id",
-      "X-Business-Id",
-    ],
-    exposedHeaders: ["Content-Length", "X-Requested-With"],
-    maxAge: 86400, // 24 horas de cache para preflight
-  }),
-);
+app.use(cors(corsOptions));
 
 // Manejo explícito de preflight requests
-app.options("*", cors());
+app.options("*", cors(corsOptions));
 
 // Logging de request/res con requestId
 app.use(requestLogger);
