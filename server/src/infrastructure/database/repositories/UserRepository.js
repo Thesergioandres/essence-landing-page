@@ -13,8 +13,8 @@ export class UserRepository {
 
   /**
    * Promueve al usuario a rol god en escenario de bootstrap:
-   * - No existe ningun usuario con rol god.
-   * - El usuario objetivo es el primero creado en la coleccion.
+   * - No existe ningún usuario con rol god.
+   * - El usuario objetivo es el primero creado en la colección.
    *
    * @param {string|import("mongoose").Types.ObjectId} userId
    * @returns {Promise<Object|null>} Usuario actualizado o null si no aplica.

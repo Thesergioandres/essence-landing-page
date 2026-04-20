@@ -131,6 +131,106 @@ const notifySessionChange = () => {
   window.dispatchEvent(new Event("session-refresh"));
 };
 
+const toAuthResponse = (value: unknown): AuthResponse =>
+  value as unknown as AuthResponse;
+
+const hasUserIdentity = (value: Record<string, unknown>): boolean =>
+  "_id" in value ||
+  "id" in value ||
+  "email" in value ||
+  "role" in value ||
+  "name" in value;
+
+const mergeUserWithTokens = (
+  userRecord: Record<string, unknown>,
+  sourceRecord: Record<string, unknown>,
+  fallbackRecord?: Record<string, unknown> | null
+): AuthResponse => {
+  const tokenFromSource =
+    typeof sourceRecord.token === "string" ? sourceRecord.token : undefined;
+  const tokenFromFallback =
+    fallbackRecord && typeof fallbackRecord.token === "string"
+      ? fallbackRecord.token
+      : undefined;
+
+  const refreshTokenFromSource =
+    typeof sourceRecord.refreshToken === "string"
+      ? sourceRecord.refreshToken
+      : undefined;
+  const refreshTokenFromFallback =
+    fallbackRecord && typeof fallbackRecord.refreshToken === "string"
+      ? fallbackRecord.refreshToken
+      : undefined;
+
+  const refreshExpiresAtFromSource =
+    typeof sourceRecord.refreshExpiresAt === "string"
+      ? sourceRecord.refreshExpiresAt
+      : undefined;
+  const refreshExpiresAtFromFallback =
+    fallbackRecord && typeof fallbackRecord.refreshExpiresAt === "string"
+      ? fallbackRecord.refreshExpiresAt
+      : undefined;
+
+  return {
+    ...(toAuthResponse(userRecord) as AuthResponse),
+    token: tokenFromSource || tokenFromFallback || "",
+    ...(refreshTokenFromSource || refreshTokenFromFallback
+      ? {
+          refreshToken:
+            refreshTokenFromSource || refreshTokenFromFallback || undefined,
+        }
+      : {}),
+    ...(refreshExpiresAtFromSource || refreshExpiresAtFromFallback
+      ? {
+          refreshExpiresAt:
+            refreshExpiresAtFromSource ||
+            refreshExpiresAtFromFallback ||
+            undefined,
+        }
+      : {}),
+  } as unknown as AuthResponse;
+};
+
+const normalizeAuthResponse = (raw: unknown): AuthResponse => {
+  const payload =
+    raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+
+  if (hasUserIdentity(payload)) {
+    return toAuthResponse(payload);
+  }
+
+  const nestedData =
+    payload.data && typeof payload.data === "object"
+      ? (payload.data as Record<string, unknown>)
+      : null;
+
+  if (nestedData) {
+    if (hasUserIdentity(nestedData)) {
+      return toAuthResponse(nestedData);
+    }
+
+    const nestedUser =
+      nestedData.user && typeof nestedData.user === "object"
+        ? (nestedData.user as Record<string, unknown>)
+        : null;
+
+    if (nestedUser) {
+      return mergeUserWithTokens(nestedUser, nestedData, payload);
+    }
+  }
+
+  const directUser =
+    payload.user && typeof payload.user === "object"
+      ? (payload.user as Record<string, unknown>)
+      : null;
+
+  if (directUser) {
+    return mergeUserWithTokens(directUser, payload);
+  }
+
+  return toAuthResponse(payload);
+};
+
 /**
  * Helper to set businessId for god users with single membership
  */
@@ -174,18 +274,19 @@ export const authService = {
   },
 
   async register(payload: RegisterCredentials): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>("/auth/register", payload);
+    const response = await api.post("/auth/register", payload);
+    const authPayload = normalizeAuthResponse(response.data);
 
     // Guardar token para que el usuario pueda crear su negocio
-    if (response.data.token) {
-      applySession({ token: response.data.token, user: response.data });
-      if (response.data.refreshToken) {
-        localStorage.setItem("refreshToken", response.data.refreshToken);
+    if (authPayload.token) {
+      applySession({ token: authPayload.token, user: authPayload });
+      if (authPayload.refreshToken) {
+        localStorage.setItem("refreshToken", authPayload.refreshToken);
       }
       notifySessionChange();
     }
 
-    return response.data;
+    return authPayload;
   },
 
   async selectPlan(plan: string) {
@@ -224,21 +325,22 @@ export const authService = {
     localStorage.removeItem("user");
     localStorage.removeItem("businessId");
 
-    const response = await api.post<AuthResponse>("/auth/login", {
+    const response = await api.post("/auth/login", {
       email,
       password,
     });
+    const authPayload = normalizeAuthResponse(response.data);
 
-    if (response.data.token) {
-      applySession({ token: response.data.token, user: response.data });
-      if (response.data.refreshToken) {
-        localStorage.setItem("refreshToken", response.data.refreshToken);
+    if (authPayload.token) {
+      applySession({ token: authPayload.token, user: authPayload });
+      if (authPayload.refreshToken) {
+        localStorage.setItem("refreshToken", authPayload.refreshToken);
       }
-      await trySetBusinessForGod(normalizeEmployeeRole(response.data.role));
+      await trySetBusinessForGod(normalizeEmployeeRole(authPayload.role));
       notifySessionChange();
     }
 
-    return response.data;
+    return authPayload;
   },
 
   async refreshToken(): Promise<{

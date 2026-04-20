@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useBrandLogo } from "../../../hooks/useBrandLogo";
 import { Button, Input } from "../../../shared/components/ui";
+import { normalizeEmployeeRole } from "../../../shared/utils/roleAliases";
 import { globalSettingsService } from "../../common/services";
 import { authService } from "../services";
 
@@ -74,7 +75,18 @@ export default function RegisterPage() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const step = params.get("step");
-    if (step !== "plan" || registeredUser) return;
+    if (step !== "plan") return;
+
+    const currentSessionUser = authService.getCurrentUser();
+    const currentRole = normalizeEmployeeRole(currentSessionUser?.role || "");
+
+    if (currentRole === "god") {
+      sessionStorage.removeItem(REGISTER_STEP_STORAGE_KEY);
+      navigate("/onboarding", { replace: true });
+      return;
+    }
+
+    if (registeredUser) return;
 
     const raw = sessionStorage.getItem(REGISTER_STEP_STORAGE_KEY);
     if (!raw) return;
@@ -90,7 +102,7 @@ export default function RegisterPage() {
     } catch {
       sessionStorage.removeItem(REGISTER_STEP_STORAGE_KEY);
     }
-  }, [location.search, registeredUser]);
+  }, [location.search, navigate, registeredUser]);
 
   useEffect(() => {
     globalSettingsService
@@ -165,12 +177,20 @@ export default function RegisterPage() {
       const pendingUser = { name: trimmedName, email: trimmedEmail };
 
       const syncedProfile = await authService.syncSession().catch(() => null);
-      const resolvedRole = String(
-        syncedProfile?.role || authData.role || ""
-      ).trim();
+      const storedSessionUser = authService.getCurrentUser();
+      const resolvedRole = normalizeEmployeeRole(
+        String(
+          syncedProfile?.role || storedSessionUser?.role || authData.role || ""
+        ).trim()
+      );
+
+      const isActiveAtRegister =
+        authData.status === "active" && authData.active === true;
 
       const shouldBypassPlan =
-        authData.isFirstUser === true || resolvedRole === "god";
+        authData.isFirstUser === true ||
+        resolvedRole === "god" ||
+        isActiveAtRegister;
 
       if (shouldBypassPlan) {
         sessionStorage.removeItem(REGISTER_STEP_STORAGE_KEY);
