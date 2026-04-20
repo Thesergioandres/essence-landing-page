@@ -79,7 +79,7 @@ export default function AddEmployee() {
         address: formData.address.trim(),
       });
 
-      navigate("/admin/employees");
+      navigate("/admin/staff");
     } catch (err) {
       const apiError = err as {
         response?: {
@@ -107,7 +107,7 @@ export default function AddEmployee() {
     <div className="mx-auto max-w-2xl space-y-6 overflow-hidden">
       <div>
         <button
-          onClick={() => navigate("/admin/employees")}
+          onClick={() => navigate("/admin/staff")}
           className="mb-4 text-sm text-gray-400 hover:text-white"
         >
           ← Volver a empleados
@@ -235,7 +235,7 @@ export default function AddEmployee() {
         <div className="flex justify-end gap-4">
           <button
             type="button"
-            onClick={() => navigate("/admin/employees")}
+            onClick={() => navigate("/admin/staff")}
             className="rounded-lg border border-gray-700 px-6 py-3 font-semibold text-gray-300 transition hover:border-purple-500 hover:text-white"
           >
             Cancelar

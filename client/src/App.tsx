@@ -684,12 +684,32 @@ export default function App() {
                       }
                     />
                     <Route
+                      path="staff/new"
+                      element={
+                        <BusinessGate requiredFeature="employees">
+                          <AddEmployee />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
                       path="staff"
                       element={
                         <BusinessGate requiredFeature="employees">
                           <EmployeeManagement />
                         </BusinessGate>
                       }
+                    />
+                    <Route
+                      path="employees"
+                      element={<Navigate to="/admin/staff" replace />}
+                    />
+                    <Route
+                      path="employees/add"
+                      element={<Navigate to="/admin/staff/new" replace />}
+                    />
+                    <Route
+                      path="employees/new"
+                      element={<Navigate to="/admin/staff/new" replace />}
                     />
                     <Route
                       path="schedules"

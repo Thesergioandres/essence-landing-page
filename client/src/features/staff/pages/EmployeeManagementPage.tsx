@@ -1,5 +1,13 @@
-import { Activity, Lock, RefreshCw, Search, Users } from "lucide-react";
+import {
+  Activity,
+  Lock,
+  RefreshCw,
+  Search,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useBusiness } from "../../../context/BusinessContext";
 import { useSession } from "../../../hooks/useSession";
 import { Button, LoadingSpinner, toast } from "../../../shared/components/ui";
@@ -57,6 +65,7 @@ const toDraftMap = (rows: StaffMemberRow[]) =>
   }, {});
 
 export default function EmployeeManagementPage() {
+  const navigate = useNavigate();
   const { business } = useBusiness();
   const { user } = useSession();
   const [rows, setRows] = useState<StaffMemberRow[]>([]);
@@ -283,16 +292,26 @@ export default function EmployeeManagementPage() {
             </p>
           </div>
 
-          <Button
-            onClick={() => loadRows("refresh")}
-            disabled={refreshing}
-            className="min-h-11 rounded-xl border border-cyan-300/30 bg-cyan-500/20 px-4 text-cyan-100 hover:bg-cyan-500/30"
-          >
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-            />
-            Actualizar
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              onClick={() => navigate("/admin/staff/new")}
+              className="min-h-11 rounded-xl border border-emerald-300/30 bg-emerald-500/20 px-4 text-emerald-100 hover:bg-emerald-500/30"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Crear empleado
+            </Button>
+
+            <Button
+              onClick={() => loadRows("refresh")}
+              disabled={refreshing}
+              className="min-h-11 rounded-xl border border-cyan-300/30 bg-cyan-500/20 px-4 text-cyan-100 hover:bg-cyan-500/30"
+            >
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              />
+              Actualizar
+            </Button>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
