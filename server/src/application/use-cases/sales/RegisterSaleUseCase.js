@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { CommissionPolicyService } from "../../../domain/services/CommissionPolicyService.js";
 import { FinanceService } from "../../../domain/services/FinanceService.js";
@@ -10,10 +11,7 @@ import EmployeeStock from "../../../infrastructure/database/models/EmployeeStock
 import Membership from "../../../infrastructure/database/models/Membership.js";
 import PaymentMethod from "../../../infrastructure/database/models/PaymentMethod.js";
 import { getEmployeeCommissionInfo } from "../../../infrastructure/services/employeePricing.service.js";
-import {
-  employeeRoleQuery,
-  isEmployeeRole,
-} from "../../../utils/roleAliases.js";
+import { employeeRoleQuery } from "../../../utils/roleAliases.js";
 import CreditRepository from "../repository-gateways/CreditPersistenceUseCase.js";
 import { ProductPersistenceUseCase } from "../repository-gateways/ProductPersistenceUseCase.js";
 import ProfitHistoryRepository from "../repository-gateways/ProfitHistoryPersistenceUseCase.js";
@@ -300,9 +298,7 @@ export class RegisterSaleUseCase {
           ? "branch"
           : "warehouse";
 
-    const isEmployeeUser = isEmployeeRole(user?.role);
-
-    if (isEmployeeUser && employeeId) {
+    if (employeeId && mongoose.isValidObjectId(employeeId)) {
       const employeeMembership = await Membership.findOne({
         business: businessId,
         user: employeeId,
@@ -316,7 +312,9 @@ export class RegisterSaleUseCase {
         ? employeeMembership.allowedBranches.map((branch) => String(branch))
         : [];
 
-      if (resolvedSourceLocation === "branch") {
+      const hasBranchRestrictions = allowedBranches.length > 0;
+
+      if (hasBranchRestrictions && resolvedSourceLocation === "branch") {
         if (!allowedBranches.includes(String(branchId))) {
           throw new Error(
             "No tienes permiso para vender desde la sede seleccionada.",
@@ -324,7 +322,7 @@ export class RegisterSaleUseCase {
         }
       }
 
-      if (resolvedSourceLocation === "warehouse") {
+      if (hasBranchRestrictions && resolvedSourceLocation === "warehouse") {
         const hasWarehousePermission = await Branch.exists({
           business: businessId,
           _id: { $in: allowedBranches },

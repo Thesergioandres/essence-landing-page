@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button, LoadingSpinner } from "../../../shared/components/ui";
+import { branchService } from "../../branches/services";
+import type { Branch } from "../../business/types/business.types";
 import { employeeService } from "../../employees/services";
 
 interface FormState {
@@ -8,6 +10,7 @@ interface FormState {
   email: string;
   phone: string;
   address: string;
+  allowedBranches: string[];
 }
 
 const EditEmployee = () => {
@@ -18,7 +21,9 @@ const EditEmployee = () => {
     email: "",
     phone: "",
     address: "",
+    allowedBranches: [],
   });
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState("");
@@ -29,14 +34,22 @@ const EditEmployee = () => {
       try {
         setLoadingData(true);
         if (!id) return;
-        const response = await employeeService.getById(id);
-        const employee = response.employee;
+        const [employeeResponse, branchesResponse] = await Promise.all([
+          employeeService.getById(id),
+          branchService.list(),
+        ]);
+
+        const employee = employeeResponse.employee;
         setFormData({
           name: employee.name,
           email: employee.email,
           phone: employee.phone || "",
           address: employee.address || "",
+          allowedBranches: Array.isArray(employee.allowedBranches)
+            ? employee.allowedBranches
+            : [],
         });
+        setBranches(branchesResponse || []);
         setError("");
       } catch (err: any) {
         setError(err.response?.data?.message || "Error al cargar empleado");
@@ -55,6 +68,15 @@ const EditEmployee = () => {
     setFormData(prev => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const toggleBranch = (branchId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      allowedBranches: prev.allowedBranches.includes(branchId)
+        ? prev.allowedBranches.filter(id => id !== branchId)
+        : [...prev.allowedBranches, branchId],
     }));
   };
 
@@ -82,9 +104,7 @@ const EditEmployee = () => {
         navigate(`/admin/employees/${id}`);
       }, 1500);
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Error al actualizar empleado"
-      );
+      setError(err.response?.data?.message || "Error al actualizar empleado");
     } finally {
       setLoading(false);
     }
@@ -205,9 +225,41 @@ const EditEmployee = () => {
         <div className="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
           <p className="text-sm text-gray-300">
             <span className="font-semibold text-white">Nota:</span> Para cambiar
-            la contraseña del empleado, contacta al administrador del
-            sistema.
+            la contraseña del empleado, contacta al administrador del sistema.
           </p>
+        </div>
+
+        <div className="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
+          <h3 className="mb-2 text-sm font-semibold text-white">
+            Acceso por Sedes
+          </h3>
+          <p className="mb-3 text-sm text-gray-400">
+            Si no hay sedes seleccionadas, el colaborador podrá operar en todas.
+          </p>
+
+          {branches.length === 0 ? (
+            <p className="text-sm text-gray-500">No hay sedes disponibles.</p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {branches.map(branch => {
+                const checked = formData.allowedBranches.includes(branch._id);
+                return (
+                  <label
+                    key={branch._id}
+                    className="flex min-h-11 items-center justify-between rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2 text-sm text-gray-200"
+                  >
+                    <span>{branch.name}</span>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleBranch(branch._id)}
+                      className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-purple-500 focus:ring-purple-500"
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Botones */}

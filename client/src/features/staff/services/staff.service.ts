@@ -66,6 +66,20 @@ const normalizeMembershipUser = (value: unknown): User | null => {
   return value as User;
 };
 
+const resolveAllowedBranches = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return [
+    ...new Set(
+      value
+        .map(branchId => resolveEntityId(branchId))
+        .filter(branchId => Boolean(branchId))
+    ),
+  ];
+};
+
 const sortRows = (rows: StaffMemberRow[]) => {
   const roleRank: Record<string, number> = {
     god: 0,
@@ -121,6 +135,12 @@ export const staffService = {
         status: String(member.status || membershipUser?.status || "active"),
         active: membershipUser?.active !== false,
         phone: membershipUser?.phone,
+        allowedBranches: resolveAllowedBranches(
+          (member as { allowedBranches?: unknown[]; branches?: unknown[] })
+            ?.allowedBranches ||
+            (member as { branches?: unknown[] })?.branches ||
+            []
+        ),
         baseCommissionPercentage: resolveCommissionRateForRole(
           resolvedRole,
           membershipUser?.baseCommissionPercentage
@@ -166,6 +186,10 @@ export const staffService = {
           phone: employee.phone || existing.phone,
           active: employee.active !== false,
           status: employee.status || existing.status,
+          allowedBranches: resolveAllowedBranches(
+            (employee as User & { allowedBranches?: unknown[] })
+              ?.allowedBranches ?? existing.allowedBranches
+          ),
           baseCommissionPercentage: commissionApplicable
             ? normalizeRate(
                 employee.baseCommissionPercentage,
@@ -206,6 +230,9 @@ export const staffService = {
         status: String(employee.status || "active"),
         active: employee.active !== false,
         phone: employee.phone,
+        allowedBranches: resolveAllowedBranches(
+          (employee as User & { allowedBranches?: unknown[] })?.allowedBranches
+        ),
         baseCommissionPercentage: resolveCommissionRateForRole(
           resolvedRole,
           employee.baseCommissionPercentage
@@ -253,5 +280,19 @@ export const staffService = {
     );
 
     return normalizeRate(payload.baseCommissionPercentage);
+  },
+
+  async updateAllowedBranches(
+    businessId: string,
+    membershipId: string,
+    allowedBranches: string[]
+  ): Promise<string[]> {
+    const payload = await businessService.updateMemberBranches(
+      businessId,
+      membershipId,
+      allowedBranches
+    );
+
+    return resolveAllowedBranches(payload?.membership?.allowedBranches);
   },
 };

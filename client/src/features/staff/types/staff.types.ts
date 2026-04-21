@@ -9,6 +9,7 @@ export interface StaffMemberRow {
   status: string;
   active: boolean;
   phone?: string;
+  allowedBranches: string[];
   baseCommissionPercentage: number;
   commissionApplicable: boolean;
   isManagementRole: boolean;

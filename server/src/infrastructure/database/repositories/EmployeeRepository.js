@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import { employeeRoleQuery } from "../../../utils/roleAliases.js";
+import Branch from "../models/Branch.js";
 import Business from "../models/Business.js";
 import EmployeeStock from "../models/EmployeeStock.js";
 import InventoryMovement from "../models/InventoryMovement.js";
@@ -27,6 +28,82 @@ const isManagementRole = (role) => MANAGEMENT_ROLES.has(normalizeRole(role));
 const isCommissionEligibleRole = (role) =>
   COMMISSION_ELIGIBLE_ROLES.has(normalizeRole(role));
 
+const resolveIdValue = (value) => {
+  if (value && typeof value === "object") {
+    return resolveIdValue(value._id || value.id || value.$oid || "");
+  }
+
+  return String(value || "").trim();
+};
+
+const sanitizeAllowedBranchesInput = (allowedBranches) => {
+  if (allowedBranches === undefined) {
+    return null;
+  }
+
+  if (allowedBranches === null) {
+    return [];
+  }
+
+  if (!Array.isArray(allowedBranches)) {
+    const err = new Error("allowedBranches debe ser un arreglo de IDs");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const normalizedValues = allowedBranches
+    .map((branchId) => resolveIdValue(branchId))
+    .filter(Boolean);
+
+  const hasInvalidBranchIds = normalizedValues.some(
+    (branchId) => !mongoose.isValidObjectId(branchId),
+  );
+
+  if (hasInvalidBranchIds) {
+    const err = new Error("allowedBranches contiene IDs inválidos");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const normalized = normalizedValues;
+
+  return [...new Set(normalized)];
+};
+
+const normalizeAllowedBranchesForOutput = (allowedBranches) => {
+  if (!Array.isArray(allowedBranches)) {
+    return [];
+  }
+
+  return allowedBranches
+    .map((branchId) => resolveIdValue(branchId))
+    .filter(Boolean);
+};
+
+const ensureAllowedBranchesBelongToBusiness = async (
+  businessId,
+  allowedBranches,
+) => {
+  if (!Array.isArray(allowedBranches) || allowedBranches.length === 0) {
+    return;
+  }
+
+  const branches = await Branch.find({
+    business: businessId,
+    _id: { $in: allowedBranches },
+  })
+    .select("_id")
+    .lean();
+
+  if (branches.length !== allowedBranches.length) {
+    const err = new Error(
+      "Una o mas sedes asignadas no existen en este negocio",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+};
+
 export class EmployeeRepository {
   async create(data, businessId) {
     const userExists = await User.findOne({ email: data.email });
@@ -35,6 +112,9 @@ export class EmployeeRepository {
       err.statusCode = 400;
       throw err;
     }
+
+    const allowedBranches = sanitizeAllowedBranchesInput(data.allowedBranches);
+    await ensureAllowedBranchesBelongToBusiness(businessId, allowedBranches);
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(data.password, salt);
@@ -52,7 +132,11 @@ export class EmployeeRepository {
 
     await Membership.findOneAndUpdate(
       { user: employee._id, business: businessId },
-      { role: "employee", status: "active" },
+      {
+        role: "employee",
+        status: "active",
+        ...(Array.isArray(allowedBranches) ? { allowedBranches } : {}),
+      },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );
 
@@ -64,6 +148,7 @@ export class EmployeeRepository {
       address: employee.address,
       role: employee.role,
       active: employee.active,
+      allowedBranches: normalizeAllowedBranchesForOutput(allowedBranches),
     };
   }
 
@@ -75,11 +160,17 @@ export class EmployeeRepository {
       business: businessId,
       role: employeeRoleQuery,
       status: "active",
-    }).select("user");
+    })
+      .select("user allowedBranches")
+      .lean();
 
     const membershipEmployeeIds = memberships
       .map((m) => m.user)
       .filter((id) => id && mongoose.isValidObjectId(id));
+
+    const membershipByEmployeeId = new Map(
+      memberships.map((membership) => [String(membership.user), membership]),
+    );
 
     if (membershipEmployeeIds.length === 0) {
       return {
@@ -186,6 +277,9 @@ export class EmployeeRepository {
 
       return {
         ...employee,
+        allowedBranches: normalizeAllowedBranchesForOutput(
+          membershipByEmployeeId.get(String(employee._id))?.allowedBranches,
+        ),
         stats: {
           totalStock: stockByEmployee.get(String(employee._id)) || 0,
           totalSales: salesStats.totalSales,
@@ -257,6 +351,9 @@ export class EmployeeRepository {
 
     return {
       ...employee.toObject(),
+      allowedBranches: normalizeAllowedBranchesForOutput(
+        membership.allowedBranches,
+      ),
       stock,
       activePromotions,
     };
@@ -277,11 +374,22 @@ export class EmployeeRepository {
     }
 
     const updates = {};
-    if (data.name) updates.name = data.name;
-    if (data.phone) updates.phone = data.phone;
-    if (data.address) updates.address = data.address;
+    if (data.name !== undefined) updates.name = data.name;
+    if (data.phone !== undefined) updates.phone = data.phone;
+    if (data.address !== undefined) updates.address = data.address;
     if (data.active !== undefined) updates.active = data.active;
-    if (data.assignedProducts) updates.assignedProducts = data.assignedProducts;
+    if (data.assignedProducts !== undefined) {
+      updates.assignedProducts = data.assignedProducts;
+    }
+
+    if (data.allowedBranches !== undefined) {
+      const allowedBranches = sanitizeAllowedBranchesInput(
+        data.allowedBranches,
+      );
+      await ensureAllowedBranchesBelongToBusiness(businessId, allowedBranches);
+      membership.allowedBranches = allowedBranches;
+      await membership.save();
+    }
 
     const employee = await User.findByIdAndUpdate(id, updates, {
       new: true,
@@ -293,7 +401,12 @@ export class EmployeeRepository {
       throw err;
     }
 
-    return employee;
+    return {
+      ...employee.toObject(),
+      allowedBranches: normalizeAllowedBranchesForOutput(
+        membership.allowedBranches,
+      ),
+    };
   }
 
   async updateBaseCommissionPercentage(

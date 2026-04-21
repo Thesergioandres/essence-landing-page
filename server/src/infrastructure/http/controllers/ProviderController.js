@@ -2,6 +2,37 @@ import { ProviderPersistenceUseCase } from "../../../application/use-cases/repos
 
 const repository = new ProviderPersistenceUseCase();
 
+const normalizeProviderPayload = (payload = {}) => {
+  const normalized = {};
+
+  if (payload.name !== undefined) normalized.name = payload.name;
+  if (payload.contactName !== undefined)
+    normalized.contactName = payload.contactName;
+  if (payload.address !== undefined) normalized.address = payload.address;
+  if (payload.notes !== undefined) normalized.notes = payload.notes;
+  if (payload.metadata !== undefined) normalized.metadata = payload.metadata;
+
+  const resolvedPhone =
+    payload.contactPhone !== undefined ? payload.contactPhone : payload.phone;
+  if (resolvedPhone !== undefined) {
+    normalized.contactPhone = resolvedPhone;
+  }
+
+  const resolvedEmail =
+    payload.contactEmail !== undefined ? payload.contactEmail : payload.email;
+  if (resolvedEmail !== undefined) {
+    normalized.contactEmail = resolvedEmail;
+  }
+
+  const resolvedActive =
+    payload.active !== undefined ? payload.active : payload.isActive;
+  if (resolvedActive !== undefined) {
+    normalized.active = Boolean(resolvedActive);
+  }
+
+  return normalized;
+};
+
 export class ProviderController {
   async create(req, res) {
     try {
@@ -12,8 +43,10 @@ export class ProviderController {
           .json({ success: false, message: "Falta x-business-id" });
       }
 
+      const providerPayload = normalizeProviderPayload(req.body || {});
+
       const provider = await repository.create({
-        ...req.body,
+        ...providerPayload,
         business: businessId,
       });
       res.status(201).json({ success: true, data: provider });
@@ -63,10 +96,11 @@ export class ProviderController {
   async update(req, res) {
     try {
       const businessId = req.businessId;
+      const providerPayload = normalizeProviderPayload(req.body || {});
       const provider = await repository.update(
         req.params.id,
         businessId,
-        req.body,
+        providerPayload,
       );
       res.json({ success: true, data: provider });
     } catch (error) {

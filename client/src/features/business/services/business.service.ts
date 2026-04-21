@@ -228,7 +228,13 @@ export const businessService = {
       `/business/${businessId}/members/${membershipId}`,
       { allowedBranches: branches }
     );
-    return response.data;
+    const membership =
+      response.data?.data || response.data?.membership || response.data;
+
+    return {
+      message: response.data?.message || "Sedes actualizadas",
+      membership,
+    };
   },
 
   async addMember(

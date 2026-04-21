@@ -47,7 +47,7 @@ export const employeeService = {
   },
 
   async getById(id: string): Promise<{
-    employee: User;
+    employee: User & { allowedBranches?: string[] };
   }> {
     const response = await api.get(`/employees/${id}`);
     // V2 API returns { success: true, data: employee }
@@ -64,6 +64,7 @@ export const employeeService = {
     password: string;
     phone?: string;
     address?: string;
+    allowedBranches?: string[];
     routes?: string[];
   }): Promise<{
     message: string;
@@ -83,6 +84,7 @@ export const employeeService = {
       name: string;
       phone: string;
       address: string;
+      allowedBranches: string[];
       routes: string[];
     }>
   ): Promise<{

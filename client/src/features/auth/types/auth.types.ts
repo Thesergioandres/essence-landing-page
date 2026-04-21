@@ -15,6 +15,7 @@ export interface User {
   active?: boolean;
   phone?: string;
   address?: string;
+  allowedBranches?: string[];
   business?: string;
   memberships?: Membership[];
   assignedProducts?: string[];

@@ -279,6 +279,42 @@ export const promotionService = {
 };
 
 // ==================== PROVIDER SERVICE ====================
+const normalizeProvider = (provider: any) => {
+  if (!provider || typeof provider !== "object") {
+    return provider;
+  }
+
+  const resolvedPhone = provider.phone ?? provider.contactPhone ?? "";
+  const resolvedEmail = provider.email ?? provider.contactEmail ?? "";
+  const resolvedActive = provider.isActive ?? provider.active ?? true;
+
+  return {
+    ...provider,
+    phone: resolvedPhone,
+    email: resolvedEmail,
+    isActive: Boolean(resolvedActive),
+  };
+};
+
+const buildProviderPayload = (data: {
+  name?: string;
+  contactName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  notes?: string;
+  isActive?: boolean;
+}) => {
+  const { phone, email, isActive, ...rest } = data;
+
+  return {
+    ...rest,
+    ...(phone !== undefined ? { contactPhone: phone } : {}),
+    ...(email !== undefined ? { contactEmail: email } : {}),
+    ...(isActive !== undefined ? { active: isActive } : {}),
+  };
+};
+
 export const providerService = {
   async getAll(): Promise<{
     providers: Array<{
@@ -296,13 +332,11 @@ export const providerService = {
     }>;
   }> {
     const response = await api.get("/providers");
-    // Backend V2 returns { success: true, data: providers[] }
-    // Normalize to { providers: providers[] }
-    if (response.data.success && response.data.data) {
-      return { providers: response.data.data };
-    }
-    // Fallback for old format
-    return response.data;
+    const payload = response.data?.data || response.data?.providers || [];
+    const providers = Array.isArray(payload)
+      ? payload.map(normalizeProvider)
+      : [];
+    return { providers };
   },
 
   async getById(id: string): Promise<{
@@ -324,7 +358,8 @@ export const providerService = {
     }>;
   }> {
     const response = await api.get(`/providers/${id}`);
-    return response.data;
+    const payload = response.data?.data || response.data;
+    return normalizeProvider(payload);
   },
 
   async create(data: {
@@ -340,8 +375,15 @@ export const providerService = {
     message: string;
     provider: any;
   }> {
-    const response = await api.post("/providers", data);
-    return response.data;
+    const response = await api.post("/providers", buildProviderPayload(data));
+    const provider = normalizeProvider(
+      response.data?.data || response.data?.provider || response.data
+    );
+
+    return {
+      message: response.data?.message || "Proveedor creado",
+      provider,
+    };
   },
 
   async update(
@@ -352,8 +394,6 @@ export const providerService = {
       email: string;
       phone: string;
       address: string;
-      taxId: string;
-      categories: string[];
       notes: string;
       isActive: boolean;
     }>
@@ -361,8 +401,18 @@ export const providerService = {
     message: string;
     provider: any;
   }> {
-    const response = await api.put(`/providers/${id}`, data);
-    return response.data;
+    const response = await api.put(
+      `/providers/${id}`,
+      buildProviderPayload(data)
+    );
+    const provider = normalizeProvider(
+      response.data?.data || response.data?.provider || response.data
+    );
+
+    return {
+      message: response.data?.message || "Proveedor actualizado",
+      provider,
+    };
   },
 
   async delete(id: string): Promise<{

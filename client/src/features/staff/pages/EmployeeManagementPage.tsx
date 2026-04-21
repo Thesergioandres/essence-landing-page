@@ -1,5 +1,6 @@
 import {
   Activity,
+  Building2,
   Lock,
   RefreshCw,
   Search,
@@ -11,6 +12,8 @@ import { useNavigate } from "react-router-dom";
 import { useBusiness } from "../../../context/BusinessContext";
 import { useSession } from "../../../hooks/useSession";
 import { Button, LoadingSpinner, toast } from "../../../shared/components/ui";
+import { branchService } from "../../branches/services";
+import type { Branch } from "../../business/types/business.types";
 import { staffService } from "../services";
 import type { StaffMemberRow } from "../types/staff.types";
 
@@ -73,6 +76,10 @@ export default function EmployeeManagementPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
+  const [savingBranchesRowId, setSavingBranchesRowId] = useState<string | null>(
+    null
+  );
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const autoSaveTimersRef = useRef<
     Record<string, ReturnType<typeof setTimeout>>
@@ -97,9 +104,23 @@ export default function EmployeeManagementPage() {
     }
 
     try {
-      const data = await staffService.getUnifiedStaff(businessId);
-      setRows(data);
-      setDraftRates(toDraftMap(data));
+      const [staffResult, branchesResult] = await Promise.allSettled([
+        staffService.getUnifiedStaff(businessId),
+        branchService.list(),
+      ]);
+
+      if (staffResult.status !== "fulfilled") {
+        throw staffResult.reason;
+      }
+
+      setRows(staffResult.value);
+      setDraftRates(toDraftMap(staffResult.value));
+
+      if (branchesResult.status === "fulfilled") {
+        setBranches(branchesResult.value || []);
+      } else {
+        setBranches([]);
+      }
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message || "No se pudo cargar el staff"
@@ -157,6 +178,17 @@ export default function EmployeeManagementPage() {
       total: rows.length,
     }),
     [rows]
+  );
+
+  const branchNameById = useMemo(
+    () =>
+      new Map(
+        branches.map(branch => [
+          String(branch._id),
+          branch.isWarehouse ? `${branch.name} (Bodega)` : branch.name,
+        ])
+      ),
+    [branches]
   );
 
   const handleRateChange = (employeeId: string, value: string) => {
@@ -264,6 +296,44 @@ export default function EmployeeManagementPage() {
     void saveRate(employeeId, { notifyOnInvalid: true });
   };
 
+  const saveAllowedBranches = async (
+    row: StaffMemberRow,
+    allowedBranches: string[]
+  ) => {
+    if (!businessId || !row.membershipId) {
+      toast.error("No se encontró la membresía para actualizar sedes.");
+      return;
+    }
+
+    try {
+      setSavingBranchesRowId(row.employeeId);
+      const normalizedAllowedBranches = [...new Set(allowedBranches)];
+      const updatedAllowedBranches = await staffService.updateAllowedBranches(
+        businessId,
+        row.membershipId,
+        normalizedAllowedBranches
+      );
+
+      setRows(previous =>
+        previous.map(item =>
+          item.employeeId === row.employeeId
+            ? {
+                ...item,
+                allowedBranches: updatedAllowedBranches,
+              }
+            : item
+        )
+      );
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+          "No se pudieron actualizar las sedes del colaborador"
+      );
+    } finally {
+      setSavingBranchesRowId(null);
+    }
+  };
+
   if (loading) {
     return (
       <main className="min-h-[60vh] pb-32">
@@ -362,6 +432,7 @@ export default function EmployeeManagementPage() {
                 <th className="px-4 py-3 sm:px-6">Colaborador</th>
                 <th className="px-4 py-3">Rol</th>
                 <th className="px-4 py-3">Estado</th>
+                <th className="px-4 py-3">Sedes permitidas</th>
                 <th className="px-4 py-3">Comision base %</th>
                 <th className="px-4 py-3">Politica</th>
                 <th className="px-4 py-3 text-right">Sync</th>
@@ -382,6 +453,21 @@ export default function EmployeeManagementPage() {
                   !canEditCommission || row.isManagementRole;
                 const hideSync =
                   showCommissionAsNotApplicable || isSelfOwnerProfile;
+                const canEditBranches =
+                  Boolean(row.membershipId) && !isSelfOwnerProfile;
+                const isSavingBranches = savingBranchesRowId === row.employeeId;
+                const selectedBranches = Array.isArray(row.allowedBranches)
+                  ? row.allowedBranches
+                  : [];
+                const branchesLabel =
+                  selectedBranches.length === 0
+                    ? "Todas las sedes"
+                    : selectedBranches
+                        .map(
+                          branchId =>
+                            branchNameById.get(String(branchId)) || "Sede"
+                        )
+                        .join(", ");
                 const draftValue = Number(draftRates[row.employeeId]);
                 const hasPendingChanges =
                   canEditCommission &&
@@ -414,6 +500,53 @@ export default function EmployeeManagementPage() {
                       >
                         {row.active ? "Activo" : "Inactivo"}
                       </span>
+                    </td>
+                    <td className="px-4 py-4 align-middle">
+                      <div className="space-y-2">
+                        <p className="line-clamp-2 text-xs text-slate-400">
+                          {branchesLabel}
+                        </p>
+
+                        <label
+                          className="sr-only"
+                          htmlFor={`branches-${row.employeeId}`}
+                        >
+                          Sedes permitidas de {row.name}
+                        </label>
+                        <select
+                          id={`branches-${row.employeeId}`}
+                          multiple
+                          value={selectedBranches}
+                          onChange={event => {
+                            const nextAllowedBranches = Array.from(
+                              event.target.selectedOptions
+                            ).map(option => option.value);
+
+                            void saveAllowedBranches(row, nextAllowedBranches);
+                          }}
+                          disabled={
+                            !canEditBranches ||
+                            isSavingBranches ||
+                            branches.length === 0
+                          }
+                          className="min-h-20 w-52 rounded-xl border border-slate-700 bg-slate-900/70 px-2 py-1 text-xs text-slate-100 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {branches.map(branch => (
+                            <option key={branch._id} value={branch._id}>
+                              {branch.isWarehouse
+                                ? `${branch.name} (Bodega)`
+                                : branch.name}
+                            </option>
+                          ))}
+                        </select>
+
+                        {isSavingBranches ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-cyan-200">
+                            <Building2 className="h-3.5 w-3.5" />
+                            Guardando sedes...
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-4 align-middle">
                       <div className="flex min-h-11 w-36 items-center rounded-xl border border-slate-700 bg-slate-900/70 px-2">

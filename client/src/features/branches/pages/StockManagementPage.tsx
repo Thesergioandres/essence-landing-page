@@ -810,7 +810,7 @@ const StockManagement = () => {
                 {!loadingEmployeeStock && employeeStock.length === 0 ? (
                   <div className="py-8 text-center">
                     <p className="text-gray-400">
-                      Este employee no tiene productos asignados
+                      Este empleado no tiene productos asignados
                     </p>
                   </div>
                 ) : (

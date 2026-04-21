@@ -2,7 +2,11 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PlanLimitModal } from "../../../shared/components/ui";
-import type { BusinessPlanSnapshot } from "../../business/types/business.types";
+import { branchService } from "../../branches/services";
+import type {
+  Branch,
+  BusinessPlanSnapshot,
+} from "../../business/types/business.types";
 import { globalSettingsService } from "../../common/services";
 import { employeeService } from "../../employees/services";
 
@@ -13,6 +17,7 @@ interface FormState {
   confirmPassword: string;
   phone: string;
   address: string;
+  allowedBranches: string[];
 }
 
 export default function AddEmployee() {
@@ -24,7 +29,9 @@ export default function AddEmployee() {
     confirmPassword: "",
     phone: "",
     address: "",
+    allowedBranches: [],
   });
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [planSnapshot, setPlanSnapshot] = useState<BusinessPlanSnapshot | null>(
@@ -33,11 +40,30 @@ export default function AddEmployee() {
   const [showLimitModal, setShowLimitModal] = useState(false);
 
   useEffect(() => {
-    globalSettingsService
-      .getBusinessLimits()
-      .then(setPlanSnapshot)
-      .catch(() => null);
+    Promise.allSettled([
+      globalSettingsService.getBusinessLimits(),
+      branchService.list(),
+    ]).then(results => {
+      const limitsResult = results[0];
+      if (limitsResult.status === "fulfilled") {
+        setPlanSnapshot(limitsResult.value);
+      }
+
+      const branchesResult = results[1];
+      if (branchesResult.status === "fulfilled") {
+        setBranches(branchesResult.value || []);
+      }
+    });
   }, []);
+
+  const toggleBranch = (branchId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      allowedBranches: prev.allowedBranches.includes(branchId)
+        ? prev.allowedBranches.filter(id => id !== branchId)
+        : [...prev.allowedBranches, branchId],
+    }));
+  };
 
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -77,6 +103,7 @@ export default function AddEmployee() {
         password: formData.password,
         phone: formData.phone.trim(),
         address: formData.address.trim(),
+        allowedBranches: formData.allowedBranches,
       });
 
       navigate("/admin/staff");
@@ -230,6 +257,41 @@ export default function AddEmployee() {
               />
             </div>
           </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+          <h2 className="mb-4 text-lg font-semibold text-white">
+            Acceso por Sedes
+          </h2>
+          <p className="mb-4 text-sm text-gray-400">
+            Si no seleccionas ninguna sede, el empleado tendrá acceso a todas.
+          </p>
+
+          {branches.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No hay sedes registradas todavía.
+            </p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {branches.map(branch => {
+                const checked = formData.allowedBranches.includes(branch._id);
+                return (
+                  <label
+                    key={branch._id}
+                    className="flex min-h-11 items-center justify-between rounded-xl border border-gray-700 bg-gray-900/40 px-4 py-3 text-sm text-gray-200"
+                  >
+                    <span>{branch.name}</span>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleBranch(branch._id)}
+                      className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-purple-500 focus:ring-purple-500"
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-4">
