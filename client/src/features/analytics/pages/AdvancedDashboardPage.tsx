@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useBusiness } from "../../../context/BusinessContext";
 import { useFeature } from "../../../components/FeatureSection";
 import InfoTooltip from "../../../components/InfoTooltip";
 import ProfitHistoryView from "../../../components/analytics/ProfitHistoryView";
@@ -42,6 +43,7 @@ import { saleService } from "../../sales/services/sales.service";
 
 export default function AdvancedDashboard() {
   const navigate = useNavigate();
+  const { businessId, hydrating } = useBusiness();
   const { hideFinancialData } = useFinancialPrivacy();
   // Feature flags
   const employeesEnabled = useFeature("employees");
@@ -228,10 +230,10 @@ export default function AdvancedDashboard() {
       }
     };
 
-    if (!validateRange(overviewRange)) {
+    if (!validateRange(overviewRange) && !hydrating && businessId) {
       fetchFunnel();
     }
-  }, [overviewRange, reloadKey, hideFinancialData]);
+  }, [overviewRange, reloadKey, hideFinancialData, businessId, hydrating]);
 
   useEffect(() => {
     if (hideFinancialData) {
@@ -259,9 +261,11 @@ export default function AdvancedDashboard() {
       }
     };
 
-    fetchRotation();
+    if (!hydrating && businessId) {
+      fetchRotation();
+    }
     // }
-  }, [rotationDays, reloadKey, hideFinancialData]);
+  }, [rotationDays, reloadKey, hideFinancialData, businessId, hydrating]);
 
   // Cargar métricas de créditos
   useEffect(() => {
@@ -284,10 +288,10 @@ export default function AdvancedDashboard() {
       }
     };
 
-    if (creditsEnabled) {
+    if (creditsEnabled && !hydrating && businessId) {
       fetchCredits();
     }
-  }, [reloadKey, creditsEnabled, hideFinancialData]);
+  }, [reloadKey, creditsEnabled, hideFinancialData, businessId, hydrating]);
 
   // Cargar gastos
   useEffect(() => {
@@ -380,8 +384,10 @@ export default function AdvancedDashboard() {
       }
     };
 
-    fetchExpenses();
-  }, [reloadKey, hideFinancialData]);
+    if (!hydrating && businessId) {
+      fetchExpenses();
+    }
+  }, [reloadKey, hideFinancialData, businessId, hydrating]);
 
   const handleExportKPIs = async () => {
     try {

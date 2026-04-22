@@ -5,6 +5,7 @@
  */
 
 import api from "../../../api/axios";
+import { isContextReady } from "../../../shared/utils/contextGuard";
 import type { Branch } from "../../business/types/business.types";
 import type { Product } from "../../inventory/types/product.types";
 
@@ -15,6 +16,7 @@ const resolveBranchFromPayload = (payload: any): Branch => {
 // ==================== BRANCH SERVICE ====================
 export const branchService = {
   async getAll(): Promise<Branch[]> {
+    if (!isContextReady()) return [];
     const response = await api.get<{ success: boolean; data: Branch[] }>(
       "/branches"
     );
@@ -283,6 +285,7 @@ export const branchTransferService = {
       pages: number;
     };
   }> {
+    if (!isContextReady()) return { transfers: [] };
     const response = await api.get("/branch-transfers", { params });
     return response.data;
   },

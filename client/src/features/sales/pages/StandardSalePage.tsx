@@ -361,8 +361,8 @@ export default function StandardSalePage({
 
   // ==================== DATA FETCHING ====================
   useEffect(() => {
-    // Don't fetch until user session is loaded
-    if (userLoading) return;
+    // Don't fetch until user session is loaded and business is ready
+    if (userLoading || businessHydrating || !effectiveBusinessId) return;
 
     const fetchData = async () => {
       setDataLoading(true);

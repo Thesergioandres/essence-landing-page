@@ -5,6 +5,7 @@
  */
 
 import api from "../../../api/axios";
+import { isContextReady } from "../../../shared/utils/contextGuard";
 import type { User } from "../../auth/types/auth.types";
 import type { Employee } from "../../business/types/business.types";
 
@@ -24,6 +25,12 @@ export const employeeService = {
       hasMore: boolean;
     };
   }> {
+    if (!isContextReady()) {
+      return {
+        data: [],
+        pagination: { page: 1, limit: params?.limit || 20, total: 0, pages: 0, hasMore: false },
+      };
+    }
     const response = await api.get("/employees", { params });
     const apiResponse = response.data;
 
@@ -222,6 +229,7 @@ export const employeeService = {
     const url = employeeId
       ? `/employees/${employeeId}/products`
       : "/employees/me/products";
+    if (!isContextReady()) return { products: [], total: 0 };
     console.log("🔍 [employeeService.getProducts] URL:", url);
     const response = await api.get(url);
     console.log(

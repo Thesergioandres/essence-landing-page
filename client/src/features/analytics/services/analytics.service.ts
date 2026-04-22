@@ -5,6 +5,7 @@
  */
 
 import api from "../../../api/axios";
+import { isContextReady } from "../../../shared/utils/contextGuard";
 
 // ==================== ANALYTICS SERVICE ====================
 export const analyticsService = {
@@ -34,6 +35,20 @@ export const analyticsService = {
     averageTicket: number;
     accountsReceivable?: number;
   }> {
+    if (!isContextReady()) {
+      return {
+        currentMonth: {
+          revenue: 0,
+          totalProfit: 0,
+          totalOPEX: 0,
+          netOperationProfit: 0,
+          salesCount: 0,
+        },
+        lastMonth: { revenue: 0, totalProfit: 0, salesCount: 0 },
+        growthPercentage: 0,
+        averageTicket: 0,
+      };
+    }
     try {
       // Use V2 financial-kpis endpoint
       const response = await api.get("/advanced-analytics/financial-kpis", {
@@ -113,6 +128,12 @@ export const analyticsService = {
       quantity: number;
     };
   }> {
+    if (!isContextReady()) {
+      return {
+        products: [],
+        totals: { revenue: 0, cost: 0, profit: 0, quantity: 0 },
+      };
+    }
     try {
       const response = await api.get("/advanced-analytics/top-products", {
         params: { ...filters, limit: 50 },
@@ -180,6 +201,9 @@ export const analyticsService = {
       profit: number;
     };
   }> {
+    if (!isContextReady()) {
+      return { employees: [], totals: { revenue: 0, cost: 0, profit: 0 } };
+    }
     try {
       const response = await api.get(
         "/advanced-analytics/employee-performance",
@@ -237,6 +261,22 @@ export const analyticsService = {
       vsLastMonth: number;
     };
   }> {
+    if (!isContextReady()) {
+      return {
+        averages: {
+          dailySales: 0,
+          dailyRevenue: 0,
+          dailyProfit: 0,
+          weeklySales: 0,
+          weeklyRevenue: 0,
+          weeklyProfit: 0,
+          monthlySales: 0,
+          monthlyRevenue: 0,
+          monthlyProfit: 0,
+        },
+        comparisons: { vsLastWeek: 0, vsLastMonth: 0 },
+      };
+    }
     try {
       const response = await api.get("/advanced-analytics/financial-kpis");
       const data = response.data.data || response.data;
@@ -361,6 +401,21 @@ export const analyticsService = {
       }>;
     };
   }> {
+    if (!isContextReady()) {
+      return {
+        summary: {
+          totalRevenue: 0,
+          totalCost: 0,
+          grossProfit: 0,
+          adminProfit: 0,
+          employeeProfit: 0,
+          expenses: 0,
+          netProfit: 0,
+          profitMargin: 0,
+        },
+        breakdown: { byPaymentMethod: [], byCategory: [] },
+      };
+    }
     try {
       // Use V2 financial-kpis + sales-by-category endpoints
       const [kpisRes, categoryRes, expensesRes] = await Promise.all([
@@ -460,6 +515,16 @@ export const analyticsService = {
       message: string;
     }>;
   }> {
+    if (!isContextReady()) {
+      return {
+        today: { sales: 0, revenue: 0, profit: 0, newCustomers: 0 },
+        week: { sales: 0, revenue: 0, profit: 0, trend: 0 },
+        month: { sales: 0, revenue: 0, profit: 0, trend: 0 },
+        topProducts: [],
+        topEmployees: [],
+        alerts: [],
+      };
+    }
     try {
       const response = await api.get("/analytics/dashboard");
       const data = response.data.data || response.data;

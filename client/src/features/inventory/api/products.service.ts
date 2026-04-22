@@ -1,4 +1,5 @@
 import { httpClient } from "../../../shared/api/httpClient";
+import { isContextReady } from "../../../shared/utils/contextGuard";
 import type {
   Product,
   ProductFormData,
@@ -7,6 +8,9 @@ import type {
 
 export const productsService = {
   getProducts: async () => {
+    if (!isContextReady()) {
+      return [];
+    }
     const response = await httpClient.get<{
       success: boolean;
       data: Product[];
@@ -16,7 +20,8 @@ export const productsService = {
     return Array.isArray(data) ? data : [];
   },
 
-  getProductById: async (id: string): Promise<Product> => {
+  getProductById: async (id: string): Promise<Product | null> => {
+    if (!isContextReady()) return null;
     const response = await httpClient.get<{ success: boolean; data: Product }>(
       `/products/${id}`
     );
@@ -24,7 +29,8 @@ export const productsService = {
     return response.data.data;
   },
 
-  createProduct: async (data: ProductFormData): Promise<Product> => {
+  createProduct: async (data: ProductFormData): Promise<Product | null> => {
+    if (!isContextReady()) return null;
     const formData = new FormData();
     formData.append("name", data.name);
     if (data.description) formData.append("description", data.description);
@@ -50,7 +56,8 @@ export const productsService = {
   updateStock: async (
     id: string,
     payload: StockUpdatePayload
-  ): Promise<Product> => {
+  ): Promise<Product | null> => {
+    if (!isContextReady()) return null;
     const response = await httpClient.patch<{
       success: boolean;
       data: Product;

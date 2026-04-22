@@ -1,13 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { productsService } from "../api/products.service";
+import { useBusiness } from "../../../context/BusinessContext";
 import type { Product } from "../types/product.types";
 
 export const useProducts = () => {
+  const { businessId, hydrating } = useBusiness();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadProducts = useCallback(async () => {
+    // If context is still hydrating, we stay in loading state
+    if (hydrating || !businessId) {
+      setLoading(true);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -19,7 +27,7 @@ export const useProducts = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [businessId, hydrating]);
 
   useEffect(() => {
     loadProducts();
@@ -27,7 +35,7 @@ export const useProducts = () => {
 
   return {
     products,
-    loading,
+    loading: loading || hydrating,
     error,
     refresh: loadProducts,
   };

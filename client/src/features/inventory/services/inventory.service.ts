@@ -5,6 +5,7 @@
  */
 
 import api from "../../../api/axios";
+import { isContextReady } from "../../../shared/utils/contextGuard";
 import { invalidateProductCache } from "../../../hooks";
 import type {
   BranchStock,
@@ -31,6 +32,7 @@ export const productService = {
       hasMore: boolean;
     };
   }> {
+    if (!isContextReady()) return { data: [] };
     const response = await api.get("/products", { params: filters });
     if (response.data.data && response.data.pagination) {
       return response.data;
@@ -47,6 +49,7 @@ export const productService = {
     data: Product[];
     business?: { _id?: string; name?: string; logoUrl?: string | null } | null;
   }> {
+    if (!isContextReady()) return { data: [], business: null };
     const response = await api.get("/products/public", { params: filters });
     if (response.data?.success && Array.isArray(response.data?.data)) {
       return {
@@ -217,6 +220,7 @@ export const categoryService = {
   async getAll(
     params?: Record<string, string | boolean | number>
   ): Promise<Category[]> {
+    if (!isContextReady()) return [];
     const response = await api.get<{ success: boolean; data: Category[] }>(
       "/categories",
       { params }
@@ -335,11 +339,13 @@ export const stockService = {
   },
 
   async getAllStock(): Promise<EmployeeStock[]> {
+    if (!isContextReady()) return [];
     const response = await api.get<EmployeeStock[]>("/stock/all");
     return response.data;
   },
 
   async getBranchStock(branchId?: string): Promise<BranchStock[]> {
+    if (!isContextReady()) return [];
     const url = branchId ? `/stock/branch/${branchId}` : "/stock/branch";
     const response = await api.get<{ data?: BranchStock[] } | BranchStock[]>(
       url
@@ -446,6 +452,7 @@ export const stockService = {
     }>;
     message?: string;
   }> {
+    if (!isContextReady()) return { branches: [] };
     const response = await api.get("/stock/my-allowed-branches");
     return response.data;
   },
@@ -490,6 +497,7 @@ export const inventoryService = {
     entries: InventoryEntry[];
     pagination?: { page: number; limit: number; total: number; pages: number };
   }> {
+    if (!isContextReady()) return { entries: [] };
     const response = await api.get("/inventory/entries", { params });
     // Handle V2 response format: { success, data: { entries, pagination } }
     const data = response.data?.data || response.data;

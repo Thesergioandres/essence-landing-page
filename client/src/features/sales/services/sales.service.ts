@@ -5,6 +5,7 @@
  */
 
 import api from "../../../api/axios";
+import { isContextReady } from "../../../shared/utils/contextGuard";
 import { salesReadUseCases } from "../../../core/use-cases/sales";
 import type {
   DefectiveProduct,
@@ -253,6 +254,23 @@ export const saleService = {
       statsOnly?: boolean;
     }
   ): Promise<{ sales: Sale[]; stats: SaleStats }> {
+    if (!isContextReady()) {
+      return {
+        sales: [],
+        stats: {
+          totalSales: 0,
+          totalRevenue: 0,
+          totalProfit: 0,
+          totalAdminProfit: 0,
+          totalEmployeeProfit: 0,
+          totalQuantity: 0,
+          totalCredits: 0,
+          totalPendingCredits: 0,
+          averageTicket: 0,
+          count: 0,
+        },
+      };
+    }
     return salesReadUseCases.getEmployeeSales<Sale, SaleStats>({
       employeeId,
       filters,
@@ -287,6 +305,32 @@ export const saleService = {
       hasMore: boolean;
     };
   }> {
+    if (!isContextReady()) {
+      return {
+        success: true,
+        sales: [],
+        stats: {
+          totalSales: 0,
+          totalRevenue: 0,
+          totalProfit: 0,
+          totalAdminProfit: 0,
+          totalEmployeeProfit: 0,
+          totalQuantity: 0,
+          totalCredits: 0,
+          totalPendingCredits: 0,
+          averageTicket: 0,
+          count: 0,
+        },
+        pagination: {
+          page: 1,
+          limit: filters?.limit || 20,
+          total: 0,
+          pages: 0,
+          totalPages: 0,
+          hasMore: false,
+        },
+      };
+    }
     return salesReadUseCases.getAllSales<Sale, SaleStats>(filters);
   },
 
@@ -302,6 +346,7 @@ export const saleService = {
       totalEmployeeProfit: number;
     }>
   > {
+    if (!isContextReady()) return [];
     const response = await api.get("/sales/report/by-product");
     return response.data;
   },
@@ -318,6 +363,7 @@ export const saleService = {
       totalEmployeeProfit: number;
     }>
   > {
+    if (!isContextReady()) return [];
     const response = await api.get("/sales/report/by-employee");
     return response.data;
   },
@@ -392,6 +438,16 @@ export const specialSaleService = {
     pages: number;
     data: any[];
   }> {
+    if (!isContextReady()) {
+      return {
+        success: true,
+        count: 0,
+        total: 0,
+        page: 1,
+        pages: 0,
+        data: [],
+      };
+    }
     const response = await api.get("/special-sales", { params });
     return response.data;
   },
@@ -596,6 +652,18 @@ export const defectiveProductService = {
       totalQuantity: number;
     };
   }> {
+    if (!isContextReady()) {
+      return {
+        reports: [],
+        stats: {
+          total: 0,
+          pendiente: 0,
+          confirmado: 0,
+          rechazado: 0,
+          totalQuantity: 0,
+        },
+      };
+    }
     const response = await api.get("/defective-products", { params: filters });
     // Handle V2 response format: { success, data: reports[] }
     const rawData = response.data;
