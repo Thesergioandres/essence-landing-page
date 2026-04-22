@@ -720,6 +720,14 @@ export default function App() {
                       }
                     />
                     <Route
+                      path="schedules/edit/:employeeId"
+                      element={
+                        <BusinessGate requiredFeature="employees">
+                          <EmployeeSchedule />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
                       path="contracts"
                       element={
                         <BusinessGate requiredFeature="employees">

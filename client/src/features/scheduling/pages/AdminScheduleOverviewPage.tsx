@@ -1,5 +1,6 @@
 import { Building2, CalendarRange, RefreshCw, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button, LoadingSpinner, toast } from "../../../shared/components/ui";
 import { branchService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
@@ -327,15 +328,26 @@ export default function AdminScheduleOverviewPage() {
                 employeeRows.map(row => (
                   <tr key={`row-${row.employee._id}`}>
                     <td className="rounded-l-xl border border-slate-800 bg-slate-900/70 px-3 py-3 align-top">
-                      <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-100">
-                        <Users className="h-4 w-4 text-cyan-300" />
-                        {row.employee.name}
-                      </p>
-                      {row.employee.email && (
-                        <p className="mt-1 text-xs text-slate-400">
-                          {row.employee.email}
-                        </p>
-                      )}
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-100">
+                            <Users className="h-4 w-4 text-cyan-300" />
+                            {row.employee.name}
+                          </p>
+                          {row.employee.email && (
+                            <p className="text-xs text-slate-400">
+                              {row.employee.email}
+                            </p>
+                          )}
+                        </div>
+
+                        <Link
+                          to={`/admin/schedules/edit/${row.employee._id}`}
+                          className="rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-2 py-1 text-[10px] font-medium text-cyan-200 transition-all hover:bg-cyan-500/20"
+                        >
+                          Editar
+                        </Link>
+                      </div>
                     </td>
 
                     {DAYS.map((day, dayIndex) => {

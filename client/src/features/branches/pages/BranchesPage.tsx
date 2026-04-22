@@ -86,6 +86,9 @@ export default function Branches({ hideFinancialData = false }: BranchesProps) {
   );
 
   const allowedBranchIds = useMemo(() => {
+    const role = String(currentMembership?.role || "").toLowerCase();
+    if (role === "god" || role === "super_admin") return null;
+
     const allowed = Array.isArray(currentMembership?.allowedBranches)
       ? currentMembership.allowedBranches
       : [];

@@ -7,6 +7,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { Button, LoadingSpinner, toast } from "../../../shared/components/ui";
 import { branchService } from "../../branches/services";
 import type { Branch } from "../../business/types/business.types";
@@ -210,6 +211,9 @@ const getBranchName = (entry: EmployeeScheduleEntry, branches: Branch[]) => {
 };
 
 export default function EmployeeSchedulePage() {
+  const { employeeId } = useParams<{ employeeId?: string }>();
+  const isEditingOther = Boolean(employeeId);
+
   const [branches, setBranches] = useState<Branch[]>([]);
   const [draft, setDraft] =
     useState<Record<ScheduleDayOfWeek, AvailabilityBlockDraft[]>>(
@@ -227,7 +231,9 @@ export default function EmployeeSchedulePage() {
     try {
       const [branchList, schedules] = await Promise.all([
         branchService.getAll(),
-        scheduleService.getMySchedule(),
+        isEditingOther
+          ? scheduleService.getEmployeeSchedule(employeeId!)
+          : scheduleService.getMySchedule(),
       ]);
 
       setBranches(branchList);
@@ -236,7 +242,7 @@ export default function EmployeeSchedulePage() {
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message ||
-          "No se pudo cargar tu disponibilidad semanal"
+          "No se pudo cargar la disponibilidad semanal"
       );
     } finally {
       setLoading(false);
@@ -322,7 +328,10 @@ export default function EmployeeSchedulePage() {
     try {
       setSaving(true);
       const payload = buildPayload();
-      const saved = await scheduleService.saveAvailability(payload);
+      const saved = isEditingOther
+        ? await scheduleService.saveEmployeeSchedule(employeeId!, payload)
+        : await scheduleService.saveAvailability(payload);
+
       setDraft(mapScheduleToDraft(saved));
       setConfirmedEntries(saved);
       toast.success("Disponibilidad guardada correctamente");

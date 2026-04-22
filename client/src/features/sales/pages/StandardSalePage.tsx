@@ -551,10 +551,18 @@ export default function StandardSalePage({
                   _id: normalizedBranchId,
                 } as Branch;
               })
-              .filter(
-                (branch): branch is Branch =>
-                  Boolean(branch) && branch.active !== false
-              )
+              .filter((branch): branch is Branch => {
+                if (!branch) return false;
+                const role = normalizeRole(user?.role);
+                const membershipRole = resolveSessionMembershipRole(user);
+                const isHighLevelAdmin =
+                  role === "god" ||
+                  role === "super_admin" ||
+                  membershipRole === "god" ||
+                  membershipRole === "super_admin";
+
+                return isHighLevelAdmin || branch.active !== false;
+              })
           );
 
           const productsWithStock = (productsData as Product[])
