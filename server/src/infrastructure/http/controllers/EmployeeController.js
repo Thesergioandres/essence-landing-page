@@ -1,6 +1,5 @@
 import { EmployeePersistenceUseCase } from "../../../application/use-cases/repository-gateways/EmployeePersistenceUseCase.js";
-import { getBusinessBaseCommissionPercentage } from "../../../domain/services/FinanceService.js";
-import { applyDynamicEmployeePricingToProduct } from "../../services/productPricing.service.js";
+import { getBusinessBaseCommissionPercentage, applyDynamicEmployeePricingToProduct } from "../../services/productPricing.service.js";
 
 const repository = new EmployeePersistenceUseCase();
 

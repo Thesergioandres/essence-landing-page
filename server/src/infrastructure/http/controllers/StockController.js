@@ -1,7 +1,6 @@
 import stockPersistenceUseCase from "../../../application/use-cases/repository-gateways/StockPersistenceUseCase.js";
 import { isEmployeeRole } from "../../../utils/roleAliases.js";
-import { getBusinessBaseCommissionPercentage } from "../../../domain/services/FinanceService.js";
-import { applyDynamicEmployeePricingToProduct } from "../../services/productPricing.service.js";
+import { getBusinessBaseCommissionPercentage, applyDynamicEmployeePricingToProduct } from "../../services/productPricing.service.js";
 
 class StockController {
   async assignToEmployee(req, res) {
