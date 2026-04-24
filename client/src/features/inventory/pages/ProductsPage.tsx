@@ -365,9 +365,16 @@ export default function ProductsPage() {
                       </div>
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-gray-400">Distribuidor</span>
-                        <span className="font-semibold text-cyan-300">
-                          {formatCurrency(product.employeePrice)}
-                        </span>
+                        <div className="flex flex-col items-end">
+                          <span className="font-semibold text-cyan-300">
+                            {formatCurrency(product.employeePrice)}
+                          </span>
+                          <span className={`text-[9px] uppercase tracking-tighter ${
+                            product.employeePriceMode === "manual" ? "text-amber-400" : "text-gray-500"
+                          }`}>
+                            {product.employeePriceMode === "manual" ? "Manual" : `Auto (${product.baseCommissionPercentage || 20}%)`}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -444,8 +451,8 @@ export default function ProductsPage() {
                     <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider text-gray-400">
                       Costo ponderado
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider text-gray-400">
-                      Precio distribuidor
+                     <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider text-gray-400">
+                      Precio distribuidor / Modo
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider text-gray-400">
                       Stock
@@ -513,8 +520,17 @@ export default function ProductsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 font-semibold text-cyan-300">
-                        {formatCurrency(product.employeePrice)}
+                       <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-cyan-300">
+                            {formatCurrency(product.employeePrice)}
+                          </span>
+                          <span className={`text-[10px] font-medium uppercase tracking-tight ${
+                            product.employeePriceMode === "manual" ? "text-amber-400" : "text-gray-500"
+                          }`}>
+                            {product.employeePriceMode === "manual" ? "Manual" : `Automático (${product.baseCommissionPercentage || 20}%)`}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-gray-300">
                         {product.totalStock || 0}
