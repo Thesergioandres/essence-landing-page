@@ -50,7 +50,9 @@ export const ProductForm = ({
       image: null,
     }
   );
-  const [employeeManual, setEmployeeManual] = useState(false);
+  const [employeeManual, setEmployeeManual] = useState(
+    initialData?.employeePriceManual ?? false
+  );
   const [showCategoryInput, setShowCategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
@@ -120,7 +122,10 @@ export const ProductForm = ({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      employeePriceManual: employeeManual,
+    });
   };
 
   const handleCreateCategory = async () => {

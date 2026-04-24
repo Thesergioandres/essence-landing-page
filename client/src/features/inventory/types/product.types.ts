@@ -153,6 +153,7 @@ export interface ProductFormData {
   purchasePrice: number;
   clientPrice: number;
   employeePrice: number;
+  employeePriceManual?: boolean;
   suggestedPrice?: number;
   categoryId: string;
   image?: File | null;

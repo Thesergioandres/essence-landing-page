@@ -37,6 +37,12 @@ const inferBusinessIdFromStoredUser = (): string | null => {
       memberships?: Array<{ business?: unknown; status?: unknown }>;
     };
 
+    // ALWAYS PREFER DIRECT BUSINESS ID FOR EMPLOYEES
+    const directBusinessId = resolveEntityId(user.business);
+    if (directBusinessId) {
+      return directBusinessId;
+    }
+
     const membershipIds = (
       Array.isArray(user.memberships)
         ? user.memberships
@@ -53,15 +59,11 @@ const inferBusinessIdFromStoredUser = (): string | null => {
     ) as string[];
 
     const uniqueMembershipIds = Array.from(new Set(membershipIds));
-    if (uniqueMembershipIds.length === 1) {
+    if (uniqueMembershipIds.length > 0) {
       return uniqueMembershipIds[0];
     }
 
-    if (uniqueMembershipIds.length > 1) {
-      return null;
-    }
-
-    return resolveEntityId(user.business);
+    return null;
   } catch {
     return null;
   }

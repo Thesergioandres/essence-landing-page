@@ -395,12 +395,11 @@ export class RegisterSaleUseCase {
         );
       }
 
-      // Anti-Manipulación: Siempre usar el precio real almacenado en la BD
+      // Usar el precio modificado si se envía desde el frontend
       const requestedSalePrice = resolveRequestedSalePrice(item);
       let salePrice = resolveCatalogSalePrice(product);
 
-      const isAdminOrGod = user?.role === "admin" || user?.role === "god" || user?.role === "super_admin";
-      if (isAdminOrGod && requestedSalePrice > 0) {
+      if (requestedSalePrice > 0) {
         salePrice = requestedSalePrice;
       }
 
