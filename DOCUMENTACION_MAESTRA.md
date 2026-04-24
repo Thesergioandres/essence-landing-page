@@ -246,6 +246,17 @@ Fuentes: docs/COMPREHENSIVE_PROJECT_ANALYSIS.md, docs/PROTOCOLO_E2E_EXHAUSTIVO_S
 - Revisar duplicidad de mounts en `server/server.js` para rutas de `employee/employees` (múltiples `app.use` repetidos).
 - Alinear nombres de variables JWT en ejemplos (`JWT_ACCESS_EXPIRES/JWT_REFRESH_DAYS`) con los usados realmente por código (`JWT_EXPIRE/JWT_REFRESH_EXPIRE`, `JWT_REFRESH_SECRET`).
 
+<!-- AGREGADO POR CONSOLIDACIÓN DE PROJECT_HEALTH -->
+
+### 12.3 Seguimiento de Auditoría y Salud (Heredado de PROJECT_HEALTH)
+
+Puntos críticos pendientes de auditorías previas:
+
+- **Multi-tenancy:** Revisar si `issue.routes.v2.js` debe operar con `businessContext` obligatorio para cumplimiento estricto.
+- **Limpieza de Código:** Eliminar comentarios de ruido técnico en `AnalyticsRepository.js` y normalizar documentación interna.
+- **Validación E2E:** Ejecutar batería de tests backend enfocada específicamente en rutas v2 y flujos de analytics.
+- **Portabilidad:** Estandarizar tareas de test para Windows (scripts npm con `NODE_ENV` portable).
+
 ## 13. Guía de Despliegue (Deploy)
 
 Se conserva la guía de despliegue Railway (migración desde VPS, servicios backend/frontend, secrets, variables de entorno y recomendaciones de seguridad).
