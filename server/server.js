@@ -12,6 +12,7 @@ import { startBackupWorker } from "./jobs/backup.worker.js";
 import { startBusinessAssistantWorker } from "./jobs/businessAssistant.worker.js";
 import { startDebtNotificationWorker } from "./jobs/debtNotification.worker.js";
 import { startDemoCleanupWorker } from "./jobs/demoCleanup.worker.js";
+import { startGamificationWorker } from "./jobs/gamificationConsolidate.worker.js";
 import { errorHandler } from "./middleware/errorHandler.middleware.js";
 import { financialShield } from "./middleware/financialShield.middleware.js";
 import {
@@ -97,6 +98,7 @@ import { startProductionBackupWorker } from "./src/infrastructure/jobs/productio
 // � V2 BATCH 5 - FINAL BOSS (Hexagonal Architecture - 100% Migration)
 // ============================================================================
 import godRoutesV2 from "./src/infrastructure/http/routes/god.routes.v2.js";
+import gamificationRoutesV2 from "./src/infrastructure/http/routes/gamification.routes.v2.js";
 import uploadRoutesV2 from "./src/infrastructure/http/routes/upload.routes.v2.js";
 
 // Configuración
@@ -266,6 +268,7 @@ if (
 
 if (process.env.NODE_ENV !== "test") {
   startDemoCleanupWorker();
+  startGamificationWorker();
 }
 
 // Compression middleware (debe ir antes de las rutas)
@@ -419,6 +422,7 @@ app.use("/api/v2/segments", segmentRoutesV2);
 // 🎯 V2 BATCH 5 - FINAL BOSS (100% Hexagonal Architecture Achieved)
 // ============================================================================
 app.use("/api/v2/god", godRoutesV2);
+app.use("/api/v2/gamification", gamificationRoutesV2);
 app.use("/api/v2/upload", uploadLimiter, uploadRoutesV2);
 
 // ============================================================================

@@ -5,6 +5,7 @@
  */
 
 import api from "../../../api/axios";
+import { isContextReady } from "../../../shared/utils/contextGuard";
 import type {
   Notification,
   NotificationListResult,
@@ -71,7 +72,7 @@ export const notificationService = {
   async getPending(
     params?: NotificationQueryParams
   ): Promise<NotificationListResult> {
-    if (!hasActiveSession()) {
+    if (!hasActiveSession() || !isContextReady()) {
       return { notifications: [], unreadCount: 0 };
     }
 
@@ -91,7 +92,7 @@ export const notificationService = {
   async getHistory(
     params?: NotificationQueryParams
   ): Promise<NotificationListResult> {
-    if (!hasActiveSession()) {
+    if (!hasActiveSession() || !isContextReady()) {
       return { notifications: [], unreadCount: 0 };
     }
 
@@ -127,8 +128,8 @@ export const notificationService = {
     notificationId: string,
     businessId?: string | null
   ): Promise<Notification> {
-    if (!hasActiveSession()) {
-      throw new Error("No hay sesión activa para marcar notificaciones");
+    if (!hasActiveSession() || !isContextReady()) {
+      throw new Error("No hay sesión activa o negocio seleccionado");
     }
 
     const safeBusinessId = requireBusinessId(
@@ -160,7 +161,7 @@ export const notificationService = {
   async markAllAsViewed(
     businessId?: string | null
   ): Promise<{ modifiedCount: number }> {
-    if (!hasActiveSession()) {
+    if (!hasActiveSession() || !isContextReady()) {
       return { modifiedCount: 0 };
     }
 

@@ -2,12 +2,15 @@ import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { CommissionPolicyService } from "../../../domain/services/CommissionPolicyService.js";
 import { FinanceService } from "../../../domain/services/FinanceService.js";
+import { GamificationService } from "../../../domain/services/GamificationService.js";
 import { InventoryService } from "../../../domain/services/InventoryService.js";
 import SaleWriteRepositoryAdapter from "../../../infrastructure/adapters/repositories/SaleWriteRepositoryAdapter.js";
 import Branch from "../../../infrastructure/database/models/Branch.js";
 import BranchStock from "../../../infrastructure/database/models/BranchStock.js";
 import DefectiveProduct from "../../../infrastructure/database/models/DefectiveProduct.js";
+import EmployeePoints from "../../../infrastructure/database/models/EmployeePoints.js";
 import EmployeeStock from "../../../infrastructure/database/models/EmployeeStock.js";
+import GamificationConfig from "../../../infrastructure/database/models/GamificationConfig.js";
 import Membership from "../../../infrastructure/database/models/Membership.js";
 import PaymentMethod from "../../../infrastructure/database/models/PaymentMethod.js";
 import { getEmployeeCommissionInfo } from "../../../infrastructure/services/employeePricing.service.js";
@@ -185,11 +188,56 @@ export class RegisterSaleUseCase {
       requestedCommissionRate: employeeProfitPercentage,
     });
 
+    // === GAMIFICATION: Resolve tier bonus for commission ===
+    let gamificationConfig = null;
+    let employeeMembershipForGamification = null;
+    let gamificationTierBonus = 0;
+
     if (employeeId) {
       const commissionInfo = await getEmployeeCommissionInfo(
         employeeId,
         businessId,
       );
+
+      // Load gamification config for this business
+      gamificationConfig = await GamificationConfig.findOne({
+        business: businessId,
+        enabled: true,
+      }).lean();
+
+      if (gamificationConfig && !commissionInfo?.isCommissionFixed) {
+        // Check if employee is eligible for gamification bonus
+        employeeMembershipForGamification = await Membership.findOne({
+          business: businessId,
+          user: employeeId,
+          role: employeeRoleQuery,
+          status: "active",
+        })
+          .select("eligibleForGamificationBonus")
+          .lean();
+
+        const isEligible =
+          employeeMembershipForGamification?.eligibleForGamificationBonus !== false;
+
+        // Get current points to determine tier
+        const employeePointsDoc = await EmployeePoints.findOne({
+          employee: employeeId,
+          business: businessId,
+        })
+          .select("currentPoints")
+          .lean();
+
+        const currentPoints = employeePointsDoc?.currentPoints || 0;
+        const tierResult = GamificationService.resolveTier(
+          currentPoints,
+          gamificationConfig.tiers,
+        );
+
+        gamificationTierBonus = GamificationService.getTierBonusIfEligible(
+          isEligible,
+          tierResult.tier,
+        );
+      }
 
       if (commissionInfo?.isCommissionFixed) {
         commissionPolicy = CommissionPolicyService.resolveEmployeeCommission({
@@ -204,6 +252,7 @@ export class RegisterSaleUseCase {
           baseCommissionRate:
             commissionInfo?.baseCommissionPercentage ??
             employeeProfitPercentage,
+          bonusCommission: gamificationTierBonus,
         });
       }
     }
@@ -874,6 +923,66 @@ export class RegisterSaleUseCase {
                 },
               });
             }
+          }
+        }
+      }
+
+      // === GAMIFICATION: Accrue points atomically ===
+      if (
+        employeeId &&
+        gamificationConfig &&
+        saleData.paymentStatus === "confirmado"
+      ) {
+        const pointsMultiplier = product.gamificationPointsMultiplier || 1;
+        const amountPerPoint =
+          gamificationConfig.pointsRatio?.amountPerPoint || 1000;
+        const { points } = GamificationService.calculatePointsForSale(
+          salePrice * quantity,
+          pointsMultiplier,
+          amountPerPoint,
+        );
+
+        if (points > 0) {
+          const pointsEntry = {
+            type: "earned",
+            points,
+            sale: createdSale._id,
+            saleGroupId,
+            productName: product.name,
+            multiplier: pointsMultiplier,
+            saleAmount: salePrice * quantity,
+            description: `+${points} pts por venta ${createdSale.saleId}`,
+            createdAt: new Date(),
+          };
+
+          const updatedPoints = await EmployeePoints.findOneAndUpdate(
+            { employee: employeeId, business: businessId },
+            {
+              $inc: { currentPoints: points },
+              $push: {
+                history: {
+                  $each: [pointsEntry],
+                  $slice: -500, // Keep last 500 entries to prevent unbounded growth
+                },
+              },
+              $set: { lastPointsEarnedAt: new Date() },
+            },
+            session
+              ? { session, upsert: true, new: true }
+              : { upsert: true, new: true },
+          );
+
+          // Update cached tier
+          if (updatedPoints) {
+            const tierResult = GamificationService.resolveTier(
+              updatedPoints.currentPoints,
+              gamificationConfig.tiers,
+            );
+            updatedPoints.currentTier = {
+              name: tierResult.tier?.name || null,
+              bonusPercentage: tierResult.bonusPercentage,
+            };
+            await updatedPoints.save(session ? { session } : undefined);
           }
         }
       }

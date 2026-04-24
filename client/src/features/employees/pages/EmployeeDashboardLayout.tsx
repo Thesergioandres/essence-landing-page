@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   Star,
   Tag,
+  Trophy,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -34,6 +35,7 @@ import { useMotionProfile } from "../../../shared/config/motion.config";
 import { authService } from "../../auth/services";
 import { dispatchService } from "../../branches/services";
 import type { BusinessFeatures } from "../../business/types/business.types";
+import POSWidget from "../../gamification/components/POSWidget";
 import NotificationPopup from "../../notifications/components/NotificationPopup";
 import PriceCatalogModal from "../components/PriceCatalogModal";
 
@@ -117,7 +119,7 @@ export default function EmployeeDashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = authService.getCurrentUser();
-  const { businessId, memberships, hydrating } = useBusiness();
+  const { businessId, memberships } = useBusiness();
   const brandLogo = useBrandLogo();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
@@ -139,15 +141,6 @@ export default function EmployeeDashboardLayout() {
   const isImpersonating = authService.isImpersonating();
   const viewAnimationKey = `${location.pathname}${location.search}`;
   const { motionProfile } = useMotionProfile();
-  const currentUserId = useMemo(() => {
-    const sessionUser = authService.getCurrentUser();
-    return (
-      resolveEntityId(sessionUser?._id) ||
-      resolveEntityId((sessionUser as { id?: unknown } | null)?.id) ||
-      resolveEntityId(user?._id) ||
-      resolveEntityId((user as { id?: unknown })?.id)
-    );
-  }, [user]);
 
   const activeMemberships = memberships.filter(
     membership => membership.status === "active"
@@ -199,6 +192,12 @@ export default function EmployeeDashboardLayout() {
             label: "Notificaciones",
             to: "/staff/notifications",
             icon: Bell,
+          },
+          {
+            id: "ranking",
+            label: "Ranking & Puntos",
+            to: "/staff/ranking",
+            icon: Trophy,
           },
         ],
       },
@@ -1002,6 +1001,9 @@ export default function EmployeeDashboardLayout() {
       </div>
 
       <NotificationPopup />
+
+      {/* Gamification Widget - Floating points & ranking indicator */}
+      <POSWidget />
 
       <ReportIssueButton />
     </div>

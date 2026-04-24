@@ -34,6 +34,11 @@ const membershipSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    // Gamificación: si false, el empleado acumula puntos pero NO recibe % extra del tier
+    eligibleForGamificationBonus: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true },
 );

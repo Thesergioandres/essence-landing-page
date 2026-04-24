@@ -86,7 +86,7 @@ export default function EmployeeProducts() {
   const [filter, setFilter] = useState<"all" | "normal" | "low">("all");
 
   useEffect(() => {
-    if (hydrating) return;
+    if (hydrating || !businessId) return;
     loadStock();
   }, [businessId, hydrating]);
 

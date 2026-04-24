@@ -112,17 +112,8 @@ const PromotionSale = lazy(
 );
 
 // Employees pages
-const Employees = lazy(
-  () => import("./features/employees/pages/EmployeesPage")
-);
 const AddEmployee = lazy(
   () => import("./features/employees/pages/AddEmployeePage")
-);
-const EmployeeDetail = lazy(
-  () => import("./features/employees/pages/EmployeeDetailPage")
-);
-const EditEmployee = lazy(
-  () => import("./features/employees/pages/EditEmployeePage")
 );
 const EmployeeDashboard = lazy(
   () => import("./features/employees/pages/EmployeeDashboardPage")
@@ -281,6 +272,14 @@ const Promotions = lazy(
 );
 const Advertising = lazy(
   () => import("./features/advertising/pages/AdvertisingPage")
+);
+
+// Gamification pages
+const GamificationRanking = lazy(
+  () => import("./features/gamification/pages/RankingPage")
+);
+const GamificationConfigPage = lazy(
+  () => import("./features/gamification/pages/GamificationConfigPage")
 );
 
 export default function App() {
@@ -783,6 +782,22 @@ export default function App() {
                         </BusinessGate>
                       }
                     />
+                    <Route
+                      path="gamification"
+                      element={
+                        <BusinessGate>
+                          <GamificationConfigPage />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="gamification-ranking"
+                      element={
+                        <BusinessGate>
+                          <GamificationRanking />
+                        </BusinessGate>
+                      }
+                    />
                   </Route>
 
                   {/* Employee Routes */}
@@ -1016,6 +1031,14 @@ export default function App() {
                       element={
                         <BusinessGate requiredFeature="defectiveProducts">
                           <CustomerWarranty />
+                        </BusinessGate>
+                      }
+                    />
+                    <Route
+                      path="ranking"
+                      element={
+                        <BusinessGate>
+                          <GamificationRanking />
                         </BusinessGate>
                       }
                     />

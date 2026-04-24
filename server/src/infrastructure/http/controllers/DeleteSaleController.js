@@ -5,6 +5,7 @@
 
 import mongoose from "mongoose";
 import { SalePersistenceUseCase } from "../../../application/use-cases/repository-gateways/SalePersistenceUseCase.js";
+import { GamificationService } from "../../../domain/services/GamificationService.js";
 import {
   buildPromotionSalesSummary,
   normalizeId,
@@ -12,7 +13,9 @@ import {
 import BranchStock from "../../database/models/BranchStock.js";
 import Credit from "../../database/models/Credit.js";
 import DefectiveProduct from "../../database/models/DefectiveProduct.js";
+import EmployeePoints from "../../database/models/EmployeePoints.js";
 import EmployeeStock from "../../database/models/EmployeeStock.js";
+import GamificationConfig from "../../database/models/GamificationConfig.js";
 import Product from "../../database/models/Product.js";
 import ProfitHistory from "../../database/models/ProfitHistory.js";
 import Promotion from "../../database/models/Promotion.js";
@@ -330,6 +333,97 @@ async function rollbackPromotionMetricsForGroup({
 }
 
 /**
+ * Revert gamification points for a cancelled sale.
+ * Atomic operation within the same session.
+ * @param {Object} sale - The sale being deleted
+ * @param {mongoose.ClientSession} session
+ */
+async function revertGamificationPoints(sale, session) {
+  const employeeId = sale.employee;
+  const businessId = sale.business;
+
+  if (!employeeId || !businessId) return;
+
+  // Only revert for confirmed sales (points are only earned on confirmed sales)
+  if (sale.paymentStatus !== "confirmado" && sale.paymentStatus !== undefined) {
+    return;
+  }
+
+  const gamificationConfig = await GamificationConfig.findOne({
+    business: businessId,
+    enabled: true,
+  }).lean();
+
+  if (!gamificationConfig) return;
+
+  const productId = sale.product?._id || sale.product;
+  if (!productId) return;
+
+  const product = await Product.findById(productId)
+    .select("gamificationPointsMultiplier name")
+    .lean();
+  const multiplier = product?.gamificationPointsMultiplier || 1;
+  const amountPerPoint = gamificationConfig.pointsRatio?.amountPerPoint || 1000;
+  const saleAmount =
+    (sale.salePrice || sale.unitPrice || 0) * (sale.quantity || 0);
+
+  const { points } = GamificationService.calculatePointsForSale(
+    saleAmount,
+    multiplier,
+    amountPerPoint,
+  );
+
+  if (points <= 0) return;
+
+  const revertEntry = {
+    type: "reverted",
+    points: -points,
+    sale: sale._id,
+    saleGroupId: sale.saleGroupId || null,
+    productName: product?.name || "Producto eliminado",
+    multiplier,
+    saleAmount,
+    description: `-${points} pts por cancelación de venta ${sale.saleId || sale._id}`,
+    createdAt: new Date(),
+  };
+
+  const updated = await EmployeePoints.findOneAndUpdate(
+    { employee: employeeId, business: businessId },
+    {
+      $inc: { currentPoints: -points },
+      $push: {
+        history: {
+          $each: [revertEntry],
+          $slice: -500,
+        },
+      },
+    },
+    session ? { session, new: true } : { new: true },
+  );
+
+  // Ensure points don't go negative & recalculate cached tier
+  if (updated) {
+    if (updated.currentPoints < 0) {
+      updated.currentPoints = 0;
+    }
+
+    const tierResult = GamificationService.resolveTier(
+      updated.currentPoints,
+      gamificationConfig.tiers,
+    );
+    updated.currentTier = {
+      name: tierResult.tier?.name || null,
+      bonusPercentage: tierResult.bonusPercentage,
+    };
+    await updated.save(session ? { session } : undefined);
+  }
+
+  console.log(
+    `🎮 [GAMIFICATION] Reverted ${points} points from employee ${employeeId} (sale ${sale._id})`,
+  );
+}
+
+/**
  * DELETE /api/v2/sales/:saleId
  * Delete a single sale
  */
@@ -409,6 +503,9 @@ export async function deleteSale(req, res) {
         sale,
         session: session || undefined,
       });
+
+      // === GAMIFICATION: Revert points ===
+      await revertGamificationPoints(sale, session || undefined);
 
       if (useTransaction) {
         await session.commitTransaction();
@@ -506,6 +603,8 @@ export async function deleteSaleGroup(req, res) {
       for (const sale of sales) {
         await restoreStock(sale, session || undefined);
         await deleteRelatedRecords(sale, session || undefined);
+        // === GAMIFICATION: Revert points for each sale in group ===
+        await revertGamificationPoints(sale, session || undefined);
       }
 
       await rollbackPromotionMetricsForGroup({

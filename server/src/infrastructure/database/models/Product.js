@@ -108,6 +108,13 @@ const productSchema = new mongoose.Schema(
     },
     ingredients: [String],
     benefits: [String],
+    // Gamificación: multiplicador de puntos (1 = normal, 2 = doble puntos, etc.)
+    gamificationPointsMultiplier: {
+      type: Number,
+      default: 1,
+      min: [0, "El multiplicador no puede ser negativo"],
+      max: [10, "El multiplicador no puede exceder 10x"],
+    },
     isDeleted: {
       type: Boolean,
       default: false,

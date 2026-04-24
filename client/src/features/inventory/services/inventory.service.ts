@@ -294,6 +294,7 @@ export const stockService = {
   },
 
   async getEmployeeStock(employeeId: string): Promise<EmployeeStock[]> {
+    if (!isContextReady()) return [];
     const response = await api.get(`/stock/employee/${employeeId}`);
 
     let data: any[] = [];
@@ -356,6 +357,7 @@ export const stockService = {
   },
 
   async getAlerts(): Promise<StockAlert> {
+    if (!isContextReady()) return { warehouseAlerts: [], employeeAlerts: [] };
     const response = await api.get<StockAlert>("/stock/alerts");
     return response.data;
   },
@@ -402,6 +404,7 @@ export const stockService = {
     stats: { totalTransfers: number; totalQuantity: number };
   }> {
     try {
+      if (!isContextReady()) return { transfers: [], pagination: { page: 1, limit: 20, total: 0, pages: 0 }, stats: { totalTransfers: 0, totalQuantity: 0 } };
       const response = await api.get("/stock/transfers", { params });
       const transfers = response.data.transfers || response.data.data || [];
       return {
@@ -458,6 +461,7 @@ export const stockService = {
   },
 
   async getGlobalInventory(): Promise<{ success: boolean; inventory: any[] }> {
+    if (!isContextReady()) return { success: true, inventory: [] };
     const response = await api.get("/stock/global");
     return {
       success: true,

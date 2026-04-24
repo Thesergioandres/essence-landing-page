@@ -71,8 +71,16 @@ const periodWinnerSchema = new mongoose.Schema(
         totalRevenue: Number,
         salesCount: Number,
         bonus: Number,
+        totalPoints: Number,
+        tierReached: String,
       },
     ],
+
+    // Gamificación: puntos totales generados en este periodo
+    totalPointsForPeriod: {
+      type: Number,
+      default: 0,
+    },
 
     // Notas adicionales
     notes: String,
