@@ -1,5 +1,7 @@
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 import {
   buildCacheKey,
   readSessionCache,
@@ -361,190 +363,207 @@ export default function PaymentMethods() {
         )}
 
         {/* Modal */}
-        {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-            <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-600/60 bg-slate-900 p-4 shadow-2xl sm:p-6">
-              <h2 className="mb-4 text-xl font-bold text-white sm:text-2xl">
-                {editingMethod
-                  ? "Editar método de pago"
-                  : "Nuevo método de pago"}
-              </h2>
+        {showModal &&
+          createPortal(
+            <div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm overflow-y-auto"
+              onClick={e => e.target === e.currentTarget && handleCloseModal()}
+            >
+              <div className="relative my-auto w-full max-w-md rounded-2xl border border-slate-600/60 bg-slate-900 p-4 shadow-2xl sm:p-6">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="absolute right-4 top-4 text-slate-400 transition-colors hover:text-white"
+                  aria-label="Cerrar"
+                >
+                  <X className="h-5 w-5" />
+                </button>
 
-              {error && (
-                <div className="mb-4 rounded-lg border border-red-500 bg-red-500/10 p-3 text-xs text-red-400 sm:text-sm">
-                  {error}
-                </div>
-              )}
+                <h2 className="mb-4 text-xl font-bold text-white sm:text-2xl">
+                  {editingMethod
+                    ? "Editar método de pago"
+                    : "Nuevo método de pago"}
+                </h2>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
-                    Nombre
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={e =>
-                      setFormData(prev => ({ ...prev, name: e.target.value }))
-                    }
-                    required
-                    disabled={editingMethod?.isSystem}
-                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 sm:px-4 sm:py-3 sm:text-base"
-                    placeholder="Nombre del método de pago"
-                  />
-                </div>
+                {error && (
+                  <div className="mb-4 rounded-lg border border-red-500 bg-red-500/10 p-3 text-xs text-red-400 sm:text-sm">
+                    {error}
+                  </div>
+                )}
 
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
-                    Descripción (opcional)
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={e =>
-                      setFormData(prev => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    rows={2}
-                    className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
-                    placeholder="Descripción del método de pago"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
-                      Icono
+                      Nombre
                     </label>
-                    <select
-                      value={formData.icon}
-                      onChange={e =>
-                        setFormData(prev => ({ ...prev, icon: e.target.value }))
-                      }
-                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
-                    >
-                      {AVAILABLE_ICONS.map(icon => (
-                        <option key={icon.value} value={icon.value}>
-                          {icon.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
-                      Color
-                    </label>
-                    <select
-                      value={formData.color}
-                      onChange={e =>
-                        setFormData(prev => ({
-                          ...prev,
-                          color: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
-                    >
-                      {AVAILABLE_COLORS.map(color => (
-                        <option key={color.value} value={color.value}>
-                          {color.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-900/30 p-4">
-                  <h3 className="text-sm font-medium text-white">Opciones</h3>
-
-                  <label className="flex items-center gap-3">
                     <input
-                      type="checkbox"
-                      checked={formData.isCredit}
+                      type="text"
+                      value={formData.name}
                       onChange={e =>
-                        setFormData(prev => ({
-                          ...prev,
-                          isCredit: e.target.checked,
-                        }))
+                        setFormData(prev => ({ ...prev, name: e.target.value }))
                       }
+                      required
                       disabled={editingMethod?.isSystem}
-                      className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-purple-600 focus:ring-2 focus:ring-purple-500"
+                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 sm:px-4 sm:py-3 sm:text-base"
+                      placeholder="Nombre del método de pago"
                     />
-                    <div>
-                      <span className="text-sm text-white">
-                        Es crédito/fiado
-                      </span>
-                      <p className="text-xs text-gray-400">
-                        Marca si este método representa ventas a crédito
-                      </p>
-                    </div>
-                  </label>
+                  </div>
 
-                  <label className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.requiresConfirmation}
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
+                      Descripción (opcional)
+                    </label>
+                    <textarea
+                      value={formData.description}
                       onChange={e =>
                         setFormData(prev => ({
                           ...prev,
-                          requiresConfirmation: e.target.checked,
+                          description: e.target.value,
                         }))
                       }
-                      className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-purple-600 focus:ring-2 focus:ring-purple-500"
+                      rows={2}
+                      className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
+                      placeholder="Descripción del método de pago"
                     />
-                    <div>
-                      <span className="text-sm text-white">
-                        Requiere confirmación
-                      </span>
-                      <p className="text-xs text-gray-400">
-                        El admin debe confirmar el pago manualmente
-                      </p>
-                    </div>
-                  </label>
+                  </div>
 
-                  <label className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.requiresProof}
-                      onChange={e =>
-                        setFormData(prev => ({
-                          ...prev,
-                          requiresProof: e.target.checked,
-                        }))
-                      }
-                      className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-purple-600 focus:ring-2 focus:ring-purple-500"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="text-sm text-white">
-                        Requiere comprobante
-                      </span>
-                      <p className="text-xs text-gray-400">
-                        El usuario debe adjuntar comprobante de pago
-                      </p>
+                      <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
+                        Icono
+                      </label>
+                      <select
+                        value={formData.icon}
+                        onChange={e =>
+                          setFormData(prev => ({
+                            ...prev,
+                            icon: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
+                      >
+                        {AVAILABLE_ICONS.map(icon => (
+                          <option key={icon.value} value={icon.value}>
+                            {icon.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  </label>
-                </div>
 
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="min-h-11 flex-1 rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-white sm:py-3 sm:text-base"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="bg-linear-to-r min-h-11 flex-1 rounded-lg from-emerald-500 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:from-emerald-400 hover:to-cyan-400 sm:py-3 sm:text-base"
-                  >
-                    {editingMethod ? "Actualizar" : "Crear"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+                    <div>
+                      <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
+                        Color
+                      </label>
+                      <select
+                        value={formData.color}
+                        onChange={e =>
+                          setFormData(prev => ({
+                            ...prev,
+                            color: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-3 py-2.5 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 sm:px-4 sm:py-3 sm:text-base"
+                      >
+                        {AVAILABLE_COLORS.map(color => (
+                          <option key={color.value} value={color.value}>
+                            {color.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+                    <h3 className="text-sm font-medium text-white">Opciones</h3>
+
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={formData.isCredit}
+                        onChange={e =>
+                          setFormData(prev => ({
+                            ...prev,
+                            isCredit: e.target.checked,
+                          }))
+                        }
+                        disabled={editingMethod?.isSystem}
+                        className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-purple-600 focus:ring-2 focus:ring-purple-500"
+                      />
+                      <div>
+                        <span className="text-sm text-white">
+                          Es crédito/fiado
+                        </span>
+                        <p className="text-xs text-gray-400">
+                          Marca si este método representa ventas a crédito
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={formData.requiresConfirmation}
+                        onChange={e =>
+                          setFormData(prev => ({
+                            ...prev,
+                            requiresConfirmation: e.target.checked,
+                          }))
+                        }
+                        className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-purple-600 focus:ring-2 focus:ring-purple-500"
+                      />
+                      <div>
+                        <span className="text-sm text-white">
+                          Requiere confirmación
+                        </span>
+                        <p className="text-xs text-gray-400">
+                          El admin debe confirmar el pago manualmente
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={formData.requiresProof}
+                        onChange={e =>
+                          setFormData(prev => ({
+                            ...prev,
+                            requiresProof: e.target.checked,
+                          }))
+                        }
+                        className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-purple-600 focus:ring-2 focus:ring-purple-500"
+                      />
+                      <div>
+                        <span className="text-sm text-white">
+                          Requiere comprobante
+                        </span>
+                        <p className="text-xs text-gray-400">
+                          El usuario debe adjuntar comprobante de pago
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="min-h-11 flex-1 rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-white sm:py-3 sm:text-base"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-linear-to-r min-h-11 flex-1 rounded-lg from-emerald-500 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:from-emerald-400 hover:to-cyan-400 sm:py-3 sm:text-base"
+                    >
+                      {editingMethod ? "Actualizar" : "Crear"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>,
+            document.body
+          )}
       </div>
     </div>
   );
