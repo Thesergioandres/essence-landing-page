@@ -97,7 +97,7 @@ export default function ConfidentialBadge({
 
       <span className="font-semibold tracking-wide">{label}</span>
       <span className="rounded bg-black/20 px-1.5 py-0.5 text-[10px] font-bold uppercase blur-[1.7px]">
-        null
+        ••••
       </span>
     </button>
   );

@@ -21,6 +21,11 @@
 import mongoose from "mongoose";
 import BranchStock from "../models/BranchStock.js";
 import EmployeeStock from "../models/EmployeeStock.js";
+import AnalysisLog from "../models/AnalysisLog.js";
+import {
+  applyDynamicEmployeePricingToProduct,
+  getBusinessBaseCommissionPercentage,
+} from "../../services/productPricing.service.js";
 import Membership from "../models/Membership.js";
 import Product from "../models/Product.js";
 import SaleModel from "../models/Sale.js";
@@ -496,18 +501,29 @@ export class AnalyticsRepository {
    * (cuánto ganaría si vendiera todo su stock disponible)
    */
   async getEmployeeEstimatedProfit(businessId, employeeId) {
+    const businessObjectId =
+      businessId instanceof mongoose.Types.ObjectId
+        ? businessId
+        : new mongoose.Types.ObjectId(businessId);
+    const employeeObjectId =
+      employeeId instanceof mongoose.Types.ObjectId
+        ? employeeId
+        : new mongoose.Types.ObjectId(employeeId);
+
     // Get employee's current stock with product details
     const stock = await EmployeeStock.find({
-      business: new mongoose.Types.ObjectId(businessId),
-      employee: new mongoose.Types.ObjectId(employeeId),
+      business: businessObjectId,
+      employee: employeeObjectId,
       quantity: { $gt: 0 }, // Only products with stock > 0
     })
-      .populate("product", "name image employeePrice employeePriceManual employeePriceManualValue clientPrice")
+      .populate(
+        "product",
+        "name image employeePrice employeePriceManual employeePriceManualValue suggestedPrice clientPrice",
+      )
       .lean();
 
     if (!stock || stock.length === 0) {
       return {
-        // Format expected by frontend (EmployeeEstimate interface)
         grossProfit: 0,
         netProfit: 0,
         totalProducts: 0,
@@ -520,6 +536,9 @@ export class AnalyticsRepository {
       };
     }
 
+    const baseCommissionPercentage =
+      await getBusinessBaseCommissionPercentage(businessId);
+
     let totalInvestment = 0;
     let totalSalesValue = 0;
     let totalUnits = 0;
@@ -528,34 +547,33 @@ export class AnalyticsRepository {
     for (const item of stock) {
       if (!item.product) continue;
 
-      const product = item.product;
-      const quantity = item.quantity;
-      const employeePrice = product.employeePrice || 0;
-      const clientPrice = product.clientPrice || 0;
+      // Apply dynamic pricing to get the actual employeePrice (cost for them)
+      const productWithPricing = applyDynamicEmployeePricingToProduct(
+        item.product,
+        baseCommissionPercentage,
+      );
+
+      const quantity = item.quantity || 0;
+      const employeePrice = productWithPricing.employeePrice || 0;
+      const clientPrice = productWithPricing.clientPrice || 0;
 
       const investment = employeePrice * quantity;
       const salesValue = clientPrice * quantity;
-      const estimatedProfit = salesValue - investment;
-      const profitPercentage =
-        investment > 0
-          ? ((estimatedProfit / investment) * 100).toFixed(1)
-          : "0";
+      const profit = salesValue - investment;
 
       totalInvestment += investment;
       totalSalesValue += salesValue;
       totalUnits += quantity;
 
       products.push({
-        productId: product._id.toString(),
-        name: product.name,
-        image: product.image,
+        id: item.product._id,
+        name: item.product.name,
         quantity,
         employeePrice,
         clientPrice,
         investment,
         salesValue,
-        estimatedProfit,
-        profitPercentage,
+        estimatedProfit: profit,
       });
     }
 

@@ -49,8 +49,9 @@ export const getEstimatedProfit = async (req, res, next) => {
  */
 export const getEmployeeEstimatedProfit = async (req, res, next) => {
   try {
-    const businessId = req.headers["x-business-id"] || req.user.business;
-    const employeeId = req.user.id || req.user._id;
+    const businessId =
+      req.businessId || req.headers["x-business-id"] || req.user.business;
+    const employeeId = req.query.employeeId || req.user.id || req.user._id;
 
     const repository = new AnalyticsPersistenceUseCase();
     const estimatedProfit = await repository.getEmployeeEstimatedProfit(
