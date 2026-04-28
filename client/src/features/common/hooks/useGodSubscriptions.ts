@@ -6,7 +6,7 @@ import {
   type PublicPlan,
 } from "../services";
 
-const LOCKED_PLAN_IDS = new Set(["starter", "pro", "enterprise"]);
+// LOCKED_PLAN_IDS removed to allow full control
 
 export type AccountStatus =
   | "active"
@@ -477,12 +477,7 @@ export function useGodSubscriptions() {
         return { ok: false, message: "Plan inválido" };
       }
 
-      if (LOCKED_PLAN_IDS.has(normalizedPlanId)) {
-        return {
-          ok: false,
-          message: "Los planes base no pueden eliminarse. Puedes archivarlos.",
-        };
-      }
+      // Allow deleting base plans if not assigned
 
       if ((subscriptionSummary.byPlan[normalizedPlanId] || 0) > 0) {
         return {

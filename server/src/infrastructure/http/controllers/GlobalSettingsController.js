@@ -11,7 +11,7 @@ import {
 } from "../../services/planLimits.service.js";
 
 const PLAN_STATUSES = new Set(["active", "archived"]);
-const LOCKED_PLAN_IDS = new Set(["starter", "pro", "enterprise"]);
+// Deletion control is now dynamic based on assignments
 
 const toPlainObject = (value) => {
   if (!value || typeof value !== "object") {
@@ -293,13 +293,7 @@ class GlobalSettingsController {
           return { ok: true };
         }
 
-        if (LOCKED_PLAN_IDS.has(normalizedPlanId)) {
-          return {
-            ok: false,
-            status: 400,
-            message: "Los planes base no pueden eliminarse, solo archivarse",
-          };
-        }
+        // Allow deleting base plans if not assigned
 
         if (normalizedPlanId === nextDefaultPlan) {
           return {

@@ -62,7 +62,7 @@ interface KpiCardConfig {
   icon: ComponentType<{ className?: string }>;
 }
 
-const LOCKED_PLAN_IDS = new Set(["starter", "pro", "enterprise"]);
+// Base plans are now manageable
 const defaultDuration: DurationForm = { days: 30, months: 0, years: 0 };
 
 const statusBadgeStyles: Record<string, string> = {
@@ -1218,7 +1218,6 @@ export default function GodPanel() {
                                     planId: plan.id,
                                   })
                                 }
-                                disabled={LOCKED_PLAN_IDS.has(plan.id)}
                                 className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-400/35 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 <Trash2 className="h-4 w-4" />
