@@ -90,7 +90,9 @@ const formatStatus = (status?: string) => {
 
 const normalizeOverrideValue = (value: string): number | undefined => {
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  if (!Number.isFinite(parsed)) return undefined;
+  if (parsed === -1) return -1;
+  if (parsed <= 0) return undefined;
   return Math.floor(parsed);
 };
 
@@ -241,7 +243,11 @@ export default function GodPanel() {
           : rowStatus === subscriptionStatusFilter;
 
       const hasOverrides =
-        Boolean(row.customLimits?.branches) || Boolean(row.customLimits?.employees);
+        Boolean(row.customLimits?.branches) ||
+        Boolean(row.customLimits?.employees) ||
+        Boolean(row.customLimits?.products) ||
+        Boolean(row.customLimits?.dailySales) ||
+        Boolean(row.customLimits?.weeklySales);
       const overrideMatches = subscriptionOnlyOverrides ? hasOverrides : true;
 
       if (!planMatches || !statusMatches || !overrideMatches) return false;
@@ -653,7 +659,7 @@ export default function GodPanel() {
 
   const updateRowCustomLimit = (
     rowId: string,
-    field: "branches" | "employees",
+    field: "branches" | "employees" | "products" | "dailySales" | "weeklySales",
     rawValue: string,
   ) => {
     setRowDraft(rowId, current => {
@@ -666,6 +672,9 @@ export default function GodPanel() {
       const cleaned = {
         ...(nextLimits.branches ? { branches: nextLimits.branches } : {}),
         ...(nextLimits.employees ? { employees: nextLimits.employees } : {}),
+        ...(nextLimits.products ? { products: nextLimits.products } : {}),
+        ...(nextLimits.dailySales ? { dailySales: nextLimits.dailySales } : {}),
+        ...(nextLimits.weeklySales ? { weeklySales: nextLimits.weeklySales } : {}),
       };
 
       return {
@@ -1174,8 +1183,20 @@ export default function GodPanel() {
                                 <strong>{plan.limits.branches}</strong>
                               </div>
                               <div className="mt-2 flex items-center justify-between text-xs text-slate-300">
-                                <span>Employees</span>
+                                <span>Empleados</span>
                                 <strong>{plan.limits.employees}</strong>
+                              </div>
+                              <div className="mt-2 flex items-center justify-between text-xs text-slate-300">
+                                <span>Productos</span>
+                                <strong>{plan.limits.products}</strong>
+                              </div>
+                              <div className="mt-2 flex items-center justify-between text-xs text-slate-300">
+                                <span>Ventas /día</span>
+                                <strong>{plan.limits.dailySales}</strong>
+                              </div>
+                              <div className="mt-2 flex items-center justify-between text-xs text-slate-300">
+                                <span>Ventas /semana</span>
+                                <strong>{plan.limits.weeklySales}</strong>
                               </div>
                               <div className="mt-2 flex items-center justify-between text-xs text-slate-300">
                                 <span>Business Assistant</span>
@@ -1448,34 +1469,161 @@ export default function GodPanel() {
                               </td>
                               <td className="px-3 py-3 align-top">
                                 <div className="grid gap-2">
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    placeholder="Sedes"
-                                    value={row.customLimits?.branches ?? ""}
-                                    onChange={event =>
-                                      updateRowCustomLimit(
-                                        row._id,
-                                        "branches",
-                                        event.target.value,
-                                      )
-                                    }
-                                    className="min-h-11 rounded-xl border border-white/15 bg-slate-950/75 px-2 py-2 text-xs text-white focus:border-cyan-300 focus:outline-none"
-                                  />
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    placeholder="Employees"
-                                    value={row.customLimits?.employees ?? ""}
-                                    onChange={event =>
-                                      updateRowCustomLimit(
-                                        row._id,
-                                        "employees",
-                                        event.target.value,
-                                      )
-                                    }
-                                    className="min-h-11 rounded-xl border border-white/15 bg-slate-950/75 px-2 py-2 text-xs text-white focus:border-cyan-300 focus:outline-none"
-                                  />
+                                  <div className="flex items-center gap-1.5">
+                                    {row.customLimits?.branches === -1 ? (
+                                      <div className="flex min-h-11 flex-1 items-center rounded-xl border border-white/10 bg-slate-950/40 px-2 text-[10px] italic text-slate-500">Ilimitado (Sedes)</div>
+                                    ) : (
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        placeholder="Sedes"
+                                        title="Límite Sedes (Override)"
+                                        value={row.customLimits?.branches ?? ""}
+                                        onChange={event =>
+                                          updateRowCustomLimit(
+                                            row._id,
+                                            "branches",
+                                            event.target.value,
+                                          )
+                                        }
+                                        className="min-h-11 w-full flex-1 rounded-xl border border-white/15 bg-slate-950/75 px-2 py-2 text-xs text-white focus:border-cyan-300 focus:outline-none"
+                                      />
+                                    )}
+                                    <label title="Sin límite (Sedes)" className="flex cursor-pointer items-center justify-center p-1">
+                                      <input
+                                        type="checkbox"
+                                        checked={row.customLimits?.branches === -1}
+                                        onChange={e =>
+                                          updateRowCustomLimit(row._id, "branches", e.target.checked ? "-1" : "")
+                                        }
+                                        className="h-4 w-4 rounded border-white/20 bg-slate-900/50 text-cyan-400 focus:ring-cyan-400"
+                                      />
+                                    </label>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    {row.customLimits?.employees === -1 ? (
+                                      <div className="flex min-h-11 flex-1 items-center rounded-xl border border-white/10 bg-slate-950/40 px-2 text-[10px] italic text-slate-500">Ilimitado (Empleados)</div>
+                                    ) : (
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        placeholder="Empleados"
+                                        title="Límite Empleados (Override)"
+                                        value={row.customLimits?.employees ?? ""}
+                                        onChange={event =>
+                                          updateRowCustomLimit(
+                                            row._id,
+                                            "employees",
+                                            event.target.value,
+                                          )
+                                        }
+                                        className="min-h-11 w-full flex-1 rounded-xl border border-white/15 bg-slate-950/75 px-2 py-2 text-xs text-white focus:border-cyan-300 focus:outline-none"
+                                      />
+                                    )}
+                                    <label title="Sin límite (Empleados)" className="flex cursor-pointer items-center justify-center p-1">
+                                      <input
+                                        type="checkbox"
+                                        checked={row.customLimits?.employees === -1}
+                                        onChange={e =>
+                                          updateRowCustomLimit(row._id, "employees", e.target.checked ? "-1" : "")
+                                        }
+                                        className="h-4 w-4 rounded border-white/20 bg-slate-900/50 text-cyan-400 focus:ring-cyan-400"
+                                      />
+                                    </label>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    {row.customLimits?.products === -1 ? (
+                                      <div className="flex min-h-11 flex-1 items-center rounded-xl border border-white/10 bg-slate-950/40 px-2 text-[10px] italic text-slate-500">Ilimitado (Productos)</div>
+                                    ) : (
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        placeholder="Productos"
+                                        title="Límite Productos (Override)"
+                                        value={row.customLimits?.products ?? ""}
+                                        onChange={event =>
+                                          updateRowCustomLimit(
+                                            row._id,
+                                            "products",
+                                            event.target.value,
+                                          )
+                                        }
+                                        className="min-h-11 w-full flex-1 rounded-xl border border-white/15 bg-slate-950/75 px-2 py-2 text-xs text-white focus:border-cyan-300 focus:outline-none"
+                                      />
+                                    )}
+                                    <label title="Sin límite (Productos)" className="flex cursor-pointer items-center justify-center p-1">
+                                      <input
+                                        type="checkbox"
+                                        checked={row.customLimits?.products === -1}
+                                        onChange={e =>
+                                          updateRowCustomLimit(row._id, "products", e.target.checked ? "-1" : "")
+                                        }
+                                        className="h-4 w-4 rounded border-white/20 bg-slate-900/50 text-cyan-400 focus:ring-cyan-400"
+                                      />
+                                    </label>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    {row.customLimits?.dailySales === -1 ? (
+                                      <div className="flex min-h-11 flex-1 items-center rounded-xl border border-white/10 bg-slate-950/40 px-2 text-[10px] italic text-slate-500">Ilimitado (Día)</div>
+                                    ) : (
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        placeholder="Ventas/día"
+                                        title="Límite Ventas Diarias (Override)"
+                                        value={row.customLimits?.dailySales ?? ""}
+                                        onChange={event =>
+                                          updateRowCustomLimit(
+                                            row._id,
+                                            "dailySales",
+                                            event.target.value,
+                                          )
+                                        }
+                                        className="min-h-11 w-full flex-1 rounded-xl border border-white/15 bg-slate-950/75 px-2 py-2 text-xs text-white focus:border-cyan-300 focus:outline-none"
+                                      />
+                                    )}
+                                    <label title="Sin límite (Ventas/día)" className="flex cursor-pointer items-center justify-center p-1">
+                                      <input
+                                        type="checkbox"
+                                        checked={row.customLimits?.dailySales === -1}
+                                        onChange={e =>
+                                          updateRowCustomLimit(row._id, "dailySales", e.target.checked ? "-1" : "")
+                                        }
+                                        className="h-4 w-4 rounded border-white/20 bg-slate-900/50 text-cyan-400 focus:ring-cyan-400"
+                                      />
+                                    </label>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    {row.customLimits?.weeklySales === -1 ? (
+                                      <div className="flex min-h-11 flex-1 items-center rounded-xl border border-white/10 bg-slate-950/40 px-2 text-[10px] italic text-slate-500">Ilimitado (Sem)</div>
+                                    ) : (
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        placeholder="Ventas/sem"
+                                        title="Límite Ventas Semanales (Override)"
+                                        value={row.customLimits?.weeklySales ?? ""}
+                                        onChange={event =>
+                                          updateRowCustomLimit(
+                                            row._id,
+                                            "weeklySales",
+                                            event.target.value,
+                                          )
+                                        }
+                                        className="min-h-11 w-full flex-1 rounded-xl border border-white/15 bg-slate-950/75 px-2 py-2 text-xs text-white focus:border-cyan-300 focus:outline-none"
+                                      />
+                                    )}
+                                    <label title="Sin límite (Ventas/sem)" className="flex cursor-pointer items-center justify-center p-1">
+                                      <input
+                                        type="checkbox"
+                                        checked={row.customLimits?.weeklySales === -1}
+                                        onChange={e =>
+                                          updateRowCustomLimit(row._id, "weeklySales", e.target.checked ? "-1" : "")
+                                        }
+                                        className="h-4 w-4 rounded border-white/20 bg-slate-900/50 text-cyan-400 focus:ring-cyan-400"
+                                      />
+                                    </label>
+                                  </div>
                                 </div>
                               </td>
                               <td className="relative px-3 py-3 align-top">
@@ -1820,45 +1968,229 @@ export default function GodPanel() {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="block space-y-1">
-                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
-                      Límite sedes
-                    </span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={selectedPlan.limits.branches}
-                      onChange={event =>
-                        updatePlanConfig(selectedPlan.id, current => ({
-                          limits: {
-                            ...current.limits,
-                            branches: Math.max(1, Number(event.target.value) || 1),
-                          },
-                        }))
-                      }
-                      className="min-h-11 w-full rounded-xl border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-white focus:border-cyan-300 focus:outline-none"
-                    />
-                  </label>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
+                        Límite sedes
+                      </span>
+                      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-400">
+                        <input
+                          type="checkbox"
+                          checked={selectedPlan.limits.branches === -1}
+                          onChange={e =>
+                            updatePlanConfig(selectedPlan.id, current => ({
+                              limits: {
+                                ...current.limits,
+                                branches: e.target.checked ? -1 : 1,
+                              },
+                            }))
+                          }
+                          className="rounded border-white/20 bg-slate-900/50 text-cyan-400 focus:ring-cyan-400"
+                        />
+                        Sin límite
+                      </label>
+                    </div>
+                    {selectedPlan.limits.branches !== -1 ? (
+                      <input
+                        type="number"
+                        min={1}
+                        value={selectedPlan.limits.branches}
+                        onChange={event =>
+                          updatePlanConfig(selectedPlan.id, current => ({
+                            limits: {
+                              ...current.limits,
+                              branches: Math.max(1, Number(event.target.value) || 1),
+                            },
+                          }))
+                        }
+                        className="min-h-11 w-full rounded-xl border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-white focus:border-cyan-300 focus:outline-none"
+                      />
+                    ) : (
+                      <div className="flex min-h-11 w-full items-center rounded-xl border border-white/10 bg-slate-900/40 px-3 text-sm italic text-slate-500">
+                        Ilimitado
+                      </div>
+                    )}
+                  </div>
 
-                  <label className="block space-y-1">
-                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
-                      Límite employees
-                    </span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={selectedPlan.limits.employees}
-                      onChange={event =>
-                        updatePlanConfig(selectedPlan.id, current => ({
-                          limits: {
-                            ...current.limits,
-                            employees: Math.max(1, Number(event.target.value) || 1),
-                          },
-                        }))
-                      }
-                      className="min-h-11 w-full rounded-xl border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-white focus:border-cyan-300 focus:outline-none"
-                    />
-                  </label>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
+                        Límite empleados
+                      </span>
+                      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-400">
+                        <input
+                          type="checkbox"
+                          checked={selectedPlan.limits.employees === -1}
+                          onChange={e =>
+                            updatePlanConfig(selectedPlan.id, current => ({
+                              limits: {
+                                ...current.limits,
+                                employees: e.target.checked ? -1 : 1,
+                              },
+                            }))
+                          }
+                          className="rounded border-white/20 bg-slate-900/50 text-cyan-400 focus:ring-cyan-400"
+                        />
+                        Sin límite
+                      </label>
+                    </div>
+                    {selectedPlan.limits.employees !== -1 ? (
+                      <input
+                        type="number"
+                        min={1}
+                        value={selectedPlan.limits.employees}
+                        onChange={event =>
+                          updatePlanConfig(selectedPlan.id, current => ({
+                            limits: {
+                              ...current.limits,
+                              employees: Math.max(1, Number(event.target.value) || 1),
+                            },
+                          }))
+                        }
+                        className="min-h-11 w-full rounded-xl border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-white focus:border-cyan-300 focus:outline-none"
+                      />
+                    ) : (
+                      <div className="flex min-h-11 w-full items-center rounded-xl border border-white/10 bg-slate-900/40 px-3 text-sm italic text-slate-500">
+                        Ilimitado
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
+                        Límite productos
+                      </span>
+                      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-400">
+                        <input
+                          type="checkbox"
+                          checked={selectedPlan.limits.products === -1}
+                          onChange={e =>
+                            updatePlanConfig(selectedPlan.id, current => ({
+                              limits: {
+                                ...current.limits,
+                                products: e.target.checked ? -1 : 1,
+                              },
+                            }))
+                          }
+                          className="rounded border-white/20 bg-slate-900/50 text-cyan-400 focus:ring-cyan-400"
+                        />
+                        Sin límite
+                      </label>
+                    </div>
+                    {selectedPlan.limits.products !== -1 ? (
+                      <input
+                        type="number"
+                        min={1}
+                        value={selectedPlan.limits.products}
+                        onChange={event =>
+                          updatePlanConfig(selectedPlan.id, current => ({
+                            limits: {
+                              ...current.limits,
+                              products: Math.max(1, Number(event.target.value) || 1),
+                            },
+                          }))
+                        }
+                        className="min-h-11 w-full rounded-xl border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-white focus:border-cyan-300 focus:outline-none"
+                      />
+                    ) : (
+                      <div className="flex min-h-11 w-full items-center rounded-xl border border-white/10 bg-slate-900/40 px-3 text-sm italic text-slate-500">
+                        Ilimitado
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
+                        Límite ventas/día
+                      </span>
+                      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-400">
+                        <input
+                          type="checkbox"
+                          checked={selectedPlan.limits.dailySales === -1}
+                          onChange={e =>
+                            updatePlanConfig(selectedPlan.id, current => ({
+                              limits: {
+                                ...current.limits,
+                                dailySales: e.target.checked ? -1 : 1,
+                              },
+                            }))
+                          }
+                          className="rounded border-white/20 bg-slate-900/50 text-cyan-400 focus:ring-cyan-400"
+                        />
+                        Sin límite
+                      </label>
+                    </div>
+                    {selectedPlan.limits.dailySales !== -1 ? (
+                      <input
+                        type="number"
+                        min={1}
+                        value={selectedPlan.limits.dailySales}
+                        onChange={event =>
+                          updatePlanConfig(selectedPlan.id, current => ({
+                            limits: {
+                              ...current.limits,
+                              dailySales: Math.max(1, Number(event.target.value) || 1),
+                            },
+                          }))
+                        }
+                        className="min-h-11 w-full rounded-xl border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-white focus:border-cyan-300 focus:outline-none"
+                      />
+                    ) : (
+                      <div className="flex min-h-11 w-full items-center rounded-xl border border-white/10 bg-slate-900/40 px-3 text-sm italic text-slate-500">
+                        Ilimitado
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
+                        Límite ventas/semana
+                      </span>
+                      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-400">
+                        <input
+                          type="checkbox"
+                          checked={selectedPlan.limits.weeklySales === -1}
+                          onChange={e =>
+                            updatePlanConfig(selectedPlan.id, current => ({
+                              limits: {
+                                ...current.limits,
+                                weeklySales: e.target.checked ? -1 : 1,
+                              },
+                            }))
+                          }
+                          className="rounded border-white/20 bg-slate-900/50 text-cyan-400 focus:ring-cyan-400"
+                        />
+                        Sin límite
+                      </label>
+                    </div>
+                    {selectedPlan.limits.weeklySales !== -1 ? (
+                      <input
+                        type="number"
+                        min={1}
+                        value={selectedPlan.limits.weeklySales}
+                        onChange={event =>
+                          updatePlanConfig(selectedPlan.id, current => ({
+                            limits: {
+                              ...current.limits,
+                              weeklySales: Math.max(1, Number(event.target.value) || 1),
+                            },
+                          }))
+                        }
+                        className="min-h-11 w-full rounded-xl border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-white focus:border-cyan-300 focus:outline-none"
+                      />
+                    ) : (
+                      <div className="flex min-h-11 w-full items-center rounded-xl border border-white/10 bg-slate-900/40 px-3 text-sm italic text-slate-500">
+                        Ilimitado
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">

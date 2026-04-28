@@ -28,6 +28,9 @@ export interface BusinessConfig {
 export interface PlanLimits {
   branches: number;
   employees: number;
+  products: number;
+  dailySales: number;
+  weeklySales: number;
 }
 
 export interface BusinessPlanSnapshot {

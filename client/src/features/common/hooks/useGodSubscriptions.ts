@@ -51,6 +51,7 @@ const normalizePositiveLimit = (value: unknown, fallback = 1): number => {
   if (!Number.isFinite(numeric)) {
     return Math.max(1, Number(fallback) || 1);
   }
+  if (numeric === -1) return -1;
   return Math.max(1, Math.floor(numeric));
 };
 
@@ -89,6 +90,9 @@ const createPlanFallback = (planId: string): EditablePlanConfig => ({
   limits: {
     branches: 1,
     employees: 1,
+    products: 10,
+    dailySales: 10,
+    weeklySales: 70,
   },
   features: {
     businessAssistant: false,
@@ -119,6 +123,9 @@ const normalizePlanConfig = (
         limits.employees,
         fallback.limits.employees,
       ),
+      products: normalizePositiveLimit(limits.products, fallback.limits.products),
+      dailySales: normalizePositiveLimit(limits.dailySales, fallback.limits.dailySales),
+      weeklySales: normalizePositiveLimit(limits.weeklySales, fallback.limits.weeklySales),
     },
     features: {
       businessAssistant:
@@ -152,7 +159,7 @@ const normalizePlanRecord = (
       monthlyPrice: 19,
       yearlyPrice: 190,
       currency: "USD",
-      limits: { branches: 1, employees: 2 },
+      limits: { branches: 1, employees: 2, products: 50, dailySales: 50, weeklySales: 350 },
       features: { businessAssistant: false },
       status: "active",
       featuresList: ["Panel base", "Inventario inicial", "Ventas esenciales"],
@@ -188,12 +195,25 @@ const normalizeCustomLimits = (
   const branches = Number(customLimits?.branches);
   const employees = Number(customLimits?.employees);
 
+  const products = Number(customLimits?.products);
+  const dailySales = Number(customLimits?.dailySales);
+  const weeklySales = Number(customLimits?.weeklySales);
+
   const normalized: Partial<PlanLimits> = {
-    ...(Number.isFinite(branches) && branches > 0
+    ...(Number.isFinite(branches) && (branches > 0 || branches === -1)
       ? { branches: Math.floor(branches) }
       : {}),
-    ...(Number.isFinite(employees) && employees > 0
+    ...(Number.isFinite(employees) && (employees > 0 || employees === -1)
       ? { employees: Math.floor(employees) }
+      : {}),
+    ...(Number.isFinite(products) && (products > 0 || products === -1)
+      ? { products: Math.floor(products) }
+      : {}),
+    ...(Number.isFinite(dailySales) && (dailySales > 0 || dailySales === -1)
+      ? { dailySales: Math.floor(dailySales) }
+      : {}),
+    ...(Number.isFinite(weeklySales) && (weeklySales > 0 || weeklySales === -1)
+      ? { weeklySales: Math.floor(weeklySales) }
       : {}),
   };
 
@@ -209,6 +229,9 @@ const serializePlanConfigs = (planConfigs: Record<string, EditablePlanConfig>) =
       limits: {
         branches: plan.limits.branches,
         employees: plan.limits.employees,
+        products: plan.limits.products,
+        dailySales: plan.limits.dailySales,
+        weeklySales: plan.limits.weeklySales,
       },
       features: {
         businessAssistant: Boolean(plan.features.businessAssistant),
@@ -556,6 +579,9 @@ export function useGodSubscriptions() {
           limits: {
             branches: plan.limits.branches,
             employees: plan.limits.employees,
+            products: plan.limits.products,
+            dailySales: plan.limits.dailySales,
+            weeklySales: plan.limits.weeklySales,
           },
           features: {
             businessAssistant: plan.features.businessAssistant,
@@ -601,17 +627,32 @@ export function useGodSubscriptions() {
       const planLimits = planConfigs[row.plan]?.limits || {
         branches: row.limits?.limits?.branches || 1,
         employees: row.limits?.limits?.employees || 1,
+        products: row.limits?.limits?.products || 10,
+        dailySales: row.limits?.limits?.dailySales || 10,
+        weeklySales: row.limits?.limits?.weeklySales || 70,
       };
 
       return {
         branches:
-          row.customLimits?.branches && row.customLimits.branches > 0
+          row.customLimits?.branches && (row.customLimits.branches > 0 || row.customLimits.branches === -1)
             ? row.customLimits.branches
             : planLimits.branches,
         employees:
-          row.customLimits?.employees && row.customLimits.employees > 0
+          row.customLimits?.employees && (row.customLimits.employees > 0 || row.customLimits.employees === -1)
             ? row.customLimits.employees
             : planLimits.employees,
+        products:
+          row.customLimits?.products && (row.customLimits.products > 0 || row.customLimits.products === -1)
+            ? row.customLimits.products
+            : planLimits.products,
+        dailySales:
+          row.customLimits?.dailySales && (row.customLimits.dailySales > 0 || row.customLimits.dailySales === -1)
+            ? row.customLimits.dailySales
+            : planLimits.dailySales,
+        weeklySales:
+          row.customLimits?.weeklySales && (row.customLimits.weeklySales > 0 || row.customLimits.weeklySales === -1)
+            ? row.customLimits.weeklySales
+            : planLimits.weeklySales,
       };
     },
     [planConfigs],

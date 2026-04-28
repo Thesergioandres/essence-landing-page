@@ -20,7 +20,7 @@ const defaultPlans = {
     monthlyPrice: 19,
     yearlyPrice: 190,
     currency: "USD",
-    limits: { branches: 1, employees: 2 },
+    limits: { branches: 1, employees: 2, products: 50, dailySales: 50, weeklySales: 350 },
     features: { businessAssistant: false },
     featuresList: ["Panel base", "Inventario inicial", "Ventas esenciales"],
     status: PLAN_STATUS.ACTIVE,
@@ -32,7 +32,7 @@ const defaultPlans = {
     monthlyPrice: 49,
     yearlyPrice: 490,
     currency: "USD",
-    limits: { branches: 3, employees: 10 },
+    limits: { branches: 3, employees: 10, products: 500, dailySales: 500, weeklySales: 3500 },
     features: { businessAssistant: false },
     featuresList: ["Multi-sede", "Gestión de equipo", "Reportes avanzados"],
     status: PLAN_STATUS.ACTIVE,
@@ -44,7 +44,7 @@ const defaultPlans = {
     monthlyPrice: 99,
     yearlyPrice: 990,
     currency: "USD",
-    limits: { branches: 10, employees: 50 },
+    limits: { branches: 10, employees: 50, products: 5000, dailySales: 5000, weeklySales: 35000 },
     features: { businessAssistant: true },
     featuresList: [
       "Business Assistant",
@@ -69,7 +69,7 @@ const buildDynamicDefaultPlan = (planId) => ({
   monthlyPrice: 0,
   yearlyPrice: 0,
   currency: "USD",
-  limits: { branches: 1, employees: 1 },
+  limits: { branches: 1, employees: 1, products: 10, dailySales: 10, weeklySales: 70 },
   features: { businessAssistant: false },
   featuresList: [],
   status: PLAN_STATUS.ACTIVE,
@@ -103,6 +103,7 @@ const normalizePositiveLimit = (value, fallback = 1) => {
   if (!Number.isFinite(numeric)) {
     return Math.max(1, Number(fallback) || 1);
   }
+  if (numeric === -1) return -1;
   return Math.max(1, Math.floor(numeric));
 };
 
@@ -180,6 +181,18 @@ const mergePlanWithDefaults = (planKey, plan) => {
       employees: normalizePositiveLimit(
         plainPlan?.limits?.employees,
         defaults.limits?.employees,
+      ),
+      products: normalizePositiveLimit(
+        plainPlan?.limits?.products,
+        defaults.limits?.products,
+      ),
+      dailySales: normalizePositiveLimit(
+        plainPlan?.limits?.dailySales,
+        defaults.limits?.dailySales,
+      ),
+      weeklySales: normalizePositiveLimit(
+        plainPlan?.limits?.weeklySales,
+        defaults.limits?.weeklySales,
       ),
     },
     features: {

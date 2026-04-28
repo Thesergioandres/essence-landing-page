@@ -26,8 +26,11 @@ const featureFlagsSchema = new mongoose.Schema(
 
 const customLimitsSchema = new mongoose.Schema(
   {
-    branches: { type: Number, min: 1 },
-    employees: { type: Number, min: 1 },
+    branches: { type: Number, min: -1 },
+    employees: { type: Number, min: -1 },
+    products: { type: Number, min: -1 },
+    dailySales: { type: Number, min: -1 },
+    weeklySales: { type: Number, min: -1 },
   },
   { _id: false },
 );

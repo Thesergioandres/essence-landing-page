@@ -8,7 +8,7 @@ const defaultPlanSeed = {
     monthlyPrice: 19,
     yearlyPrice: 190,
     currency: "USD",
-    limits: { branches: 1, employees: 2 },
+    limits: { branches: 1, employees: 2, products: 50, dailySales: 50, weeklySales: 350 },
     features: { businessAssistant: false },
     featuresList: ["Panel base", "Inventario inicial", "Ventas esenciales"],
     status: "active",
@@ -20,7 +20,7 @@ const defaultPlanSeed = {
     monthlyPrice: 49,
     yearlyPrice: 490,
     currency: "USD",
-    limits: { branches: 3, employees: 10 },
+    limits: { branches: 3, employees: 10, products: 500, dailySales: 500, weeklySales: 3500 },
     features: { businessAssistant: false },
     featuresList: ["Multi-sede", "Gestión de equipo", "Reportes avanzados"],
     status: "active",
@@ -32,7 +32,7 @@ const defaultPlanSeed = {
     monthlyPrice: 99,
     yearlyPrice: 990,
     currency: "USD",
-    limits: { branches: 10, employees: 50 },
+    limits: { branches: 10, employees: 50, products: 5000, dailySales: 5000, weeklySales: 35000 },
     features: { businessAssistant: true },
     featuresList: [
       "Business Assistant",
@@ -45,8 +45,11 @@ const defaultPlanSeed = {
 
 const planLimitsSchema = new mongoose.Schema(
   {
-    branches: { type: Number, default: 1, min: 1 },
-    employees: { type: Number, default: 2, min: 1 },
+    branches: { type: Number, default: 1, min: -1 },
+    employees: { type: Number, default: 2, min: -1 },
+    products: { type: Number, default: 50, min: -1 },
+    dailySales: { type: Number, default: 50, min: -1 },
+    weeklySales: { type: Number, default: 350, min: -1 },
   },
   { _id: false },
 );
