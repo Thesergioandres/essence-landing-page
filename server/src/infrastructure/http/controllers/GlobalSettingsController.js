@@ -278,6 +278,11 @@ class GlobalSettingsController {
         settings.maintenanceMode = Boolean(maintenanceMode);
       }
 
+      const nextDefaultPlan =
+        defaultPlan !== undefined
+          ? sanitizePlanIdentifier(defaultPlan)
+          : sanitizePlanIdentifier(settings.defaultPlan);
+
       const safeRemovePlan = async (rawPlanId) => {
         const normalizedPlanId = sanitizePlanIdentifier(rawPlanId);
         if (!normalizedPlanId) {
@@ -296,7 +301,7 @@ class GlobalSettingsController {
           };
         }
 
-        if (normalizedPlanId === sanitizePlanIdentifier(settings.defaultPlan)) {
+        if (normalizedPlanId === nextDefaultPlan) {
           return {
             ok: false,
             status: 400,
@@ -371,11 +376,6 @@ class GlobalSettingsController {
           plansMap.set(normalizedPlanId, nextPlan);
         }
       }
-
-      const nextDefaultPlan =
-        defaultPlan !== undefined
-          ? sanitizePlanIdentifier(defaultPlan)
-          : sanitizePlanIdentifier(settings.defaultPlan);
 
       const snapshotForValidation = {
         ...toPlainObject(settings),

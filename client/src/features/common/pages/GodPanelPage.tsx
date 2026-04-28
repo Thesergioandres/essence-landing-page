@@ -549,9 +549,11 @@ export default function GodPanel() {
         updateUser(userId, updatedUser);
         setFeedback("Cambios guardados");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("god panel action error", err);
-      setError("No se pudo completar la acción");
+      const msg =
+        err.response?.data?.message || err.message || "No se pudo completar la acción";
+      setError(msg);
     } finally {
       setActionKey(null);
     }
@@ -585,9 +587,13 @@ export default function GodPanel() {
       await saveGlobalPlans();
       setFeedback("Dashboard SaaS actualizado correctamente");
       setPlanDrawerId(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error("save global settings error", err);
-      setError("No se pudieron guardar los planes globales");
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "No se pudieron guardar los planes globales";
+      setError(msg);
     }
   };
 
@@ -599,9 +605,13 @@ export default function GodPanel() {
       await updateBusinessPlan(row);
       setFeedback(`Suscripción actualizada para ${row.name}`);
       setOpenBusinessActionMenuId(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error("update business subscription error", err);
-      setError("No se pudo actualizar la suscripción del negocio");
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "No se pudo actualizar la suscripción del negocio";
+      setError(msg);
     }
   };
 
@@ -685,9 +695,10 @@ export default function GodPanel() {
       }
 
       setFeedback("Centro de mando actualizado");
-    } catch (err) {
+    } catch (err: any) {
       console.error("god panel refresh error", err);
-      setError("No se pudo refrescar");
+      const msg = err.response?.data?.message || err.message || "No se pudo refrescar";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -1067,7 +1078,34 @@ export default function GodPanel() {
                 {subscriptionsLoading ? (
                   <SubscriptionsSkeleton />
                 ) : (
-                  <div ref={planCardsRef} className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                  <div className="space-y-4">
+                    {error && (
+                      <div className="flex items-center gap-3 rounded-xl border border-red-500/35 bg-red-500/10 p-4 text-sm text-red-100 shadow-lg shadow-red-900/10">
+                        <AlertTriangle className="h-5 w-5 shrink-0 text-red-400" />
+                        <p>{error}</p>
+                        <button
+                          onClick={() => setError(null)}
+                          className="ml-auto text-xs font-bold uppercase tracking-wider text-red-300 hover:text-white"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    )}
+
+                    {feedback && (
+                      <div className="flex items-center gap-3 rounded-xl border border-emerald-500/35 bg-emerald-500/10 p-4 text-sm text-emerald-100 shadow-lg shadow-emerald-900/10">
+                        <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
+                        <p>{feedback}</p>
+                        <button
+                          onClick={() => setFeedback(null)}
+                          className="ml-auto text-xs font-bold uppercase tracking-wider text-emerald-300 hover:text-white"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    )}
+
+                    <div ref={planCardsRef} className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
                     {Object.values(planConfigs)
                       .sort((a, b) => a.monthlyPrice - b.monthlyPrice)
                       .map(plan => {
@@ -1190,6 +1228,7 @@ export default function GodPanel() {
                           </article>
                         );
                       })}
+                    </div>
                   </div>
                 )}
 
