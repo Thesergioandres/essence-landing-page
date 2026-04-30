@@ -260,11 +260,10 @@ export default function Home() {
       .getPublicSettings()
       .then(settings => {
         setMaintenanceMode(Boolean(settings.maintenanceMode));
-        setPlans([
-          settings.plans.starter,
-          settings.plans.pro,
-          settings.plans.enterprise,
-        ]);
+        const planValues = Object.values(settings.plans ?? {}).filter(
+          (p): p is NonNullable<typeof p> => p != null && typeof p === "object"
+        );
+        setPlans(planValues);
       })
       .catch(() => null);
   }, []);
