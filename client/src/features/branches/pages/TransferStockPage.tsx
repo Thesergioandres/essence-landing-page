@@ -5,6 +5,8 @@ import type { Branch } from "../../business/types/business.types";
 import { employeeService } from "../../employees/services";
 import { stockService } from "../../inventory/services/inventory.service";
 import type { EmployeeStock } from "../../inventory/types/product.types";
+import { useSession } from "../../../hooks/useSession";
+import { authService } from "../../auth/services";
 
 const sanitizeIdString = (raw: string): string => {
   const trimmed = String(raw || "").trim();
@@ -17,6 +19,7 @@ const sanitizeIdString = (raw: string): string => {
     return "";
   }
 
+  // Handle MongoDB ObjectId hex strings
   const objectIdMatch = trimmed.match(/[a-fA-F0-9]{24}/);
   if (objectIdMatch) {
     return objectIdMatch[0].toLowerCase();
@@ -26,6 +29,8 @@ const sanitizeIdString = (raw: string): string => {
 };
 
 const resolveEntityId = (value: unknown): string => {
+  if (!value) return "";
+  
   if (typeof value === "string") {
     return sanitizeIdString(value);
   }
@@ -34,55 +39,57 @@ const resolveEntityId = (value: unknown): string => {
     return String(value);
   }
 
-  if (!value || typeof value !== "object") {
-    return "";
-  }
+  if (typeof value === "object") {
+    const candidate = value as {
+      _id?: unknown;
+      id?: unknown;
+      $oid?: unknown;
+      oid?: unknown;
+      toHexString?: () => string;
+      toString?: () => string;
+    };
 
-  const candidate = value as {
-    _id?: unknown;
-    id?: unknown;
-    $oid?: unknown;
-    oid?: unknown;
-    toHexString?: () => string;
-    toString?: () => string;
-  };
+    // Try common ID fields
+    const directId = 
+      resolveEntityId(candidate._id) || 
+      resolveEntityId(candidate.id) || 
+      resolveEntityId(candidate.$oid) || 
+      resolveEntityId(candidate.oid);
+      
+    if (directId) return directId;
 
-  const fromToHex =
-    typeof candidate.toHexString === "function"
-      ? sanitizeIdString(candidate.toHexString())
-      : "";
+    if (typeof candidate.toHexString === "function") {
+      const hex = sanitizeIdString(candidate.toHexString());
+      if (hex) return hex;
+    }
 
-  const nested =
-    resolveEntityId(candidate._id) ||
-    resolveEntityId(candidate.id) ||
-    resolveEntityId(candidate.$oid) ||
-    resolveEntityId(candidate.oid);
-
-  if (fromToHex) {
-    return fromToHex;
-  }
-
-  if (nested) {
-    return nested;
-  }
-
-  if (typeof candidate.toString === "function") {
-    return sanitizeIdString(candidate.toString());
+    if (typeof candidate.toString === "function") {
+      const s = candidate.toString();
+      if (s && s !== "[object Object]") {
+        return sanitizeIdString(s);
+      }
+    }
+    
+    // If it's a string representation of an ID but hidden in an object
+    // (some serializers do this)
+    try {
+      const serialized = JSON.stringify(value);
+      const match = serialized.match(/[a-fA-F0-9]{24}/);
+      if (match) return match[0].toLowerCase();
+    } catch {
+      // ignore
+    }
   }
 
   return "";
 };
 
 const resolveStockProductId = (stock: EmployeeStock): string => {
-  const rawProductId =
-    typeof stock.product === "string"
-      ? stock.product
-      : (stock.product as { _id?: unknown })?._id;
-
-  return resolveEntityId(rawProductId);
+  return resolveEntityId(stock.product);
 };
 
 export default function TransferStock() {
+  const { user: sessionUser, loading: sessionLoading } = useSession();
   const [employees, setEmployees] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [myStock, setMyStock] = useState<EmployeeStock[]>([]);
@@ -105,13 +112,15 @@ export default function TransferStock() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const user = JSON.parse(localStorage.getItem("user") || "{}") as {
-        _id?: unknown;
-      };
-      const currentUserId = resolveEntityId(user?._id);
+      
+      // Try to get user ID from session context, then fallback to direct service call (which checks localStorage)
+      const currentUser = sessionUser || authService.getCurrentUser();
+      const currentUserId = resolveEntityId(currentUser);
 
       // Verificar que tengamos un ID de usuario válido
       if (!currentUserId) {
+        if (sessionLoading) return; // Wait for session if it's still loading
+        
         setMessage({
           type: "error",
           text: "No se encontró información del usuario. Por favor, inicia sesión nuevamente.",
@@ -120,39 +129,56 @@ export default function TransferStock() {
         return;
       }
 
-      const [employeesData, stockData, allowedBranchesData] = await Promise.all(
-        [
-          employeeService.getAll({ active: true }).catch(() => []),
-          stockService.getEmployeeStock(currentUserId).catch(() => []),
-          stockService.getMyAllowedBranches().catch(() => ({ branches: [] })),
-        ]
-      );
+      console.log("🚀 [TransferStock] Loading data for user:", currentUserId);
 
-      // Filtrar el employee actual de la lista
+      const [employeesData, stockData, allowedBranchesData] = await Promise.all([
+        employeeService.getAll({ active: true }).catch(err => {
+          console.error("Error fetching employees:", err);
+          return { data: [], pagination: {} };
+        }),
+        stockService.getEmployeeStock(currentUserId).catch(err => {
+          console.error("Error fetching employee stock:", err);
+          return [];
+        }),
+        stockService.getMyAllowedBranches().catch(err => {
+          console.error("Error fetching allowed branches:", err);
+          return { branches: [] };
+        }),
+      ]);
+
+      // Handle employees data format
       const allEmployees = Array.isArray(employeesData)
         ? employeesData
-        : employeesData?.data || [];
+        : (employeesData as any)?.data || [];
 
       const filteredEmployees = allEmployees.filter((d: User) => {
-        const employeeId = resolveEntityId((d as { _id?: unknown })._id);
+        const employeeId = resolveEntityId(d);
         return Boolean(employeeId && employeeId !== currentUserId && d.active);
       });
 
+      console.log("📊 [TransferStock] Data loaded:", {
+        employeesCount: filteredEmployees.length,
+        stockItemsCount: stockData.length,
+        branchesCount: (allowedBranchesData?.branches || []).length
+      });
+
       setEmployees(filteredEmployees);
-      // Solo mostrar las sedes a las que tiene acceso
       setBranches(allowedBranchesData?.branches || []);
       setMyStock(stockData || []);
+      setMessage(null);
     } catch (error) {
       console.error("Error al cargar datos:", error);
       setMessage({ type: "error", text: "Error al cargar los datos" });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sessionUser, sessionLoading]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (!sessionLoading) {
+      loadData();
+    }
+  }, [loadData, sessionLoading]);
 
   const getAvailableStock = () => {
     if (!selectedProduct) return 0;
@@ -171,14 +197,12 @@ export default function TransferStock() {
       let result;
 
       if (transferType === "employee") {
-        // Transferir a otro employee
         result = await stockService.transferStock({
           toEmployeeId: selectedEmployee,
           productId: selectedProduct,
           quantity,
         });
       } else {
-        // Transferir a sede
         result = await stockService.transferStockToBranch({
           toBranchId: selectedBranch,
           productId: selectedProduct,
@@ -191,15 +215,12 @@ export default function TransferStock() {
         text: result.message || "Transferencia realizada exitosamente",
       });
 
-      // Limpiar formulario
-      setTransferType("employee");
       setSelectedEmployee("");
       setSelectedBranch("");
       setSelectedProduct("");
       setQuantity(1);
       setShowConfirmation(false);
 
-      // Recargar stock
       await loadData();
     } catch (error: any) {
       console.error("Error en transferencia:", error);
@@ -216,38 +237,24 @@ export default function TransferStock() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (transferType === "employee") {
-      if (!selectedEmployee) {
-        setMessage({
-          type: "error",
-          text: "Selecciona un empleado",
-        });
-        return;
-      }
-    } else {
-      if (!selectedBranch) {
-        setMessage({
-          type: "error",
-          text: "Selecciona una sede",
-        });
-        return;
-      }
+    if (transferType === "employee" && !selectedEmployee) {
+      setMessage({ type: "error", text: "Selecciona un empleado" });
+      return;
+    }
+    
+    if (transferType === "branch" && !selectedBranch) {
+      setMessage({ type: "error", text: "Selecciona una sede" });
+      return;
     }
 
     if (!selectedProduct || quantity <= 0) {
-      setMessage({
-        type: "error",
-        text: "Completa todos los campos correctamente",
-      });
+      setMessage({ type: "error", text: "Completa todos los campos correctamente" });
       return;
     }
 
     const availableStock = getAvailableStock();
     if (quantity > availableStock) {
-      setMessage({
-        type: "error",
-        text: `Stock insuficiente. Disponible: ${availableStock}`,
-      });
+      setMessage({ type: "error", text: `Stock insuficiente. Disponible: ${availableStock}` });
       return;
     }
 
@@ -256,31 +263,19 @@ export default function TransferStock() {
 
   const getDestinationName = () => {
     if (transferType === "employee") {
-      return (
-        employees.find(
-          d =>
-            resolveEntityId((d as { _id?: unknown })._id) === selectedEmployee
-        )?.name || ""
-      );
+      return employees.find(d => resolveEntityId(d) === selectedEmployee)?.name || "";
     } else {
-      return (
-        branches.find(
-          b => resolveEntityId((b as { _id?: unknown })._id) === selectedBranch
-        )?.name || ""
-      );
+      return branches.find(b => resolveEntityId(b) === selectedBranch)?.name || "";
     }
   };
 
   const getProductName = () => {
-    const stock = myStock.find(s => {
-      const productId = resolveStockProductId(s);
-      return productId === selectedProduct;
-    });
+    const stock = myStock.find(s => resolveStockProductId(s) === selectedProduct);
     if (!stock) return "";
-    return typeof stock.product === "string" ? "" : stock.product.name;
+    return typeof stock.product === "object" ? stock.product.name : "Producto";
   };
 
-  if (loading) {
+  if (loading || sessionLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner
@@ -296,7 +291,7 @@ export default function TransferStock() {
       <div>
         <h1 className="text-3xl font-bold text-white">Transferir Inventario</h1>
         <p className="mt-2 text-gray-300">
-          Transfiere productos de tu inventario a otro employee o a una sede
+          Transfiere productos de tu inventario a otro empleado o a una sede
         </p>
       </div>
 
@@ -355,11 +350,11 @@ export default function TransferStock() {
             </div>
           </div>
 
-          {/* Seleccionar employee o sede según el tipo */}
+          {/* Seleccionar empleado o sede */}
           {transferType === "employee" ? (
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-300">
-                Employee Destino *
+                Empleado Destino *
               </label>
               <select
                 value={selectedEmployee}
@@ -367,20 +362,13 @@ export default function TransferStock() {
                 className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2.5 text-gray-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                 required
               >
-                <option value="">Selecciona un empleaddo</option>
+                <option value="">Selecciona un empleado</option>
                 {employees.map((dist, index) => {
-                  const employeeId = resolveEntityId(
-                    (dist as { _id?: unknown })._id
-                  );
-                  if (!employeeId) {
-                    return null;
-                  }
+                  const employeeId = resolveEntityId(dist);
+                  if (!employeeId) return null;
 
                   return (
-                    <option
-                      key={`employee-${employeeId}-${index}`}
-                      value={employeeId}
-                    >
+                    <option key={`emp-${employeeId}-${index}`} value={employeeId}>
                       {dist.name} - {dist.email}
                     </option>
                   );
@@ -400,20 +388,12 @@ export default function TransferStock() {
               >
                 <option value="">Selecciona una sede</option>
                 {branches.map((branch, index) => {
-                  const branchId = resolveEntityId(
-                    (branch as { _id?: unknown })._id
-                  );
-                  if (!branchId) {
-                    return null;
-                  }
+                  const branchId = resolveEntityId(branch);
+                  if (!branchId) return null;
 
                   return (
-                    <option
-                      key={`branch-${branchId}-${index}`}
-                      value={branchId}
-                    >
-                      {branch.name}
-                      {branch.address ? ` - ${branch.address}` : ""}
+                    <option key={`branch-${branchId}-${index}`} value={branchId}>
+                      {branch.name} {branch.address ? `- ${branch.address}` : ""}
                     </option>
                   );
                 })}
@@ -432,7 +412,7 @@ export default function TransferStock() {
                 setSelectedProduct(e.target.value);
                 setQuantity(1);
               }}
-              className="w-full rounded-lg border border-gray-600 bg-gray-900/50 px-4 py-3 text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-700 bg-gray-900/40 px-4 py-2.5 text-gray-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500/40"
               required
             >
               <option value="">Selecciona un producto</option>
@@ -440,20 +420,12 @@ export default function TransferStock() {
                 .filter(s => s.quantity > 0)
                 .map((stock, index) => {
                   const productId = resolveStockProductId(stock);
-                  if (!productId) {
-                    return null;
-                  }
+                  if (!productId) return null;
 
-                  const productName =
-                    typeof stock.product === "string"
-                      ? "Producto"
-                      : stock.product.name;
+                  const productName = typeof stock.product === "object" ? stock.product.name : "Producto";
                   return (
-                    <option
-                      key={`product-${productId}-${index}`}
-                      value={productId}
-                    >
-                      {productName} - Disponible: {stock.quantity} unidades
+                    <option key={`prod-${productId}-${index}`} value={productId}>
+                      {productName} - Disponible: {stock.quantity}
                     </option>
                   );
                 })}
@@ -476,106 +448,79 @@ export default function TransferStock() {
             />
             {selectedProduct && (
               <p className="mt-1 text-sm text-gray-400">
-                Disponible: {getAvailableStock()} unidades
+                Máximo disponible: {getAvailableStock()} unidades
               </p>
             )}
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex-1 rounded-lg bg-blue-600 px-6 py-2.5 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-            >
-              {submitting ? "Procesando..." : "Transferir"}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-lg bg-blue-600 py-3 font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+          >
+            {submitting ? "Procesando..." : "Transferir"}
+          </button>
         </form>
       </div>
 
       {/* Modal de confirmación */}
       {showConfirmation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
-            <h3 className="text-xl font-bold text-white">
-              Confirmar Transferencia
-            </h3>
-            <div className="mt-4 space-y-2 text-gray-200">
-              <p>
-                <strong>Producto:</strong> {getProductName()}
-              </p>
-              <p>
-                <strong>Cantidad:</strong> {quantity} unidades
-              </p>
-              <p>
-                <strong>Destino:</strong> {getDestinationName()}
-              </p>
-              <p>
-                <strong>Tipo:</strong>{" "}
-                {transferType === "employee" ? "Empleado" : "Sede"}
-              </p>
-              <p className="mt-4 text-sm text-amber-300">
-                ⚠️ Esta acción no se puede deshacer. El stock se restará de tu
-                inventario y se agregará al inventario del{" "}
-                {transferType === "employee" ? "empleado" : "sede"} seleccionado
-                {transferType === "employee" ? "" : "."}.
-              </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-white">Confirmar Transferencia</h3>
+            <div className="mt-4 space-y-3 text-gray-300">
+              <div className="flex justify-between border-b border-gray-800 pb-2">
+                <span>Producto:</span>
+                <span className="font-semibold text-white">{getProductName()}</span>
+              </div>
+              <div className="flex justify-between border-b border-gray-800 pb-2">
+                <span>Cantidad:</span>
+                <span className="font-semibold text-white">{quantity}</span>
+              </div>
+              <div className="flex justify-between border-b border-gray-800 pb-2">
+                <span>Destino:</span>
+                <span className="font-semibold text-white">{getDestinationName()}</span>
+              </div>
             </div>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-6 flex gap-4">
               <button
                 onClick={() => setShowConfirmation(false)}
-                disabled={submitting}
-                className="flex-1 rounded-lg border border-gray-700 bg-transparent px-4 py-2 font-medium text-gray-200 transition-colors hover:bg-gray-800 disabled:opacity-50"
+                className="flex-1 rounded-xl bg-gray-800 py-2.5 text-gray-300 transition hover:bg-gray-700"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleTransfer}
                 disabled={submitting}
-                className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                className="flex-1 rounded-xl bg-blue-600 py-2.5 font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
               >
-                {submitting ? "Transfiriendo..." : "Confirmar"}
+                Confirmar
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Resumen de mi inventario */}
+      {/* Mi Inventario */}
       <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-6">
-        <h2 className="mb-4 text-xl font-bold text-white">
-          Mi Inventario Actual
-        </h2>
-        <div className="space-y-2">
-          {myStock.length === 0 ? (
-            <p className="text-gray-400">
-              No tienes productos en tu inventario
-            </p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {myStock.map((stock, index) => {
-                const productId = resolveStockProductId(stock);
-                const productName =
-                  typeof stock.product === "string"
-                    ? "Producto"
-                    : stock.product.name;
-                return (
-                  <div
-                    key={productId ? `stock-${productId}` : `stock-${index}`}
-                    className="rounded-lg border border-gray-700 bg-gray-900/30 p-4"
-                  >
-                    <h3 className="font-medium text-gray-200">{productName}</h3>
-                    <p className="mt-1 text-sm text-gray-300">
-                      Stock:{" "}
-                      <span className="font-semibold">{stock.quantity}</span>{" "}
-                      unidades
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <h2 className="mb-4 text-xl font-bold text-white">Mi Inventario</h2>
+        {myStock.length === 0 ? (
+          <p className="text-gray-400 italic text-center py-4">No tienes productos en tu inventario</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {myStock.map((stock, index) => {
+              const productId = resolveStockProductId(stock);
+              const productName = typeof stock.product === "object" ? stock.product.name : "Producto";
+              return (
+                <div key={`stock-card-${productId}-${index}`} className="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
+                  <h4 className="font-medium text-gray-200">{productName}</h4>
+                  <p className="mt-2 text-2xl font-bold text-white">{stock.quantity}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mt-1">Unidades Disponibles</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
