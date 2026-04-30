@@ -294,8 +294,7 @@ export default function SaleDetailModal({
 
   const product = typeof sale.product === "object" ? sale.product : null;
   const productImageUrl = product?.image?.url || fallbackProductImageUrl;
-  const employee =
-    typeof sale.employee === "object" ? sale.employee : null;
+  const employee = typeof sale.employee === "object" ? sale.employee : null;
   const createdBy = typeof sale.createdBy === "object" ? sale.createdBy : null;
   const customer = typeof sale.customer === "object" ? sale.customer : null;
   const branch = typeof sale.branch === "object" ? sale.branch : null;
@@ -528,8 +527,7 @@ export default function SaleDetailModal({
                       employee &&
                       sale.employeeProfitPercentage !== undefined && (
                         <p className="text-slate-400">
-                          Comisión:{" "}
-                          {formatCurrency(sale.employeeProfit || 0)} (
+                          Comisión: {formatCurrency(sale.employeeProfit || 0)} (
                           {sale.employeeProfitPercentage}%)
                         </p>
                       )}
@@ -680,7 +678,7 @@ export default function SaleDetailModal({
                       {employee && totalToDeliver > 0 && (
                         <div className="rounded-lg border border-sky-500/30 bg-sky-500/10 p-2.5 sm:col-span-2">
                           <p className="text-xs text-sky-200">
-                            A entregar a employee
+                            A entregar a empleado
                           </p>
                           <p className="font-semibold text-sky-200">
                             {formatCurrency(totalToDeliver)}

@@ -335,7 +335,7 @@ export default function TransferStock() {
                 }`}
               >
                 <div className="mb-1 text-2xl">👥</div>
-                <div className="font-medium">A Employee</div>
+                <div className="font-medium">A Empleado</div>
               </button>
               <button
                 type="button"

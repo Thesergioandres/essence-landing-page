@@ -156,7 +156,7 @@ export default function EmployeeAdvertisingPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white sm:text-3xl">
-          🎨 Publicidad para Employees
+          🎨 Publicidad para empleados
         </h1>
         <p className="mt-1 text-gray-400">
           Genera posts con tus productos o con todo el catalogo.

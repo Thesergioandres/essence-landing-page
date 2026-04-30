@@ -482,7 +482,7 @@ export default function EmployeeDashboard() {
             )}
           </div>
           <p className="mt-2 text-sm text-gray-400">
-            Los costos internos permanecen sellados para vista employee.
+            Los costos internos permanecen sellados para vista empleado.
           </p>
         </article>
       </div>

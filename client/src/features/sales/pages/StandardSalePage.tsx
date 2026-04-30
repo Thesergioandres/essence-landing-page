@@ -290,10 +290,7 @@ export default function StandardSalePage({
   const isEmployee =
     isEmployeeRole(user?.role) ||
     isEmployeeRole(resolveSessionMembershipRole(user));
-  const currentUserId =
-    resolveEntityId(user?._id) ||
-    resolveEntityId((user as { id?: unknown })?.id) ||
-    "";
+  const currentUserId = resolveEntityId(user) || "";
   const effectiveBusinessId = useMemo(
     () =>
       resolveEntityId(contextBusinessId) ||
