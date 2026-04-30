@@ -393,16 +393,26 @@ function protectQueryMethods() {
 function protectConnectionCollections(connection) {
   if (!connection || !connection.db) return;
 
-  const originalCollection = connection.db.collection.bind(connection.db);
+  const db = connection.db;
 
-  connection.db.collection = function (name, options) {
+  // Proteger métodos de DB
+  for (const methodName of WRITE_METHODS.db) {
+    if (typeof db[methodName] === "function") {
+      db[methodName] = async function (...args) {
+        syncLogger.protectionTriggered(methodName, "db_level");
+        throw new ProductionWriteBlockedError(methodName, "db_level");
+      };
+    }
+  }
+
+  const originalCollection = db.collection.bind(db);
+
+  db.collection = function (name, options) {
     const collection = originalCollection(name, options);
 
     // Proteger métodos de la colección
     for (const methodName of WRITE_METHODS.collection) {
       if (typeof collection[methodName] === "function") {
-        const originalMethod = collection[methodName].bind(collection);
-
         collection[methodName] = function (...args) {
           syncLogger.protectionTriggered(methodName, name);
           throw new ProductionWriteBlockedError(methodName, name);
@@ -414,7 +424,7 @@ function protectConnectionCollections(connection) {
   };
 
   syncLogger.debug(
-    `Colecciones protegidas para conexión: ${connection.name || "default"}`,
+    `Colecciones y comandos DB protegidos para conexión: ${connection.name || "default"}`,
   );
 }
 

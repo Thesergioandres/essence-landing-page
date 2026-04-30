@@ -40,8 +40,22 @@ const resolveEntityId = (value: unknown): string => {
   if (typeof value === "object" && value !== null) {
     const candidate = value as any;
 
+    // 0. Handle Buffer-serialized ObjectId: {"buffer": {"type": "Buffer", "data": [...]}}
+    // or directly {"type": "Buffer", "data": [...]}
+    const bufferObj = candidate.buffer || (candidate.type === "Buffer" ? candidate : null);
+    if (bufferObj && bufferObj.type === "Buffer" && Array.isArray(bufferObj.data)) {
+      try {
+        const hex = bufferObj.data
+          .map((b: number) => b.toString(16).padStart(2, "0"))
+          .join("");
+        if (hex && hex.length === 24) return hex.toLowerCase();
+      } catch {
+        // ignore
+      }
+    }
+
     // 1. Intentar campos comunes directamente
-    const fields = ["_id", "id", "$oid", "userId", "uid", "oid"];
+    const fields = ["_id", "id", "$oid", "userId", "uid", "oid", "user", "sub", "data"];
     for (const field of fields) {
       const val = candidate[field];
       if (val) {
@@ -78,11 +92,14 @@ const resolveEntityId = (value: unknown): string => {
       // ignore
     }
 
-    // 4. Búsqueda exhaustiva en todas las propiedades del objeto (un nivel)
+    // 4. Búsqueda exhaustiva en todas las propiedades del objeto (un nivel) - RECURSIVA
     for (const key in candidate) {
       const val = candidate[key];
       if (typeof val === "string") {
         const res = sanitizeIdString(val);
+        if (res) return res;
+      } else if (typeof val === "object" && val !== null) {
+        const res = resolveEntityId(val);
         if (res) return res;
       }
     }
@@ -132,11 +149,16 @@ export default function TransferStock() {
       console.log("📥 [TransferStock] loadData called");
       setLoading(true);
       
-      const currentUser = sessionUser || authService.getCurrentUser();
-      const currentUserId = resolveEntityId(currentUser);
+      const sessionUserId = resolveEntityId(sessionUser);
+      const localUser = authService.getCurrentUser();
+      const localUserId = resolveEntityId(localUser);
+      
+      const currentUser = sessionUserId ? sessionUser : localUser;
+      const currentUserId = sessionUserId || localUserId;
 
       console.log("🛠️ [TransferStock] Identification check:", {
-        currentUserSource: sessionUser ? "sessionContext" : (currentUser ? "localStorage" : "none"),
+        sessionUserId,
+        localUserId,
         currentUserId,
         sessionLoading
       });
@@ -235,10 +257,11 @@ export default function TransferStock() {
   }, [sessionUser, sessionLoading]);
 
   useEffect(() => {
-    if (!sessionLoading) {
+    // Solo cargamos si no estamos cargando ya y si no hay un mensaje de error crítico previo
+    if (!sessionLoading && !message) {
       loadData();
     }
-  }, [loadData, sessionLoading]);
+  }, [loadData, sessionLoading, !!message]);
 
   const getAvailableStock = () => {
     if (!selectedProduct) return 0;

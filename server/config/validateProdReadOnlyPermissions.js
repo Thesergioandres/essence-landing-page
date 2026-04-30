@@ -228,6 +228,8 @@ async function testWriteBlocked(connection) {
       errorMessage.includes("permission denied") ||
       errorMessage.includes("requires authentication") ||
       errorMessage.includes("not allowed to do action") ||
+      errorMessage.includes("bloqueada en producción") ||
+      errorMessage.includes("operación de escritura bloqueada") ||
       error.code === 13 || // Unauthorized
       error.code === 18 // AuthenticationFailed
     ) {

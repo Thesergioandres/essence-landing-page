@@ -20,6 +20,7 @@ import fs from "fs";
 import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
+import { startProductionMirrorWorker } from "./productionMirror.worker.js";
 import { installFullProtection } from "../../../security/mongooseWriteProtector.js";
 import { resolveProductionMongoSource } from "../database/utils/resolveProductionMongoUri.js";
 
@@ -370,6 +371,11 @@ async function main() {
 
   // Paso 2: Sincronización V2
   await runSyncV2();
+
+  // Paso 2.1: Activar Mirror Worker (Background)
+  startProductionMirrorWorker().catch((err) => {
+    logError(`No se pudo iniciar el Mirror Worker: ${err.message}`);
+  });
 
   // Paso 3: Iniciar servidor
   startServer();

@@ -17,31 +17,63 @@ import type {
 const ADMIN_ORIGINAL_TOKEN_KEY = "admin_original_token";
 
 const resolveEntityId = (value: unknown): string | null => {
+  if (!value) return null;
+
   if (typeof value === "string") {
     const trimmed = value.trim();
-    if (!trimmed || trimmed === "[object Object]") {
+    if (
+      !trimmed ||
+      trimmed === "[object Object]" ||
+      trimmed === "undefined" ||
+      trimmed === "null"
+    ) {
       return null;
     }
     return trimmed;
   }
 
-  if (!value || typeof value !== "object") {
+  if (typeof value !== "object") {
     return null;
   }
 
-  const candidate = value as {
-    _id?: unknown;
-    id?: unknown;
-    $oid?: unknown;
-  };
+  const candidate = value as any;
 
-  return (
-    resolveEntityId(candidate._id) ||
-    resolveEntityId(candidate.id) ||
-    resolveEntityId(candidate.$oid) ||
-    null
-  );
+  // 1. Handle Buffer-serialized ObjectId: {"buffer": {"type": "Buffer", "data": [...]}}
+  // or directly {"type": "Buffer", "data": [...]}
+  const bufferObj = candidate.buffer || (candidate.type === "Buffer" ? candidate : null);
+  if (bufferObj && bufferObj.type === "Buffer" && Array.isArray(bufferObj.data)) {
+    try {
+      const hex = bufferObj.data
+        .map((b: number) => b.toString(16).padStart(2, "0"))
+        .join("");
+      if (hex && hex.length === 24) return hex.toLowerCase();
+    } catch {
+      // ignore
+    }
+  }
+
+  // 2. Try common fields recursively
+  const fields = ["_id", "id", "$oid", "userId", "uid", "oid"];
+  for (const field of fields) {
+    const val = candidate[field];
+    if (val) {
+      const resolved = resolveEntityId(val);
+      if (resolved) return resolved;
+    }
+  }
+
+  // 3. Last resort string match
+  if (typeof candidate.toString === "function" && candidate.toString !== Object.prototype.toString) {
+    const s = candidate.toString();
+    if (s && s !== "[object Object]") {
+      const match = s.match(/[a-fA-F0-9]{24}/);
+      if (match) return match[0].toLowerCase();
+    }
+  }
+
+  return null;
 };
+
 
 const normalizeSessionUser = <T extends User | AuthResponse>(user: T): T => {
   const record = (user || {}) as Record<string, unknown>;
