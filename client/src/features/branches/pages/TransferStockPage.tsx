@@ -32,26 +32,27 @@ const resolveEntityId = (value: unknown): string => {
   if (!value) return "";
   
   if (typeof value === "string") {
-    return sanitizeIdString(value);
+    const cleaned = sanitizeIdString(value);
+    if (cleaned) return cleaned;
   }
 
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return String(value);
-  }
-
-  if (typeof value === "object") {
+  if (typeof value === "object" && value !== null) {
     const candidate = value as any;
 
-    // 1. Prioridad: Campos directos de ID
-    const directId = 
-      resolveEntityId(candidate._id) || 
-      resolveEntityId(candidate.id) || 
-      resolveEntityId(candidate.$oid) || 
-      resolveEntityId(candidate.oid) ||
-      resolveEntityId(candidate.userId) ||
-      resolveEntityId(candidate.uid);
-      
-    if (directId) return directId;
+    // 1. Intentar campos comunes directamente
+    const fields = ["_id", "id", "$oid", "userId", "uid", "oid"];
+    for (const field of fields) {
+      const val = candidate[field];
+      if (val) {
+        if (typeof val === "string") {
+          const res = sanitizeIdString(val);
+          if (res) return res;
+        } else if (typeof val === "object") {
+          const res = resolveEntityId(val);
+          if (res) return res;
+        }
+      }
+    }
 
     // 2. Soporte para Mongoose ObjectId o similares
     if (typeof candidate.toHexString === "function") {
@@ -59,7 +60,7 @@ const resolveEntityId = (value: unknown): string => {
       if (hex) return hex;
     }
 
-    if (typeof candidate.toString === "function") {
+    if (typeof candidate.toString === "function" && candidate.toString !== Object.prototype.toString) {
       const s = candidate.toString();
       if (s && s !== "[object Object]") {
         const hex = sanitizeIdString(s);
@@ -67,13 +68,22 @@ const resolveEntityId = (value: unknown): string => {
       }
     }
     
-    // 3. Último recurso: escaneo de la cadena serializada
+    // 3. Último recurso: escaneo profundo de la cadena serializada
     try {
       const serialized = JSON.stringify(value);
       const match = serialized.match(/[a-fA-F0-9]{24}/);
       if (match) return match[0].toLowerCase();
     } catch {
       // ignore
+    }
+
+    // 4. Búsqueda exhaustiva en todas las propiedades del objeto (un nivel)
+    for (const key in candidate) {
+      const val = candidate[key];
+      if (typeof val === "string") {
+        const res = sanitizeIdString(val);
+        if (res) return res;
+      }
     }
   }
 
@@ -136,11 +146,10 @@ export default function TransferStock() {
           return;
         }
         
-        console.error("🛠️ [TransferStock] CRITICAL: No currentUserId found. currentUser details:", {
+        console.error("🛠️ [TransferStock] CRITICAL: No currentUserId found.", {
           hasUser: !!currentUser,
-          keys: currentUser ? Object.keys(currentUser) : [],
           role: (currentUser as any)?.role,
-          id: (currentUser as any)?._id || (currentUser as any)?.id
+          fullUser: currentUser
         });
 
         setMessage({
