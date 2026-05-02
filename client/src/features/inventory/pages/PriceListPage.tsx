@@ -51,9 +51,10 @@ export default function PriceListPage() {
           promotionService.getAll(),
         ]);
 
-        const data = productsResponse?.data || [];
+        const data = (productsResponse?.data || []).filter(p => p != null && typeof p === "object");
         setProducts(data);
-        setPromotions(promotionsResponse?.promotions || []);
+        const promos = (promotionsResponse?.promotions || []).filter(p => p != null && typeof p === "object");
+        setPromotions(promos);
 
         const initialDrafts: Record<string, RowDraft> = {};
         data.forEach((item: Product) => {
@@ -77,7 +78,9 @@ export default function PriceListPage() {
   }, []);
 
   const sortedProducts = useMemo(() => {
-    return [...products].sort((a, b) => a.name.localeCompare(b.name));
+    return [...products]
+      .filter(p => p && typeof p.name === "string")
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [products]);
 
   useGSAP(
@@ -108,7 +111,9 @@ export default function PriceListPage() {
   );
 
   const sortedPromotions = useMemo(() => {
-    return [...promotions].sort((a, b) => a.name.localeCompare(b.name));
+    return [...promotions]
+      .filter(p => p && typeof p.name === "string")
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [promotions]);
 
   const formatPromotionStatus = (status?: string) => {

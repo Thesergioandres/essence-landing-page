@@ -259,7 +259,7 @@ export const globalSettingsService = {
       success: boolean;
       data: PublicGlobalSettingsResponse;
     }>("/global-settings/public");
-    return response.data.data;
+    return response.data.data || { maintenanceMode: false, defaultPlan: "starter", plans: {} };
   },
 
   async getBusinessLimits(): Promise<BusinessPlanSnapshot> {

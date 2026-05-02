@@ -112,15 +112,11 @@ export default function RegisterPage() {
       .getPublicSettings()
       .then(settings => {
         if (settings?.plans) {
-          const starter = settings.plans.starter;
-          const pro = settings.plans.pro;
-          const enterprise = settings.plans.enterprise;
-
-          if (starter || pro || enterprise) {
-            const fetchedPlans: PlanOption[] = [];
-            if (starter) fetchedPlans.push(starter as PlanOption);
-            if (pro) fetchedPlans.push(pro as PlanOption);
-            if (enterprise) fetchedPlans.push(enterprise as PlanOption);
+          const fetchedPlans = Object.values(settings.plans)
+            .filter((p): p is NonNullable<typeof p> => p != null && typeof p === "object")
+            .map(p => p as PlanOption);
+          
+          if (fetchedPlans.length > 0) {
             setPlans(fetchedPlans);
           }
         }

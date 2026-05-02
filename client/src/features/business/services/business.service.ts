@@ -103,7 +103,7 @@ export const businessService = {
         activeMembership?: BusinessMembership & { business: Business };
       };
     }>("/business/my-memberships");
-    return response.data.data;
+    return response.data.data || { memberships: [], activeMembership: null };
   },
 
   async updateBusiness(

@@ -147,8 +147,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const [{ memberships: fetched }, publicSettings] = await Promise.all([
-        businessService.getMyMemberships(),
-        globalSettingsService.getPublicSettings().catch(() => null),
+        businessService.getMyMemberships().catch(() => ({ memberships: [] })),
+        globalSettingsService.getPublicSettings().catch(() => ({ maintenanceMode: false, defaultPlan: "starter", plans: {} })),
       ]);
 
       if (publicSettings?.plans) {
