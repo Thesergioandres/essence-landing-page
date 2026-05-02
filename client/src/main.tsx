@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
 import { AuthProvider } from "./context/AuthContext";
-import { BusinessProvider } from "./context/BusinessContext";
+import { BusinessProvider } from "./context/BusinessProvider";
 import "./index.css";
 import { ErrorBoundary } from "./shared/components/ui";
 import { enableConsoleBuffer } from "./utils/consoleBuffer";
