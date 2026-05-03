@@ -16,9 +16,17 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: unknown): State {
+    const isChunkError = 
+      error instanceof Error && 
+      (error.message.includes("Failed to fetch dynamically imported module") ||
+       error.message.includes("Loading chunk") ||
+       error.message.includes("chunk load"));
+
     return {
       hasError: true,
-      message: error instanceof Error ? error.message : "Error desconocido",
+      message: isChunkError 
+        ? "Nueva versión detectada. La aplicación se recargará automáticamente."
+        : (error instanceof Error ? error.message : "Error desconocido"),
     };
   }
 
@@ -29,6 +37,19 @@ export default class ErrorBoundary extends Component<Props, State> {
       stack: error.stack,
       componentStack: info?.componentStack,
     });
+
+    const isChunkError = 
+      error.message.includes("Failed to fetch dynamically imported module") ||
+      error.message.includes("Loading chunk") ||
+      error.message.includes("chunk load");
+
+    if (isChunkError) {
+      const sessionKey = "chunk_error_reloaded";
+      if (!sessionStorage.getItem(sessionKey)) {
+        sessionStorage.setItem(sessionKey, "true");
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    }
   }
 
   render() {

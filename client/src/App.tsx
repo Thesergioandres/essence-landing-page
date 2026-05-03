@@ -7,6 +7,7 @@ import {
 } from "framer-motion";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { lazyRetry } from "./utils/lazyRetry";
 import BusinessGate from "./components/BusinessGate";
 import ImpersonationBanner from "./components/ImpersonationBanner";
 import LoadingProgress from "./components/LoadingProgress";
@@ -25,260 +26,260 @@ const PageLoader = () => (
 // ========== LAZY LOAD - FEATURE-BASED PAGES ==========
 
 // Auth pages
-const Login = lazy(() => import("./features/auth/pages/LoginPage"));
-const LoginAdmin = lazy(
+const Login = lazyRetry(() => import("./features/auth/pages/LoginPage"));
+const LoginAdmin = lazyRetry(
   () => import("./features/auth/pages/LoginAdminRedirect")
 );
-const LoginEmpleado = lazy(
+const LoginEmpleado = lazyRetry(
   () => import("./features/auth/pages/LoginEmployeeRedirect")
 );
-const LoginGod = lazy(() => import("./features/auth/pages/LoginGodRedirect"));
-const Register = lazy(() => import("./features/auth/pages/RegisterPage"));
-const AccountHold = lazy(() => import("./features/auth/pages/AccountHoldPage"));
+const LoginGod = lazyRetry(() => import("./features/auth/pages/LoginGodRedirect"));
+const Register = lazyRetry(() => import("./features/auth/pages/RegisterPage"));
+const AccountHold = lazyRetry(() => import("./features/auth/pages/AccountHoldPage"));
 
 // Common / Public pages
-const Home = lazy(() => import("./features/common/pages/HomePage"));
-const Manual = lazy(() => import("./features/common/pages/ManualPage"));
-const Catalog = lazy(() => import("./features/common/pages/CatalogPage"));
-const PublicStorefront = lazy(
+const Home = lazyRetry(() => import("./features/common/pages/HomePage"));
+const Manual = lazyRetry(() => import("./features/common/pages/ManualPage"));
+const Catalog = lazyRetry(() => import("./features/common/pages/CatalogPage"));
+const PublicStorefront = lazyRetry(
   () => import("./features/public-storefront/pages/PublicStorefrontPage")
 );
-const GodPanel = lazy(() => import("./features/common/pages/GodPanelPage"));
-const DefectiveReports = lazy(
+const GodPanel = lazyRetry(() => import("./features/common/pages/GodPanelPage"));
+const DefectiveReports = lazyRetry(
   () => import("./features/common/pages/DefectiveReportsPage")
 );
-const DefectiveProductsManagement = lazy(
+const DefectiveProductsManagement = lazyRetry(
   () => import("./features/common/pages/DefectiveProductsManagementPage")
 );
-const CustomerWarranty = lazy(
+const CustomerWarranty = lazyRetry(
   () => import("./features/warranties/pages/CustomerWarrantyPage")
 );
-const TestOptimization = lazy(
+const TestOptimization = lazyRetry(
   () => import("./features/common/pages/TestOptimizationPage")
 );
 
 // Inventory pages
-const Products = lazy(() => import("./features/inventory/pages/ProductsPage"));
-const Categories = lazy(
+const Products = lazyRetry(() => import("./features/inventory/pages/ProductsPage"));
+const Categories = lazyRetry(
   () => import("./features/inventory/pages/CategoriesPage")
 );
-const AddProduct = lazy(
+const AddProduct = lazyRetry(
   () => import("./features/inventory/pages/AddProductPage")
 );
-const EditProduct = lazy(
+const EditProduct = lazyRetry(
   () => import("./features/inventory/pages/EditProductPage")
 );
-const ProductDetail = lazy(
+const ProductDetail = lazyRetry(
   () => import("./features/inventory/pages/ProductDetailPage")
 );
-const AdminProductDetail = lazy(
+const AdminProductDetail = lazyRetry(
   () => import("./features/inventory/pages/AdminProductDetailPage")
 );
-const CategoryProducts = lazy(
+const CategoryProducts = lazyRetry(
   () => import("./features/inventory/pages/CategoryProductsPage")
 );
-const GlobalInventory = lazy(
+const GlobalInventory = lazyRetry(
   () => import("./features/inventory/pages/GlobalInventoryPage")
 );
-const InventoryEntries = lazy(
+const InventoryEntries = lazyRetry(
   () => import("./features/inventory/pages/InventoryEntriesPage")
 );
-const PriceList = lazy(
+const PriceList = lazyRetry(
   () => import("./features/inventory/pages/PriceListPage")
 );
 
 // Analytics pages
-const AdvancedDashboard = lazy(
+const AdvancedDashboard = lazyRetry(
   () => import("./features/analytics/pages/AdvancedDashboardPage")
 );
-const AuditLogs = lazy(
+const AuditLogs = lazyRetry(
   () => import("./features/analytics/pages/AuditLogsPage")
 );
-const Expenses = lazy(() => import("./features/analytics/pages/ExpensesPage"));
-const ProfitHistory = lazy(
+const Expenses = lazyRetry(() => import("./features/analytics/pages/ExpensesPage"));
+const ProfitHistory = lazyRetry(
   () => import("./features/analytics/pages/ProfitHistoryPage")
 );
 
 // Sales pages
-const Sales = lazy(() => import("./features/sales/pages/SalesPage"));
-const SpecialSales = lazy(
+const Sales = lazyRetry(() => import("./features/sales/pages/SalesPage"));
+const SpecialSales = lazyRetry(
   () => import("./features/sales/pages/SpecialSalesPage")
 );
-const StandardSale = lazy(
+const StandardSale = lazyRetry(
   () => import("./features/sales/pages/StandardSalePage")
 );
-const PromotionSale = lazy(
+const PromotionSale = lazyRetry(
   () => import("./features/sales/pages/PromotionSalePage")
 );
 
 // Employees pages
-const AddEmployee = lazy(
+const AddEmployee = lazyRetry(
   () => import("./features/employees/pages/AddEmployeePage")
 );
-const EmployeeDashboard = lazy(
+const EmployeeDashboard = lazyRetry(
   () => import("./features/employees/pages/EmployeeDashboardPage")
 );
-const EmployeeDashboardLayout = lazy(
+const EmployeeDashboardLayout = lazyRetry(
   () => import("./features/employees/pages/EmployeeDashboardLayout")
 );
-const EmployeeProducts = lazy(
+const EmployeeProducts = lazyRetry(
   () => import("./features/employees/pages/EmployeeProductsPage")
 );
-const EmployeeSales = lazy(
+const EmployeeSales = lazyRetry(
   () => import("./features/employees/pages/EmployeeSalesPage")
 );
-const EmployeeCredits = lazy(
+const EmployeeCredits = lazyRetry(
   () => import("./features/employees/pages/EmployeeCreditsPage")
 );
-const EmployeeStats = lazy(
+const EmployeeStats = lazyRetry(
   () => import("./features/employees/pages/EmployeeStatsPage")
 );
-const EmployeeCatalog = lazy(
+const EmployeeCatalog = lazyRetry(
   () => import("./features/employees/pages/EmployeeCatalogPage")
 );
-const EmployeeCatalogShare = lazy(
+const EmployeeCatalogShare = lazyRetry(
   () => import("./features/employees/pages/EmployeeCatalogSharePage")
 );
-const EmployeeShipments = lazy(
+const EmployeeShipments = lazyRetry(
   () => import("./features/employees/pages/EmployeeShipmentsPage")
 );
-const EmployeeRequestDispatch = lazy(
+const EmployeeRequestDispatch = lazyRetry(
   () => import("./features/employees/pages/EmployeeRequestDispatchPage")
 );
-const PublicEmployeeCatalog = lazy(
+const PublicEmployeeCatalog = lazyRetry(
   () => import("./features/employees/pages/PublicEmployeeCatalogPage")
 );
-const EmployeeAdvertising = lazy(
+const EmployeeAdvertising = lazyRetry(
   () => import("./features/advertising/pages/EmployeeAdvertisingPage")
 );
-const EmployeeManagement = lazy(
+const EmployeeManagement = lazyRetry(
   () => import("./features/staff/pages/EmployeeManagementPage")
 );
-const EmployeeSchedule = lazy(
+const EmployeeSchedule = lazyRetry(
   () => import("./features/scheduling/pages/EmployeeSchedulePage")
 );
-const AdminScheduleOverview = lazy(
+const AdminScheduleOverview = lazyRetry(
   () => import("./features/scheduling/pages/AdminScheduleOverviewPage")
 );
-const Contracts = lazy(
+const Contracts = lazyRetry(
   () => import("./features/contracts/pages/ContractsPage")
 );
-const OperativoStockManagement = lazy(
+const OperativoStockManagement = lazyRetry(
   () =>
     import("./features/employees/pages/operativo/OperativoStockManagementPage")
 );
-const OperativoGlobalInventory = lazy(
+const OperativoGlobalInventory = lazyRetry(
   () =>
     import("./features/employees/pages/operativo/OperativoGlobalInventoryPage")
 );
-const OperativoBranches = lazy(
+const OperativoBranches = lazyRetry(
   () => import("./features/employees/pages/operativo/OperativoBranchesPage")
 );
-const OperativoTransferHistory = lazy(
+const OperativoTransferHistory = lazyRetry(
   () =>
     import("./features/employees/pages/operativo/OperativoTransferHistoryPage")
 );
-const OperativoSales = lazy(
+const OperativoSales = lazyRetry(
   () => import("./features/employees/pages/operativo/OperativoSalesPage")
 );
-const OperativoAnalytics = lazy(
+const OperativoAnalytics = lazyRetry(
   () => import("./features/employees/pages/operativo/OperativoAnalyticsPage")
 );
-const OperativoExpenses = lazy(
+const OperativoExpenses = lazyRetry(
   () => import("./features/employees/pages/operativo/OperativoExpensesPage")
 );
-const OperativoTeam = lazy(
+const OperativoTeam = lazyRetry(
   () => import("./features/employees/pages/operativo/OperativoTeamPage")
 );
-const OperativoPromotions = lazy(
+const OperativoPromotions = lazyRetry(
   () => import("./features/employees/pages/operativo/OperativoPromotionsPage")
 );
-const OperativoProviders = lazy(
+const OperativoProviders = lazyRetry(
   () => import("./features/employees/pages/operativo/OperativoProvidersPage")
 );
-const OperativoCustomers = lazy(
+const OperativoCustomers = lazyRetry(
   () => import("./features/employees/pages/operativo/OperativoCustomersPage")
 );
-const DemoPage = lazy(() => import("./features/demo/DemoPage"));
+const DemoPage = lazyRetry(() => import("./features/demo/DemoPage"));
 
 // Customers pages
-const Customers = lazy(
+const Customers = lazyRetry(
   () => import("./features/customers/pages/CustomersPage")
 );
-const Segments = lazy(() => import("./features/customers/pages/SegmentsPage"));
+const Segments = lazyRetry(() => import("./features/customers/pages/SegmentsPage"));
 
 // Credits pages
-const Credits = lazy(() => import("./features/credits/pages/CreditsPage"));
-const CreditDetail = lazy(
+const Credits = lazyRetry(() => import("./features/credits/pages/CreditsPage"));
+const CreditDetail = lazyRetry(
   () => import("./features/credits/pages/CreditDetailPage")
 );
 
 // Business pages
-const DashboardLayout = lazy(
+const DashboardLayout = lazyRetry(
   () => import("./features/business/pages/DashboardLayout")
 );
-const BusinessSettings = lazy(
+const BusinessSettings = lazyRetry(
   () => import("./features/business/pages/BusinessSettingsPage")
 );
-const PublicPageSettings = lazy(
+const PublicPageSettings = lazyRetry(
   () => import("./features/business/pages/PublicPageSettingsPage")
 );
-const BusinessFullInfo = lazy(
+const BusinessFullInfo = lazyRetry(
   () => import("./features/business/pages/BusinessFullInfoPage")
 );
-const CreateBusiness = lazy(
+const CreateBusiness = lazyRetry(
   () => import("./features/business/pages/CreateBusinessPage")
 );
-const BusinessAssistant = lazy(
+const BusinessAssistant = lazyRetry(
   () => import("./features/business/pages/BusinessAssistantPage")
 );
-const Onboarding = lazy(
+const Onboarding = lazyRetry(
   () => import("./features/business/pages/OnboardingPage")
 );
 
 // Branches pages
-const Branches = lazy(() => import("./features/branches/pages/BranchesPage"));
-const StockManagement = lazy(
+const Branches = lazyRetry(() => import("./features/branches/pages/BranchesPage"));
+const StockManagement = lazyRetry(
   () => import("./features/branches/pages/StockManagementPage")
 );
-const TransferStock = lazy(
+const TransferStock = lazyRetry(
   () => import("./features/branches/pages/TransferStockPage")
 );
-const TransferHistory = lazy(
+const TransferHistory = lazyRetry(
   () => import("./features/branches/pages/TransferHistoryPage")
 );
-const DispatchCenter = lazy(
+const DispatchCenter = lazyRetry(
   () => import("./features/branches/pages/DispatchCenterPage")
 );
 
 // Notifications pages
-const Notifications = lazy(
+const Notifications = lazyRetry(
   () => import("./features/notifications/pages/NotificationsPage")
 );
 
 // Settings pages
-const UserSettings = lazy(
+const UserSettings = lazyRetry(
   () => import("./features/settings/pages/UserSettingsPage")
 );
-const PaymentMethods = lazy(
+const PaymentMethods = lazyRetry(
   () => import("./features/settings/pages/PaymentMethodsPage")
 );
-const DeliveryMethods = lazy(
+const DeliveryMethods = lazyRetry(
   () => import("./features/settings/pages/DeliveryMethodsPage")
 );
-const Providers = lazy(() => import("./features/settings/pages/ProvidersPage"));
-const Promotions = lazy(
+const Providers = lazyRetry(() => import("./features/settings/pages/ProvidersPage"));
+const Promotions = lazyRetry(
   () => import("./features/settings/pages/PromotionsPage")
 );
-const Advertising = lazy(
+const Advertising = lazyRetry(
   () => import("./features/advertising/pages/AdvertisingPage")
 );
 
 // Gamification pages
-const GamificationRanking = lazy(
+const GamificationRanking = lazyRetry(
   () => import("./features/gamification/pages/RankingPage")
 );
-const GamificationConfigPage = lazy(
+const GamificationConfigPage = lazyRetry(
   () => import("./features/gamification/pages/GamificationConfigPage")
 );
 
@@ -1060,3 +1061,4 @@ export default function App() {
     </MotionConfig>
   );
 }
+

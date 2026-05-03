@@ -10,6 +10,11 @@ import { PromotionController } from "../controllers/PromotionController.js";
 const router = Router();
 const controller = new PromotionController();
 
+// Public routes (no authentication required)
+router.get("/public", businessContext, requireFeature("promotions"), (req, res) =>
+  controller.getActive(req, res),
+);
+
 router.use(protect, businessContext, requireFeature("promotions"));
 
 router.post(

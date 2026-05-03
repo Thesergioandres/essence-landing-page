@@ -236,9 +236,15 @@ export default function Catalog() {
         }
 
         try {
-          const promoResponse = await promotionService.getAll({
-            status: "active",
-          });
+          const promoResponse = hasToken
+            ? await promotionService.getAll({
+                status: "active",
+              })
+            : await promotionService.getPublicPromotions({
+                businessId: publicBusinessId || "",
+                status: "active",
+              });
+
           const promoList = (promoResponse.promotions || []).filter(
             promo => promo.showInCatalog !== false
           );
@@ -467,7 +473,7 @@ export default function Catalog() {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
       setShareError(null);
-    } catch (_error) {
+    } catch {
       window.prompt("Copia este enlace", shareLink);
     }
   };
@@ -488,7 +494,7 @@ export default function Catalog() {
         url: shareLink,
       });
       setShareError(null);
-    } catch (_error) {
+    } catch {
       setShareError("No se pudo abrir el panel de compartir.");
     }
   };

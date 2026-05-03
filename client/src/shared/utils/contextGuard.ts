@@ -5,7 +5,6 @@
  */
 
 export const isContextReady = (): boolean => {
-  const token = localStorage.getItem("token");
   let businessId = localStorage.getItem("businessId");
   
   if (!businessId || businessId === "null" || businessId === "undefined") {
@@ -26,9 +25,13 @@ export const isContextReady = (): boolean => {
     }
   }
   
-  // Some routes might allow calls without businessId, 
-  // but for guarded features (inventory, sales), both are usually required.
-  return Boolean(token && businessId && businessId !== "null" && businessId !== "undefined");
+  // Some routes allow calls without token (public storefront, catalog),
+  // but they still require a valid businessId.
+  const hasBusiness = Boolean(businessId && businessId !== "null" && businessId !== "undefined");
+  
+  // If we have a token, we MUST have a businessId too (standard guarded flow)
+  // If we DON'T have a token, we only need businessId (public flow)
+  return hasBusiness;
 };
 
 /**

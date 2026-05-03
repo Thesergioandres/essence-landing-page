@@ -177,6 +177,19 @@ export const promotionService = {
     };
   },
 
+  async getPublicPromotions(params?: {
+    businessId: string;
+    status?: string;
+  }): Promise<{
+    promotions: Promotion[];
+  }> {
+    const response = await api.get("/promotions/public", { params });
+    return {
+      promotions:
+        response.data?.data || response.data?.promotions || response.data || [],
+    };
+  },
+
   async getById(id: string): Promise<Promotion> {
     const response = await api.get(`/promotions/${id}`);
     return response.data;
